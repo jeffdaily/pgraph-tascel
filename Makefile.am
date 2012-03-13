@@ -24,5 +24,5 @@ libpgraph_la_SOURCES =
 libpgraph_la_SOURCES += src/dynamic.c
 libpgraph_la_SOURCES += src/dynamic.h
 
-check_PROGRAMS = test_dynamic
-test_dynamic_SOURCES = test_dynamic.c
+check_PROGRAMS = tests/test_dynamic
+tests_test_dynamic_SOURCES = tests/test_dynamic.c

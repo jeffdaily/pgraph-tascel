@@ -34,7 +34,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-check_PROGRAMS = test_dynamic$(EXEEXT)
+check_PROGRAMS = tests/test_dynamic$(EXEEXT)
 subdir = .
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/config.h.in \
@@ -89,11 +89,11 @@ libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
-am_test_dynamic_OBJECTS = test_dynamic.$(OBJEXT)
-test_dynamic_OBJECTS = $(am_test_dynamic_OBJECTS)
-test_dynamic_LDADD = $(LDADD)
+am_tests_test_dynamic_OBJECTS = tests/test_dynamic.$(OBJEXT)
+tests_test_dynamic_OBJECTS = $(am_tests_test_dynamic_OBJECTS)
+tests_test_dynamic_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
-test_dynamic_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
+tests_test_dynamic_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
@@ -121,8 +121,8 @@ am__v_CCLD_0 = @echo "  CCLD  " $@;
 AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
-SOURCES = $(libpgraph_la_SOURCES) $(test_dynamic_SOURCES)
-DIST_SOURCES = $(libpgraph_la_SOURCES) $(test_dynamic_SOURCES)
+SOURCES = $(libpgraph_la_SOURCES) $(tests_test_dynamic_SOURCES)
+DIST_SOURCES = $(libpgraph_la_SOURCES) $(tests_test_dynamic_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -274,7 +274,7 @@ AM_LDFLAGS = $(GA_LDFLAGS) $(PT_MPI_LDFLAGS)
 LDADD = libpgraph.la $(GA_LIBS) $(PT_MPI_LIBS) $(GA_FLIBS)
 lib_LTLIBRARIES = libpgraph.la
 libpgraph_la_SOURCES = src/dynamic.c src/dynamic.h
-test_dynamic_SOURCES = test_dynamic.c
+tests_test_dynamic_SOURCES = tests/test_dynamic.c
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -380,20 +380,29 @@ clean-checkPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
-test_dynamic$(EXEEXT): $(test_dynamic_OBJECTS) $(test_dynamic_DEPENDENCIES) 
-	@rm -f test_dynamic$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(test_dynamic_OBJECTS) $(test_dynamic_LDADD) $(LIBS)
+tests/$(am__dirstamp):
+	@$(MKDIR_P) tests
+	@: > tests/$(am__dirstamp)
+tests/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) tests/$(DEPDIR)
+	@: > tests/$(DEPDIR)/$(am__dirstamp)
+tests/test_dynamic.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+tests/test_dynamic$(EXEEXT): $(tests_test_dynamic_OBJECTS) $(tests_test_dynamic_DEPENDENCIES) tests/$(am__dirstamp)
+	@rm -f tests/test_dynamic$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(tests_test_dynamic_OBJECTS) $(tests_test_dynamic_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 	-rm -f src/dynamic.$(OBJEXT)
 	-rm -f src/dynamic.lo
+	-rm -f tests/test_dynamic.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_dynamic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/dynamic.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_dynamic.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -428,6 +437,7 @@ mostlyclean-libtool:
 clean-libtool:
 	-rm -rf .libs _libs
 	-rm -rf src/.libs src/_libs
+	-rm -rf tests/.libs tests/_libs
 
 distclean-libtool:
 	-rm -f libtool config.lt
@@ -662,6 +672,8 @@ distclean-generic:
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
 	-rm -f src/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/$(am__dirstamp)
+	-rm -f tests/$(DEPDIR)/$(am__dirstamp)
+	-rm -f tests/$(am__dirstamp)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -673,7 +685,7 @@ clean-am: clean-checkPROGRAMS clean-generic clean-libLTLIBRARIES \
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf ./$(DEPDIR) src/$(DEPDIR)
+	-rm -rf src/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -721,7 +733,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf ./$(DEPDIR) src/$(DEPDIR)
+	-rm -rf src/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
