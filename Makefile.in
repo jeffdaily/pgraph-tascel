@@ -50,7 +50,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ga.m4 \
 	$(top_srcdir)/m4/lt~obsolete.m4 \
 	$(top_srcdir)/m4/pt_mpi_unwrap.m4 $(top_srcdir)/m4/pt_mpicc.m4 \
 	$(top_srcdir)/m4/pt_mpicxx.m4 $(top_srcdir)/m4/pt_with_mpi.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/tascel.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
@@ -212,6 +212,9 @@ SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+TASCEL_CPPFLAGS = @TASCEL_CPPFLAGS@
+TASCEL_LDFLAGS = @TASCEL_LDFLAGS@
+TASCEL_LIBS = @TASCEL_LIBS@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@

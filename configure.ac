@@ -38,7 +38,6 @@ AS_IF([test x$with_mpi_wrappers = xyes],
 
 # Checks for libraries.
 GA_REQUIRE
-# TODO tascel
 
 # Checks for header files.
 AC_CHECK_HEADERS([limits.h stdlib.h])
@@ -60,6 +59,7 @@ PT_PROG_MPICXX
 AS_IF([test x$with_mpi_wrappers = xyes], [PT_MPI_UNWRAP])
 
 # Checks for libraries.
+TASCEL_REQUIRE
 
 # Checks for header files.
 
@@ -110,12 +110,12 @@ AC_MSG_NOTICE([        PT_MPI_LDFLAGS=$PT_MPI_LDFLAGS])
 AC_MSG_NOTICE([       PT_MPI_CPPFLAGS=$PT_MPI_CPPFLAGS])
 AC_MSG_NOTICE([                    CC=$CC])
 AS_IF([test "x$with_mpi_wrappers" = xyes], [
-AC_MSG_NOTICE([          unwrapped CC=$ga_cv_mpic_naked])
+AC_MSG_NOTICE([          unwrapped CC=$pt_cv_mpic_naked])
 ])
 AC_MSG_NOTICE([                CFLAGS=$CFLAGS])
 AC_MSG_NOTICE([                   CXX=$CXX])
 AS_IF([test "x$with_mpi_wrappers" = xyes], [
-AC_MSG_NOTICE([         unwrapped CXX=$ga_cv_mpicxx_naked])
+AC_MSG_NOTICE([         unwrapped CXX=$pt_cv_mpicxx_naked])
 ])
 AC_MSG_NOTICE([              CXXFLAGS=$CXXFLAGS])
 AC_MSG_NOTICE([             PT_CXXOPT=$PT_CXXOPT])
@@ -127,3 +127,6 @@ AC_MSG_NOTICE([           GA_CPPFLAGS=$GA_CPPFLAGS])
 AC_MSG_NOTICE([            GA_LDFLAGS=$GA_LDFLAGS])
 AC_MSG_NOTICE([               GA_LIBS=$GA_LIBS])
 AC_MSG_NOTICE([              GA_FLIBS=$GA_FLIBS])
+AC_MSG_NOTICE([       TASCEL_CPPFLAGS=$TASCEL_CPPFLAGS])
+AC_MSG_NOTICE([        TASCEL_LDFLAGS=$TASCEL_LDFLAGS])
+AC_MSG_NOTICE([           TASCEL_LIBS=$TASCEL_LIBS])

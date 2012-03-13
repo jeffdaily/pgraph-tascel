@@ -1,5 +1,39 @@
+# GA_SEARCH_LIBS(function, search-LIBS,
+#                [action-if-found], [action-if-not-found],
+#                [other-libraries], [preamble])
+# --------------------------------------------------------
+# Like AC_SEARCH_LIBS, but allow an optional preamble.
+AC_DEFUN([GA_SEARCH_LIBS], [
+AS_VAR_PUSHDEF([ga_search], [ga_cv_search_$1])dnl
+AC_CACHE_CHECK([for library containing $1], [ga_search],
+    [ga_func_search_save_LIBS=$LIBS
+     AC_LANG_CONFTEST([AC_LANG_CALL([$6], [$1])])
+     for ga_lib in '' $2
+     do
+        if test -z "$ga_lib"; then
+            ga_res="none required"
+        else
+            ga_res=-l$ga_lib
+            LIBS="-l$ga_lib $5 $ga_func_search_save_LIBS"
+        fi
+        AC_LINK_IFELSE([], [AS_VAR_SET([ga_search], [$ga_res])])
+        AS_VAR_SET_IF([ga_search], [break])
+     done
+     AS_VAR_SET_IF([ga_search], , [AS_VAR_SET([ga_search], [no])])
+     rm conftest.$ac_ext
+     LIBS=$ga_func_search_save_LIBS])
+AS_VAR_COPY([ga_res], [ga_search])
+AS_IF([test "$ga_res" != no],
+    [test "$ga_res" = "none required" || LIBS="$ga_res $LIBS"
+     $3],
+    [$4])
+AS_VAR_POPDEF([ga_search])dnl
+])
+
+
 # GA_CHECK_PACKAGE(pkg, header, library, function, [extra-libs],
-#                  [action-if-found], [action-if-not-found])
+#                  [action-if-found], [action-if-not-found],
+#                  [function-preamble])
 # --------------------------------------------------------------
 #
 AC_DEFUN([GA_CHECK_PACKAGE], [
@@ -30,10 +64,12 @@ CPPFLAGS="$ga_save_CPPFLAGS"
 # Check for library.
 ga_save_LIBS="$LIBS"; LIBS="$PKG_LIBS $LIBS"
 ga_save_LDFLAGS="$LDFLAGS"; LDFLAGS="$LDFLAGS $PKG_LDFLAGS"
-AC_SEARCH_LIBS([$4], [$3], [], [], [$5])
+ga_save_CPPFLAGS="$CPPFLAGS"; CPPFLAGS="$CPPFLAGS $PKG_CPPFLAGS"
+GA_SEARCH_LIBS([$4], [$3], [], [], [$5], [$8])
 LIBS="$ga_save_LIBS"
 LDFLAGS="$ga_save_LDFLAGS"
-AS_IF([test "x$ac_cv_search_$4" != xno],
+CPPFLAGS="$ga_save_CPPFLAGS"
+AS_IF([test "x$ga_cv_search_$4" != xno],
     [$6
      AC_DEFINE([HAVE_PKG], [1], [set to 1 if we have the indicated package])],
     [$7])
