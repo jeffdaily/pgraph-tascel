@@ -6,7 +6,6 @@
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  */
 #include "dynamic.h"
-#include "elib.h"
 
 static int blosum62[24][24] = { 
 { 4, -1, -2, -2,  0, -1, -1,  0, -2, -1, -1, -1, -1, -2, -1,  1,  0, -3, -2,  0, -2, -1,  0, -4},
@@ -44,7 +43,7 @@ static char AA[] = {'A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I',
 
 static int map[SIGMA];
 
-void initMap(int nAA)
+void init_map(int nAA)
 {
     int i;
     for (i = 0; i < nAA; i++) {
@@ -52,9 +51,9 @@ void initMap(int nAA)
     }
 }
 
-int selfScore(char *s, int ns)
+int self_score(const char *s, size_t ns)
 {
-    int i;
+    size_t i;
     int j;
     int score = 0;
 
@@ -67,20 +66,20 @@ int selfScore(char *s, int ns)
 }
 
 /*--------------------------------------------*
- * alloc 2-dimension CELL array.
+ * alloc 2-dimension cell_t array.
  * @param nrow -
  * @param ncol - strlen(s2), alloc ONE more
  *               dor dynamic align.
  *--------------------------------------------*/
-CELL **allocTBL(int nrow, int ncol)
+cell_t **alloc_tbl(int nrow, int ncol)
 {
     int i;
-    CELL **tbl = NULL;
+    cell_t **tbl = NULL;
 
-    tbl = (CELL **)emalloc(nrow * sizeof(CELL *));
+    tbl = (cell_t **)malloc(nrow * sizeof(cell_t *));
     for (i = 0; i < nrow; i++) {
         /* +1 for dynamic align */
-        tbl[i] = emalloc((ncol + 1) * sizeof(CELL));
+        tbl[i] = malloc((ncol + 1) * sizeof(cell_t));
     }
 
     return tbl;
@@ -93,15 +92,15 @@ CELL **allocTBL(int nrow, int ncol)
  * @param ncol - strlen(s2), alloc ONE more
  *               dor dynamic align.
  *--------------------------------------------*/
-int **allocINT(int nrow, int ncol)
+int **alloc_int(int nrow, int ncol)
 {
     int **tbl = NULL;
     int i;
 
-    tbl = emalloc(nrow * (sizeof * tbl));
+    tbl = malloc(nrow * (sizeof * tbl));
     for (i = 0; i < nrow; i++) {
         /* +1 for dynamic align */
-        tbl[i] = emalloc((ncol + 1) * (sizeof * tbl[i]));
+        tbl[i] = malloc((ncol + 1) * (sizeof * tbl[i]));
     }
 
     return tbl;
@@ -109,7 +108,7 @@ int **allocINT(int nrow, int ncol)
 
 
 /* free function, symetric to allocTBL() */
-void freeTBL(CELL **tbl, int nrow)
+void free_tbl(cell_t **tbl, int nrow)
 {
     int i;
     for (i = 0; i < nrow; i++) {
@@ -120,7 +119,7 @@ void freeTBL(CELL **tbl, int nrow)
 
 
 /* free function, symetric to allocINT() */
-void freeINT(int **tbl, int nrow)
+void free_int(int **tbl, int nrow)
 {
     int i;
     for (i = 0; i < nrow; i++) {
@@ -143,126 +142,15 @@ void freeINT(int **tbl, int nrow)
  * @param tbl - pre-allocated score table
  * @param del - pre-allocated deletion table
  * @param ins - pre-allocated insertion table
- *
  *------------------------------------------------------------*/
-void ffineGapAlign(char *s1, int s1Len, char *s2, int s2Len, CELL *result, CELL **tbl, int **del, int **ins)
+void affine_gap_align(const char *s1, size_t s1Len, const char *s2, size_t s2Len, cell_t *result, cell_t **tbl, int **del, int **ins)
 {
-    int i, j;
-    int cr, pr;
-    int dig, up, left, maxScore;
-    char ch1, ch2;  /* character s[i] and s[j] */
-
-    /* struct can be ONLY initialized as it is declared ??*/
-    CELL lastCol = {INT_MIN, 0, 0};
-    CELL lastRow = {INT_MIN, 0, 0};
-
-    //assert(s1Len>0 && s2Len>0);
-
-    cr = 1;
-    pr = 0;
-
-    /* init first row of 3 tables */
-    tbl[0][0].score = 0;
-    tbl[0][0].ndig = 0;
-    tbl[0][0].alen = 0;
-    del[0][0] = 0;
-    ins[0][0] = 0;
-
-    for (j = 1; j <= s2Len; j++) {
-        tbl[0][j].score = OPEN + j * GAP;
-        tbl[0][j].ndig = 0;
-        tbl[0][j].alen = 0;
-
-        del[0][j] = INT_MIN;
-        ins[0][j] = OPEN + j * GAP;
-    }
-
-    for (i = 1; i <= s1Len; i++) {
-        ch1 = s1[i-1];
-        cr = CROW(i);
-        pr = PROW(i);
-
-        /* init first column of 3 tables */
-        tbl[cr][0].score = OPEN + i * GAP;
-        tbl[cr][0].ndig = 0;
-        tbl[cr][0].alen = 0;
-
-        del[cr][0] = OPEN + i * GAP;
-        ins[cr][0] = INT_MIN;
-
-        for (j = 1; j <= s2Len; j++) {
-            ch2 = s2[j-1];
-
-            /* overflow could happen, INT_MIN-1 = 2147483647
-             * #define NEG_ADD(x, y) \
-             *     (((y)<0)&&((x)<(INT_MIN-y)) ? INT_MIN : (x)+(y)) */
-            up = MAX(tbl[pr][j].score + OPEN + GAP, NEG_ADD(del[pr][j], GAP));
-            del[cr][j] = up;
-            left = MAX(tbl[cr][j-1].score + OPEN + GAP, NEG_ADD(ins[cr][j-1], GAP));
-            ins[cr][j] = left;
-            maxScore = (up >= left) ? up : left;
-
-            /* blosum62[map[ch1-'A']][map[ch2-'A']]; */
-            dig = tbl[pr][j-1].score + BLOSUM62(map, ch1, ch2);
-            if (dig >= maxScore) {
-                maxScore = dig;
-            }
-            tbl[cr][j].score = maxScore;
-
-#ifdef DEBUG
-            printf("up=%d, left=%d, dig=%d, <%c,%c>\n", up, left, dig, ch1, ch2);
-#endif
-
-            if (maxScore == dig) {
-                tbl[cr][j].ndig = tbl[pr][j-1].ndig + ((ch1 == ch2) ? 1 : 0);
-                tbl[cr][j].alen = tbl[pr][j-1].alen + 1;
-            }
-            else if (maxScore == up) {
-                tbl[cr][j].ndig = tbl[pr][j].ndig;
-                tbl[cr][j].alen = tbl[pr][j].alen + 1;
-            }
-            else {
-                tbl[cr][j].ndig = tbl[cr][j-1].ndig;
-                tbl[cr][j].alen = tbl[cr][j-1].alen + 1;
-            }
-
-            /* track of the maximum last row */
-            if (i == s1Len) {
-                lastRow = (tbl[cr][j].score > lastRow.score) ? tbl[cr][j] : lastRow;
-            }
-        }
-
-        //assert(j == (s2Len+1));
-        /* update the maximum of last column */
-        lastCol = (tbl[cr][s2Len].score > lastCol.score) ? tbl[cr][s2Len] : lastCol;
-    }
-
-    *result = (lastCol.score > lastRow.score) ? lastCol : lastRow;
-}
-
-
-/*------------------------------------------------------------*
- * Implementation of affine gap pairwise sequence alignment, it
- * is a space efficient version: only two rows are required; also
- * mem for all dynamic tables are allocated ONLY ONCE.
- *
- * @param s1 - sequence s1
- * @param s1Len - sequence length of <s1>, strlen(s1)
- * @param s2 - sequence s2
- * @param s2Len - sequence length of <s2>, strlen(s2)
- * @param result - alignment result <score, ndig, alen>
- * @param tbl - pre-allocated score table
- * @param del - pre-allocated deletion table
- * @param ins - pre-allocated insertion table
- *------------------------------------------------------------*/
-void affineGapAlign(char *s1, int s1Len, char *s2, int s2Len, CELL *result, CELL **tbl, int **del, int **ins)
-{
-    int i, j;
+    size_t i, j;
     int maxScore;
-    CELL *maxRecord;
+    cell_t *maxRecord;
 
-    CELL *tblCR;
-    CELL *tblPR;
+    cell_t *tblCR;
+    cell_t *tblPR;
     int   *delCR;
     int   *delPR;
 
@@ -369,7 +257,7 @@ void affineGapAlign(char *s1, int s1Len, char *s2, int s2Len, CELL *result, CELL
 }
 
 
-void printRow(CELL **tbl, int i, int ncol)
+void print_row(cell_t **tbl, int i, int ncol)
 {
     int j;
     printf("[");
@@ -379,13 +267,16 @@ void printRow(CELL **tbl, int i, int ncol)
     printf("]\n");
 }
 
-int isEdge(CELL *result, char *s1, int s1Len, char *s2, int s2Len, PARAM *param)
+int is_edge(
+        const cell_t result,
+        const char *s1, size_t s1Len, const char *s2, size_t s2Len,
+        const is_edge_param_t param)
 {
     int sscore;
     int maxLen;
     int nmatch;
 
-    if (result->score <= 0) {
+    if (result.score <= 0) {
         return FALSE;
     }
 
@@ -393,20 +284,20 @@ int isEdge(CELL *result, char *s1, int s1Len, char *s2, int s2Len, PARAM *param)
      * failed at the first step, the sscore computation is wasted */
     if (s1Len > s2Len) {
         maxLen = s1Len;
-        sscore = selfScore(s1, s1Len);
+        sscore = self_score(s1, s1Len);
     }
     else {
         maxLen = s2Len;
-        sscore = selfScore(s2, s2Len);
+        sscore = self_score(s2, s2Len);
     }
 
-    nmatch = result->ndig;
+    nmatch = result.ndig;
 
     /* order the condition in strict->loose way, performance perspective
      * comparison using integers, no overflow could happen */
-    if ((10 * result->alen >= param->AOL * maxLen)
-            && (10 * nmatch >= param->SIM * result->alen)
-            && (10 * result->score >= param->OS * sscore)) {
+    if ((10 * result.alen >= param.AOL * maxLen)
+            && (10 * nmatch >= param.SIM * result.alen)
+            && (10 * result.score >= param.OS * sscore)) {
         return TRUE;
     }
     else {

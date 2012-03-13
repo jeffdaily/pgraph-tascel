@@ -1,6 +1,9 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
-
+#
+###############################################################################
+# Init autoconf
+###############################################################################
 AC_PREREQ([2.68])
 AC_INIT([parallel sequence graph construction using work stealing],
         [0.1], [jeff.daily@pnnl.gov], pgraph-tascel)
@@ -9,14 +12,33 @@ AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/dynamic.h])
 
-AC_LANG([C++])
+###############################################################################
+# Init automake
+###############################################################################
+AM_INIT_AUTOMAKE([color-tests foreign parallel-tests silent-rules subdir-objects])
 
-# Checks for programs.
-AC_PROG_CC([mpicc mpixlc_r mpixlc hcc mpxlc_r mpxlc sxmpicc mpifcc mpgcc mpcc cmpicc cc])
+###############################################################################
+# Misc initial setup
+###############################################################################
+# MPI is required; user can specify to use MPI compilers or standard compilers
+PT_WITH_MPI
 
-AC_PROG_CXX([mpic++ mpicxx mpiCC sxmpic++ hcp mpxlC_r mpxlC mpixlcxx_r mpixlcxx mpg++ mpc++ mpCC cmpic++ mpiFCC CC])
+###############################################################################
+# C compiler
+###############################################################################
+AC_MSG_NOTICE
+AC_MSG_NOTICE([C compiler])
+AC_MSG_NOTICE
+
+PT_PROG_MPICC
+
+AS_IF([test x$with_mpi_wrappers = xyes],
+    [PT_MPI_UNWRAP],
+    [GA_ARG_PARSE([with_mpi], [PT_MPI_LIBS], [PT_MPI_LDFLAGS], [PT_MPI_CPPFLAGS])])
 
 # Checks for libraries.
+GA_REQUIRE
+# TODO tascel
 
 # Checks for header files.
 AC_CHECK_HEADERS([limits.h stdlib.h])
@@ -25,9 +47,83 @@ AC_CHECK_HEADERS([limits.h stdlib.h])
 
 # Checks for library functions.
 
-AM_INIT_AUTOMAKE([color-tests foreign parallel-tests silent-rules subdir-objects])
+###############################################################################
+# C++ compiler
+###############################################################################
+AC_MSG_NOTICE
+AC_MSG_NOTICE([C++ compiler])
+AC_MSG_NOTICE
+AC_LANG_PUSH([C++])
 
+PT_PROG_MPICXX
+
+AS_IF([test x$with_mpi_wrappers = xyes], [PT_MPI_UNWRAP])
+
+# Checks for libraries.
+
+# Checks for header files.
+
+# Checks for typedefs, structures, and compiler characteristics.
+
+# Checks for library functions.
+
+AC_LANG_POP([C++])
+
+###############################################################################
+# Libtool setup -- no compiler/linker tests after this
+###############################################################################
+AC_MSG_NOTICE
+AC_MSG_NOTICE([Libtool setup])
+AC_MSG_NOTICE
+# temporarily restore unwrapped compilers
+# this works around a bug where libtool sadly relies on matching compiler
+# names in order to determine features (Fortran only, I think)
+# libtool doesn't recognize MPI compiler names, nor should it
+AS_IF([test x$with_mpi_wrappers = xyes], [PT_MPI_UNWRAP_PUSH])
 LT_INIT([disable-shared])
+# and now that that's over, put the MPI compilers back
+# also, the above hack incorrectly sets the base compiler as the linker
+AS_IF([test x$with_mpi_wrappers = xyes],
+    [PT_MPI_UNWRAP_POP
+     compiler="$CC"
+     LTCC="$CC"
+     lt_save_CC="$CC"
+     compiler_DEFAULT="$CC"
+     compiler_CXX="$CXX"
+     compiler_F77="$F77"])
 
+###############################################################################
+# The End
+###############################################################################
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
+
+# Report on what we found.
+AC_MSG_NOTICE([])
+AC_MSG_NOTICE([**************************************************************])
+AC_MSG_NOTICE([ $PACKAGE_NAME])
+AC_MSG_NOTICE([ configured as follows:])
+AC_MSG_NOTICE([**************************************************************])
+AC_MSG_NOTICE([])
+AC_MSG_NOTICE([           PT_MPI_LIBS=$PT_MPI_LIBS])
+AC_MSG_NOTICE([        PT_MPI_LDFLAGS=$PT_MPI_LDFLAGS])
+AC_MSG_NOTICE([       PT_MPI_CPPFLAGS=$PT_MPI_CPPFLAGS])
+AC_MSG_NOTICE([                    CC=$CC])
+AS_IF([test "x$with_mpi_wrappers" = xyes], [
+AC_MSG_NOTICE([          unwrapped CC=$ga_cv_mpic_naked])
+])
+AC_MSG_NOTICE([                CFLAGS=$CFLAGS])
+AC_MSG_NOTICE([                   CXX=$CXX])
+AS_IF([test "x$with_mpi_wrappers" = xyes], [
+AC_MSG_NOTICE([         unwrapped CXX=$ga_cv_mpicxx_naked])
+])
+AC_MSG_NOTICE([              CXXFLAGS=$CXXFLAGS])
+AC_MSG_NOTICE([             PT_CXXOPT=$PT_CXXOPT])
+AC_MSG_NOTICE([                   CPP=$CPP])
+AC_MSG_NOTICE([              CPPFLAGS=$CPPFLAGS])
+AC_MSG_NOTICE([               LDFLAGS=$LDFLAGS])
+AC_MSG_NOTICE([                  LIBS=$LIBS])
+AC_MSG_NOTICE([           GA_CPPFLAGS=$GA_CPPFLAGS])
+AC_MSG_NOTICE([            GA_LDFLAGS=$GA_LDFLAGS])
+AC_MSG_NOTICE([               GA_LIBS=$GA_LIBS])
+AC_MSG_NOTICE([              GA_FLIBS=$GA_FLIBS])
