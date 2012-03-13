@@ -34,6 +34,9 @@ int main(int argc, char **argv)
     is_edge_param_t param;
     int is_edge_answer = 0;
 
+    /* NOTE: init blosum matrix for alignment */
+    init_map(SIGMA);
+
     assert(NROW == 2);
     tbl = alloc_tbl(NROW, max_seq_len);
     del = alloc_int(NROW, max_seq_len);
