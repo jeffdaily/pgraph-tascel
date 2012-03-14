@@ -18,11 +18,14 @@ LDADD += $(GA_LIBS)
 LDADD += $(PT_MPI_LIBS)
 LDADD += $(GA_FLIBS)
 
-lib_LTLIBRARIES = libpgraph.la
+noinst_LTLIBRARIES = libpgraph.la
 
 libpgraph_la_SOURCES =
 libpgraph_la_SOURCES += src/dynamic.c
 libpgraph_la_SOURCES += src/dynamic.h
 
-check_PROGRAMS = tests/test_dynamic
-tests_test_dynamic_SOURCES = tests/test_dynamic.c
+noinst_PROGRAMS =
+noinst_PROGRAMS += sandbox/io_into_shared_memory
+noinst_PROGRAMS += tests/test_dynamic
+sandbox_io_into_shared_memory_SOURCES = sandbox/io_into_shared_memory.c
+tests_test_dynamic_SOURCES            = tests/test_dynamic.c
