@@ -19,13 +19,15 @@ AS_CASE([$with_tascel],
                 [TASCEL_CPPFLAGS])])
 happy=yes
 # Check for header.
-ga_save_CPPFLAGS="$CPPFLAGS"; CPPFLAGS="$CPPFLAGS $TASCEL_CPPFLAGS"
-AC_CHECK_HEADER([UniformTaskCollection.h], [happy=yes], [happy=no])
+ga_save_CPPFLAGS="$CPPFLAGS"
+CPPFLAGS="$CPPFLAGS $TASCEL_CPPFLAGS"
+AC_CHECK_HEADER([tascel.h], [happy=yes], [happy=no])
 CPPFLAGS="$ga_save_CPPFLAGS"
 AS_IF([test "x$happy" = xno],
     [AC_MSG_FAILURE([could not locate tascel])])
 # Check for library.
 AC_MSG_CHECKING([for libtascel])
+## add -ltascel if not already part of TASCEL_LIBS
 AS_CASE([$TASCEL_LIBS],
     [*-ltascel*], [],
     [TASCEL_LIBS="$TASCEL_LIBS -ltascel"])
@@ -38,48 +40,22 @@ CPPFLAGS="$TASCEL_CPPFLAGS $GA_CPPFLAGS $PT_MPI_CPPFLAGS $CPPFLAGS"
 AC_LINK_IFELSE(
     [AC_LANG_PROGRAM([[
 #include <mpi.h>
-#include <ga.h>
-#include <UniformTaskCollectionShared.h>
+#include <tascel.h>
+#include <vector>
 using namespace std;
 using namespace tascel;
-#define MAX_TASKS 100
-
-static int me;
-
-struct TskDscr {
-  int v;
-  TskDscr(int _v): v(_v) {}
-};
-
-void fn(UniformTaskCollection *coll, void *desc, int dscr_len, void *pldata,
-        int pldata_len, std::vector<void*> data_bufs) {
-  TskDscr *dsc = (TskDscr*)desc;
-  if(dsc->v>0) {
-    TskDscr dsc2(dsc->v-1);
-    coll->addTask(&dsc2, sizeof(dsc2));
-  }
-}
-
-void the_test() {
-  TslFuncRegTbl frt;
-  TslFunc tf = frt.add(fn);
-  TaskCollProps props;
-  props.functions(tf,frt).taskSize(sizeof(TskDscr)).maxTasks(MAX_TASKS);
-  UniformTaskCollectionShared utc(props);
-  if(me==0) {
-    TskDscr dsc(10);
-    utc.addTask(&dsc, sizeof(dsc));
-  }
-  utc.process();
-}
 ]], [[
   int dummy_argc;
   char **dummy_argv;
-  MPI_Init(&dummy_argc, &dummy_argv);
-  MPI_Comm_rank(MPI_COMM_WORLD, &me);
-  GA_Initialize();
-  the_test();
-  GA_Terminate();
+  ProcRank me;
+  ProcRank nproc;
+  int provided;
+  const unsigned int numIntraRanks=1;
+  MPI_Init_thread(&dummy_argc, &dummy_argv, MPI_THREAD_MULTIPLE, &provided);
+  TascelConfig::initialize(numIntraRanks, MPI_COMM_WORLD);
+  me = theTwoSided().getProcRank();
+  nproc = theTwoSided().numProcRanks();
+  TascelConfig::finalize();
   MPI_Finalize();
   return 0;
 ]])], [happy=yes], [happy=no])

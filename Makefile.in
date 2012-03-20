@@ -44,9 +44,7 @@ DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	build-aux/config.sub build-aux/depcomp build-aux/install-sh \
 	build-aux/ltmain.sh build-aux/missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/ga.m4 \
-	$(top_srcdir)/m4/ga_arg_parse.m4 \
-	$(top_srcdir)/m4/ga_check_package.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ga_arg_parse.m4 \
 	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
 	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
 	$(top_srcdir)/m4/lt~obsolete.m4 \
@@ -77,13 +75,11 @@ sandbox_io_into_shared_memory_OBJECTS =  \
 sandbox_io_into_shared_memory_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
 sandbox_io_into_shared_memory_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 am_tests_test_dynamic_OBJECTS = tests/test_dynamic.$(OBJEXT)
 tests_test_dynamic_OBJECTS = $(am_tests_test_dynamic_OBJECTS)
 tests_test_dynamic_LDADD = $(LDADD)
-tests_test_dynamic_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+tests_test_dynamic_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__depfiles_maybe = depfiles
@@ -158,11 +154,6 @@ ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
-GA_CONFIG = @GA_CONFIG@
-GA_CPPFLAGS = @GA_CPPFLAGS@
-GA_FLIBS = @GA_FLIBS@
-GA_LDFLAGS = @GA_LDFLAGS@
-GA_LIBS = @GA_LIBS@
 GREP = @GREP@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@

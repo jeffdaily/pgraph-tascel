@@ -37,7 +37,7 @@ AS_IF([test x$with_mpi_wrappers = xyes],
     [GA_ARG_PARSE([with_mpi], [PT_MPI_LIBS], [PT_MPI_LDFLAGS], [PT_MPI_CPPFLAGS])])
 
 # Checks for libraries.
-GA_REQUIRE
+#GA_REQUIRE
 
 # Checks for header files.
 AC_CHECK_HEADERS([limits.h stdlib.h])
