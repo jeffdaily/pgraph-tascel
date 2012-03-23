@@ -35,7 +35,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = sandbox/io_into_shared_memory$(EXEEXT) \
+noinst_PROGRAMS = sandbox/brute_force$(EXEEXT) \
+	sandbox/io_into_shared_memory$(EXEEXT) \
 	tests/test_dynamic$(EXEEXT)
 subdir = .
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
@@ -68,18 +69,24 @@ AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
 PROGRAMS = $(noinst_PROGRAMS)
+am_sandbox_brute_force_OBJECTS = sandbox/brute_force.$(OBJEXT)
+sandbox_brute_force_OBJECTS = $(am_sandbox_brute_force_OBJECTS)
+sandbox_brute_force_LDADD = $(LDADD)
+am__DEPENDENCIES_1 =
+sandbox_brute_force_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_sandbox_io_into_shared_memory_OBJECTS =  \
 	sandbox/io_into_shared_memory.$(OBJEXT)
 sandbox_io_into_shared_memory_OBJECTS =  \
 	$(am_sandbox_io_into_shared_memory_OBJECTS)
 sandbox_io_into_shared_memory_LDADD = $(LDADD)
-am__DEPENDENCIES_1 =
 sandbox_io_into_shared_memory_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_tests_test_dynamic_OBJECTS = tests/test_dynamic.$(OBJEXT)
 tests_test_dynamic_OBJECTS = $(am_tests_test_dynamic_OBJECTS)
 tests_test_dynamic_LDADD = $(LDADD)
-tests_test_dynamic_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1)
+tests_test_dynamic_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__depfiles_maybe = depfiles
@@ -103,13 +110,29 @@ LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 AM_V_CCLD = $(am__v_CCLD_$(V))
 am__v_CCLD_ = $(am__v_CCLD_$(AM_DEFAULT_VERBOSITY))
 am__v_CCLD_0 = @echo "  CCLD  " $@;
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+LTCXXCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CXXFLAGS) $(CXXFLAGS)
+AM_V_CXX = $(am__v_CXX_$(V))
+am__v_CXX_ = $(am__v_CXX_$(AM_DEFAULT_VERBOSITY))
+am__v_CXX_0 = @echo "  CXX   " $@;
+CXXLD = $(CXX)
+CXXLINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+AM_V_CXXLD = $(am__v_CXXLD_$(V))
+am__v_CXXLD_ = $(am__v_CXXLD_$(AM_DEFAULT_VERBOSITY))
+am__v_CXXLD_0 = @echo "  CXXLD " $@;
 AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
-SOURCES = $(libpgraph_la_SOURCES) \
+SOURCES = $(libpgraph_la_SOURCES) $(sandbox_brute_force_SOURCES) \
 	$(sandbox_io_into_shared_memory_SOURCES) \
 	$(tests_test_dynamic_SOURCES)
-DIST_SOURCES = $(libpgraph_la_SOURCES) \
+DIST_SOURCES = $(libpgraph_la_SOURCES) $(sandbox_brute_force_SOURCES) \
 	$(sandbox_io_into_shared_memory_SOURCES) \
 	$(tests_test_dynamic_SOURCES)
 ETAGS = etags
@@ -256,18 +279,21 @@ top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I m4
 AM_CFLAGS = 
 AM_CXXFLAGS = 
-AM_CPPFLAGS = $(GA_CPPFLAGS) $(PT_MPI_CPPFLAGS) -I$(top_srcdir)/src
-AM_LDFLAGS = $(GA_LDFLAGS) $(PT_MPI_LDFLAGS)
-LDADD = libpgraph.la $(GA_LIBS) $(PT_MPI_LIBS) $(GA_FLIBS)
+AM_CPPFLAGS = $(TASCEL_CPPFLAGS) $(GA_CPPFLAGS) $(PT_MPI_CPPFLAGS) \
+	-I$(top_srcdir)/src
+AM_LDFLAGS = $(TASCEL_LDFLAGS) $(GA_LDFLAGS) $(PT_MPI_LDFLAGS)
+LDADD = libpgraph.la $(TASCEL_LIBS) $(GA_LIBS) $(PT_MPI_LIBS) \
+	$(GA_FLIBS)
 noinst_LTLIBRARIES = libpgraph.la
 libpgraph_la_SOURCES = src/dynamic.c src/dynamic.h
+sandbox_brute_force_SOURCES = sandbox/brute_force.cc
 sandbox_io_into_shared_memory_SOURCES = sandbox/io_into_shared_memory.c
 tests_test_dynamic_SOURCES = tests/test_dynamic.c
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .lo .o .obj
+.SUFFIXES: .c .cc .lo .o .obj
 am--refresh:
 	@:
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
@@ -352,6 +378,11 @@ sandbox/$(am__dirstamp):
 sandbox/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) sandbox/$(DEPDIR)
 	@: > sandbox/$(DEPDIR)/$(am__dirstamp)
+sandbox/brute_force.$(OBJEXT): sandbox/$(am__dirstamp) \
+	sandbox/$(DEPDIR)/$(am__dirstamp)
+sandbox/brute_force$(EXEEXT): $(sandbox_brute_force_OBJECTS) $(sandbox_brute_force_DEPENDENCIES) sandbox/$(am__dirstamp)
+	@rm -f sandbox/brute_force$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_OBJECTS) $(sandbox_brute_force_LDADD) $(LIBS)
 sandbox/io_into_shared_memory.$(OBJEXT): sandbox/$(am__dirstamp) \
 	sandbox/$(DEPDIR)/$(am__dirstamp)
 sandbox/io_into_shared_memory$(EXEEXT): $(sandbox_io_into_shared_memory_OBJECTS) $(sandbox_io_into_shared_memory_DEPENDENCIES) sandbox/$(am__dirstamp)
@@ -371,6 +402,7 @@ tests/test_dynamic$(EXEEXT): $(tests_test_dynamic_OBJECTS) $(tests_test_dynamic_
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f sandbox/brute_force.$(OBJEXT)
 	-rm -f sandbox/io_into_shared_memory.$(OBJEXT)
 	-rm -f src/dynamic.$(OBJEXT)
 	-rm -f src/dynamic.lo
@@ -379,6 +411,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/io_into_shared_memory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/dynamic.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_dynamic.Po@am__quote@
@@ -409,6 +442,33 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
+
+.cc.o:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
+
+.cc.obj:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+.cc.lo:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
+@am__fastdepCXX_TRUE@	$(LTCXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
 
 mostlyclean-libtool:
 	-rm -f *.lo

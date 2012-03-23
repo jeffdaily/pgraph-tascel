@@ -8,6 +8,10 @@
 #ifndef DYNAMIC_H_
 #define DYNAMIC_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -68,6 +72,10 @@ int is_edge(const cell_t result,
         const char *s1, size_t s1Len,
         const char *s2, size_t s2Len,
         const is_edge_param_t param);
+
+#ifdef __cplusplus
+}
+#endif 
 
 #endif /* DYNAMIC_H_ */
 
