@@ -6,10 +6,10 @@
  */
 #include <mpi.h>
 #include <tascel.h>
-#include <tascel/meta_data.h>
 #include <tascel/UniformTaskCollection.h>
 #include <tascel/UniformTaskCollectionSplit.h>
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -31,6 +31,7 @@ int check_count;
 cell_t **tbl = NULL;
 int **del = NULL;
 int **ins = NULL;
+vector<string> sequences;
 
 #define MPI_CHECK(what) do {                              \
     int __err;                                            \
@@ -44,25 +45,43 @@ int **ins = NULL;
 } while (0)
 
 typedef struct {
-  int id1;
-  int id2;
+    int id1;
+    int id2;
 } task_description;
-
-typedef struct {
-} task_local;
 
 static void alignment_task(
         tascel::UniformTaskCollection *utc,
         void *_bigd, int bigd_len,
         void *pldata, int pldata_len,
         vector<void *> data_bufs, int thd) {
-  int id1, id2;
-  task_description *desc = (task_description*)_bigd;
-  id1 = desc->id1;
-  id2 = desc->id2;
-  std::cout << rank << ": aligning " << id1 << ", " << id2 << std::endl;
+    int id1, id2;
+    task_description *desc = (task_description*)_bigd;
+    id1 = desc->id1;
+    id2 = desc->id2;
+    cell_t result;
+    is_edge_param_t param;
+    int is_edge_answer = 0;
 
-  // TODO ALIGN!!
+    affine_gap_align(
+            sequences[id1].c_str(), sequences[id1].size(),
+            sequences[id2].c_str(), sequences[id2].size(),
+            &result, tbl, del, ins);
+    param.AOL = 8;
+    param.SIM = 4;
+    param.OS = 3;
+    is_edge_answer = is_edge(result,
+            sequences[id1].c_str(), sequences[id1].size(),
+            sequences[id2].c_str(), sequences[id2].size(),
+            param);
+
+    if (is_edge_answer) {
+    std::cout << rank << ": aligned " << id1 << " " << id2
+        << ": (score,ndig,alen)=("
+        << result.score << ","
+        << result.ndig << ","
+        << result.alen << ")"
+        << ": edge? " << is_edge_answer << endl;
+    }
 }
 
 
@@ -72,12 +91,11 @@ int main(int argc, char **argv)
     vector<string> all_argv;
     long file_size = -1;
     char *file_buffer = NULL;
-    vector<string> sequences;
     MPI_File fh;
     MPI_Status status;
     long seg_count = 0;
     const unsigned int num_intra_ranks = 1;
-    int max_seq_len;
+    size_t max_seq_len = 0;
 
     check_count = 0;
 
@@ -186,7 +204,7 @@ int main(int argc, char **argv)
             ++seg_count;
         }
     }
-#if DEBUG
+#if 1
     /* print the seg_count on each process */
     for (int i=0; i<nprocs; ++i) {
         if (i == rank) {
@@ -206,6 +224,7 @@ int main(int argc, char **argv)
         if (line[0] == '>') {
             if (!sequence.empty()) {
                 sequences.push_back(sequence);
+                max_seq_len = max(max_seq_len, sequence.size());
             }
             sequence.clear();
             continue;
@@ -216,13 +235,22 @@ int main(int argc, char **argv)
      * '>' character but rather an EOF */
     if (!sequence.empty()) {
         sequences.push_back(sequence);
+        max_seq_len = max(max_seq_len, sequence.size());
     }
     sequence.clear();
 #if 1
     /* print the seg_count on each process */
     for (int i=0; i<nprocs; ++i) {
         if (i == rank) {
-            printf("[%d] sequences.size()=%ld\n", rank, (long)sequences.size());
+            printf("[%d] sequences.size()=%ld sequences.capacity()=%ld\n",
+                    rank, long(sequences.size()), long(sequences.capacity()));
+        }
+        MPI_Barrier(comm);
+    }
+    /* print the max_seq_len on each process */
+    for (int i=0; i<nprocs; ++i) {
+        if (i == rank) {
+            printf("[%d] max_seq_len=%ld\n", rank, long(max_seq_len));
         }
         MPI_Barrier(comm);
     }
@@ -256,12 +284,10 @@ int main(int argc, char **argv)
         int worker = 0;
         tascel::TslFuncRegTbl frt;
         tascel::TslFunc tf = frt.add(alignment_task);
-        task_local tl;
         tascel::TaskCollProps props;
         props.functions(tf, &frt)
             .taskSize(sizeof(task_description))
-            .maxTasks(100000)
-            .localData(&tl, sizeof(task_local));
+            .maxTasks(640000);
 
         tascel::UniformTaskCollectionSplit utc(props, worker);
 
@@ -272,7 +298,7 @@ int main(int argc, char **argv)
         int count = 0;
         srand48(rank * 7138943);
 
-        for (int i = 0; i < ((rank+1) * 20); i++) {
+        for (int i = 0; i < 640*(rank+1); i++) {
             count++;
             desc.id1 = lrand48() % sequences.size();
             desc.id2 = lrand48() % sequences.size();
@@ -290,6 +316,9 @@ int main(int argc, char **argv)
 
     /* clean up */
     delete [] file_buffer;
+    free_tbl(tbl, NROW);
+    free_int(del, NROW);
+    free_int(ins, NROW);
 
     TascelConfig::finalize();
     MPI_Comm_free(&comm);
