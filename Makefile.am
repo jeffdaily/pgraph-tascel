@@ -29,8 +29,10 @@ libpgraph_la_SOURCES += src/dynamic.h
 
 noinst_PROGRAMS =
 noinst_PROGRAMS += sandbox/brute_force
+noinst_PROGRAMS += sandbox/forest
 noinst_PROGRAMS += sandbox/io_into_shared_memory
 noinst_PROGRAMS += tests/test_dynamic
 sandbox_brute_force_SOURCES           = sandbox/brute_force.cc
+sandbox_forest_SOURCES                = sandbox/forest.cc
 sandbox_io_into_shared_memory_SOURCES = sandbox/io_into_shared_memory.c
 tests_test_dynamic_SOURCES            = tests/test_dynamic.c

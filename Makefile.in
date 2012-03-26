@@ -35,7 +35,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = sandbox/brute_force$(EXEEXT) \
+noinst_PROGRAMS = sandbox/brute_force$(EXEEXT) sandbox/forest$(EXEEXT) \
 	sandbox/io_into_shared_memory$(EXEEXT) \
 	tests/test_dynamic$(EXEEXT)
 subdir = .
@@ -74,6 +74,11 @@ sandbox_brute_force_OBJECTS = $(am_sandbox_brute_force_OBJECTS)
 sandbox_brute_force_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
 sandbox_brute_force_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
+am_sandbox_forest_OBJECTS = sandbox/forest.$(OBJEXT)
+sandbox_forest_OBJECTS = $(am_sandbox_forest_OBJECTS)
+sandbox_forest_LDADD = $(LDADD)
+sandbox_forest_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 am_sandbox_io_into_shared_memory_OBJECTS =  \
 	sandbox/io_into_shared_memory.$(OBJEXT)
@@ -130,9 +135,11 @@ AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
 SOURCES = $(libpgraph_la_SOURCES) $(sandbox_brute_force_SOURCES) \
+	$(sandbox_forest_SOURCES) \
 	$(sandbox_io_into_shared_memory_SOURCES) \
 	$(tests_test_dynamic_SOURCES)
 DIST_SOURCES = $(libpgraph_la_SOURCES) $(sandbox_brute_force_SOURCES) \
+	$(sandbox_forest_SOURCES) \
 	$(sandbox_io_into_shared_memory_SOURCES) \
 	$(tests_test_dynamic_SOURCES)
 ETAGS = etags
@@ -287,6 +294,7 @@ LDADD = libpgraph.la $(TASCEL_LIBS) $(GA_LIBS) $(PT_MPI_LIBS) \
 noinst_LTLIBRARIES = libpgraph.la
 libpgraph_la_SOURCES = src/dynamic.c src/dynamic.h
 sandbox_brute_force_SOURCES = sandbox/brute_force.cc
+sandbox_forest_SOURCES = sandbox/forest.cc
 sandbox_io_into_shared_memory_SOURCES = sandbox/io_into_shared_memory.c
 tests_test_dynamic_SOURCES = tests/test_dynamic.c
 all: config.h
@@ -383,6 +391,11 @@ sandbox/brute_force.$(OBJEXT): sandbox/$(am__dirstamp) \
 sandbox/brute_force$(EXEEXT): $(sandbox_brute_force_OBJECTS) $(sandbox_brute_force_DEPENDENCIES) sandbox/$(am__dirstamp)
 	@rm -f sandbox/brute_force$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_OBJECTS) $(sandbox_brute_force_LDADD) $(LIBS)
+sandbox/forest.$(OBJEXT): sandbox/$(am__dirstamp) \
+	sandbox/$(DEPDIR)/$(am__dirstamp)
+sandbox/forest$(EXEEXT): $(sandbox_forest_OBJECTS) $(sandbox_forest_DEPENDENCIES) sandbox/$(am__dirstamp)
+	@rm -f sandbox/forest$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_forest_OBJECTS) $(sandbox_forest_LDADD) $(LIBS)
 sandbox/io_into_shared_memory.$(OBJEXT): sandbox/$(am__dirstamp) \
 	sandbox/$(DEPDIR)/$(am__dirstamp)
 sandbox/io_into_shared_memory$(EXEEXT): $(sandbox_io_into_shared_memory_OBJECTS) $(sandbox_io_into_shared_memory_DEPENDENCIES) sandbox/$(am__dirstamp)
@@ -403,6 +416,7 @@ tests/test_dynamic$(EXEEXT): $(tests_test_dynamic_OBJECTS) $(tests_test_dynamic_
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 	-rm -f sandbox/brute_force.$(OBJEXT)
+	-rm -f sandbox/forest.$(OBJEXT)
 	-rm -f sandbox/io_into_shared_memory.$(OBJEXT)
 	-rm -f src/dynamic.$(OBJEXT)
 	-rm -f src/dynamic.lo
@@ -412,6 +426,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/forest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/io_into_shared_memory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/dynamic.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_dynamic.Po@am__quote@
