@@ -280,8 +280,8 @@ int main(int argc, char **argv)
     ins = alloc_int(NROW, max_seq_len);
 
     /* the tascel part */
+    for (int worker=0; worker<NUM_WORKERS; ++worker)
     {
-        int worker = 0;
         tascel::TslFuncRegTbl frt;
         tascel::TslFunc tf = frt.add(alignment_task);
         tascel::TaskCollProps props;

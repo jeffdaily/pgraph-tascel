@@ -20,18 +20,60 @@
 #include <set>
 #include <string>
 #include <strstream>
+#include <utility>
 #include <vector>
+
+#include "timer.h"
 
 #define ARG_LEN_MAX 1024
 #define W 4
 
 using namespace std;
+typedef uint64_t idx_t;
+#define MAX(A,B) (A) > (B) ? (A) : (B)
 
 int rank;
 int nprocs;
 int check_count;
 vector<string> sequences;
-map<string, set<size_t> > bins;
+#define VEC_BINS 0
+#if VEC_BINS
+vector<vector<pair<idx_t,idx_t> > > bins(456976); // 26**4
+#else
+typedef struct {
+    int bin_id;
+    int seq_id;
+    int offset;
+} test_t;
+bool cmp_test_t(const test_t &i, const test_t &j) {
+    return i.bin_id < j.bin_id;
+}
+vector<test_t> bins; // 26**4
+#endif
+static int pow_26[] = { 1, 26, 676, 17576 };
+
+static inline int prefix_hash(const string &prefix)
+{
+    int hash = 0;
+    int ordinal=0;
+    string::const_reverse_iterator rit;
+    for (rit=prefix.rbegin(); rit<prefix.rend(); ++rit) {
+        hash += pow_26[ordinal] * ((*rit)-'A');
+        ++ordinal;
+    }
+    return hash;
+}
+
+static inline int prefix_hash(const string &seq, const idx_t &j)
+{
+    int hash = 0;
+    int ordinal=W-1;
+    for (idx_t i=j; i<j+W; ++i) {
+        hash += pow_26[ordinal] * (seq[i]-'A');
+        --ordinal;
+    }
+    return hash;
+}
 
 #define MPI_CHECK(what) do {                              \
     int __err;                                            \
@@ -55,9 +97,12 @@ int main(int argc, char **argv)
     MPI_Status status;
     long seg_count = 0;
     const unsigned int num_intra_ranks = 1;
-    size_t max_seq_len = 0;
+    idx_t max_seq_len = 0;
+    idx_t tot_seq_len = 0;
 
     check_count = 0;
+
+    timer_init();
 
     /* initialize MPI */
     MPI_CHECK(MPI_Init(&argc, &argv));
@@ -177,7 +222,8 @@ int main(int argc, char **argv)
         if (line[0] == '>') {
             if (!sequence.empty()) {
                 sequences.push_back(sequence);
-                max_seq_len = max(max_seq_len, sequence.size());
+                max_seq_len = MAX(max_seq_len, sequence.size());
+                tot_seq_len += sequence.size();
             }
             sequence.clear();
             continue;
@@ -188,7 +234,8 @@ int main(int argc, char **argv)
      * '>' character but rather an EOF */
     if (!sequence.empty()) {
         sequences.push_back(sequence);
-        max_seq_len = max(max_seq_len, sequence.size());
+        max_seq_len = MAX(max_seq_len, sequence.size());
+        tot_seq_len += sequence.size();
     }
     sequence.clear();
 #if 1
@@ -204,6 +251,7 @@ int main(int argc, char **argv)
     for (int i=0; i<nprocs; ++i) {
         if (i == rank) {
             printf("[%d] max_seq_len=%ld\n", rank, long(max_seq_len));
+            printf("[%d] tot_seq_len=%lld\n", rank, tot_seq_len);
         }
         MPI_Barrier(comm);
     }
@@ -225,17 +273,58 @@ int main(int argc, char **argv)
         MPI_Barrier(comm);
     }
 #endif
+#if !VEC_BINS
+    bins.reserve(tot_seq_len);
+#endif
 
     /* iterate over the sequences, binning their suffixes */
-    for (size_t i=0,ilimit=sequences.size(); i<ilimit; ++i) {
+    long long t = timer_start();
+    long long ti = timer_start();
+    idx_t ilimit=sequences.size();
+    for (idx_t i=0; i<ilimit; ++i) {
         if (i % 10000 == 0) {
-            cout << i << "/" << ilimit << endl;
+            long long elapsed = timer_end(ti);
+            ti = timer_start();
+            cout << i << "/" << ilimit << "\t" << elapsed << endl;
         }
         string& seq = sequences[i];
-        for (size_t j=0,jlimit=seq.size(); j<jlimit; ++j) {
-            bins[seq.substr(j,W)].insert(i);
+        if (seq.size() < W) {
+            continue;
+        }
+        for (idx_t j=0,jlimit=seq.size()-W; j<jlimit; ++j) {
+#if VEC_BINS
+            int hash = prefix_hash(seq,j);
+            vector<pair<idx_t,idx_t> > &bin = bins[hash];
+            bin.push_back(make_pair(i,j));
+#else
+            test_t t = {prefix_hash(seq,j), i, j};
+            bins.push_back(t);
+#endif
         }
     }
+#if !VEC_BINS
+    //sort(bins.begin(), bins.end(), cmp_test_t);
+#endif
+    t = timer_end(t);
+    cout << "timer " << t << endl;
+    long long capacity=0;
+    long long size=0;
+    long long zeros=0;
+#if VEC_BINS
+    for (idx_t i=0; i<bins.size(); ++i) {
+        capacity+=bins[i].capacity();
+        size+=bins[i].size();
+        if (bins[i].size() == 0) {
+            ++zeros;
+        }
+    }
+#else
+    capacity=bins.capacity();
+    size=bins.size();
+#endif
+    cout << "capacity=" << capacity << endl;
+    cout << "size=" << size << endl;
+    cout << "zeros=" << zeros << endl;
 
     /* clean up */
     delete [] file_buffer;
