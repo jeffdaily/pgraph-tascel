@@ -7,7 +7,9 @@
 #include <mpi.h>
 #include <tascel.h>
 #include <tascel/UniformTaskCollection.h>
-#include <tascel/UniformTaskCollectionSplit.h>
+#include <tascel/UniformTaskCollSplitHybrid.h>
+
+#include <sys/time.h>
 
 #include <algorithm>
 #include <cstdio>
@@ -20,18 +22,10 @@
 
 #include "dynamic.h"
 
-#define ARG_LEN_MAX 1024
-
 using namespace std;
 using namespace tascel;
 
-int rank;
-int nprocs;
-int check_count;
-cell_t **tbl = NULL;
-int **del = NULL;
-int **ins = NULL;
-vector<string> sequences;
+#define ARG_LEN_MAX 1024
 
 #define MPI_CHECK(what) do {                              \
     int __err;                                            \
@@ -44,13 +38,128 @@ vector<string> sequences;
     }                                                     \
 } while (0)
 
+int rank = 0;
+int nprocs = 0;
+int check_count = 0;
+cell_t **tbl = NULL;
+int **del = NULL;
+int **ins = NULL;
+vector<string> sequences;
+ProcGroup* pgrp = NULL;
+UniformTaskCollSplitHybrid* utcs[NUM_WORKERS];
+long align_counts[NUM_WORKERS];
+long long align_times[NUM_WORKERS];
+long long align_times_max[NUM_WORKERS];
+// Synchronization for worker threads
+pthread_barrier_t workersStart, workersEnd;
+// Synchronization for server thread
+pthread_barrier_t serverStart, serverEnd;
+static pthread_t threadHandles[NUM_WORKERS + NUM_SERVERS];
+static unsigned threadRanks[NUM_WORKERS + NUM_SERVERS];
+volatile bool serverEnabled = true;
+
+static unsigned long long timer_start()
+{
+    struct timeval timer;
+    (void)gettimeofday(&timer, NULL);
+    return timer.tv_sec * 1000000 + timer.tv_usec;
+}
+
+static unsigned long long timer_end(unsigned long long begin)
+{
+    return timer_start() - begin;
+}
+
+void *serverThd(void *args)
+{
+#if defined(SET_AFFINITY)
+    cpu_set_t cpuset;
+    pthread_t thread;
+    CPU_ZERO(&cpuset);
+    thread = pthread_self();
+
+    int rank = theTwoSided().getProcRank().toInt();
+
+    CPU_SET(NUM_WORKERS, &cpuset);
+
+    int ret = pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
+#endif
+
+    // When enabled execute any active messages that arrive
+    while (1) {
+        pthread_barrier_wait(&serverStart);
+        while (serverEnabled) {
+            AmListenObjCodelet<NullMutex>* lcodelet;
+            if((lcodelet=theAm().amListeners[0]->progress()) != NULL) {
+                lcodelet->execute();
+            }
+            Codelet* codelet;
+            if ((codelet = serverDispatcher.progress()) != NULL) {
+                codelet->execute();
+                // Assume that codelet was an AmRequest and needs to be freed
+                delete reinterpret_cast<AmRequest*>(codelet);
+            }
+        }
+        pthread_barrier_wait(&serverEnd);
+    }
+    return NULL;
+}
+
+void *workerThd(void *args)
+{
+    const unsigned threadRank = *(unsigned*)args;
+
+#if defined(SET_AFFINITY)
+    cpu_set_t cpuset;
+    pthread_t thread;
+    CPU_ZERO(&cpuset);
+    thread = pthread_self();
+
+    int rank = theTwoSided().getProcRank().toInt();
+
+    CPU_SET(threadRank, &cpuset);
+
+    int ret = pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
+#endif
+
+    while (1) {
+        pthread_barrier_wait(&workersStart);
+        utcs[threadRank]->process(threadRank);
+        pthread_barrier_wait(&workersEnd);
+    }
+
+    return NULL;
+}
+
+void amBarrier()
+{
+    int epoch = pgrp->signalBarrier();
+    while(!pgrp->testBarrier(epoch)) {
+        AmListenObjCodelet<NullMutex>* codelet;
+        if((codelet=theAm().amListeners[0]->progress()) != NULL) {
+            codelet->execute();
+        }
+    }
+}
+
+void amBarrierThd()
+{
+    int epoch = pgrp->signalBarrier();
+    while(!pgrp->testBarrier(epoch)) { }
+}
+
+static int trank(int thd)
+{
+    return (theTwoSided().getProcRank().toInt() * NUM_WORKERS) + thd;
+}
+
 typedef struct {
-    int id1;
-    int id2;
+    uint32_t id1;
+    uint32_t id2;
 } task_description;
 
 static void alignment_task(
-        tascel::UniformTaskCollection *utc,
+        UniformTaskCollection *utc,
         void *_bigd, int bigd_len,
         void *pldata, int pldata_len,
         vector<void *> data_bufs, int thd) {
@@ -61,6 +170,7 @@ static void alignment_task(
     cell_t result;
     is_edge_param_t param;
     int is_edge_answer = 0;
+    long long t = timer_start();
 
     affine_gap_align(
             sequences[id1].c_str(), sequences[id1].size(),
@@ -73,21 +183,26 @@ static void alignment_task(
             sequences[id1].c_str(), sequences[id1].size(),
             sequences[id2].c_str(), sequences[id2].size(),
             param);
+    ++align_counts[thd];
 
     if (is_edge_answer) {
-    std::cout << rank << ": aligned " << id1 << " " << id2
-        << ": (score,ndig,alen)=("
-        << result.score << ","
-        << result.ndig << ","
-        << result.alen << ")"
-        << ": edge? " << is_edge_answer << endl;
+        cout << trank(thd) << ": aligned " << id1 << " " << id2
+            << ": (score,ndig,alen)=("
+            << result.score << ","
+            << result.ndig << ","
+            << result.alen << ")"
+            << ": edge? " << is_edge_answer << endl;
     }
+    t = timer_end(t);
+    align_times[thd] += t;
+    align_times_max[thd] = MAX(align_times_max[thd],t);
 }
 
 
 int main(int argc, char **argv)
 {
     MPI_Comm comm = MPI_COMM_NULL;
+    int provided;
     vector<string> all_argv;
     long file_size = -1;
     char *file_buffer = NULL;
@@ -100,13 +215,18 @@ int main(int argc, char **argv)
     check_count = 0;
 
     /* initialize MPI */
-    MPI_CHECK(MPI_Init(&argc, &argv));
+    MPI_CHECK(MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided));
+    assert(provided == MPI_THREAD_MULTIPLE);
     MPI_CHECK(MPI_Comm_rank(MPI_COMM_WORLD, &rank));
     MPI_CHECK(MPI_Comm_size(MPI_COMM_WORLD, &nprocs));
     MPI_CHECK(MPI_Comm_dup(MPI_COMM_WORLD, &comm));
 
     /* initialize tascel */
-    TascelConfig::initialize(num_intra_ranks, MPI_COMM_WORLD);
+    TascelConfig::initialize(NUM_WORKERS, MPI_COMM_WORLD);
+    pgrp = ProcGroup::construct();
+    for (int worker=0; worker<NUM_WORKERS; ++worker) {
+        threadRanks[worker] = worker;
+    }
 
     /* initialize dynamic code */
     init_map(SIGMA);
@@ -282,36 +402,98 @@ int main(int argc, char **argv)
     /* the tascel part */
     for (int worker=0; worker<NUM_WORKERS; ++worker)
     {
-        tascel::TslFuncRegTbl frt;
-        tascel::TslFunc tf = frt.add(alignment_task);
-        tascel::TaskCollProps props;
-        props.functions(tf, &frt)
+        UniformTaskCollSplitHybrid*& utc = utcs[worker];
+        align_counts[worker] = 0;
+        align_times[worker] = 0;
+        align_times_max[worker] = 0;
+        TslFuncRegTbl *frt = new TslFuncRegTbl();
+        TslFunc tf = frt->add(alignment_task);
+        TaskCollProps props;
+        props.functions(tf, frt)
             .taskSize(sizeof(task_description))
             .maxTasks(640000);
+        utc = new UniformTaskCollSplitHybrid(props, worker);
 
-        tascel::UniformTaskCollectionSplit utc(props, worker);
-
-        MPI_Barrier(MPI_COMM_WORLD);
-
+        /* add some tasks, different amounts to different tranks */
         task_description desc;
-
         int count = 0;
-        srand48(rank * 7138943);
 
-        for (int i = 0; i < 640*(rank+1); i++) {
+        srand48(rank * 7138943);
+#if defined(THREADED)
+        for (int i = 0; i < 640*(threadRanks[worker]+1); i++)
+#else
+        for (int i = 0; i < 640*28; i++)
+#endif
+        {
             count++;
             desc.id1 = lrand48() % sequences.size();
             desc.id2 = lrand48() % sequences.size();
-            utc.addTask(&desc, sizeof(desc));
+            utcs[0]->addTask(&desc, sizeof(desc));
         }
+        printf("%d(%d): added %d tasks\n", rank, threadRanks[worker], count);
+    }
 
-        printf("%d: added %d tasks\n",
-                theTwoSided().getProcRank().toInt(), count);
+    amBarrier();
 
-        MPI_Barrier(MPI_COMM_WORLD);
+#if defined(THREADED)
+    cpu_set_t cpuset;
+    pthread_t thread;
+    CPU_ZERO(&cpuset);
+    thread = pthread_self();
+    CPU_SET(0, &cpuset);
+    pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
 
-        utc.process();
-        //utc.printStats();
+    pthread_barrier_init(&workersStart, 0, NUM_WORKERS);
+    pthread_barrier_init(&workersEnd, 0, NUM_WORKERS);
+    pthread_barrier_init(&serverStart, 0, NUM_SERVERS + 1);
+    pthread_barrier_init(&serverEnd, 0, NUM_SERVERS + 1);
+    asm("mfence");
+    for (unsigned i = 1; i < NUM_WORKERS; ++i) {
+      pthread_create(&threadHandles[i], NULL, workerThd, &threadRanks[i]);
+    }
+    pthread_create(&threadHandles[NUM_WORKERS], NULL,
+           serverThd, &threadRanks[NUM_WORKERS]);
+#endif
+
+#if defined(THREADED)
+    serverEnabled = true;
+    pthread_barrier_wait(&serverStart);
+    pthread_barrier_wait(&workersStart);
+#endif
+
+    utcs[0]->process(0);
+
+#if defined(THREADED)
+    pthread_barrier_wait(&workersEnd);
+    amBarrierThd();
+
+    serverEnabled = false;
+    asm("mfence");
+    pthread_barrier_wait(&serverEnd);
+
+    amBarrier();
+#endif
+
+    for (int i = 0; i < NUM_WORKERS; i++) {
+        utcs[i]->restore();
+    }
+
+    amBarrier();
+
+    for (int worker=0; worker<NUM_WORKERS; ++worker) {
+        printf("%d(%d) aligned %ld tasks\n",
+                rank, worker, align_counts[worker]);
+    }
+    for (int worker=0; worker<NUM_WORKERS; ++worker) {
+        printf("%d(%d) times     %ld ms\n",
+                rank, worker, align_times[worker]);
+    }
+    for (int worker=0; worker<NUM_WORKERS; ++worker) {
+        printf("%d(%d) max times %ld ms\n",
+                rank, worker, align_times_max[worker]);
+    }
+    for (int worker=0; worker<NUM_WORKERS; ++worker) {
+        utcs[worker]->printStats();
     }
 
     /* clean up */
