@@ -66,6 +66,7 @@ TASCEL_REQUIRE
 # Checks for typedefs, structures, and compiler characteristics.
 
 # Checks for library functions.
+AC_SEARCH_LIBS([__gmpz_bin_uiui], [gmp])
 
 AC_LANG_POP([C++])
 

@@ -8,6 +8,7 @@
 #include <tascel.h>
 #include <tascel/UniformTaskCollection.h>
 #include <tascel/UniformTaskCollSplitHybrid.h>
+#include <gmp.h>
 
 #include <sys/time.h>
 
@@ -211,7 +212,9 @@ int main(int argc, char **argv)
     long seg_count = 0;
     const unsigned int num_intra_ranks = 1;
     size_t max_seq_len = 0;
+    mpz_t nCk;
 
+    mpz_init(nCk);
     check_count = 0;
 
     /* initialize MPI */
@@ -392,6 +395,13 @@ int main(int argc, char **argv)
         MPI_Barrier(comm);
     }
 #endif
+    /* how many combinations of sequences are there? */
+    mpz_bin_uiui(nCk, sequences.size(), 2);
+    gmp_printf("brute force has %Zd combinations\n", nCk);
+    mpz_bin_uiui(nCk, 20000000, 2);
+    gmp_printf("20000000 choose 2 = %Zd combinations\n", nCk);
+    unsigned long ui_nCk = mpz_get_ui(nCk);
+    printf("20000000 choose 2 = %lu combinations\n", ui_nCk);
 
     /* some more dynamic initialization */
     assert(NROW == 2);

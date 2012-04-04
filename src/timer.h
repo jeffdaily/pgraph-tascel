@@ -1,7 +1,9 @@
 #ifndef __TIMER_H__
 #define __TIMER_H__
 
-#if (defined(__i386__) || defined(__x86_64__) || defined(__powerpc__)) && !defined(_CRAYC)
+#define FORCE_SYS_TIME 1
+
+#if (defined(__i386__) || defined(__x86_64__) || defined(__powerpc__)) && !defined(_CRAYC) && !defined(FORCE_SYS_TIME)
 #   define HAVE_RDTSC 1
 #   if defined(__i386__)
 static __inline__ unsigned long long rdtsc(void)
@@ -38,9 +40,13 @@ static __inline__ unsigned long long rdtsc(void)
   return(result);
 }
 #   endif
-#elif HAVE_SYS_TIME_H
+#elif defined(HAVE_SYS_TIME_H) || defined(FORCE_SYS_TIME)
+#   undef HAVE_SYS_TIME_H
+#   define HAVE_SYS_TIME_H 1
 #   include <sys/time.h>
-#elif HAVE_WINDOWS_H
+#elif define(HAVE_WINDOWS_H)
+#   undef HAVE_WINDOWS_H
+#   define HAVE_WINDOWS_H 1
 #   include <windows.h>
 static LARGE_INTEGER frequency;
 #endif
