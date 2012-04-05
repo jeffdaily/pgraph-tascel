@@ -210,7 +210,6 @@ int main(int argc, char **argv)
     MPI_File fh;
     MPI_Status status;
     long seg_count = 0;
-    const unsigned int num_intra_ranks = 1;
     size_t max_seq_len = 0;
     mpz_t nCk;
 
@@ -495,11 +494,11 @@ int main(int argc, char **argv)
                 rank, worker, align_counts[worker]);
     }
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
-        printf("%d(%d) times     %ld ms\n",
+        printf("%d(%d) times     %lld ms\n",
                 rank, worker, align_times[worker]);
     }
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
-        printf("%d(%d) max times %ld ms\n",
+        printf("%d(%d) max times %lld ms\n",
                 rank, worker, align_times_max[worker]);
     }
     for (int worker=0; worker<NUM_WORKERS; ++worker) {

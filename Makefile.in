@@ -37,12 +37,7 @@ build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = sandbox/brute_force$(EXEEXT) sandbox/forest$(EXEEXT) \
 	sandbox/io_into_shared_memory$(EXEEXT) \
-	src/stdcomb/Benchmark/BenchmarkMain$(EXEEXT) \
-	src/stdcomb/CombFromRepSet/CombFromRepSetMain$(EXEEXT) \
-	src/stdcomb/CombWithRep/CombWithRepMain$(EXEEXT) \
-	src/stdcomb/FindComb/FindComb$(EXEEXT) \
-	src/stdcomb/IntComb/IntComb$(EXEEXT) \
-	tests/test_dynamic$(EXEEXT)
+	tests/test_combinations$(EXEEXT) tests/test_dynamic$(EXEEXT)
 subdir = .
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/config.h.in \
@@ -51,6 +46,7 @@ DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	build-aux/ltmain.sh build-aux/missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ga_arg_parse.m4 \
+	$(top_srcdir)/m4/ga_check_package.m4 \
 	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
 	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
 	$(top_srcdir)/m4/lt~obsolete.m4 \
@@ -68,34 +64,22 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libpgraph_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
-am_libpgraph_la_OBJECTS = src/dynamic.lo
+am_libpgraph_la_OBJECTS = src/combinations.lo src/dynamic.lo
 libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
-libstdcomb_la_LIBADD =
-am_libstdcomb_la_OBJECTS =  \
-	src/stdcomb/BigInteger/BigIntegerAlgorithms.lo \
-	src/stdcomb/BigInteger/BigInteger.lo \
-	src/stdcomb/BigInteger/BigIntegerUtils.lo \
-	src/stdcomb/BigInteger/BigUnsigned.lo \
-	src/stdcomb/BigInteger/BigUnsignedInABase.lo \
-	src/stdcomb/stdcomb/CombFromRepSet.lo \
-	src/stdcomb/stdcomb/CombWithRep.lo \
-	src/stdcomb/stdcomb/FindCombByIdx.lo \
-	src/stdcomb/stdcomb/FindTotalComb.lo
-libstdcomb_la_OBJECTS = $(am_libstdcomb_la_OBJECTS)
 PROGRAMS = $(noinst_PROGRAMS)
 am_sandbox_brute_force_OBJECTS = sandbox/brute_force.$(OBJEXT)
 sandbox_brute_force_OBJECTS = $(am_sandbox_brute_force_OBJECTS)
 sandbox_brute_force_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
-sandbox_brute_force_DEPENDENCIES = libpgraph.la libstdcomb.la \
+sandbox_brute_force_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_sandbox_forest_OBJECTS = sandbox/forest.$(OBJEXT)
 sandbox_forest_OBJECTS = $(am_sandbox_forest_OBJECTS)
 sandbox_forest_LDADD = $(LDADD)
-sandbox_forest_DEPENDENCIES = libpgraph.la libstdcomb.la \
+sandbox_forest_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_sandbox_io_into_shared_memory_OBJECTS =  \
 	sandbox/io_into_shared_memory.$(OBJEXT)
@@ -103,47 +87,20 @@ sandbox_io_into_shared_memory_OBJECTS =  \
 	$(am_sandbox_io_into_shared_memory_OBJECTS)
 sandbox_io_into_shared_memory_LDADD = $(LDADD)
 sandbox_io_into_shared_memory_DEPENDENCIES = libpgraph.la \
-	libstdcomb.la $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_src_stdcomb_Benchmark_BenchmarkMain_OBJECTS =  \
-	src/stdcomb/Benchmark/BenchmarkMain.$(OBJEXT)
-src_stdcomb_Benchmark_BenchmarkMain_OBJECTS =  \
-	$(am_src_stdcomb_Benchmark_BenchmarkMain_OBJECTS)
-src_stdcomb_Benchmark_BenchmarkMain_LDADD = $(LDADD)
-src_stdcomb_Benchmark_BenchmarkMain_DEPENDENCIES = libpgraph.la \
-	libstdcomb.la $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_src_stdcomb_CombFromRepSet_CombFromRepSetMain_OBJECTS =  \
-	src/stdcomb/CombFromRepSet/CombFromRepSetMain.$(OBJEXT)
-src_stdcomb_CombFromRepSet_CombFromRepSetMain_OBJECTS =  \
-	$(am_src_stdcomb_CombFromRepSet_CombFromRepSetMain_OBJECTS)
-src_stdcomb_CombFromRepSet_CombFromRepSetMain_LDADD = $(LDADD)
-src_stdcomb_CombFromRepSet_CombFromRepSetMain_DEPENDENCIES =  \
-	libpgraph.la libstdcomb.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
-am_src_stdcomb_CombWithRep_CombWithRepMain_OBJECTS =  \
-	src/stdcomb/CombWithRep/CombWithRepMain.$(OBJEXT)
-src_stdcomb_CombWithRep_CombWithRepMain_OBJECTS =  \
-	$(am_src_stdcomb_CombWithRep_CombWithRepMain_OBJECTS)
-src_stdcomb_CombWithRep_CombWithRepMain_LDADD = $(LDADD)
-src_stdcomb_CombWithRep_CombWithRepMain_DEPENDENCIES = libpgraph.la \
-	libstdcomb.la $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_src_stdcomb_FindComb_FindComb_OBJECTS =  \
-	src/stdcomb/FindComb/FindComb.$(OBJEXT)
-src_stdcomb_FindComb_FindComb_OBJECTS =  \
-	$(am_src_stdcomb_FindComb_FindComb_OBJECTS)
-src_stdcomb_FindComb_FindComb_LDADD = $(LDADD)
-src_stdcomb_FindComb_FindComb_DEPENDENCIES = libpgraph.la \
-	libstdcomb.la $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_src_stdcomb_IntComb_IntComb_OBJECTS =  \
-	src/stdcomb/IntComb/IntComb.$(OBJEXT)
-src_stdcomb_IntComb_IntComb_OBJECTS =  \
-	$(am_src_stdcomb_IntComb_IntComb_OBJECTS)
-src_stdcomb_IntComb_IntComb_LDADD = $(LDADD)
-src_stdcomb_IntComb_IntComb_DEPENDENCIES = libpgraph.la libstdcomb.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am_tests_test_combinations_OBJECTS =  \
+	tests/test_combinations.$(OBJEXT)
+tests_test_combinations_OBJECTS =  \
+	$(am_tests_test_combinations_OBJECTS)
+tests_test_combinations_LDADD = $(LDADD)
+tests_test_combinations_DEPENDENCIES = libpgraph.la \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_tests_test_dynamic_OBJECTS = tests/test_dynamic.$(OBJEXT)
 tests_test_dynamic_OBJECTS = $(am_tests_test_dynamic_OBJECTS)
 tests_test_dynamic_LDADD = $(LDADD)
-tests_test_dynamic_DEPENDENCIES = libpgraph.la libstdcomb.la \
+tests_test_dynamic_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
@@ -187,23 +144,15 @@ am__v_CXXLD_0 = @echo "  CXXLD " $@;
 AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
-SOURCES = $(libpgraph_la_SOURCES) $(libstdcomb_la_SOURCES) \
-	$(sandbox_brute_force_SOURCES) $(sandbox_forest_SOURCES) \
+SOURCES = $(libpgraph_la_SOURCES) $(sandbox_brute_force_SOURCES) \
+	$(sandbox_forest_SOURCES) \
 	$(sandbox_io_into_shared_memory_SOURCES) \
-	$(src_stdcomb_Benchmark_BenchmarkMain_SOURCES) \
-	$(src_stdcomb_CombFromRepSet_CombFromRepSetMain_SOURCES) \
-	$(src_stdcomb_CombWithRep_CombWithRepMain_SOURCES) \
-	$(src_stdcomb_FindComb_FindComb_SOURCES) \
-	$(src_stdcomb_IntComb_IntComb_SOURCES) \
+	$(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES)
-DIST_SOURCES = $(libpgraph_la_SOURCES) $(libstdcomb_la_SOURCES) \
-	$(sandbox_brute_force_SOURCES) $(sandbox_forest_SOURCES) \
+DIST_SOURCES = $(libpgraph_la_SOURCES) $(sandbox_brute_force_SOURCES) \
+	$(sandbox_forest_SOURCES) \
 	$(sandbox_io_into_shared_memory_SOURCES) \
-	$(src_stdcomb_Benchmark_BenchmarkMain_SOURCES) \
-	$(src_stdcomb_CombFromRepSet_CombFromRepSetMain_SOURCES) \
-	$(src_stdcomb_CombWithRep_CombWithRepMain_SOURCES) \
-	$(src_stdcomb_FindComb_FindComb_SOURCES) \
-	$(src_stdcomb_IntComb_IntComb_SOURCES) \
+	$(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES)
 ETAGS = etags
 CTAGS = ctags
@@ -247,6 +196,9 @@ ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
+GMP_CPPFLAGS = @GMP_CPPFLAGS@
+GMP_LDFLAGS = @GMP_LDFLAGS@
+GMP_LIBS = @GMP_LIBS@
 GREP = @GREP@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -350,50 +302,24 @@ ACLOCAL_AMFLAGS = -I m4
 AM_CFLAGS = 
 AM_CXXFLAGS = 
 AM_CPPFLAGS = $(TASCEL_CPPFLAGS) $(GA_CPPFLAGS) $(PT_MPI_CPPFLAGS) \
-	-I$(top_srcdir)/src -I$(top_srcdir)/src/stdcomb \
-	-I$(top_srcdir)/src/stdcomb/stdcomb
-AM_LDFLAGS = $(TASCEL_LDFLAGS) $(GA_LDFLAGS) $(PT_MPI_LDFLAGS)
-LDADD = libpgraph.la libstdcomb.la $(TASCEL_LIBS) $(GA_LIBS) \
-	$(PT_MPI_LIBS) $(GA_FLIBS)
-noinst_LTLIBRARIES = libpgraph.la libstdcomb.la
-libpgraph_la_SOURCES = src/dynamic.c src/dynamic.h
-libstdcomb_la_SOURCES =  \
-	src/stdcomb/BigInteger/BigIntegerAlgorithms.cpp \
-	src/stdcomb/BigInteger/BigIntegerAlgorithms.h \
-	src/stdcomb/BigInteger/BigInteger.cpp \
-	src/stdcomb/BigInteger/BigInteger.h \
-	src/stdcomb/BigInteger/BigIntegerLibrary.h \
-	src/stdcomb/BigInteger/BigIntegerUtils.cpp \
-	src/stdcomb/BigInteger/BigIntegerUtils.h \
-	src/stdcomb/BigInteger/BigUnsigned.cpp \
-	src/stdcomb/BigInteger/BigUnsigned.h \
-	src/stdcomb/BigInteger/BigUnsignedInABase.cpp \
-	src/stdcomb/BigInteger/BigUnsignedInABase.h \
-	src/stdcomb/BigInteger/NumberlikeArray.h \
-	src/stdcomb/stdcomb/CombFromRepSet.cpp \
-	src/stdcomb/stdcomb/CombFromRepSet.h \
-	src/stdcomb/stdcomb/combination.h \
-	src/stdcomb/stdcomb/CombWithRep.cpp \
-	src/stdcomb/stdcomb/CombWithRep.h \
-	src/stdcomb/stdcomb/FindCombByIdx.cpp \
-	src/stdcomb/stdcomb/FindCombByIdx.h \
-	src/stdcomb/stdcomb/FindTotalComb.cpp \
-	src/stdcomb/stdcomb/FindTotalComb.h \
-	src/stdcomb/stdcomb/IndexCombination.h
+	$(GMP_CPPFLAGS) -I$(top_srcdir)/src
+AM_LDFLAGS = $(TASCEL_LDFLAGS) $(GA_LDFLAGS) $(PT_MPI_LDFLAGS) \
+	$(GMP_LDFLAGS)
+LDADD = libpgraph.la $(TASCEL_LIBS) $(GA_LIBS) $(PT_MPI_LIBS) \
+	$(GMP_LIBS) $(GA_FLIBS)
+noinst_LTLIBRARIES = libpgraph.la
+libpgraph_la_SOURCES = src/combinations.c src/combinations.h \
+	src/dynamic.c src/dynamic.h
 sandbox_brute_force_SOURCES = sandbox/brute_force.cc
 sandbox_forest_SOURCES = sandbox/forest.cc
 sandbox_io_into_shared_memory_SOURCES = sandbox/io_into_shared_memory.c
-src_stdcomb_Benchmark_BenchmarkMain_SOURCES = src/stdcomb/Benchmark/BenchmarkMain.cpp
-src_stdcomb_CombFromRepSet_CombFromRepSetMain_SOURCES = src/stdcomb/CombFromRepSet/CombFromRepSetMain.cpp
-src_stdcomb_CombWithRep_CombWithRepMain_SOURCES = src/stdcomb/CombWithRep/CombWithRepMain.cpp
-src_stdcomb_FindComb_FindComb_SOURCES = src/stdcomb/FindComb/FindComb.cpp
-src_stdcomb_IntComb_IntComb_SOURCES = src/stdcomb/IntComb/IntComb.cpp
+tests_test_combinations_SOURCES = tests/test_combinations.cc
 tests_test_dynamic_SOURCES = tests/test_dynamic.c
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .cc .cpp .lo .o .obj
+.SUFFIXES: .c .cc .lo .o .obj
 am--refresh:
 	@:
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
@@ -460,50 +386,10 @@ src/$(am__dirstamp):
 src/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) src/$(DEPDIR)
 	@: > src/$(DEPDIR)/$(am__dirstamp)
+src/combinations.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/dynamic.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 libpgraph.la: $(libpgraph_la_OBJECTS) $(libpgraph_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK)  $(libpgraph_la_OBJECTS) $(libpgraph_la_LIBADD) $(LIBS)
-src/stdcomb/BigInteger/$(am__dirstamp):
-	@$(MKDIR_P) src/stdcomb/BigInteger
-	@: > src/stdcomb/BigInteger/$(am__dirstamp)
-src/stdcomb/BigInteger/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) src/stdcomb/BigInteger/$(DEPDIR)
-	@: > src/stdcomb/BigInteger/$(DEPDIR)/$(am__dirstamp)
-src/stdcomb/BigInteger/BigIntegerAlgorithms.lo:  \
-	src/stdcomb/BigInteger/$(am__dirstamp) \
-	src/stdcomb/BigInteger/$(DEPDIR)/$(am__dirstamp)
-src/stdcomb/BigInteger/BigInteger.lo:  \
-	src/stdcomb/BigInteger/$(am__dirstamp) \
-	src/stdcomb/BigInteger/$(DEPDIR)/$(am__dirstamp)
-src/stdcomb/BigInteger/BigIntegerUtils.lo:  \
-	src/stdcomb/BigInteger/$(am__dirstamp) \
-	src/stdcomb/BigInteger/$(DEPDIR)/$(am__dirstamp)
-src/stdcomb/BigInteger/BigUnsigned.lo:  \
-	src/stdcomb/BigInteger/$(am__dirstamp) \
-	src/stdcomb/BigInteger/$(DEPDIR)/$(am__dirstamp)
-src/stdcomb/BigInteger/BigUnsignedInABase.lo:  \
-	src/stdcomb/BigInteger/$(am__dirstamp) \
-	src/stdcomb/BigInteger/$(DEPDIR)/$(am__dirstamp)
-src/stdcomb/stdcomb/$(am__dirstamp):
-	@$(MKDIR_P) src/stdcomb/stdcomb
-	@: > src/stdcomb/stdcomb/$(am__dirstamp)
-src/stdcomb/stdcomb/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) src/stdcomb/stdcomb/$(DEPDIR)
-	@: > src/stdcomb/stdcomb/$(DEPDIR)/$(am__dirstamp)
-src/stdcomb/stdcomb/CombFromRepSet.lo:  \
-	src/stdcomb/stdcomb/$(am__dirstamp) \
-	src/stdcomb/stdcomb/$(DEPDIR)/$(am__dirstamp)
-src/stdcomb/stdcomb/CombWithRep.lo:  \
-	src/stdcomb/stdcomb/$(am__dirstamp) \
-	src/stdcomb/stdcomb/$(DEPDIR)/$(am__dirstamp)
-src/stdcomb/stdcomb/FindCombByIdx.lo:  \
-	src/stdcomb/stdcomb/$(am__dirstamp) \
-	src/stdcomb/stdcomb/$(DEPDIR)/$(am__dirstamp)
-src/stdcomb/stdcomb/FindTotalComb.lo:  \
-	src/stdcomb/stdcomb/$(am__dirstamp) \
-	src/stdcomb/stdcomb/$(DEPDIR)/$(am__dirstamp)
-libstdcomb.la: $(libstdcomb_la_OBJECTS) $(libstdcomb_la_DEPENDENCIES) 
-	$(AM_V_CXXLD)$(CXXLINK)  $(libstdcomb_la_OBJECTS) $(libstdcomb_la_LIBADD) $(LIBS)
 
 clean-noinstPROGRAMS:
 	@list='$(noinst_PROGRAMS)'; test -n "$$list" || exit 0; \
@@ -534,72 +420,17 @@ sandbox/io_into_shared_memory.$(OBJEXT): sandbox/$(am__dirstamp) \
 sandbox/io_into_shared_memory$(EXEEXT): $(sandbox_io_into_shared_memory_OBJECTS) $(sandbox_io_into_shared_memory_DEPENDENCIES) sandbox/$(am__dirstamp)
 	@rm -f sandbox/io_into_shared_memory$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(sandbox_io_into_shared_memory_OBJECTS) $(sandbox_io_into_shared_memory_LDADD) $(LIBS)
-src/stdcomb/Benchmark/$(am__dirstamp):
-	@$(MKDIR_P) src/stdcomb/Benchmark
-	@: > src/stdcomb/Benchmark/$(am__dirstamp)
-src/stdcomb/Benchmark/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) src/stdcomb/Benchmark/$(DEPDIR)
-	@: > src/stdcomb/Benchmark/$(DEPDIR)/$(am__dirstamp)
-src/stdcomb/Benchmark/BenchmarkMain.$(OBJEXT):  \
-	src/stdcomb/Benchmark/$(am__dirstamp) \
-	src/stdcomb/Benchmark/$(DEPDIR)/$(am__dirstamp)
-src/stdcomb/Benchmark/BenchmarkMain$(EXEEXT): $(src_stdcomb_Benchmark_BenchmarkMain_OBJECTS) $(src_stdcomb_Benchmark_BenchmarkMain_DEPENDENCIES) src/stdcomb/Benchmark/$(am__dirstamp)
-	@rm -f src/stdcomb/Benchmark/BenchmarkMain$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(src_stdcomb_Benchmark_BenchmarkMain_OBJECTS) $(src_stdcomb_Benchmark_BenchmarkMain_LDADD) $(LIBS)
-src/stdcomb/CombFromRepSet/$(am__dirstamp):
-	@$(MKDIR_P) src/stdcomb/CombFromRepSet
-	@: > src/stdcomb/CombFromRepSet/$(am__dirstamp)
-src/stdcomb/CombFromRepSet/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) src/stdcomb/CombFromRepSet/$(DEPDIR)
-	@: > src/stdcomb/CombFromRepSet/$(DEPDIR)/$(am__dirstamp)
-src/stdcomb/CombFromRepSet/CombFromRepSetMain.$(OBJEXT):  \
-	src/stdcomb/CombFromRepSet/$(am__dirstamp) \
-	src/stdcomb/CombFromRepSet/$(DEPDIR)/$(am__dirstamp)
-src/stdcomb/CombFromRepSet/CombFromRepSetMain$(EXEEXT): $(src_stdcomb_CombFromRepSet_CombFromRepSetMain_OBJECTS) $(src_stdcomb_CombFromRepSet_CombFromRepSetMain_DEPENDENCIES) src/stdcomb/CombFromRepSet/$(am__dirstamp)
-	@rm -f src/stdcomb/CombFromRepSet/CombFromRepSetMain$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(src_stdcomb_CombFromRepSet_CombFromRepSetMain_OBJECTS) $(src_stdcomb_CombFromRepSet_CombFromRepSetMain_LDADD) $(LIBS)
-src/stdcomb/CombWithRep/$(am__dirstamp):
-	@$(MKDIR_P) src/stdcomb/CombWithRep
-	@: > src/stdcomb/CombWithRep/$(am__dirstamp)
-src/stdcomb/CombWithRep/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) src/stdcomb/CombWithRep/$(DEPDIR)
-	@: > src/stdcomb/CombWithRep/$(DEPDIR)/$(am__dirstamp)
-src/stdcomb/CombWithRep/CombWithRepMain.$(OBJEXT):  \
-	src/stdcomb/CombWithRep/$(am__dirstamp) \
-	src/stdcomb/CombWithRep/$(DEPDIR)/$(am__dirstamp)
-src/stdcomb/CombWithRep/CombWithRepMain$(EXEEXT): $(src_stdcomb_CombWithRep_CombWithRepMain_OBJECTS) $(src_stdcomb_CombWithRep_CombWithRepMain_DEPENDENCIES) src/stdcomb/CombWithRep/$(am__dirstamp)
-	@rm -f src/stdcomb/CombWithRep/CombWithRepMain$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(src_stdcomb_CombWithRep_CombWithRepMain_OBJECTS) $(src_stdcomb_CombWithRep_CombWithRepMain_LDADD) $(LIBS)
-src/stdcomb/FindComb/$(am__dirstamp):
-	@$(MKDIR_P) src/stdcomb/FindComb
-	@: > src/stdcomb/FindComb/$(am__dirstamp)
-src/stdcomb/FindComb/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) src/stdcomb/FindComb/$(DEPDIR)
-	@: > src/stdcomb/FindComb/$(DEPDIR)/$(am__dirstamp)
-src/stdcomb/FindComb/FindComb.$(OBJEXT):  \
-	src/stdcomb/FindComb/$(am__dirstamp) \
-	src/stdcomb/FindComb/$(DEPDIR)/$(am__dirstamp)
-src/stdcomb/FindComb/FindComb$(EXEEXT): $(src_stdcomb_FindComb_FindComb_OBJECTS) $(src_stdcomb_FindComb_FindComb_DEPENDENCIES) src/stdcomb/FindComb/$(am__dirstamp)
-	@rm -f src/stdcomb/FindComb/FindComb$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(src_stdcomb_FindComb_FindComb_OBJECTS) $(src_stdcomb_FindComb_FindComb_LDADD) $(LIBS)
-src/stdcomb/IntComb/$(am__dirstamp):
-	@$(MKDIR_P) src/stdcomb/IntComb
-	@: > src/stdcomb/IntComb/$(am__dirstamp)
-src/stdcomb/IntComb/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) src/stdcomb/IntComb/$(DEPDIR)
-	@: > src/stdcomb/IntComb/$(DEPDIR)/$(am__dirstamp)
-src/stdcomb/IntComb/IntComb.$(OBJEXT):  \
-	src/stdcomb/IntComb/$(am__dirstamp) \
-	src/stdcomb/IntComb/$(DEPDIR)/$(am__dirstamp)
-src/stdcomb/IntComb/IntComb$(EXEEXT): $(src_stdcomb_IntComb_IntComb_OBJECTS) $(src_stdcomb_IntComb_IntComb_DEPENDENCIES) src/stdcomb/IntComb/$(am__dirstamp)
-	@rm -f src/stdcomb/IntComb/IntComb$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(src_stdcomb_IntComb_IntComb_OBJECTS) $(src_stdcomb_IntComb_IntComb_LDADD) $(LIBS)
 tests/$(am__dirstamp):
 	@$(MKDIR_P) tests
 	@: > tests/$(am__dirstamp)
 tests/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) tests/$(DEPDIR)
 	@: > tests/$(DEPDIR)/$(am__dirstamp)
+tests/test_combinations.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+tests/test_combinations$(EXEEXT): $(tests_test_combinations_OBJECTS) $(tests_test_combinations_DEPENDENCIES) tests/$(am__dirstamp)
+	@rm -f tests/test_combinations$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_combinations_OBJECTS) $(tests_test_combinations_LDADD) $(LIBS)
 tests/test_dynamic.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 tests/test_dynamic$(EXEEXT): $(tests_test_dynamic_OBJECTS) $(tests_test_dynamic_DEPENDENCIES) tests/$(am__dirstamp)
@@ -611,31 +442,11 @@ mostlyclean-compile:
 	-rm -f sandbox/brute_force.$(OBJEXT)
 	-rm -f sandbox/forest.$(OBJEXT)
 	-rm -f sandbox/io_into_shared_memory.$(OBJEXT)
+	-rm -f src/combinations.$(OBJEXT)
+	-rm -f src/combinations.lo
 	-rm -f src/dynamic.$(OBJEXT)
 	-rm -f src/dynamic.lo
-	-rm -f src/stdcomb/Benchmark/BenchmarkMain.$(OBJEXT)
-	-rm -f src/stdcomb/BigInteger/BigInteger.$(OBJEXT)
-	-rm -f src/stdcomb/BigInteger/BigInteger.lo
-	-rm -f src/stdcomb/BigInteger/BigIntegerAlgorithms.$(OBJEXT)
-	-rm -f src/stdcomb/BigInteger/BigIntegerAlgorithms.lo
-	-rm -f src/stdcomb/BigInteger/BigIntegerUtils.$(OBJEXT)
-	-rm -f src/stdcomb/BigInteger/BigIntegerUtils.lo
-	-rm -f src/stdcomb/BigInteger/BigUnsigned.$(OBJEXT)
-	-rm -f src/stdcomb/BigInteger/BigUnsigned.lo
-	-rm -f src/stdcomb/BigInteger/BigUnsignedInABase.$(OBJEXT)
-	-rm -f src/stdcomb/BigInteger/BigUnsignedInABase.lo
-	-rm -f src/stdcomb/CombFromRepSet/CombFromRepSetMain.$(OBJEXT)
-	-rm -f src/stdcomb/CombWithRep/CombWithRepMain.$(OBJEXT)
-	-rm -f src/stdcomb/FindComb/FindComb.$(OBJEXT)
-	-rm -f src/stdcomb/IntComb/IntComb.$(OBJEXT)
-	-rm -f src/stdcomb/stdcomb/CombFromRepSet.$(OBJEXT)
-	-rm -f src/stdcomb/stdcomb/CombFromRepSet.lo
-	-rm -f src/stdcomb/stdcomb/CombWithRep.$(OBJEXT)
-	-rm -f src/stdcomb/stdcomb/CombWithRep.lo
-	-rm -f src/stdcomb/stdcomb/FindCombByIdx.$(OBJEXT)
-	-rm -f src/stdcomb/stdcomb/FindCombByIdx.lo
-	-rm -f src/stdcomb/stdcomb/FindTotalComb.$(OBJEXT)
-	-rm -f src/stdcomb/stdcomb/FindTotalComb.lo
+	-rm -f tests/test_combinations.$(OBJEXT)
 	-rm -f tests/test_dynamic.$(OBJEXT)
 
 distclean-compile:
@@ -644,21 +455,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/forest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/io_into_shared_memory.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/combinations.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/dynamic.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/stdcomb/Benchmark/$(DEPDIR)/BenchmarkMain.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/stdcomb/BigInteger/$(DEPDIR)/BigInteger.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/stdcomb/BigInteger/$(DEPDIR)/BigIntegerAlgorithms.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/stdcomb/BigInteger/$(DEPDIR)/BigIntegerUtils.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/stdcomb/BigInteger/$(DEPDIR)/BigUnsigned.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/stdcomb/BigInteger/$(DEPDIR)/BigUnsignedInABase.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/stdcomb/CombFromRepSet/$(DEPDIR)/CombFromRepSetMain.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/stdcomb/CombWithRep/$(DEPDIR)/CombWithRepMain.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/stdcomb/FindComb/$(DEPDIR)/FindComb.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/stdcomb/IntComb/$(DEPDIR)/IntComb.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/stdcomb/stdcomb/$(DEPDIR)/CombFromRepSet.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/stdcomb/stdcomb/$(DEPDIR)/CombWithRep.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/stdcomb/stdcomb/$(DEPDIR)/FindCombByIdx.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/stdcomb/stdcomb/$(DEPDIR)/FindTotalComb.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_combinations.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_dynamic.Po@am__quote@
 
 .c.o:
@@ -715,33 +514,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
 
-.cpp.o:
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
-@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
-@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
-@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
-
-.cpp.obj:
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
-@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
-@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
-@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
-.cpp.lo:
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
-@am__fastdepCXX_TRUE@	$(LTCXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
-@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
-@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
-
 mostlyclean-libtool:
 	-rm -f *.lo
 
@@ -749,13 +521,6 @@ clean-libtool:
 	-rm -rf .libs _libs
 	-rm -rf sandbox/.libs sandbox/_libs
 	-rm -rf src/.libs src/_libs
-	-rm -rf src/stdcomb/Benchmark/.libs src/stdcomb/Benchmark/_libs
-	-rm -rf src/stdcomb/BigInteger/.libs src/stdcomb/BigInteger/_libs
-	-rm -rf src/stdcomb/CombFromRepSet/.libs src/stdcomb/CombFromRepSet/_libs
-	-rm -rf src/stdcomb/CombWithRep/.libs src/stdcomb/CombWithRep/_libs
-	-rm -rf src/stdcomb/FindComb/.libs src/stdcomb/FindComb/_libs
-	-rm -rf src/stdcomb/IntComb/.libs src/stdcomb/IntComb/_libs
-	-rm -rf src/stdcomb/stdcomb/.libs src/stdcomb/stdcomb/_libs
 	-rm -rf tests/.libs tests/_libs
 
 distclean-libtool:
@@ -989,20 +754,6 @@ distclean-generic:
 	-rm -f sandbox/$(am__dirstamp)
 	-rm -f src/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/$(am__dirstamp)
-	-rm -f src/stdcomb/Benchmark/$(DEPDIR)/$(am__dirstamp)
-	-rm -f src/stdcomb/Benchmark/$(am__dirstamp)
-	-rm -f src/stdcomb/BigInteger/$(DEPDIR)/$(am__dirstamp)
-	-rm -f src/stdcomb/BigInteger/$(am__dirstamp)
-	-rm -f src/stdcomb/CombFromRepSet/$(DEPDIR)/$(am__dirstamp)
-	-rm -f src/stdcomb/CombFromRepSet/$(am__dirstamp)
-	-rm -f src/stdcomb/CombWithRep/$(DEPDIR)/$(am__dirstamp)
-	-rm -f src/stdcomb/CombWithRep/$(am__dirstamp)
-	-rm -f src/stdcomb/FindComb/$(DEPDIR)/$(am__dirstamp)
-	-rm -f src/stdcomb/FindComb/$(am__dirstamp)
-	-rm -f src/stdcomb/IntComb/$(DEPDIR)/$(am__dirstamp)
-	-rm -f src/stdcomb/IntComb/$(am__dirstamp)
-	-rm -f src/stdcomb/stdcomb/$(DEPDIR)/$(am__dirstamp)
-	-rm -f src/stdcomb/stdcomb/$(am__dirstamp)
 	-rm -f tests/$(DEPDIR)/$(am__dirstamp)
 	-rm -f tests/$(am__dirstamp)
 
@@ -1016,7 +767,7 @@ clean-am: clean-generic clean-libtool clean-noinstLTLIBRARIES \
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf sandbox/$(DEPDIR) src/$(DEPDIR) src/stdcomb/Benchmark/$(DEPDIR) src/stdcomb/BigInteger/$(DEPDIR) src/stdcomb/CombFromRepSet/$(DEPDIR) src/stdcomb/CombWithRep/$(DEPDIR) src/stdcomb/FindComb/$(DEPDIR) src/stdcomb/IntComb/$(DEPDIR) src/stdcomb/stdcomb/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf sandbox/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -1064,7 +815,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf sandbox/$(DEPDIR) src/$(DEPDIR) src/stdcomb/Benchmark/$(DEPDIR) src/stdcomb/BigInteger/$(DEPDIR) src/stdcomb/CombFromRepSet/$(DEPDIR) src/stdcomb/CombWithRep/$(DEPDIR) src/stdcomb/FindComb/$(DEPDIR) src/stdcomb/IntComb/$(DEPDIR) src/stdcomb/stdcomb/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf sandbox/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

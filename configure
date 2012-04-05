@@ -643,6 +643,11 @@ build_vendor
 build_cpu
 build
 LIBTOOL
+HAVE_GMP_FALSE
+HAVE_GMP_TRUE
+GMP_CPPFLAGS
+GMP_LDFLAGS
+GMP_LIBS
 TASCEL_CPPFLAGS
 TASCEL_LDFLAGS
 TASCEL_LIBS
@@ -748,6 +753,7 @@ enable_silent_rules
 with_mpi
 enable_dependency_tracking
 with_tascel
+with_gmp
 enable_shared
 enable_static
 with_pic
@@ -1408,6 +1414,7 @@ Optional Packages:
                           ARG blank to use MPI compiler wrappers
   --with-tascel[=ARG]     specify location of tascel install and/or other
                           flags
+  --with-gmp[=ARG]        specify location of gmp install and/or other flags
   --with-pic[=PKGS]       try to use only PIC/non-PIC objects [default=use
                           both]
   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
@@ -6185,18 +6192,178 @@ fi
 
 
 
-# Checks for header files.
 
-# Checks for typedefs, structures, and compiler characteristics.
 
-# Checks for library functions.
+
+
+GMP_LIBS=
+GMP_LDFLAGS=
+GMP_CPPFLAGS=
+
+# Check whether --with-gmp was given.
+if test "${with_gmp+set}" = set; then :
+  withval=$with_gmp;
+else
+  with_gmp=yes
+fi
+
+case $with_gmp in #(
+  yes) :
+     ;; #(
+  no) :
+     ;; #(
+  *) :
+    if ac_fn_cxx_compute_int "$LINENO" "(long int) (sizeof (void*))" "ga_arg_parse_sizeof_voidp"        ""; then :
+
+fi
+
+for arg in $with_gmp ; do
+    case $arg in #(
+  yes) :
+     ;; #(
+  no) :
+     ;; #(
+  -l*) :
+    GMP_LIBS="$GMP_LIBS $arg" ;; #(
+  -L*) :
+    GMP_LDFLAGS="$GMP_LDFLAGS $arg" ;; #(
+  -WL*) :
+    GMP_LDFLAGS="$GMP_LDFLAGS $arg" ;; #(
+  -Wl*) :
+    GMP_LDFLAGS="$GMP_LDFLAGS $arg" ;; #(
+  -I*) :
+    GMP_CPPFLAGS="$GMP_CPPFLAGS $arg" ;; #(
+  *.a) :
+    GMP_LIBS="$GMP_LIBS $arg" ;; #(
+  *.so) :
+    GMP_LIBS="$GMP_LIBS $arg" ;; #(
+  *lib) :
+    if test -d $arg; then :
+  GMP_LDFLAGS="$GMP_LDFLAGS -L$arg"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_gmp not parsed" >&5
+$as_echo "$as_me: WARNING: $arg of with_gmp not parsed" >&2;}
+fi ;; #(
+  *lib/) :
+    if test -d $arg; then :
+  GMP_LDFLAGS="$GMP_LDFLAGS -L$arg"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_gmp not parsed" >&5
+$as_echo "$as_me: WARNING: $arg of with_gmp not parsed" >&2;}
+fi ;; #(
+  *lib64) :
+    if test -d $arg; then :
+  GMP_LDFLAGS="$GMP_LDFLAGS -L$arg"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_gmp not parsed" >&5
+$as_echo "$as_me: WARNING: $arg of with_gmp not parsed" >&2;}
+fi ;; #(
+  *lib64/) :
+    if test -d $arg; then :
+  GMP_LDFLAGS="$GMP_LDFLAGS -L$arg"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_gmp not parsed" >&5
+$as_echo "$as_me: WARNING: $arg of with_gmp not parsed" >&2;}
+fi ;; #(
+  *include) :
+    if test -d $arg; then :
+  GMP_CPPFLAGS="$GMP_CPPFLAGS -I$arg"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_gmp not parsed" >&5
+$as_echo "$as_me: WARNING: $arg of with_gmp not parsed" >&2;}
+fi ;; #(
+  *include/) :
+    if test -d $arg; then :
+  GMP_CPPFLAGS="$GMP_CPPFLAGS -I$arg"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_gmp not parsed" >&5
+$as_echo "$as_me: WARNING: $arg of with_gmp not parsed" >&2;}
+fi ;; #(
+  *include64) :
+    if test -d $arg; then :
+  GMP_CPPFLAGS="$GMP_CPPFLAGS -I$arg"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_gmp not parsed" >&5
+$as_echo "$as_me: WARNING: $arg of with_gmp not parsed" >&2;}
+fi ;; #(
+  *include64/) :
+    if test -d $arg; then :
+  GMP_CPPFLAGS="$GMP_CPPFLAGS -I$arg"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_gmp not parsed" >&5
+$as_echo "$as_me: WARNING: $arg of with_gmp not parsed" >&2;}
+fi ;; #(
+  *) :
+    ga_arg_parse_ok=no ;;
+esac
+# $arg didn't fit the most common cases
+# check for subdirectories e.g. lib,include
+    if test "x$ga_arg_parse_ok" = xno; then :
+  if test "x$ga_arg_parse_sizeof_voidp" = x8; then :
+  if test -d $arg/lib64; then :
+  GMP_LDFLAGS="$GMP_LDFLAGS -L$arg/lib64"; ga_arg_parse_ok=yes
+elif test -d $arg/lib; then :
+  GMP_LDFLAGS="$GMP_LDFLAGS -L$arg/lib"; ga_arg_parse_ok=yes
+fi
+             if test -d $arg/include64; then :
+  GMP_CPPFLAGS="$GMP_CPPFLAGS -I$arg/include64"; ga_arg_parse_ok=yes
+elif test -d $arg/include; then :
+  GMP_CPPFLAGS="$GMP_CPPFLAGS -I$arg/include"; ga_arg_parse_ok=yes
+fi
+else
+  if test -d $arg/lib; then :
+  GMP_LDFLAGS="$GMP_LDFLAGS -L$arg/lib"; ga_arg_parse_ok=yes
+fi
+             if test -d $arg/include; then :
+  GMP_CPPFLAGS="$GMP_CPPFLAGS -I$arg/include"; ga_arg_parse_ok=yes
+fi
+fi
+fi
+# $arg still unknown, look for "lib" and "include" anywhere...
+    if test "x$ga_arg_parse_ok" = xno; then :
+  case $arg in #(
+  *lib*) :
+    if test -d $arg; then :
+  GMP_LDFLAGS="$GMP_LDFLAGS -L$arg"; ga_arg_parse_ok=yes
+fi ;; #(
+  *include*) :
+    if test -d $arg; then :
+  GMP_CPPFLAGS="$GMP_CPPFLAGS -I$arg"; ga_arg_parse_ok=yes
+fi ;; #(
+  *) :
+     ;;
+esac
+fi
+# warn user that $arg fell through
+     if test "x$ga_arg_parse_ok" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_gmp not parsed" >&5
+$as_echo "$as_me: WARNING: $arg of with_gmp not parsed" >&2;}
+fi
+done ;;
+esac
+# Check for header.
+ga_save_CPPFLAGS="$CPPFLAGS"; CPPFLAGS="$CPPFLAGS $GMP_CPPFLAGS"
+ac_fn_cxx_check_header_mongrel "$LINENO" "gmp.h" "ac_cv_header_gmp_h" "$ac_includes_default"
+if test "x$ac_cv_header_gmp_h" = xyes; then :
+
+else
+  as_fn_error $? "gmp package not found" "$LINENO" 5
+fi
+
+
+CPPFLAGS="$ga_save_CPPFLAGS"
+# Check for library.
+ga_save_LIBS="$LIBS"; LIBS="$GMP_LIBS $LIBS"
+ga_save_LDFLAGS="$LDFLAGS"; LDFLAGS="$LDFLAGS $GMP_LDFLAGS"
+ga_save_CPPFLAGS="$CPPFLAGS"; CPPFLAGS="$CPPFLAGS $GMP_CPPFLAGS"
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing __gmpz_bin_uiui" >&5
 $as_echo_n "checking for library containing __gmpz_bin_uiui... " >&6; }
-if ${ac_cv_search___gmpz_bin_uiui+:} false; then :
+if ${ga_cv_search___gmpz_bin_uiui+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+  ga_func_search_save_LIBS=$LIBS
+     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 /* Override any GCC internal prototype to avoid an error.
@@ -6214,38 +6381,75 @@ return __gmpz_bin_uiui ();
   return 0;
 }
 _ACEOF
-for ac_lib in '' gmp; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_cxx_try_link "$LINENO"; then :
-  ac_cv_search___gmpz_bin_uiui=$ac_res
+     for ga_lib in '' gmp
+     do
+        if test -z "$ga_lib"; then
+            ga_res="none required"
+        else
+            ga_res=-l$ga_lib
+            LIBS="-l$ga_lib  $ga_func_search_save_LIBS"
+        fi
+        if ac_fn_cxx_try_link "$LINENO"; then :
+  ga_cv_search___gmpz_bin_uiui=$ga_res
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext
-  if ${ac_cv_search___gmpz_bin_uiui+:} false; then :
+        if ${ga_cv_search___gmpz_bin_uiui+:} false; then :
   break
 fi
-done
-if ${ac_cv_search___gmpz_bin_uiui+:} false; then :
+     done
+     if ${ga_cv_search___gmpz_bin_uiui+:} false; then :
 
 else
-  ac_cv_search___gmpz_bin_uiui=no
+  ga_cv_search___gmpz_bin_uiui=no
 fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
+     rm conftest.$ac_ext
+     LIBS=$ga_func_search_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search___gmpz_bin_uiui" >&5
-$as_echo "$ac_cv_search___gmpz_bin_uiui" >&6; }
-ac_res=$ac_cv_search___gmpz_bin_uiui
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ga_cv_search___gmpz_bin_uiui" >&5
+$as_echo "$ga_cv_search___gmpz_bin_uiui" >&6; }
+ga_res=$ga_cv_search___gmpz_bin_uiui
+if test "$ga_res" != no; then :
+  test "$ga_res" = "none required" || LIBS="$ga_res $LIBS"
 
 fi
 
+LIBS="$ga_save_LIBS"
+LDFLAGS="$ga_save_LDFLAGS"
+CPPFLAGS="$ga_save_CPPFLAGS"
+if test "x$ga_cv_search___gmpz_bin_uiui" != xno; then :
+
+     if test "x$ga_cv_search___gmpz_bin_uiui" != "xnone required"; then :
+  as_fn_append GMP_LIBS $ga_cv_search___gmpz_bin_uiui
+fi
+
+$as_echo "#define HAVE_GMP 1" >>confdefs.h
+
+
+
+
+else
+  as_fn_error $? "gmp package not found" "$LINENO" 5
+fi
+ if test "x$ga_cv_search___gmpz_bin_uiui" != xno; then
+  HAVE_GMP_TRUE=
+  HAVE_GMP_FALSE='#'
+else
+  HAVE_GMP_TRUE='#'
+  HAVE_GMP_FALSE=
+fi
+
+
+
+
+
+
+
+# Checks for header files.
+
+# Checks for typedefs, structures, and compiler characteristics.
+
+# Checks for library functions.
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -16817,6 +17021,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${am__fastdepCXX_TRUE}" && test -z "${am__fastdepCXX_FALSE}"; then
   as_fn_error $? "conditional \"am__fastdepCXX\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_GMP_TRUE}" && test -z "${HAVE_GMP_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_GMP\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 

@@ -71,8 +71,14 @@ LDFLAGS="$ga_save_LDFLAGS"
 CPPFLAGS="$ga_save_CPPFLAGS"
 AS_IF([test "x$ga_cv_search_$4" != xno],
     [$6
-     AC_DEFINE([HAVE_PKG], [1], [set to 1 if we have the indicated package])],
+     AS_IF([test "x$ga_cv_search_$4" != "xnone required"],
+        [AS_VAR_APPEND([PKG_LIBS], [$ga_cv_search_$4])])
+     AC_DEFINE([HAVE_PKG], [1], [set to 1 if we have the indicated package])
+     AC_SUBST(PKG_LIBS)
+     AC_SUBST(PKG_LDFLAGS)
+     AC_SUBST(PKG_CPPFLAGS)],
     [$7])
+AM_CONDITIONAL(HAVE_PKG, [test "x$ga_cv_search_$4" != xno])
 AS_VAR_POPDEF([HAVE_PKG])
 AS_VAR_POPDEF([PKG_LIBS])
 AS_VAR_POPDEF([PKG_LDFLAGS])

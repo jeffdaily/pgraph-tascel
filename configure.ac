@@ -60,13 +60,14 @@ AS_IF([test x$with_mpi_wrappers = xyes], [PT_MPI_UNWRAP])
 
 # Checks for libraries.
 TASCEL_REQUIRE
+GA_CHECK_PACKAGE([gmp], [gmp.h], [gmp], [__gmpz_bin_uiui], [], [],
+                 [AC_MSG_ERROR([gmp package not found])])
 
 # Checks for header files.
 
 # Checks for typedefs, structures, and compiler characteristics.
 
 # Checks for library functions.
-AC_SEARCH_LIBS([__gmpz_bin_uiui], [gmp])
 
 AC_LANG_POP([C++])
 
