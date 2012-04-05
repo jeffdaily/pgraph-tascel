@@ -96,7 +96,6 @@ int main(int argc, char **argv)
     MPI_File fh;
     MPI_Status status;
     long seg_count = 0;
-    const unsigned int num_intra_ranks = 1;
     idx_t max_seq_len = 0;
     idx_t tot_seq_len = 0;
 
@@ -250,8 +249,10 @@ int main(int argc, char **argv)
     /* print the max_seq_len on each process */
     for (int i=0; i<nprocs; ++i) {
         if (i == rank) {
-            printf("[%d] max_seq_len=%ld\n", rank, long(max_seq_len));
-            printf("[%d] tot_seq_len=%lld\n", rank, tot_seq_len);
+            printf("[%d] max_seq_len=%lu\n",
+                    rank, (unsigned long)(max_seq_len));
+            printf("[%d] tot_seq_len=%lu\n",
+                    rank, (unsigned long)(tot_seq_len));
         }
         MPI_Barrier(comm);
     }
