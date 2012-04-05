@@ -21,6 +21,7 @@
 #include <strstream>
 #include <vector>
 
+#include "combinations.h"
 #include "dynamic.h"
 
 using namespace std;
@@ -58,6 +59,7 @@ pthread_barrier_t serverStart, serverEnd;
 static pthread_t threadHandles[NUM_WORKERS + NUM_SERVERS];
 static unsigned threadRanks[NUM_WORKERS + NUM_SERVERS];
 volatile bool serverEnabled = true;
+unsigned long combinations_per_task=0;
 
 static unsigned long long timer_start()
 {
@@ -155,8 +157,7 @@ static int trank(int thd)
 }
 
 typedef struct {
-    uint32_t id1;
-    uint32_t id2;
+    unsigned long id;
 } task_description;
 
 static void alignment_task(
@@ -164,39 +165,55 @@ static void alignment_task(
         void *_bigd, int bigd_len,
         void *pldata, int pldata_len,
         vector<void *> data_bufs, int thd) {
-    int id1, id2;
     task_description *desc = (task_description*)_bigd;
-    id1 = desc->id1;
-    id2 = desc->id2;
+    unsigned long task_id = desc->id;
+    unsigned long combo_start_index = task_id * combinations_per_task;
+    unsigned long seq_id[2];
     cell_t result;
     is_edge_param_t param;
     int is_edge_answer = 0;
-    long long t = timer_start();
+    long long t = 0;
+    unsigned long i;
 
-    affine_gap_align(
-            sequences[id1].c_str(), sequences[id1].size(),
-            sequences[id2].c_str(), sequences[id2].size(),
-            &result, tbl, del, ins);
-    param.AOL = 8;
-    param.SIM = 4;
-    param.OS = 3;
-    is_edge_answer = is_edge(result,
-            sequences[id1].c_str(), sequences[id1].size(),
-            sequences[id2].c_str(), sequences[id2].size(),
-            param);
-    ++align_counts[thd];
+    k_combination(combo_start_index, 2, seq_id);
 
-    if (is_edge_answer) {
-        cout << trank(thd) << ": aligned " << id1 << " " << id2
-            << ": (score,ndig,alen)=("
-            << result.score << ","
-            << result.ndig << ","
-            << result.alen << ")"
-            << ": edge? " << is_edge_answer << endl;
+    for (i=0; i<combinations_per_task; ++i) {
+        /* the last task may run out of sequences */
+        if (seq_id[0] >= sequences.size() || seq_id[1] >= sequences.size()) {
+            cout << "task_id " << task_id << " left early" << endl;
+            break;
+        }
+        t = timer_start();
+        affine_gap_align(
+                sequences[seq_id[0]].c_str(), sequences[seq_id[0]].size(),
+                sequences[seq_id[1]].c_str(), sequences[seq_id[1]].size(),
+                &result, tbl, del, ins);
+        param.AOL = 8;
+        param.SIM = 4;
+        param.OS = 3;
+        is_edge_answer = is_edge(result,
+                sequences[seq_id[0]].c_str(), sequences[seq_id[0]].size(),
+                sequences[seq_id[1]].c_str(), sequences[seq_id[1]].size(),
+                param);
+        ++align_counts[thd];
+
+        if (is_edge_answer) {
+            cout << trank(thd)
+                << ": aligned " << seq_id[0] << " " << seq_id[1]
+                << ": (score,ndig,alen)=("
+                << result.score << ","
+                << result.ndig << ","
+                << result.alen << ")"
+                << ": edge? " << is_edge_answer << endl;
+        }
+        t = timer_end(t);
+        align_times[thd] += t;
+        align_times_max[thd] = MAX(align_times_max[thd],t);
+        next_combination(2, seq_id);
     }
-    t = timer_end(t);
-    align_times[thd] += t;
-    align_times_max[thd] = MAX(align_times_max[thd],t);
+#if DEBUG
+    cout << trank(thd) << " finished task_id " << task_id << endl;
+#endif
 }
 
 
@@ -211,9 +228,8 @@ int main(int argc, char **argv)
     MPI_Status status;
     long seg_count = 0;
     size_t max_seq_len = 0;
-    mpz_t nCk;
+    unsigned long nCk;
 
-    mpz_init(nCk);
     check_count = 0;
 
     /* initialize MPI */
@@ -268,14 +284,15 @@ int main(int argc, char **argv)
 #endif
 
     /* sanity check that we got the correct number of arguments */
-    if (all_argv.size() <= 1 || all_argv.size() >= 3) {
+    if (all_argv.size() <= 1 || all_argv.size() >= 4) {
         if (0 == rank) {
             if (all_argv.size() <= 1) {
                 printf("missing input file\n");
             }
-            else if (all_argv.size() >= 3) {
+            else if (all_argv.size() >= 4) {
                 printf("too many arguments\n");
             }
+            printf("usage: brute_force sequence_file [combinations_per_task]\n");
         }
         MPI_Comm_free(&comm);
         MPI_Finalize();
@@ -306,7 +323,9 @@ int main(int argc, char **argv)
 
     /* the file_size is broadcast to all */
     MPI_CHECK(MPI_Bcast(&file_size, 1, MPI_LONG, 0, comm));
-    printf("[%d] file_size=%ld\n", rank, file_size);
+    if (0 == trank(0)) {
+        printf("file_size=%ld\n", file_size);
+    }
     /* allocate a buffer for the file, of the entire size */
     /* TODO: this is not memory efficient since we allocate a buffer to read
      * the entire input file and then parse the buffer into a vector of
@@ -326,7 +345,7 @@ int main(int argc, char **argv)
             ++seg_count;
         }
     }
-#if 1
+#if DEBUG
     /* print the seg_count on each process */
     for (int i=0; i<nprocs; ++i) {
         if (i == rank) {
@@ -360,7 +379,7 @@ int main(int argc, char **argv)
         max_seq_len = max(max_seq_len, sequence.size());
     }
     sequence.clear();
-#if 1
+#if DEBUG
     /* print the seg_count on each process */
     for (int i=0; i<nprocs; ++i) {
         if (i == rank) {
@@ -395,12 +414,38 @@ int main(int argc, char **argv)
     }
 #endif
     /* how many combinations of sequences are there? */
-    mpz_bin_uiui(nCk, sequences.size(), 2);
-    gmp_printf("brute force has %Zd combinations\n", nCk);
-    mpz_bin_uiui(nCk, 20000000, 2);
-    gmp_printf("20000000 choose 2 = %Zd combinations\n", nCk);
-    unsigned long ui_nCk = mpz_get_ui(nCk);
-    printf("20000000 choose 2 = %lu combinations\n", ui_nCk);
+    nCk = binomial_coefficient(sequences.size(), 2);
+    if (0 == trank(0)) {
+        printf("brute force %lu C 2 has %lu combinations\n",
+                sequences.size(), nCk);
+    }
+
+    /* set the combinations_per_task variable */
+    if (all_argv.size() == 3) {
+        combinations_per_task = strtoll(all_argv[2].c_str(), NULL, 10);
+    }
+    else {
+        combinations_per_task = sequences.size();
+    }
+    unsigned long ntasks = nCk / combinations_per_task;
+    if (nCk % combinations_per_task != 0) {
+        ntasks += 1;
+    }
+    unsigned long global_num_workers = nprocs*NUM_WORKERS;
+    unsigned long tasks_per_worker = ntasks / global_num_workers;
+    unsigned long max_tasks_per_worker = ntasks / global_num_workers;
+    max_tasks_per_worker += ntasks % global_num_workers;
+    //for (int i=0; i<nprocs; ++i) {
+        //if (i == rank) {
+        if (0 == trank(0)) {
+            printf("combinations_per_task=%lu\n", combinations_per_task);
+            printf("ntasks=%lu\n", ntasks);
+            printf("global_num_workers=%lu\n", global_num_workers);
+            printf("tasks_per_worker=%lu\n", tasks_per_worker);
+            printf("max_tasks_per_worker=%lu\n", max_tasks_per_worker);
+        }
+        MPI_Barrier(comm);
+    ////}
 
     /* some more dynamic initialization */
     assert(NROW == 2);
@@ -420,24 +465,33 @@ int main(int argc, char **argv)
         TaskCollProps props;
         props.functions(tf, frt)
             .taskSize(sizeof(task_description))
-            .maxTasks(640000);
+            .maxTasks(max_tasks_per_worker);
         utc = new UniformTaskCollSplitHybrid(props, worker);
 
         /* add some tasks, different amounts to different tranks */
         task_description desc;
         int count = 0;
 
-        srand48(rank * 7138943);
-#if defined(THREADED)
-        for (int i = 0; i < 640*(threadRanks[worker]+1); i++)
-#else
-        for (int i = 0; i < 640*28; i++)
-#endif
-        {
+        printf("%d(%d): trank(%d)=%d\n",
+                rank, threadRanks[worker], worker, trank(worker));
+        unsigned long i = trank(worker)*tasks_per_worker;
+        unsigned long limit = i + tasks_per_worker;
+        printf("%d(%d): i=%lu limit=%lu\n",
+                rank, threadRanks[worker], i, limit);
+
+        for (/*ignore*/; i<limit; ++i) {
             count++;
-            desc.id1 = lrand48() % sequences.size();
-            desc.id2 = lrand48() % sequences.size();
+            desc.id = i;
             utcs[0]->addTask(&desc, sizeof(desc));
+        }
+        /* if I'm the last worker, add the remainder of the tasks */
+        if (trank(worker) == nprocs*NUM_WORKERS-1) {
+            limit = i + (ntasks % global_num_workers);
+            for (/*ignore*/; i<limit; ++i) {
+                count++;
+                desc.id = i;
+                utcs[0]->addTask(&desc, sizeof(desc));
+            }
         }
         printf("%d(%d): added %d tasks\n", rank, threadRanks[worker], count);
     }
@@ -490,7 +544,7 @@ int main(int argc, char **argv)
     amBarrier();
 
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
-        printf("%d(%d) aligned %ld tasks\n",
+        printf("%d(%d) aligned %ld sequence pairs\n",
                 rank, worker, align_counts[worker]);
     }
     for (int worker=0; worker<NUM_WORKERS; ++worker) {

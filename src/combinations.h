@@ -5,7 +5,7 @@
 extern "C" {
 #endif 
 
-unsigned long binary_coefficient(unsigned long n, unsigned long k);
+unsigned long binomial_coefficient(unsigned long n, unsigned long k);
 void k_combination(unsigned long pos, unsigned long k, unsigned long *result);
 void next_combination(unsigned long k, unsigned long *combination);
 

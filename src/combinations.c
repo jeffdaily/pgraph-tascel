@@ -6,7 +6,7 @@
 #include "combinations.h"
 
 
-unsigned long binary_coefficient(unsigned long n, unsigned long k)
+unsigned long binomial_coefficient(unsigned long n, unsigned long k)
 {
     mpz_t mpz_answer;
     unsigned long ui_answer;
@@ -41,11 +41,11 @@ void k_combination(unsigned long pos, unsigned long k, unsigned long *result)
         }
         n=i-1;
         bc_previous = 0;
-        bc = binary_coefficient(n,i);
+        bc = binomial_coefficient(n,i);
         while (bc <= pos) {
             bc_previous = bc;
             ++n;
-            bc = binary_coefficient(n,i);
+            bc = binomial_coefficient(n,i);
         }
         pos -= bc_previous;
         result[i-1] = n-1;
