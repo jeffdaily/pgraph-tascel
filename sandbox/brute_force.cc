@@ -43,12 +43,13 @@ using namespace tascel;
 int rank = 0;
 int nprocs = 0;
 int check_count = 0;
-cell_t **tbl = NULL;
-int **del = NULL;
-int **ins = NULL;
+cell_t **tbl[NUM_WORKERS];
+int **del[NUM_WORKERS];
+int **ins[NUM_WORKERS];
 vector<string> sequences;
 ProcGroup* pgrp = NULL;
 UniformTaskCollSplitHybrid* utcs[NUM_WORKERS];
+long edge_counts[NUM_WORKERS];
 long align_counts[NUM_WORKERS];
 long long align_times[NUM_WORKERS];
 long long align_times_max[NUM_WORKERS];
@@ -187,7 +188,7 @@ static void alignment_task(
         affine_gap_align(
                 sequences[seq_id[0]].c_str(), sequences[seq_id[0]].size(),
                 sequences[seq_id[1]].c_str(), sequences[seq_id[1]].size(),
-                &result, tbl, del, ins);
+                &result, tbl[thd], del[thd], ins[thd]);
         param.AOL = 8;
         param.SIM = 4;
         param.OS = 3;
@@ -205,6 +206,7 @@ static void alignment_task(
                 << result.ndig << ","
                 << result.alen << ")"
                 << ": edge? " << is_edge_answer << endl;
+            ++edge_counts[thd];
         }
         t = timer_end(t);
         align_times[thd] += t;
@@ -449,14 +451,17 @@ int main(int argc, char **argv)
 
     /* some more dynamic initialization */
     assert(NROW == 2);
-    tbl = alloc_tbl(NROW, max_seq_len);
-    del = alloc_int(NROW, max_seq_len);
-    ins = alloc_int(NROW, max_seq_len);
+    for (int worker=0; worker<NUM_WORKERS; ++worker) {
+        tbl[worker] = alloc_tbl(NROW, max_seq_len);
+        del[worker] = alloc_int(NROW, max_seq_len);
+        ins[worker] = alloc_int(NROW, max_seq_len);
+    }
 
     /* the tascel part */
     for (int worker=0; worker<NUM_WORKERS; ++worker)
     {
         UniformTaskCollSplitHybrid*& utc = utcs[worker];
+        edge_counts[worker] = 0;
         align_counts[worker] = 0;
         align_times[worker] = 0;
         align_times_max[worker] = 0;
@@ -550,6 +555,10 @@ int main(int argc, char **argv)
     amBarrier();
 
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
+        printf("%d(%d) found %ld edges\n",
+                rank, worker, edge_counts[worker]);
+    }
+    for (int worker=0; worker<NUM_WORKERS; ++worker) {
         printf("%d(%d) aligned %ld sequence pairs\n",
                 rank, worker, align_counts[worker]);
     }
@@ -567,9 +576,11 @@ int main(int argc, char **argv)
 
     /* clean up */
     delete [] file_buffer;
-    free_tbl(tbl, NROW);
-    free_int(del, NROW);
-    free_int(ins, NROW);
+    for (int worker=0; worker<NUM_WORKERS; ++worker) {
+        free_tbl(tbl[worker], NROW);
+        free_int(del[worker], NROW);
+        free_int(ins[worker], NROW);
+    }
 
     TascelConfig::finalize();
     MPI_Comm_free(&comm);
