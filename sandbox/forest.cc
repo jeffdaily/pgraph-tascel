@@ -11,6 +11,8 @@
  */
 #include <mpi.h>
 
+#include <stdint.h>
+
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>

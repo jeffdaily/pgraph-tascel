@@ -482,7 +482,7 @@ int main(int argc, char **argv)
         for (/*ignore*/; i<limit; ++i) {
             count++;
             desc.id = i;
-            utcs[0]->addTask(&desc, sizeof(desc));
+            utcs[worker]->addTask(&desc, sizeof(desc));
         }
         /* if I'm the last worker, add the remainder of the tasks */
         if (trank(worker) == nprocs*NUM_WORKERS-1) {
@@ -490,7 +490,7 @@ int main(int argc, char **argv)
             for (/*ignore*/; i<limit; ++i) {
                 count++;
                 desc.id = i;
-                utcs[0]->addTask(&desc, sizeof(desc));
+                utcs[worker]->addTask(&desc, sizeof(desc));
             }
         }
         printf("%d(%d): added %d tasks\n", rank, threadRanks[worker], count);
