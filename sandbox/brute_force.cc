@@ -472,39 +472,45 @@ int main(int argc, char **argv)
         task_description desc;
         int count = 0;
 
-        printf("%d(%d): trank(%d)=%d\n",
-                rank, threadRanks[worker], worker, trank(worker));
-        unsigned long i = trank(worker)*tasks_per_worker;
-        unsigned long limit = i + tasks_per_worker;
-        printf("%d(%d): i=%lu limit=%lu\n",
-                rank, threadRanks[worker], i, limit);
+        unsigned long i;
+        unsigned long lower_limit = trank(worker)*tasks_per_worker;
+        unsigned long upper_limit = lower_limit + tasks_per_worker;
+        unsigned long remainder = ntasks % global_num_workers;
 
-        for (/*ignore*/; i<limit; ++i) {
+        for (i=lower_limit; i<upper_limit; ++i) {
             count++;
             desc.id = i;
             utcs[worker]->addTask(&desc, sizeof(desc));
         }
         /* if I'm the last worker, add the remainder of the tasks */
         if (trank(worker) == nprocs*NUM_WORKERS-1) {
-            limit = i + (ntasks % global_num_workers);
-            for (/*ignore*/; i<limit; ++i) {
+            for (/*ignore*/; i<upper_limit+remainder; ++i) {
                 count++;
                 desc.id = i;
                 utcs[worker]->addTask(&desc, sizeof(desc));
             }
+            printf("%d(%d): %lu tasks [%lu..%lu)\n",
+                    rank, threadRanks[worker], count,
+                    lower_limit, upper_limit+remainder);
         }
-        printf("%d(%d): added %d tasks\n", rank, threadRanks[worker], count);
+        else {
+            printf("%d(%d): %lu tasks [%lu..%lu)\n",
+                    rank, threadRanks[worker], count,
+                    lower_limit, upper_limit);
+        }
     }
 
     amBarrier();
 
 #if defined(THREADED)
+#if defined(SET_AFFINITY)
     cpu_set_t cpuset;
     pthread_t thread;
     CPU_ZERO(&cpuset);
     thread = pthread_self();
     CPU_SET(0, &cpuset);
     pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
+#endif
 
     pthread_barrier_init(&workersStart, 0, NUM_WORKERS);
     pthread_barrier_init(&workersEnd, 0, NUM_WORKERS);
