@@ -27,6 +27,10 @@
 using namespace std;
 using namespace tascel;
 
+#ifndef MULTIPLE_PAIRS_PER_TASK
+#define MULTIPLE_PAIRS_PER_TASK 0
+#endif
+
 #define ARG_LEN_MAX 1024
 
 #define MPI_CHECK(what) do {                              \
@@ -157,9 +161,16 @@ static int trank(int thd)
     return (theTwoSided().getProcRank().toInt() * NUM_WORKERS) + thd;
 }
 
+#if MULTIPLE_PAIRS_PER_TASK
 typedef struct {
     unsigned long id;
 } task_description;
+#else
+typedef struct {
+    unsigned long id1;
+    unsigned long id2;
+} task_description;
+#endif
 
 static void alignment_task(
         UniformTaskCollection *utc,
@@ -167,8 +178,10 @@ static void alignment_task(
         void *pldata, int pldata_len,
         vector<void *> data_bufs, int thd) {
     task_description *desc = (task_description*)_bigd;
+#if MULTIPLE_PAIRS_PER_TASK
     unsigned long task_id = desc->id;
     unsigned long combo_start_index = task_id * combinations_per_task;
+#endif
     unsigned long seq_id[2];
     cell_t result;
     is_edge_param_t param;
@@ -176,14 +189,20 @@ static void alignment_task(
     long long t = 0;
     unsigned long i;
 
+#if MULTIPLE_PAIRS_PER_TASK
     k_combination(combo_start_index, 2, seq_id);
-
-    for (i=0; i<combinations_per_task; ++i) {
+    for (i=0; i<combinations_per_task; ++i)
+#else
+    seq_id[0] = desc->id1;
+    seq_id[1] = desc->id2;
+#endif
+    {
+#if MULTIPLE_PAIRS_PER_TASK
         /* the last task may run out of sequences */
         if (seq_id[0] >= sequences.size() || seq_id[1] >= sequences.size()) {
-            cout << "task_id " << task_id << " left early" << endl;
             break;
         }
+#endif
         t = timer_start();
         affine_gap_align(
                 sequences[seq_id[0]].c_str(), sequences[seq_id[0]].size(),
@@ -211,11 +230,10 @@ static void alignment_task(
         t = timer_end(t);
         align_times[thd] += t;
         align_times_max[thd] = MAX(align_times_max[thd],t);
+#if MULTIPLE_PAIRS_PER_TASK
         next_combination(2, seq_id);
-    }
-#if DEBUG
-    cout << trank(thd) << " finished task_id " << task_id << endl;
 #endif
+    }
 }
 
 
@@ -235,8 +253,12 @@ int main(int argc, char **argv)
     check_count = 0;
 
     /* initialize MPI */
+#if defined(THREADED)
     MPI_CHECK(MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided));
     assert(provided == MPI_THREAD_MULTIPLE);
+#else
+    MPI_CHECK(MPI_Init(&argc, &argv));
+#endif
     MPI_CHECK(MPI_Comm_rank(MPI_COMM_WORLD, &rank));
     MPI_CHECK(MPI_Comm_size(MPI_COMM_WORLD, &nprocs));
     MPI_CHECK(MPI_Comm_dup(MPI_COMM_WORLD, &comm));
@@ -422,6 +444,7 @@ int main(int argc, char **argv)
                 sequences.size(), nCk);
     }
 
+#if MULTIPLE_PAIRS_PER_TASK
     /* set the combinations_per_task variable */
     if (all_argv.size() == 3) {
         combinations_per_task = strtoll(all_argv[2].c_str(), NULL, 10);
@@ -437,17 +460,23 @@ int main(int argc, char **argv)
     unsigned long tasks_per_worker = ntasks / global_num_workers;
     unsigned long max_tasks_per_worker = ntasks / global_num_workers;
     max_tasks_per_worker += ntasks % global_num_workers;
-    //for (int i=0; i<nprocs; ++i) {
-        //if (i == rank) {
-        if (0 == trank(0)) {
-            printf("combinations_per_task=%lu\n", combinations_per_task);
-            printf("ntasks=%lu\n", ntasks);
-            printf("global_num_workers=%lu\n", global_num_workers);
-            printf("tasks_per_worker=%lu\n", tasks_per_worker);
-            printf("max_tasks_per_worker=%lu\n", max_tasks_per_worker);
-        }
-        MPI_Barrier(comm);
-    ////}
+#else
+    unsigned long ntasks = nCk;
+    unsigned long global_num_workers = nprocs*NUM_WORKERS;
+    unsigned long tasks_per_worker = nCk / global_num_workers;
+    unsigned long max_tasks_per_worker = nCk / global_num_workers;
+    max_tasks_per_worker += nCk % global_num_workers;
+#endif
+    if (0 == trank(0)) {
+#if MULTIPLE_PAIRS_PER_TASK
+        printf("combinations_per_task=%lu\n", combinations_per_task);
+#endif
+        printf("ntasks=%lu\n", ntasks);
+        printf("global_num_workers=%lu\n", global_num_workers);
+        printf("tasks_per_worker=%lu\n", tasks_per_worker);
+        printf("max_tasks_per_worker=%lu\n", max_tasks_per_worker);
+    }
+    MPI_Barrier(comm);
 
     /* some more dynamic initialization */
     assert(NROW == 2);
@@ -475,23 +504,40 @@ int main(int argc, char **argv)
 
         /* add some tasks, different amounts to different tranks */
         task_description desc;
-        int count = 0;
+        unsigned long count = 0;
 
         unsigned long i;
         unsigned long lower_limit = trank(worker)*tasks_per_worker;
         unsigned long upper_limit = lower_limit + tasks_per_worker;
         unsigned long remainder = ntasks % global_num_workers;
 
+#if MULTIPLE_PAIRS_PER_TASK
+#else
+        unsigned long seq_id[2];
+        k_combination(lower_limit, 2, seq_id);
+#endif
         for (i=lower_limit; i<upper_limit; ++i) {
             count++;
+#if MULTIPLE_PAIRS_PER_TASK
             desc.id = i;
+#else
+            desc.id1 = seq_id[0];
+            desc.id2 = seq_id[1];
+            next_combination(2, seq_id);
+#endif
             utcs[worker]->addTask(&desc, sizeof(desc));
         }
         /* if I'm the last worker, add the remainder of the tasks */
         if (trank(worker) == nprocs*NUM_WORKERS-1) {
             for (/*ignore*/; i<upper_limit+remainder; ++i) {
                 count++;
+#if MULTIPLE_PAIRS_PER_TASK
                 desc.id = i;
+#else
+                desc.id1 = seq_id[0];
+                desc.id2 = seq_id[1];
+                next_combination(2, seq_id);
+#endif
                 utcs[worker]->addTask(&desc, sizeof(desc));
             }
             printf("%d(%d): %lu tasks [%lu..%lu)\n",
@@ -532,10 +578,16 @@ int main(int argc, char **argv)
 #if defined(THREADED)
     serverEnabled = true;
     pthread_barrier_wait(&serverStart);
+    MPI_Barrier(MPI_COMM_WORLD);
     pthread_barrier_wait(&workersStart);
 #endif
 
+    double mytimer = MPI_Wtime();
     utcs[0]->process(0);
+    mytimer = MPI_Wtime() - mytimer;
+    if (0 == trank(0)) {
+        cout << "mytimer=" << mytimer << endl;
+    }
 
 #if defined(THREADED)
     pthread_barrier_wait(&workersEnd);
@@ -555,20 +607,9 @@ int main(int argc, char **argv)
     amBarrier();
 
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
-        printf("%d(%d) found %ld edges\n",
-                rank, worker, edge_counts[worker]);
-    }
-    for (int worker=0; worker<NUM_WORKERS; ++worker) {
-        printf("%d(%d) aligned %ld sequence pairs\n",
-                rank, worker, align_counts[worker]);
-    }
-    for (int worker=0; worker<NUM_WORKERS; ++worker) {
-        printf("%d(%d) times     %lld ms\n",
-                rank, worker, align_times[worker]);
-    }
-    for (int worker=0; worker<NUM_WORKERS; ++worker) {
-        printf("%d(%d) max times %lld ms\n",
-                rank, worker, align_times_max[worker]);
+        printf("%d(%d) %ld edges in %ld alignments taking %lld ms total time and %lld longest single task time\n",
+                rank, worker, edge_counts[worker], align_counts[worker],
+                align_times[worker], align_times_max[worker]);
     }
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
         utcs[worker]->printStats();

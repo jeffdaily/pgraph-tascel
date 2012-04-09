@@ -35,7 +35,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = sandbox/brute_force$(EXEEXT) sandbox/forest$(EXEEXT) \
+noinst_PROGRAMS = sandbox/brute_force$(EXEEXT) \
+	sandbox/brute_force_multiple$(EXEEXT) sandbox/forest$(EXEEXT) \
 	sandbox/io_into_shared_memory$(EXEEXT) \
 	tests/test_combinations$(EXEEXT) tests/test_dynamic$(EXEEXT)
 subdir = .
@@ -76,6 +77,14 @@ sandbox_brute_force_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
 sandbox_brute_force_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am_sandbox_brute_force_multiple_OBJECTS =  \
+	sandbox/sandbox_brute_force_multiple-brute_force.$(OBJEXT)
+sandbox_brute_force_multiple_OBJECTS =  \
+	$(am_sandbox_brute_force_multiple_OBJECTS)
+sandbox_brute_force_multiple_LDADD = $(LDADD)
+sandbox_brute_force_multiple_DEPENDENCIES = libpgraph.la \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_sandbox_forest_OBJECTS = sandbox/forest.$(OBJEXT)
 sandbox_forest_OBJECTS = $(am_sandbox_forest_OBJECTS)
 sandbox_forest_LDADD = $(LDADD)
@@ -145,11 +154,13 @@ AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
 SOURCES = $(libpgraph_la_SOURCES) $(sandbox_brute_force_SOURCES) \
+	$(sandbox_brute_force_multiple_SOURCES) \
 	$(sandbox_forest_SOURCES) \
 	$(sandbox_io_into_shared_memory_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES)
 DIST_SOURCES = $(libpgraph_la_SOURCES) $(sandbox_brute_force_SOURCES) \
+	$(sandbox_brute_force_multiple_SOURCES) \
 	$(sandbox_forest_SOURCES) \
 	$(sandbox_io_into_shared_memory_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
@@ -311,10 +322,12 @@ noinst_LTLIBRARIES = libpgraph.la
 libpgraph_la_SOURCES = src/combinations.c src/combinations.h \
 	src/dynamic.c src/dynamic.h
 sandbox_brute_force_SOURCES = sandbox/brute_force.cc
+sandbox_brute_force_multiple_SOURCES = sandbox/brute_force.cc
 sandbox_forest_SOURCES = sandbox/forest.cc
 sandbox_io_into_shared_memory_SOURCES = sandbox/io_into_shared_memory.c
 tests_test_combinations_SOURCES = tests/test_combinations.cc
 tests_test_dynamic_SOURCES = tests/test_dynamic.c
+sandbox_brute_force_multiple_CPPFLAGS = $(AM_CPPFLAGS) -DMULTIPLE_PAIRS_PER_TASK=1
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -410,6 +423,11 @@ sandbox/brute_force.$(OBJEXT): sandbox/$(am__dirstamp) \
 sandbox/brute_force$(EXEEXT): $(sandbox_brute_force_OBJECTS) $(sandbox_brute_force_DEPENDENCIES) sandbox/$(am__dirstamp)
 	@rm -f sandbox/brute_force$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_OBJECTS) $(sandbox_brute_force_LDADD) $(LIBS)
+sandbox/sandbox_brute_force_multiple-brute_force.$(OBJEXT):  \
+	sandbox/$(am__dirstamp) sandbox/$(DEPDIR)/$(am__dirstamp)
+sandbox/brute_force_multiple$(EXEEXT): $(sandbox_brute_force_multiple_OBJECTS) $(sandbox_brute_force_multiple_DEPENDENCIES) sandbox/$(am__dirstamp)
+	@rm -f sandbox/brute_force_multiple$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_multiple_OBJECTS) $(sandbox_brute_force_multiple_LDADD) $(LIBS)
 sandbox/forest.$(OBJEXT): sandbox/$(am__dirstamp) \
 	sandbox/$(DEPDIR)/$(am__dirstamp)
 sandbox/forest$(EXEEXT): $(sandbox_forest_OBJECTS) $(sandbox_forest_DEPENDENCIES) sandbox/$(am__dirstamp)
@@ -442,6 +460,7 @@ mostlyclean-compile:
 	-rm -f sandbox/brute_force.$(OBJEXT)
 	-rm -f sandbox/forest.$(OBJEXT)
 	-rm -f sandbox/io_into_shared_memory.$(OBJEXT)
+	-rm -f sandbox/sandbox_brute_force_multiple-brute_force.$(OBJEXT)
 	-rm -f src/combinations.$(OBJEXT)
 	-rm -f src/combinations.lo
 	-rm -f src/dynamic.$(OBJEXT)
@@ -455,6 +474,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/forest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/io_into_shared_memory.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sandbox_brute_force_multiple-brute_force.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/combinations.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/dynamic.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_combinations.Po@am__quote@
@@ -513,6 +533,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
+
+sandbox/sandbox_brute_force_multiple-brute_force.o: sandbox/brute_force.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_multiple_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sandbox/sandbox_brute_force_multiple-brute_force.o -MD -MP -MF sandbox/$(DEPDIR)/sandbox_brute_force_multiple-brute_force.Tpo -c -o sandbox/sandbox_brute_force_multiple-brute_force.o `test -f 'sandbox/brute_force.cc' || echo '$(srcdir)/'`sandbox/brute_force.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) sandbox/$(DEPDIR)/sandbox_brute_force_multiple-brute_force.Tpo sandbox/$(DEPDIR)/sandbox_brute_force_multiple-brute_force.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sandbox/brute_force.cc' object='sandbox/sandbox_brute_force_multiple-brute_force.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_multiple_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sandbox/sandbox_brute_force_multiple-brute_force.o `test -f 'sandbox/brute_force.cc' || echo '$(srcdir)/'`sandbox/brute_force.cc
+
+sandbox/sandbox_brute_force_multiple-brute_force.obj: sandbox/brute_force.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_multiple_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sandbox/sandbox_brute_force_multiple-brute_force.obj -MD -MP -MF sandbox/$(DEPDIR)/sandbox_brute_force_multiple-brute_force.Tpo -c -o sandbox/sandbox_brute_force_multiple-brute_force.obj `if test -f 'sandbox/brute_force.cc'; then $(CYGPATH_W) 'sandbox/brute_force.cc'; else $(CYGPATH_W) '$(srcdir)/sandbox/brute_force.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) sandbox/$(DEPDIR)/sandbox_brute_force_multiple-brute_force.Tpo sandbox/$(DEPDIR)/sandbox_brute_force_multiple-brute_force.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sandbox/brute_force.cc' object='sandbox/sandbox_brute_force_multiple-brute_force.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_multiple_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sandbox/sandbox_brute_force_multiple-brute_force.obj `if test -f 'sandbox/brute_force.cc'; then $(CYGPATH_W) 'sandbox/brute_force.cc'; else $(CYGPATH_W) '$(srcdir)/sandbox/brute_force.cc'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
