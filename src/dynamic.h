@@ -25,8 +25,8 @@ extern "C" {
         blosum62[map[ch1-'A']][map[ch2-'A']]
 #define NEG_ADD(x, y) \
         (((y)<0)&&((x)<(INT_MIN-y)) ? INT_MIN : (x)+(y))
-#define MAX(x, y) \
-        (((x)>(y))? (x) : (y))
+#define MIN(x, y) (((x)<(y))? (x) : (y))
+#define MAX(x, y) (((x)>(y))? (x) : (y))
 #define MIN_VAL (-20000000)
 
 enum {OPEN = -10, GAP = -1};

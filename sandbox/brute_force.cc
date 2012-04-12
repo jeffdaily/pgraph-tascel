@@ -55,7 +55,8 @@ ProcGroup* pgrp = NULL;
 UniformTaskCollSplitHybrid* utcs[NUM_WORKERS];
 long edge_counts[NUM_WORKERS];
 long align_counts[NUM_WORKERS];
-long long align_times[NUM_WORKERS];
+long long align_times_tot[NUM_WORKERS];
+long long align_times_min[NUM_WORKERS];
 long long align_times_max[NUM_WORKERS];
 // Synchronization for worker threads
 pthread_barrier_t workersStart, workersEnd;
@@ -218,6 +219,7 @@ static void alignment_task(
         ++align_counts[thd];
 
         if (is_edge_answer) {
+#if DEBUG
             cout << trank(thd)
                 << ": aligned " << seq_id[0] << " " << seq_id[1]
                 << ": (score,ndig,alen)=("
@@ -225,10 +227,12 @@ static void alignment_task(
                 << result.ndig << ","
                 << result.alen << ")"
                 << ": edge? " << is_edge_answer << endl;
+#endif
             ++edge_counts[thd];
         }
         t = timer_end(t);
-        align_times[thd] += t;
+        align_times_tot[thd] += t;
+        align_times_min[thd] = MIN(align_times_min[thd],t);
         align_times_max[thd] = MAX(align_times_max[thd],t);
 #if MULTIPLE_PAIRS_PER_TASK
         next_combination(2, seq_id);
@@ -492,7 +496,8 @@ int main(int argc, char **argv)
         UniformTaskCollSplitHybrid*& utc = utcs[worker];
         edge_counts[worker] = 0;
         align_counts[worker] = 0;
-        align_times[worker] = 0;
+        align_times_tot[worker] = 0;
+        align_times_min[worker] = LLONG_MAX;
         align_times_max[worker] = 0;
         TslFuncRegTbl *frt = new TslFuncRegTbl();
         TslFunc tf = frt->add(alignment_task);
@@ -540,28 +545,32 @@ int main(int argc, char **argv)
 #endif
                 utcs[worker]->addTask(&desc, sizeof(desc));
             }
+#if DEBUG
             printf("%d(%d): %lu tasks [%lu..%lu)\n",
                     rank, threadRanks[worker], count,
                     lower_limit, upper_limit+remainder);
+#endif
         }
         else {
+#if DEBUG
             printf("%d(%d): %lu tasks [%lu..%lu)\n",
                     rank, threadRanks[worker], count,
                     lower_limit, upper_limit);
+#endif
         }
     }
 
     amBarrier();
 
 #if defined(THREADED)
-#if defined(SET_AFFINITY)
+//#if defined(SET_AFFINITY)
     cpu_set_t cpuset;
     pthread_t thread;
     CPU_ZERO(&cpuset);
     thread = pthread_self();
     CPU_SET(0, &cpuset);
     pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
-#endif
+//#endif
 
     pthread_barrier_init(&workersStart, 0, NUM_WORKERS);
     pthread_barrier_init(&workersEnd, 0, NUM_WORKERS);
@@ -606,13 +615,69 @@ int main(int argc, char **argv)
 
     amBarrier();
 
+    long align_counts_workers = 0;
+    long align_counts_all = 0;
+    long long align_times_workers = 0;
+    long long align_times_all = 0;
+
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
-        printf("%d(%d) %ld edges in %ld alignments taking %lld ms total time and %lld longest single task time\n",
-                rank, worker, edge_counts[worker], align_counts[worker],
-                align_times[worker], align_times_max[worker]);
+#if DEBUG
+        printf("%4d(%2d) edges=%10ld alignments=%10ld times_tot=%20lld times_avg=%10.2lf times_min=%20lld times_max=%20lld\n",
+                rank, worker,
+                edge_counts[worker],
+                align_counts[worker],
+                align_times_tot[worker],
+                1.0*align_times_tot[worker]/align_counts[worker],
+                align_times_min[worker],
+                align_times_max[worker]);
+#endif
+        align_counts_workers += align_counts[worker];
+        align_times_workers += align_times_tot[worker];
     }
-    for (int worker=0; worker<NUM_WORKERS; ++worker) {
-        utcs[worker]->printStats();
+
+    MPI_Allreduce(&align_counts_workers, &align_counts_all, 1, MPI_LONG, 
+            MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&align_times_workers, &align_times_all, 1, MPI_LONG_LONG, 
+            MPI_SUM, MPI_COMM_WORLD);
+
+    amBarrier();
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    /* synchronously print stealing stats all from process 0 */
+    if (0 == rank) {
+        cout << utcs[0]->getStats().getHeader() << endl;
+        for (int worker=0; worker<NUM_WORKERS; ++worker) {
+            cout << utcs[worker]->getStats().getStats() << endl;
+        }
+        for (int p=1; p<nprocs; ++p) {
+            for (int w=0; w<NUM_WORKERS; ++w) {
+                MPI_Status stat;
+                int len;
+                char *msg;
+                MPI_Recv(&len, 1, MPI_INT, p, 1234+w, MPI_COMM_WORLD, &stat);
+                msg = new char[len];
+                MPI_Recv(msg, len, MPI_CHAR, p, 1234+w, MPI_COMM_WORLD, &stat);
+                printf("%s\n", msg);
+                delete [] msg;
+            }
+        }
+    }
+    else {
+        for (int w=0; w<NUM_WORKERS; ++w) {
+            string msg = utcs[w]->getStats().getStats();
+            int len = msg.size() + 1;
+            MPI_Send(&len, 1, MPI_INT, 0, 1234+w, MPI_COMM_WORLD);
+            MPI_Send((void*)msg.c_str(), len, MPI_CHAR, 0, 1234+w,
+                    MPI_COMM_WORLD);
+        }
+    }
+
+    amBarrier();
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    if (0 == trank(0)) {
+        cout << "align_counts_all=" << align_counts_all << endl;
+        cout << "align_times_all=" << align_times_all << endl;
     }
 
     /* clean up */
