@@ -6346,8 +6346,6 @@ ga_save_CPPFLAGS="$CPPFLAGS"; CPPFLAGS="$CPPFLAGS $GMP_CPPFLAGS"
 ac_fn_cxx_check_header_mongrel "$LINENO" "gmp.h" "ac_cv_header_gmp_h" "$ac_includes_default"
 if test "x$ac_cv_header_gmp_h" = xyes; then :
 
-else
-  as_fn_error $? "gmp package not found" "$LINENO" 5
 fi
 
 
@@ -6428,8 +6426,6 @@ $as_echo "#define HAVE_GMP 1" >>confdefs.h
 
 
 
-else
-  as_fn_error $? "gmp package not found" "$LINENO" 5
 fi
  if test "x$ga_cv_search___gmpz_bin_uiui" != xno; then
   HAVE_GMP_TRUE=
