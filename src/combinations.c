@@ -1,13 +1,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#if HAVE_GMP
 #include <gmp.h>
+#endif
 
 #include "combinations.h"
 
 
 unsigned long binomial_coefficient(unsigned long n, unsigned long k)
 {
+#if HAVE_GMP
     mpz_t mpz_answer;
     unsigned long ui_answer;
 
@@ -24,6 +27,17 @@ unsigned long binomial_coefficient(unsigned long n, unsigned long k)
     mpz_clear(mpz_answer);
 
     return ui_answer;
+#else
+    /* from http://blog.plover.com/math/choose.html */
+    unsigned long r = 1;
+    unsigned long d;
+    if (k > n) return 0;
+    for (d=1; d <= k; d++) {
+        r *= n--;
+        r /= d;
+    }
+    return r;
+#endif
 }
 
 

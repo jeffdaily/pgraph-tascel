@@ -8,7 +8,6 @@
 #include <tascel.h>
 #include <tascel/UniformTaskCollection.h>
 #include <tascel/UniformTaskCollSplitHybrid.h>
-#include <gmp.h>
 
 #include <sys/time.h>
 
