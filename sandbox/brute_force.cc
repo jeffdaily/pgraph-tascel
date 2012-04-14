@@ -647,7 +647,7 @@ int main(int argc, char **argv)
 
     StealingStats stt[NUM_WORKERS];
     for(unsigned i=0; i<NUM_WORKERS; i++) {
-      stt[i] = utcs[i]->stats();
+      stt[i] = utcs[i]->getStats();
     }
 
     StealingStats * rstt = new StealingStats[NUM_WORKERS*nprocs];
