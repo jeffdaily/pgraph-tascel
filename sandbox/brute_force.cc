@@ -19,6 +19,7 @@
 #include <string>
 #include <strstream>
 #include <vector>
+#include <iomanip>
 
 #include "combinations.h"
 #include "dynamic.h"
@@ -609,10 +610,11 @@ int main(int argc, char **argv)
     amBarrier();
 #endif
 
+#if 0
     for (int i = 0; i < NUM_WORKERS; i++) {
         utcs[i]->restore();
     }
-
+#endif
     amBarrier();
 
     long align_counts_workers = 0;
@@ -643,34 +645,25 @@ int main(int argc, char **argv)
     amBarrier();
     MPI_Barrier(MPI_COMM_WORLD);
 
+    StealingStats stt[NUM_WORKERS];
+    for(unsigned i=0; i<NUM_WORKERS; i++) {
+      stt[i] = utcs[i]->stats();
+    }
+
+    StealingStats * rstt = new StealingStats[NUM_WORKERS*nprocs];
+    MPI_Gather(stt, sizeof(StealingStats)*NUM_WORKERS, MPI_CHAR, 
+	       rstt, sizeof(StealingStats)*NUM_WORKERS, MPI_CHAR, 
+	       0, MPI_COMM_WORLD);
+
     /* synchronously print stealing stats all from process 0 */
     if (0 == rank) {
-        cout << utcs[0]->getStats().getHeader() << endl;
-        for (int worker=0; worker<NUM_WORKERS; ++worker) {
-            cout << utcs[worker]->getStats().getStats() << endl;
-        }
-        for (int p=1; p<nprocs; ++p) {
-            for (int w=0; w<NUM_WORKERS; ++w) {
-                MPI_Status stat;
-                int len;
-                char *msg;
-                MPI_Recv(&len, 1, MPI_INT, p, 1234+w, MPI_COMM_WORLD, &stat);
-                msg = new char[len];
-                MPI_Recv(msg, len, MPI_CHAR, p, 1234+w, MPI_COMM_WORLD, &stat);
-                printf("%s\n", msg);
-                delete [] msg;
-            }
-        }
+      cout<<" pid "<<rstt[0].formatString()<<endl;      
+      for(unsigned i=0; i<nprocs*NUM_WORKERS; i++) {
+	cout<<std::setw(4)<<std::right<<i<<rstt[i]<<endl;
+      }
     }
-    else {
-        for (int w=0; w<NUM_WORKERS; ++w) {
-            string msg = utcs[w]->getStats().getStats();
-            int len = msg.size() + 1;
-            MPI_Send(&len, 1, MPI_INT, 0, 1234+w, MPI_COMM_WORLD);
-            MPI_Send((void*)msg.c_str(), len, MPI_CHAR, 0, 1234+w,
-                    MPI_COMM_WORLD);
-        }
-    }
+    delete [] rstt;
+    rstt=NULL;
 
     amBarrier();
     MPI_Barrier(MPI_COMM_WORLD);
