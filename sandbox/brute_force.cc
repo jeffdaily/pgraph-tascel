@@ -470,8 +470,8 @@ int main(int argc, char **argv)
     unsigned long tasks_per_worker = nCk / global_num_workers;
     unsigned long max_tasks_per_worker = nCk / global_num_workers;
     max_tasks_per_worker += nCk % global_num_workers;
-    max_tasks_per_worker *= 10;
 #endif
+    max_tasks_per_worker *= 10;
     if (0 == trank(0)) {
 #if MULTIPLE_PAIRS_PER_TASK
         printf("combinations_per_task=%lu\n", combinations_per_task);
