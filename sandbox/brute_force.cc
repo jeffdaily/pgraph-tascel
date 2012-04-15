@@ -15,6 +15,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cmath>
 #include <iostream>
 #include <string>
 #include <strstream>
@@ -450,14 +451,19 @@ int main(int argc, char **argv)
 
 #if MULTIPLE_PAIRS_PER_TASK
     /* set the combinations_per_task variable */
-    if (all_argv.size() == 3) {
+    if (all_argv.size() >= 3) {
         combinations_per_task = strtoll(all_argv[2].c_str(), NULL, 10);
     }
     else {
         combinations_per_task = sequences.size();
     }
-    unsigned long ntasks = nCk / combinations_per_task;
-    if (nCk % combinations_per_task != 0) {
+    double selectivity = 1.0;
+    if (all_argv.size() == 4) {
+      selectivity  = fabs(min(1.0,atof(all_argv[3].c_str())));
+    }
+    unsigned long nalignments = (long)(0.5+selectivity*nCk);
+    unsigned long ntasks = nalignments / combinations_per_task;
+    if (nalignments % combinations_per_task != 0) {
         ntasks += 1;
     }
     unsigned long global_num_workers = nprocs*NUM_WORKERS;
@@ -465,17 +471,24 @@ int main(int argc, char **argv)
     unsigned long max_tasks_per_worker = ntasks / global_num_workers;
     max_tasks_per_worker += ntasks % global_num_workers;
 #else
-    unsigned long ntasks = nCk;
+    double selectivity = 1.0;
+    if (all_argv.size() == 3) {
+      selectivity  = fabs(min(1.0,atof(all_argv[2].c_str())));
+    }
+    unsigned long nalignments = (long)(0.5+selectivity*nCk);
+    unsigned long ntasks = nalignments;
     unsigned long global_num_workers = nprocs*NUM_WORKERS;
-    unsigned long tasks_per_worker = nCk / global_num_workers;
-    unsigned long max_tasks_per_worker = nCk / global_num_workers;
-    max_tasks_per_worker += nCk % global_num_workers;
+    unsigned long tasks_per_worker = ntasks / global_num_workers;
+    unsigned long max_tasks_per_worker = ntasks / global_num_workers;
+    max_tasks_per_worker += ntasks % global_num_workers;
 #endif
     max_tasks_per_worker *= 10;
     if (0 == trank(0)) {
 #if MULTIPLE_PAIRS_PER_TASK
         printf("combinations_per_task=%lu\n", combinations_per_task);
 #endif
+        printf("selectivity=%lf\n", selectivity);
+        printf("nalignments=%lu\n", nalignments);
         printf("ntasks=%lu\n", ntasks);
         printf("global_num_workers=%lu\n", global_num_workers);
         printf("tasks_per_worker=%lu\n", tasks_per_worker);
@@ -657,10 +670,14 @@ int main(int argc, char **argv)
 
     /* synchronously print stealing stats all from process 0 */
     if (0 == rank) {
+      StealingStats tstt;
       cout<<" pid "<<rstt[0].formatString()<<endl;      
       for(unsigned i=0; i<nprocs*NUM_WORKERS; i++) {
+	tstt += rstt[i];
 	cout<<std::setw(4)<<std::right<<i<<rstt[i]<<endl;
       }
+      cout<<"=============================================="<<endl;
+      cout<<tstt<<endl;
     }
     delete [] rstt;
     rstt=NULL;
