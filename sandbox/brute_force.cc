@@ -279,7 +279,7 @@ static void alignment_task(
     }
 }
 
-void populate_tasks(unsigned long ntasks, unsigned long tasks_per_worker, int worker)
+unsigned long populate_tasks(unsigned long ntasks, unsigned long tasks_per_worker, int worker)
 {
     task_description desc;
     int wrank = trank(worker);
@@ -319,13 +319,15 @@ void populate_tasks(unsigned long ntasks, unsigned long tasks_per_worker, int wo
             utcs[worker]->addTask(&desc, sizeof(desc));
         }
     }
+
+    return count;
 }
 
-void populate_tasks_rr(unsigned long ntasks, int worker)
+unsigned long populate_tasks_rr(unsigned long ntasks, int worker)
 {
     task_description desc;
     int nworkers = nprocs * NUM_WORKERS;
-    int wrank = trank(worker)+1;
+    int wrank = trank(worker);
     unsigned long count = 0;
 
 #if MULTIPLE_PAIRS_PER_TASK
@@ -349,6 +351,8 @@ void populate_tasks_rr(unsigned long ntasks, int worker)
         next_combination(2, seq_id);
 #endif
     }
+
+    return count;
 }
 
 int main(int argc, char **argv)
@@ -373,12 +377,12 @@ int main(int argc, char **argv)
 #else
     MPI_CHECK(MPI_Init(&argc, &argv));
 #endif
-    MPI_CHECK(MPI_Comm_rank(MPI_COMM_WORLD, &rank));
-    MPI_CHECK(MPI_Comm_size(MPI_COMM_WORLD, &nprocs));
     MPI_CHECK(MPI_Comm_dup(MPI_COMM_WORLD, &comm));
+    MPI_CHECK(MPI_Comm_rank(comm, &rank));
+    MPI_CHECK(MPI_Comm_size(comm, &nprocs));
 
     /* initialize tascel */
-    TascelConfig::initialize(NUM_WORKERS, MPI_COMM_WORLD);
+    TascelConfig::initialize(NUM_WORKERS, comm);
     pgrp = ProcGroup::construct();
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
         threadRanks[worker] = worker;
@@ -614,6 +618,8 @@ int main(int argc, char **argv)
     }
 
     /* the tascel part */
+    unsigned long count[NUM_WORKERS];
+    unsigned long global_count = 0;
     for (int worker=0; worker<NUM_WORKERS; ++worker)
     {
         UniformTaskCollSplitHybrid*& utc = utcs[worker];
@@ -627,11 +633,31 @@ int main(int argc, char **argv)
 
         /* add some tasks */
 #if ROUND_ROBIN_SEQUENCE_PAIRS
-        populate_tasks_rr(ntasks, worker);
+        count[worker] = populate_tasks_rr(ntasks, worker);
 #else
-        populate_tasks(ntasks, tasks_per_worker, worker);
+        count[worker] = populate_tasks(ntasks, tasks_per_worker, worker);
 #endif
     }
+#if DEBUG
+    unsigned long *task_counts = new unsigned long[nprocs*NUM_WORKERS];
+    MPI_CHECK(MPI_Gather(count, NUM_WORKERS, MPI_UNSIGNED_LONG,
+                task_counts, NUM_WORKERS, MPI_UNSIGNED_LONG, 0, comm));
+    if (0 == rank) {
+        unsigned long tally = 0;
+        cout << " pid        ntasks" << endl;
+        for(unsigned i=0; i<nprocs*NUM_WORKERS; i++) {
+            tally += task_counts[i];
+            cout << std::setw(4) << std::right << i
+                << setw(14) << task_counts[i] << endl;
+        }
+        cout << "==============================================" << endl;
+        cout << setw(4) << right << "T" << setw(14) << tally << endl;
+        if (tally != ntasks) {
+            cout << "tally != ntasks\t" << tally << " != " << ntasks << endl;
+        }
+    }
+    delete [] task_counts;
+#endif
 
     amBarrier();
 
@@ -660,7 +686,7 @@ int main(int argc, char **argv)
 #if defined(THREADED)
     serverEnabled = true;
     pthread_barrier_wait(&serverStart);
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(comm);
     pthread_barrier_wait(&workersStart);
 #endif
 
@@ -689,12 +715,12 @@ int main(int argc, char **argv)
 #endif
 
     amBarrier();
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(comm);
 
     AlignStats * rstats = new AlignStats[NUM_WORKERS*nprocs];
     MPI_Gather(stats, sizeof(AlignStats)*NUM_WORKERS, MPI_CHAR, 
 	       rstats, sizeof(AlignStats)*NUM_WORKERS, MPI_CHAR, 
-	       0, MPI_COMM_WORLD);
+	       0, comm);
 
     /* synchronously print alignment stats all from process 0 */
     if (0 == rank) {
@@ -705,7 +731,7 @@ int main(int argc, char **argv)
             cout << std::setw(4) << std::right << i << rstats[i] << endl;
         }
         cout << "==============================================" << endl;
-        cout << setw(4) << right << "N" << totals << endl;
+        cout << setw(4) << right << "TOT" << totals << endl;
     }
     delete [] rstats;
     rstats=NULL;
@@ -718,7 +744,7 @@ int main(int argc, char **argv)
     StealingStats * rstt = new StealingStats[NUM_WORKERS*nprocs];
     MPI_Gather(stt, sizeof(StealingStats)*NUM_WORKERS, MPI_CHAR, 
 	       rstt, sizeof(StealingStats)*NUM_WORKERS, MPI_CHAR, 
-	       0, MPI_COMM_WORLD);
+	       0, comm);
 
     /* synchronously print stealing stats all from process 0 */
     if (0 == rank) {
@@ -729,13 +755,13 @@ int main(int argc, char **argv)
 	cout<<std::setw(4)<<std::right<<i<<rstt[i]<<endl;
       }
       cout<<"=============================================="<<endl;
-      cout<<tstt<<endl;
+      cout<<"TOT "<<tstt<<endl;
     }
     delete [] rstt;
     rstt=NULL;
 
     amBarrier();
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(comm);
 
     /* clean up */
     delete [] file_buffer;
