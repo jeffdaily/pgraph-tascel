@@ -12,15 +12,16 @@
 #include <sys/time.h>
 
 #include <algorithm>
+#include <cfloat>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <cmath>
+#include <iomanip>
 #include <iostream>
 #include <string>
 #include <strstream>
 #include <vector>
-#include <iomanip>
 
 #include "combinations.h"
 #include "dynamic.h"
@@ -54,11 +55,52 @@ int **ins[NUM_WORKERS];
 vector<string> sequences;
 ProcGroup* pgrp = NULL;
 UniformTaskCollSplitHybrid* utcs[NUM_WORKERS];
-long edge_counts[NUM_WORKERS];
-long align_counts[NUM_WORKERS];
-long long align_times_tot[NUM_WORKERS];
-long long align_times_min[NUM_WORKERS];
-long long align_times_max[NUM_WORKERS];
+
+class AlignStats {
+    public:
+        unsigned long edge_counts;
+        unsigned long align_counts;
+        double align_times_tot;
+        double align_times_min;
+        double align_times_max;
+
+        AlignStats()
+            : edge_counts(0)
+            , align_counts(0)
+            , align_times_tot(0.0)
+            , align_times_min(DBL_MAX)
+            , align_times_max(DBL_MIN)
+        { }
+
+        AlignStats& operator +=(const AlignStats &other) {
+            edge_counts += other.edge_counts;
+            align_counts += other.align_counts;
+            align_times_tot += other.align_times_tot;
+            align_times_min = MIN(align_times_min,other.align_times_min);
+            align_times_max = MAX(align_times_max,other.align_times_max);
+            return *this;
+        }
+
+        string getHeader() const {
+            return "    Edges  Alignments   Total_Time     Min_Time     Max_Time     Avg_Time";
+        }
+
+        friend ostream& operator << (ostream &os, const AlignStats &stats) {
+            int p = os.precision();
+            os.precision(2);
+            os << setw(10) << stats.edge_counts
+               << setw(10) << stats.align_counts
+               << setw(12) << fixed << showpoint << stats.align_times_tot
+               << setw(12) << fixed << showpoint << stats.align_times_min
+               << setw(12) << fixed << showpoint << stats.align_times_max
+               << setw(12) << fixed << showpoint << (stats.align_times_tot/stats.align_counts);
+            os.precision(p); // undo state change
+            return os;
+        }
+};
+
+AlignStats stats[NUM_WORKERS];
+
 // Synchronization for worker threads
 pthread_barrier_t workersStart, workersEnd;
 // Synchronization for server thread
@@ -66,19 +108,11 @@ pthread_barrier_t serverStart, serverEnd;
 static pthread_t threadHandles[NUM_WORKERS + NUM_SERVERS];
 static unsigned threadRanks[NUM_WORKERS + NUM_SERVERS];
 volatile bool serverEnabled = true;
+
+#if MULTIPLE_PAIRS_PER_TASK
 unsigned long combinations_per_task=0;
+#endif
 
-static unsigned long long timer_start()
-{
-    struct timeval timer;
-    (void)gettimeofday(&timer, NULL);
-    return timer.tv_sec * 1000000 + timer.tv_usec;
-}
-
-static unsigned long long timer_end(unsigned long long begin)
-{
-    return timer_start() - begin;
-}
 
 void *serverThd(void *args)
 {
@@ -188,7 +222,7 @@ static void alignment_task(
     cell_t result;
     is_edge_param_t param;
     int is_edge_answer = 0;
-    long long t = 0;
+    double t = 0;
     unsigned long i;
 
 #if MULTIPLE_PAIRS_PER_TASK
@@ -205,7 +239,7 @@ static void alignment_task(
             break;
         }
 #endif
-        t = timer_start();
+        t = MPI_Wtime();
         affine_gap_align(
                 sequences[seq_id[0]].c_str(), sequences[seq_id[0]].size(),
                 sequences[seq_id[1]].c_str(), sequences[seq_id[1]].size(),
@@ -217,7 +251,7 @@ static void alignment_task(
                 sequences[seq_id[0]].c_str(), sequences[seq_id[0]].size(),
                 sequences[seq_id[1]].c_str(), sequences[seq_id[1]].size(),
                 param);
-        ++align_counts[thd];
+        ++stats[thd].align_counts;
 
         if (is_edge_answer) {
 #if DEBUG
@@ -229,12 +263,12 @@ static void alignment_task(
                 << result.alen << ")"
                 << ": edge? " << is_edge_answer << endl;
 #endif
-            ++edge_counts[thd];
+            ++stats[thd].edge_counts;
         }
-        t = timer_end(t);
-        align_times_tot[thd] += t;
-        align_times_min[thd] = MIN(align_times_min[thd],t);
-        align_times_max[thd] = MAX(align_times_max[thd],t);
+        t = MPI_Wtime() - t;
+        stats[thd].align_times_tot += t;
+        stats[thd].align_times_min = MIN(stats[thd].align_times_min,t);
+        stats[thd].align_times_max = MAX(stats[thd].align_times_max,t);
 #if MULTIPLE_PAIRS_PER_TASK
         next_combination(2, seq_id);
 #endif
@@ -508,11 +542,6 @@ int main(int argc, char **argv)
     for (int worker=0; worker<NUM_WORKERS; ++worker)
     {
         UniformTaskCollSplitHybrid*& utc = utcs[worker];
-        edge_counts[worker] = 0;
-        align_counts[worker] = 0;
-        align_times_tot[worker] = 0;
-        align_times_min[worker] = LLONG_MAX;
-        align_times_max[worker] = 0;
         TslFuncRegTbl *frt = new TslFuncRegTbl();
         TslFunc tf = frt->add(alignment_task);
         TaskCollProps props;
@@ -628,35 +657,28 @@ int main(int argc, char **argv)
         utcs[i]->restore();
     }
 #endif
-    amBarrier();
-
-    long align_counts_workers = 0;
-    long align_counts_all = 0;
-    long long align_times_workers = 0;
-    long long align_times_all = 0;
-
-    for (int worker=0; worker<NUM_WORKERS; ++worker) {
-#if DEBUG
-        printf("%4d(%2d) edges=%10ld alignments=%10ld times_tot=%20lld times_avg=%10.2lf times_min=%20lld times_max=%20lld\n",
-                rank, worker,
-                edge_counts[worker],
-                align_counts[worker],
-                align_times_tot[worker],
-                1.0*align_times_tot[worker]/align_counts[worker],
-                align_times_min[worker],
-                align_times_max[worker]);
-#endif
-        align_counts_workers += align_counts[worker];
-        align_times_workers += align_times_tot[worker];
-    }
-
-    MPI_Allreduce(&align_counts_workers, &align_counts_all, 1, MPI_LONG, 
-            MPI_SUM, MPI_COMM_WORLD);
-    MPI_Allreduce(&align_times_workers, &align_times_all, 1, MPI_LONG_LONG, 
-            MPI_SUM, MPI_COMM_WORLD);
 
     amBarrier();
     MPI_Barrier(MPI_COMM_WORLD);
+
+    AlignStats * rstats = new AlignStats[NUM_WORKERS*nprocs];
+    MPI_Gather(stats, sizeof(AlignStats)*NUM_WORKERS, MPI_CHAR, 
+	       rstats, sizeof(StealingStats)*NUM_WORKERS, MPI_CHAR, 
+	       0, MPI_COMM_WORLD);
+
+    /* synchronously print alignment stats all from process 0 */
+    if (0 == rank) {
+        AlignStats totals;
+        cout<<" pid "<<rstats[0].getHeader()<<endl;      
+        for(unsigned i=0; i<nprocs*NUM_WORKERS; i++) {
+            totals += rstats[i];
+            cout<<std::setw(4)<<std::right<<i<<rstats[i]<<endl;
+        }
+        cout<<"=============================================="<<endl;
+        cout<<totals<<endl;
+    }
+    delete [] rstats;
+    rstats=NULL;
 
     StealingStats stt[NUM_WORKERS];
     for(unsigned i=0; i<NUM_WORKERS; i++) {
@@ -684,11 +706,6 @@ int main(int argc, char **argv)
 
     amBarrier();
     MPI_Barrier(MPI_COMM_WORLD);
-
-    if (0 == trank(0)) {
-        cout << "align_counts_all=" << align_counts_all << endl;
-        cout << "align_times_all=" << align_times_all << endl;
-    }
 
     /* clean up */
     delete [] file_buffer;
