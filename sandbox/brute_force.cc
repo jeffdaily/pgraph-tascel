@@ -82,18 +82,18 @@ class AlignStats {
         }
 
         string getHeader() const {
-            return "    Edges  Alignments   Total_Time     Min_Time     Max_Time     Avg_Time";
+            return "  Edges Alignments   Total_Time     Min_Time     Max_Time     Avg_Time";
         }
 
         friend ostream& operator << (ostream &os, const AlignStats &stats) {
             int p = os.precision();
-            os.precision(2);
-            os << setw(10) << stats.edge_counts
-               << setw(10) << stats.align_counts
-               << setw(12) << fixed << showpoint << stats.align_times_tot
-               << setw(12) << fixed << showpoint << stats.align_times_min
-               << setw(12) << fixed << showpoint << stats.align_times_max
-               << setw(12) << fixed << showpoint << (stats.align_times_tot/stats.align_counts);
+            os.precision(4);
+            os << setw(7) << stats.edge_counts
+               << setw(11) << stats.align_counts
+               << setw(13) << fixed << showpoint << stats.align_times_tot
+               << setw(13) << fixed << showpoint << stats.align_times_min
+               << setw(13) << fixed << showpoint << stats.align_times_max
+               << setw(13) << fixed << showpoint << (stats.align_times_tot/stats.align_counts);
             os.precision(p); // undo state change
             return os;
         }
@@ -663,19 +663,19 @@ int main(int argc, char **argv)
 
     AlignStats * rstats = new AlignStats[NUM_WORKERS*nprocs];
     MPI_Gather(stats, sizeof(AlignStats)*NUM_WORKERS, MPI_CHAR, 
-	       rstats, sizeof(StealingStats)*NUM_WORKERS, MPI_CHAR, 
+	       rstats, sizeof(AlignStats)*NUM_WORKERS, MPI_CHAR, 
 	       0, MPI_COMM_WORLD);
 
     /* synchronously print alignment stats all from process 0 */
     if (0 == rank) {
         AlignStats totals;
-        cout<<" pid "<<rstats[0].getHeader()<<endl;      
+        cout << " pid" << rstats[0].getHeader() << endl;      
         for(unsigned i=0; i<nprocs*NUM_WORKERS; i++) {
             totals += rstats[i];
-            cout<<std::setw(4)<<std::right<<i<<rstats[i]<<endl;
+            cout << std::setw(4) << std::right << i << rstats[i] << endl;
         }
-        cout<<"=============================================="<<endl;
-        cout<<totals<<endl;
+        cout << "==============================================" << endl;
+        cout << setw(4) << right << "N" << totals << endl;
     }
     delete [] rstats;
     rstats=NULL;
