@@ -33,6 +33,10 @@ using namespace tascel;
 #define MULTIPLE_PAIRS_PER_TASK 0
 #endif
 
+#ifndef ROUND_ROBIN_SEQUENCE_PAIRS
+#define ROUND_ROBIN_SEQUENCE_PAIRS 1
+#endif
+
 #define ARG_LEN_MAX 1024
 
 #define MPI_CHECK(what) do {                              \
@@ -275,6 +279,77 @@ static void alignment_task(
     }
 }
 
+void populate_tasks(unsigned long ntasks, unsigned long tasks_per_worker, int worker)
+{
+    task_description desc;
+    int wrank = trank(worker);
+    unsigned long count = 0;
+    unsigned long i;
+    unsigned long lower_limit = wrank*tasks_per_worker;
+    unsigned long upper_limit = lower_limit + tasks_per_worker;
+    unsigned long remainder = ntasks % (nprocs*NUM_WORKERS);
+
+#if MULTIPLE_PAIRS_PER_TASK
+#else
+    unsigned long seq_id[2];
+    k_combination(lower_limit, 2, seq_id);
+#endif
+    for (i=lower_limit; i<upper_limit; ++i) {
+        count++;
+#if MULTIPLE_PAIRS_PER_TASK
+        desc.id = i;
+#else
+        desc.id1 = seq_id[0];
+        desc.id2 = seq_id[1];
+        next_combination(2, seq_id);
+#endif
+        utcs[worker]->addTask(&desc, sizeof(desc));
+    }
+    /* if I'm the last worker, add the remainder of the tasks */
+    if (wrank == nprocs*NUM_WORKERS-1) {
+        for (/*ignore*/; i<upper_limit+remainder; ++i) {
+            count++;
+#if MULTIPLE_PAIRS_PER_TASK
+            desc.id = i;
+#else
+            desc.id1 = seq_id[0];
+            desc.id2 = seq_id[1];
+            next_combination(2, seq_id);
+#endif
+            utcs[worker]->addTask(&desc, sizeof(desc));
+        }
+    }
+}
+
+void populate_tasks_rr(unsigned long ntasks, int worker)
+{
+    task_description desc;
+    int nworkers = nprocs * NUM_WORKERS;
+    int wrank = trank(worker)+1;
+    unsigned long count = 0;
+
+#if MULTIPLE_PAIRS_PER_TASK
+#else
+    unsigned long seq_id[2];
+    init_combination(2, seq_id);
+#endif
+    for (unsigned long i=0; i<ntasks; ++i) {
+        if (i%nworkers == wrank) {
+            count++;
+#if MULTIPLE_PAIRS_PER_TASK
+            desc.id = i;
+#else
+            desc.id1 = seq_id[0];
+            desc.id2 = seq_id[1];
+#endif
+            utcs[worker]->addTask(&desc, sizeof(desc));
+        }
+#if MULTIPLE_PAIRS_PER_TASK
+#else
+        next_combination(2, seq_id);
+#endif
+    }
+}
 
 int main(int argc, char **argv)
 {
@@ -550,57 +625,12 @@ int main(int argc, char **argv)
             .maxTasks(max_tasks_per_worker);
         utc = new UniformTaskCollSplitHybrid(props, worker);
 
-        /* add some tasks, different amounts to different tranks */
-        task_description desc;
-        unsigned long count = 0;
-
-        unsigned long i;
-        unsigned long lower_limit = trank(worker)*tasks_per_worker;
-        unsigned long upper_limit = lower_limit + tasks_per_worker;
-        unsigned long remainder = ntasks % global_num_workers;
-
-#if MULTIPLE_PAIRS_PER_TASK
+        /* add some tasks */
+#if ROUND_ROBIN_SEQUENCE_PAIRS
+        populate_tasks_rr(ntasks, worker);
 #else
-        unsigned long seq_id[2];
-        k_combination(lower_limit, 2, seq_id);
+        populate_tasks(ntasks, tasks_per_worker, worker);
 #endif
-        for (i=lower_limit; i<upper_limit; ++i) {
-            count++;
-#if MULTIPLE_PAIRS_PER_TASK
-            desc.id = i;
-#else
-            desc.id1 = seq_id[0];
-            desc.id2 = seq_id[1];
-            next_combination(2, seq_id);
-#endif
-            utcs[worker]->addTask(&desc, sizeof(desc));
-        }
-        /* if I'm the last worker, add the remainder of the tasks */
-        if (trank(worker) == nprocs*NUM_WORKERS-1) {
-            for (/*ignore*/; i<upper_limit+remainder; ++i) {
-                count++;
-#if MULTIPLE_PAIRS_PER_TASK
-                desc.id = i;
-#else
-                desc.id1 = seq_id[0];
-                desc.id2 = seq_id[1];
-                next_combination(2, seq_id);
-#endif
-                utcs[worker]->addTask(&desc, sizeof(desc));
-            }
-#if DEBUG
-            printf("%d(%d): %lu tasks [%lu..%lu)\n",
-                    rank, threadRanks[worker], count,
-                    lower_limit, upper_limit+remainder);
-#endif
-        }
-        else {
-#if DEBUG
-            printf("%d(%d): %lu tasks [%lu..%lu)\n",
-                    rank, threadRanks[worker], count,
-                    lower_limit, upper_limit);
-#endif
-        }
     }
 
     amBarrier();
