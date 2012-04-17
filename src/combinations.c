@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -69,7 +70,7 @@ void k_combination(unsigned long pos, unsigned long k, unsigned long *result)
 
 void init_combination(unsigned long k, unsigned long *combination)
 {
-    size_t i;
+    unsigned long i;
 
     for (i=0; i<k; ++i) {
         combination[i] = i;
@@ -79,7 +80,7 @@ void init_combination(unsigned long k, unsigned long *combination)
 
 void next_combination(unsigned long k, unsigned long *combination)
 {
-    size_t i;
+    unsigned long i;
 
     /* as we find position to increment, reset values */
     for (i=0; i<k-1; ++i) {
@@ -92,4 +93,69 @@ void next_combination(unsigned long k, unsigned long *combination)
     }
     /* increment it */
     ++combination[i];
+}
+
+
+void inc_combination(
+        unsigned long inc, unsigned long k, unsigned long *combination)
+{
+    unsigned long pos = 0;
+    unsigned long i = 0;
+
+    /* special case 2 combination for faster compute */
+    if (2 == k) {
+        inc_2combination(inc, combination);
+    }
+    else {
+        /* find starting position, reset values */
+        for (pos=0; pos<k-1; ++pos) {
+            if (combination[pos]+1 < combination[pos+1]) {
+                break;
+            }
+            else {
+                combination[pos] = pos;
+            }
+        }
+
+        while (i < inc) {
+            if (pos == k-1 || combination[pos]+1 < combination[pos+1]) {
+                /* move all left */
+                while (pos>0 && i<inc) {
+                    ++i;
+                    ++combination[pos];
+                    --pos;
+                }
+                if (i<inc) {
+                    ++i;
+                    ++combination[pos];
+                }
+            }
+            else {
+                while (pos<k-1 && combination[pos]+1 == combination[pos+1]) {
+                    combination[pos] = pos;
+                    ++pos;
+                }
+            }
+        }
+    }
+}
+
+
+void inc_2combination(unsigned long inc, unsigned long *combination)
+{
+    unsigned long i = 0;
+
+    assert(combination[0] < combination[1]);
+    while (i < inc) {
+        unsigned long diff = combination[1] - combination[0];
+        if ((inc-i) < diff) { 
+            combination[0] += inc-i;
+            break;
+        }
+        else {
+            i += diff;
+            combination[0] = 0;
+            ++combination[1];
+        }
+    }
 }

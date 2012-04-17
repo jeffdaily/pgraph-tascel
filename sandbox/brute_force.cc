@@ -33,6 +33,12 @@ using namespace tascel;
 #define MULTIPLE_PAIRS_PER_TASK 0
 #endif
 
+/* MULTIPLE_PAIRS_PER_TASK with ROUND_ROBIN_SEQUENCE_PAIRS not supported */
+#if MULTIPLE_PAIRS_PER_TASK
+#undef ROUND_ROBIN_SEQUENCE_PAIRS
+#define ROUND_ROBIN_SEQUENCE_PAIRS 0
+#endif
+
 #ifndef ROUND_ROBIN_SEQUENCE_PAIRS
 #define ROUND_ROBIN_SEQUENCE_PAIRS 1
 #endif
@@ -279,6 +285,34 @@ static void alignment_task(
     }
 }
 
+#if ROUND_ROBIN_SEQUENCE_PAIRS
+unsigned long populate_tasks_rr(unsigned long ntasks, int worker)
+{
+    task_description desc;
+    int nworkers = nprocs * NUM_WORKERS;
+    int wrank = trank(worker);
+    unsigned long count = 0;
+    unsigned long seq_id[2];
+    unsigned long nseq = sequences.size();
+
+    init_combination(2, seq_id); /* seq_id = {0,1} */
+    inc_2combination(wrank, seq_id); /* start seq_id at this worker's rank */
+    while (seq_id[1] < nseq) { /* break out when we get an invalid seq id */
+        desc.id1 = seq_id[0];
+        desc.id2 = seq_id[1];
+#if DEBUG
+        cout << wrank << " added " << seq_id[0] << "," << seq_id[1] << endl;
+#endif
+        utcs[worker]->addTask(&desc, sizeof(desc));
+        count++;
+        inc_2combination(nworkers, seq_id);
+    }
+
+    return count;
+}
+
+#else
+
 unsigned long populate_tasks(unsigned long ntasks, unsigned long tasks_per_worker, int worker)
 {
     task_description desc;
@@ -295,15 +329,18 @@ unsigned long populate_tasks(unsigned long ntasks, unsigned long tasks_per_worke
     k_combination(lower_limit, 2, seq_id);
 #endif
     for (i=lower_limit; i<upper_limit; ++i) {
-        count++;
 #if MULTIPLE_PAIRS_PER_TASK
         desc.id = i;
 #else
         desc.id1 = seq_id[0];
         desc.id2 = seq_id[1];
+#if DEBUG
+        cout << wrank << " added " << seq_id[0] << "," << seq_id[1] << endl;
+#endif
         next_combination(2, seq_id);
 #endif
         utcs[worker]->addTask(&desc, sizeof(desc));
+        count++;
     }
     /* if I'm the last worker, add the remainder of the tasks */
     if (wrank == nprocs*NUM_WORKERS-1) {
@@ -323,37 +360,7 @@ unsigned long populate_tasks(unsigned long ntasks, unsigned long tasks_per_worke
     return count;
 }
 
-unsigned long populate_tasks_rr(unsigned long ntasks, int worker)
-{
-    task_description desc;
-    int nworkers = nprocs * NUM_WORKERS;
-    int wrank = trank(worker);
-    unsigned long count = 0;
-
-#if MULTIPLE_PAIRS_PER_TASK
-#else
-    unsigned long seq_id[2];
-    init_combination(2, seq_id);
 #endif
-    for (unsigned long i=0; i<ntasks; ++i) {
-        if (i%nworkers == wrank) {
-            count++;
-#if MULTIPLE_PAIRS_PER_TASK
-            desc.id = i;
-#else
-            desc.id1 = seq_id[0];
-            desc.id2 = seq_id[1];
-#endif
-            utcs[worker]->addTask(&desc, sizeof(desc));
-        }
-#if MULTIPLE_PAIRS_PER_TASK
-#else
-        next_combination(2, seq_id);
-#endif
-    }
-
-    return count;
-}
 
 int main(int argc, char **argv)
 {
@@ -618,6 +625,7 @@ int main(int argc, char **argv)
     }
 
     /* the tascel part */
+    double populate_times[NUM_WORKERS];
     unsigned long count[NUM_WORKERS];
     unsigned long global_count = 0;
     for (int worker=0; worker<NUM_WORKERS; ++worker)
@@ -632,12 +640,31 @@ int main(int argc, char **argv)
         utc = new UniformTaskCollSplitHybrid(props, worker);
 
         /* add some tasks */
+        populate_times[worker] = MPI_Wtime();
 #if ROUND_ROBIN_SEQUENCE_PAIRS
         count[worker] = populate_tasks_rr(ntasks, worker);
 #else
         count[worker] = populate_tasks(ntasks, tasks_per_worker, worker);
 #endif
+        populate_times[worker] = MPI_Wtime() - populate_times[worker];
     }
+#if DEBUG
+    double *g_populate_times = new double[nprocs*NUM_WORKERS];
+    MPI_CHECK(MPI_Gather(populate_times, NUM_WORKERS, MPI_DOUBLE,
+                g_populate_times, NUM_WORKERS, MPI_DOUBLE, 0, comm));
+    if (0 == rank) {
+        double tally = 0;
+        cout << " pid populate_time" << endl;
+        for(unsigned i=0; i<nprocs*NUM_WORKERS; i++) {
+            tally += g_populate_times[i];
+            cout << std::setw(4) << std::right << i
+                << setw(14) << fixed << g_populate_times[i] << endl;
+        }
+        cout << "==============================================" << endl;
+        cout << setw(4) << right << "T" << setw(14) << fixed << tally << endl;
+    }
+    delete [] g_populate_times;
+#endif
 #if DEBUG
     unsigned long *task_counts = new unsigned long[nprocs*NUM_WORKERS];
     MPI_CHECK(MPI_Gather(count, NUM_WORKERS, MPI_UNSIGNED_LONG,
