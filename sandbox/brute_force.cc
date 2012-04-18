@@ -295,6 +295,12 @@ unsigned long populate_tasks_rr(
     unsigned long count = 0;
     unsigned long seq_id[2];
     unsigned long nseq = sequences.size();
+    unsigned long remainder = ntasks % (nprocs*NUM_WORKERS);
+
+    /* distribute remainder tasks to first 'remainder' workers */
+    if (wrank < remainder) {
+        ++tasks_per_worker;
+    }
 
     init_combination(2, seq_id); /* seq_id = {0,1} */
     inc_2combination(wrank, seq_id); /* start seq_id at this worker's rank */
