@@ -43,6 +43,10 @@ using namespace tascel;
 #define ROUND_ROBIN_SEQUENCE_PAIRS 1
 #endif
 
+#ifndef SORT_TASKS_LOCALLY
+#define SORT_TASKS_LOCALLY 0
+#endif
+
 #define ARG_LEN_MAX 1024
 
 #define MPI_CHECK(what) do {                              \
@@ -216,6 +220,34 @@ typedef struct {
     unsigned long id1;
     unsigned long id2;
 } task_description;
+
+#if SORT_TASKS_LOCALLY
+class SortedTask {
+    public:
+        unsigned long _id1;
+        unsigned long _id2;
+        unsigned long cost;
+        SortedTask()
+            : _id1(0)
+            , _id2(0)
+            , cost(0)
+        { }
+        SortedTask(unsigned long id1, unsigned long id2)
+            : _id1(id1)
+            , _id2(id2)
+            , cost(sequences[id1].size() * sequences[id2].size())
+        { }
+        void assign(unsigned long id1, unsigned long id2) {
+            _id1 = id1;
+            _id2 = id2;
+            cost = sequences[id1].size() * sequences[id2].size();
+        }
+        bool operator < (const SortedTask &other) const {
+            return cost > other.cost;
+        }
+};
+#endif
+
 #endif
 
 static void alignment_task(
@@ -304,6 +336,23 @@ unsigned long populate_tasks_rr(
 
     init_combination(2, seq_id); /* seq_id = {0,1} */
     inc_2combination(wrank, seq_id); /* start seq_id at this worker's rank */
+#if SORT_TASKS_LOCALLY
+    vector<SortedTask> tasks(tasks_per_worker);
+    while (count < tasks_per_worker) {
+        //assert(seq_id[1] < nseq);
+        tasks[count++].assign(seq_id[0], seq_id[1]);
+        inc_2combination(nworkers, seq_id);
+    }
+    sort(tasks.begin(), tasks.end());
+    for (unsigned long i=0; i<count; ++i) {
+        desc.id1 = tasks[i]._id1;
+        desc.id2 = tasks[i]._id2;
+#if DEBUG
+        cout << wrank << " added " << desc.id1 << "," << desc.id2 << " cost=" << tasks[i].cost << endl;
+#endif
+        utcs[worker]->addTask(&desc, sizeof(desc));
+    }
+#else
     while (count < tasks_per_worker) {
         //assert(seq_id[1] < nseq);
         desc.id1 = seq_id[0];
@@ -315,6 +364,7 @@ unsigned long populate_tasks_rr(
         count++;
         inc_2combination(nworkers, seq_id);
     }
+#endif
 
     return count;
 }
