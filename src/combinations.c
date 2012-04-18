@@ -141,11 +141,12 @@ void inc_combination(
 }
 
 
+#if 1
 void inc_2combination(unsigned long inc, unsigned long *combination)
 {
     unsigned long i = 0;
 
-    assert(combination[0] < combination[1]);
+    //assert(combination[0] < combination[1]);
     while (i < inc) {
         unsigned long diff = combination[1] - combination[0];
         if ((inc-i) < diff) { 
@@ -159,3 +160,20 @@ void inc_2combination(unsigned long inc, unsigned long *combination)
         }
     }
 }
+#else
+/* this implementation was easier to understand but turned out to be slower */
+void inc_2combination(unsigned long inc, unsigned long *combination)
+{
+    unsigned long diff = combination[1] - combination[0];
+    if (inc >= diff) {
+        combination[0] = 0;
+        ++combination[1];
+        inc -= diff;
+    }
+    while (inc >= combination[1]) {
+        inc -= combination[1];
+        ++combination[1];
+    }
+    combination[0] += inc;
+}
+#endif

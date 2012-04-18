@@ -286,7 +286,8 @@ static void alignment_task(
 }
 
 #if ROUND_ROBIN_SEQUENCE_PAIRS
-unsigned long populate_tasks_rr(unsigned long ntasks, int worker)
+unsigned long populate_tasks_rr(
+        unsigned long ntasks, unsigned long tasks_per_worker, int worker)
 {
     task_description desc;
     int nworkers = nprocs * NUM_WORKERS;
@@ -297,7 +298,8 @@ unsigned long populate_tasks_rr(unsigned long ntasks, int worker)
 
     init_combination(2, seq_id); /* seq_id = {0,1} */
     inc_2combination(wrank, seq_id); /* start seq_id at this worker's rank */
-    while (seq_id[1] < nseq) { /* break out when we get an invalid seq id */
+    while (count < tasks_per_worker) {
+        //assert(seq_id[1] < nseq);
         desc.id1 = seq_id[0];
         desc.id2 = seq_id[1];
 #if DEBUG
@@ -313,7 +315,8 @@ unsigned long populate_tasks_rr(unsigned long ntasks, int worker)
 
 #else
 
-unsigned long populate_tasks(unsigned long ntasks, unsigned long tasks_per_worker, int worker)
+unsigned long populate_tasks(
+        unsigned long ntasks, unsigned long tasks_per_worker, int worker)
 {
     task_description desc;
     int wrank = trank(worker);
@@ -642,7 +645,7 @@ int main(int argc, char **argv)
         /* add some tasks */
         populate_times[worker] = MPI_Wtime();
 #if ROUND_ROBIN_SEQUENCE_PAIRS
-        count[worker] = populate_tasks_rr(ntasks, worker);
+        count[worker] = populate_tasks_rr(ntasks, tasks_per_worker, worker);
 #else
         count[worker] = populate_tasks(ntasks, tasks_per_worker, worker);
 #endif
