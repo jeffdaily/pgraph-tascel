@@ -9,8 +9,6 @@
 #include <tascel/UniformTaskCollection.h>
 #include <tascel/UniformTaskCollSplitHybrid.h>
 
-#include <sys/time.h>
-
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
@@ -40,11 +38,15 @@ using namespace tascel;
 #endif
 
 #ifndef ROUND_ROBIN_SEQUENCE_PAIRS
-#define ROUND_ROBIN_SEQUENCE_PAIRS 1
+#define ROUND_ROBIN_SEQUENCE_PAIRS 0
 #endif
 
 #ifndef SORT_TASKS_LOCALLY
 #define SORT_TASKS_LOCALLY 0
+#endif
+
+#ifndef SORT_SEQUENCES
+#define SORT_SEQUENCES 0
 #endif
 
 #define ARG_LEN_MAX 1024
@@ -69,6 +71,10 @@ int **ins[NUM_WORKERS];
 vector<string> sequences;
 ProcGroup* pgrp = NULL;
 UniformTaskCollSplitHybrid* utcs[NUM_WORKERS];
+
+bool longest_string_first(const string &i, const string &j) {
+    return i.size() > j.size();
+}
 
 class AlignStats {
     public:
@@ -587,6 +593,26 @@ int main(int argc, char **argv)
         max_seq_len = max(max_seq_len, sequence.size());
     }
     sequence.clear();
+#if SORT_SEQUENCES
+    double *sort_times = new double[nprocs];
+    double  sort_time = MPI_Wtime();
+    /* sort the sequences, largest first */
+    sort(sequences.begin(), sequences.end(), longest_string_first);
+    sort_time = MPI_Wtime() - sort_time;
+    MPI_CHECK(MPI_Gather(&sort_time, 1, MPI_DOUBLE, sort_times, 1, MPI_DOUBLE, 0, comm));
+    if (0 == rank) {
+        double tally = 0;
+        cout << "rank sort_time" << endl;
+        for(unsigned i=0; i<nprocs; i++) {
+            tally += sort_times[i];
+            cout << std::setw(4) << std::right << i
+                << setw(14) << fixed << sort_times[i] << endl;
+        }
+        cout << "==============================================" << endl;
+        cout << setw(4) << right << "T" << setw(14) << fixed << tally << endl;
+    }
+    delete [] sort_times;
+#endif
 #if DEBUG
     /* print the seg_count on each process */
     for (int i=0; i<nprocs; ++i) {
