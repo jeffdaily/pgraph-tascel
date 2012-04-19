@@ -39,6 +39,8 @@ noinst_PROGRAMS += sandbox/brute_force_multiple
 noinst_PROGRAMS += sandbox/brute_force_rr
 noinst_PROGRAMS += sandbox/brute_force_rr_sorted
 noinst_PROGRAMS += sandbox/brute_force_rr_sorted_seq
+noinst_PROGRAMS += sandbox/brute_force_sorted
+noinst_PROGRAMS += sandbox/brute_force_sorted_seq
 noinst_PROGRAMS += sandbox/forest
 noinst_PROGRAMS += sandbox/io_into_shared_memory
 noinst_PROGRAMS += tests/test_combinations
@@ -49,6 +51,8 @@ sandbox_brute_force_multiple_SOURCES       = sandbox/brute_force.cc
 sandbox_brute_force_rr_SOURCES             = sandbox/brute_force.cc
 sandbox_brute_force_rr_sorted_SOURCES      = sandbox/brute_force.cc
 sandbox_brute_force_rr_sorted_seq_SOURCES  = sandbox/brute_force.cc
+sandbox_brute_force_sorted_SOURCES         = sandbox/brute_force.cc
+sandbox_brute_force_sorted_seq_SOURCES     = sandbox/brute_force.cc
 sandbox_forest_SOURCES                     = sandbox/forest.cc
 sandbox_io_into_shared_memory_SOURCES      = sandbox/io_into_shared_memory.c
 tests_test_combinations_SOURCES            = tests/test_combinations.cc
@@ -58,3 +62,5 @@ sandbox_brute_force_multiple_CPPFLAGS      = $(AM_CPPFLAGS) -DMULTIPLE_PAIRS_PER
 sandbox_brute_force_rr_CPPFLAGS            = $(AM_CPPFLAGS) -DROUND_ROBIN_SEQUENCE_PAIRS=1
 sandbox_brute_force_rr_sorted_CPPFLAGS     = $(AM_CPPFLAGS) -DROUND_ROBIN_SEQUENCE_PAIRS=1 -DSORT_TASKS_LOCALLY=1
 sandbox_brute_force_rr_sorted_seq_CPPFLAGS = $(AM_CPPFLAGS) -DROUND_ROBIN_SEQUENCE_PAIRS=1 -DSORT_SEQUENCES=1
+sandbox_brute_force_sorted_CPPFLAGS        = $(AM_CPPFLAGS) -DSORT_TASKS_LOCALLY=1
+sandbox_brute_force_sorted_seq_CPPFLAGS    = $(AM_CPPFLAGS) -DSORT_SEQUENCES=1
