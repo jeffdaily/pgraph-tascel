@@ -341,13 +341,13 @@ unsigned long populate_tasks_rr(
     }
 
     init_combination(2, seq_id); /* seq_id = {0,1} */
-    inc_2combination(wrank, seq_id); /* start seq_id at this worker's rank */
+    inc_combination2(wrank, seq_id); /* start seq_id at this worker's rank */
 #if SORT_TASKS_LOCALLY
     vector<SortedTask> tasks(tasks_per_worker);
     while (count < tasks_per_worker) {
         //assert(seq_id[1] < nseq);
         tasks[count++].assign(seq_id[0], seq_id[1]);
-        inc_2combination(nworkers, seq_id);
+        inc_combination2(nworkers, seq_id);
     }
     sort(tasks.begin(), tasks.end());
     for (unsigned long i=0; i<count; ++i) {
@@ -368,7 +368,7 @@ unsigned long populate_tasks_rr(
 #endif
         utcs[worker]->addTask(&desc, sizeof(desc));
         count++;
-        inc_2combination(nworkers, seq_id);
+        inc_combination2(nworkers, seq_id);
     }
 #endif
 

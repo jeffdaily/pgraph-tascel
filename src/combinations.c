@@ -126,7 +126,7 @@ void inc_combination(
 
     /* special case 2 combination for faster compute */
     if (2 == k) {
-        inc_2combination(inc, combination);
+        inc_combination2(inc, combination);
     }
     else {
         /* find starting position, reset values */
@@ -164,7 +164,7 @@ void inc_combination(
 
 
 #if 1
-void inc_2combination(unsigned long inc, unsigned long *combination)
+void inc_combination2(unsigned long inc, unsigned long *combination)
 {
     unsigned long i = 0;
 
@@ -184,7 +184,7 @@ void inc_2combination(unsigned long inc, unsigned long *combination)
 }
 #else
 /* this implementation was easier to understand but turned out to be slower */
-void inc_2combination(unsigned long inc, unsigned long *combination)
+void inc_combination2(unsigned long inc, unsigned long *combination)
 {
     unsigned long diff = combination[1] - combination[0];
     if (inc >= diff) {
