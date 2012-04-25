@@ -34,6 +34,7 @@ libpgraph_la_SOURCES += src/dynamic.c
 libpgraph_la_SOURCES += src/dynamic.h
 
 noinst_PROGRAMS =
+noinst_PROGRAMS += sandbox/blast
 noinst_PROGRAMS += sandbox/brute_force
 noinst_PROGRAMS += sandbox/brute_force_multiple
 noinst_PROGRAMS += sandbox/brute_force_rr
@@ -46,6 +47,7 @@ noinst_PROGRAMS += sandbox/io_into_shared_memory
 noinst_PROGRAMS += tests/test_combinations
 noinst_PROGRAMS += tests/test_dynamic
 
+sandbox_blast_SOURCES                      = sandbox/blast.cc
 sandbox_brute_force_SOURCES                = sandbox/brute_force.cc
 sandbox_brute_force_multiple_SOURCES       = sandbox/brute_force.cc
 sandbox_brute_force_rr_SOURCES             = sandbox/brute_force.cc
