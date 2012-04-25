@@ -118,7 +118,7 @@ int main(int argc, char **argv)
     }
 
     if (retcode != EXIT_FAILURE) {
-        retcode = test(2, 111, 127);
+        retcode = test(2, 111, 12700);
     }
 
     return retcode;

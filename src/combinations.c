@@ -6,6 +6,8 @@
 #include <gmp.h>
 #endif
 
+#include <math.h>
+
 #include "combinations.h"
 
 
@@ -49,6 +51,9 @@ void k_combination(unsigned long pos, unsigned long k, unsigned long *result)
     unsigned long bc;
     unsigned long bc_previous;
 
+    if (2 == k) {
+        k_combination2(pos, result);
+    }
     for (i=k; i>0; --i) {
         if (0 == pos) {
             result[i-1] = i-1;
@@ -65,6 +70,23 @@ void k_combination(unsigned long pos, unsigned long k, unsigned long *result)
         pos -= bc_previous;
         result[i-1] = n-1;
     }
+}
+
+
+void k_combination2(unsigned long pos, unsigned long *result)
+{
+    double s;
+    double i = floor(sqrt(2.0*pos)) - 1.0;
+    if (i <= 1) {
+        i = 1.0;
+    }
+    s = i*(i-1.0)/2.0;
+    while (pos-s >= i) {
+        s += i;
+        i += 1;
+    }
+    result[0] = pos-s;
+    result[1] = i;
 }
 
 
