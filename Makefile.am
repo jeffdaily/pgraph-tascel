@@ -46,9 +46,13 @@ noinst_PROGRAMS += sandbox/forest
 noinst_PROGRAMS += sandbox/io_into_shared_memory
 noinst_PROGRAMS += tests/test_combinations
 noinst_PROGRAMS += tests/test_dynamic
+if HAVE_UTC_ITER
+noinst_PROGRAMS += sandbox/brute_force_iter
+endif
 
 sandbox_blast_SOURCES                      = sandbox/blast.cc
 sandbox_brute_force_SOURCES                = sandbox/brute_force.cc
+sandbox_brute_force_iter_SOURCES           = sandbox/brute_force_iter.cc
 sandbox_brute_force_multiple_SOURCES       = sandbox/brute_force.cc
 sandbox_brute_force_rr_SOURCES             = sandbox/brute_force.cc
 sandbox_brute_force_rr_sorted_SOURCES      = sandbox/brute_force.cc

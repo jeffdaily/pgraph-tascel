@@ -43,7 +43,9 @@ noinst_PROGRAMS = sandbox/blast$(EXEEXT) sandbox/brute_force$(EXEEXT) \
 	sandbox/brute_force_sorted$(EXEEXT) \
 	sandbox/brute_force_sorted_seq$(EXEEXT) \
 	sandbox/forest$(EXEEXT) sandbox/io_into_shared_memory$(EXEEXT) \
-	tests/test_combinations$(EXEEXT) tests/test_dynamic$(EXEEXT)
+	tests/test_combinations$(EXEEXT) tests/test_dynamic$(EXEEXT) \
+	$(am__EXEEXT_1)
+@HAVE_UTC_ITER_TRUE@am__append_1 = sandbox/brute_force_iter
 subdir = .
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/config.h.in \
@@ -75,6 +77,7 @@ libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
+@HAVE_UTC_ITER_TRUE@am__EXEEXT_1 = sandbox/brute_force_iter$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_sandbox_blast_OBJECTS = sandbox/blast.$(OBJEXT)
 sandbox_blast_OBJECTS = $(am_sandbox_blast_OBJECTS)
@@ -87,6 +90,14 @@ sandbox_brute_force_OBJECTS = $(am_sandbox_brute_force_OBJECTS)
 sandbox_brute_force_LDADD = $(LDADD)
 sandbox_brute_force_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am_sandbox_brute_force_iter_OBJECTS =  \
+	sandbox/brute_force_iter.$(OBJEXT)
+sandbox_brute_force_iter_OBJECTS =  \
+	$(am_sandbox_brute_force_iter_OBJECTS)
+sandbox_brute_force_iter_LDADD = $(LDADD)
+sandbox_brute_force_iter_DEPENDENCIES = libpgraph.la \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_sandbox_brute_force_multiple_OBJECTS =  \
 	sandbox/sandbox_brute_force_multiple-brute_force.$(OBJEXT)
 sandbox_brute_force_multiple_OBJECTS =  \
@@ -203,6 +214,7 @@ am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
 SOURCES = $(libpgraph_la_SOURCES) $(sandbox_blast_SOURCES) \
 	$(sandbox_brute_force_SOURCES) \
+	$(sandbox_brute_force_iter_SOURCES) \
 	$(sandbox_brute_force_multiple_SOURCES) \
 	$(sandbox_brute_force_rr_SOURCES) \
 	$(sandbox_brute_force_rr_sorted_SOURCES) \
@@ -215,6 +227,7 @@ SOURCES = $(libpgraph_la_SOURCES) $(sandbox_blast_SOURCES) \
 	$(tests_test_dynamic_SOURCES)
 DIST_SOURCES = $(libpgraph_la_SOURCES) $(sandbox_blast_SOURCES) \
 	$(sandbox_brute_force_SOURCES) \
+	$(sandbox_brute_force_iter_SOURCES) \
 	$(sandbox_brute_force_multiple_SOURCES) \
 	$(sandbox_brute_force_rr_SOURCES) \
 	$(sandbox_brute_force_rr_sorted_SOURCES) \
@@ -383,6 +396,7 @@ libpgraph_la_SOURCES = src/combinations.c src/combinations.h \
 	src/dynamic.c src/dynamic.h
 sandbox_blast_SOURCES = sandbox/blast.cc
 sandbox_brute_force_SOURCES = sandbox/brute_force.cc
+sandbox_brute_force_iter_SOURCES = sandbox/brute_force_iter.cc
 sandbox_brute_force_multiple_SOURCES = sandbox/brute_force.cc
 sandbox_brute_force_rr_SOURCES = sandbox/brute_force.cc
 sandbox_brute_force_rr_sorted_SOURCES = sandbox/brute_force.cc
@@ -499,6 +513,11 @@ sandbox/brute_force.$(OBJEXT): sandbox/$(am__dirstamp) \
 sandbox/brute_force$(EXEEXT): $(sandbox_brute_force_OBJECTS) $(sandbox_brute_force_DEPENDENCIES) sandbox/$(am__dirstamp)
 	@rm -f sandbox/brute_force$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_OBJECTS) $(sandbox_brute_force_LDADD) $(LIBS)
+sandbox/brute_force_iter.$(OBJEXT): sandbox/$(am__dirstamp) \
+	sandbox/$(DEPDIR)/$(am__dirstamp)
+sandbox/brute_force_iter$(EXEEXT): $(sandbox_brute_force_iter_OBJECTS) $(sandbox_brute_force_iter_DEPENDENCIES) sandbox/$(am__dirstamp)
+	@rm -f sandbox/brute_force_iter$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_iter_OBJECTS) $(sandbox_brute_force_iter_LDADD) $(LIBS)
 sandbox/sandbox_brute_force_multiple-brute_force.$(OBJEXT):  \
 	sandbox/$(am__dirstamp) sandbox/$(DEPDIR)/$(am__dirstamp)
 sandbox/brute_force_multiple$(EXEEXT): $(sandbox_brute_force_multiple_OBJECTS) $(sandbox_brute_force_multiple_DEPENDENCIES) sandbox/$(am__dirstamp)
@@ -560,6 +579,7 @@ mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 	-rm -f sandbox/blast.$(OBJEXT)
 	-rm -f sandbox/brute_force.$(OBJEXT)
+	-rm -f sandbox/brute_force_iter.$(OBJEXT)
 	-rm -f sandbox/forest.$(OBJEXT)
 	-rm -f sandbox/io_into_shared_memory.$(OBJEXT)
 	-rm -f sandbox/sandbox_brute_force_multiple-brute_force.$(OBJEXT)
@@ -580,6 +600,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/blast.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force_iter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/forest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/io_into_shared_memory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sandbox_brute_force_multiple-brute_force.Po@am__quote@

@@ -648,6 +648,8 @@ HAVE_GMP_TRUE
 GMP_CPPFLAGS
 GMP_LDFLAGS
 GMP_LIBS
+HAVE_UTC_ITER_FALSE
+HAVE_UTC_ITER_TRUE
 TASCEL_CPPFLAGS
 TASCEL_LDFLAGS
 TASCEL_LIBS
@@ -6189,6 +6191,76 @@ See \`config.log' for more details" "$LINENO" 5; }
 fi
 
 
+
+# whether tascel has UniformTaskCollSplitIter
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether libtascel has UniformTaskCollSplitIter" >&5
+$as_echo_n "checking whether libtascel has UniformTaskCollSplitIter... " >&6; }
+ga_save_LIBS="$LIBS"
+ga_save_LDFLAGS="$LDFLAGS"
+ga_save_CPPFLAGS="$CPPFLAGS"
+LIBS="$TASCEL_LIBS $GA_LIBS $PT_MPI_LIBS $LIBS $GA_FLIBS"
+LDFLAGS="$TASCEL_LDFLAGS $GA_LDFLAGS $PT_MPI_LDFLAGS $LDFLAGS"
+CPPFLAGS="$TASCEL_CPPFLAGS $GA_CPPFLAGS $PT_MPI_CPPFLAGS $CPPFLAGS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <mpi.h>
+#include <tascel.h>
+#include <tascel/UniformTaskCollIter.h>
+#include <vector>
+using namespace std;
+using namespace tascel;
+static void alignment_task(
+        UniformTaskCollection *utc,
+        void *_bigd, int bigd_len,
+        void *pldata, int pldata_len,
+        vector<void *> data_bufs, int thd) { }
+typedef int task_description;
+
+int
+main ()
+{
+
+  int dummy_argc;
+  char **dummy_argv;
+  ProcRank me;
+  ProcRank nproc;
+  int provided;
+  const unsigned int numIntraRanks=1;
+  MPI_Init_thread(&dummy_argc, &dummy_argv, MPI_THREAD_MULTIPLE, &provided);
+  TascelConfig::initialize(numIntraRanks, MPI_COMM_WORLD);
+  me = theTwoSided().getProcRank();
+  nproc = theTwoSided().numProcRanks();
+  TslFuncRegTbl *frt = new TslFuncRegTbl();
+  TslFunc tf = frt->add(alignment_task);
+  TaskCollProps props;
+  props.functions(tf, frt)
+      .taskSize(sizeof(task_description));
+  UniformTaskCollIter utc(props, NULL, 0, -1, 0);
+  TascelConfig::finalize();
+  MPI_Finalize();
+  return 0;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  happy=yes
+else
+  happy=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $happy" >&5
+$as_echo "$happy" >&6; }
+ if test "x$happy" = xyes; then
+  HAVE_UTC_ITER_TRUE=
+  HAVE_UTC_ITER_FALSE='#'
+else
+  HAVE_UTC_ITER_TRUE='#'
+  HAVE_UTC_ITER_FALSE=
+fi
 
 
 
@@ -17017,6 +17089,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${am__fastdepCXX_TRUE}" && test -z "${am__fastdepCXX_FALSE}"; then
   as_fn_error $? "conditional \"am__fastdepCXX\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_UTC_ITER_TRUE}" && test -z "${HAVE_UTC_ITER_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_UTC_ITER\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${HAVE_GMP_TRUE}" && test -z "${HAVE_GMP_FALSE}"; then
