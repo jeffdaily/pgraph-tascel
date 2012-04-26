@@ -206,7 +206,7 @@ static void alignment_task(
 
     seq_id[0] = task_id / sequences.size();
     seq_id[1] = task_id % sequences.size();
-    if (seq_id[0] != seq_id[1])
+    //if (seq_id[0] != seq_id[1])
     {
         t = MPI_Wtime();
         affine_gap_align(
