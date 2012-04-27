@@ -36,6 +36,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = sandbox/blast$(EXEEXT) sandbox/brute_force$(EXEEXT) \
+	sandbox/brute_force_binning$(EXEEXT) \
 	sandbox/brute_force_multiple$(EXEEXT) \
 	sandbox/brute_force_rr$(EXEEXT) \
 	sandbox/brute_force_rr_sorted$(EXEEXT) \
@@ -90,6 +91,14 @@ sandbox_brute_force_OBJECTS = $(am_sandbox_brute_force_OBJECTS)
 sandbox_brute_force_LDADD = $(LDADD)
 sandbox_brute_force_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am_sandbox_brute_force_binning_OBJECTS =  \
+	sandbox/brute_force_binning.$(OBJEXT)
+sandbox_brute_force_binning_OBJECTS =  \
+	$(am_sandbox_brute_force_binning_OBJECTS)
+sandbox_brute_force_binning_LDADD = $(LDADD)
+sandbox_brute_force_binning_DEPENDENCIES = libpgraph.la \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_sandbox_brute_force_iter_OBJECTS =  \
 	sandbox/brute_force_iter.$(OBJEXT)
 sandbox_brute_force_iter_OBJECTS =  \
@@ -214,6 +223,7 @@ am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
 SOURCES = $(libpgraph_la_SOURCES) $(sandbox_blast_SOURCES) \
 	$(sandbox_brute_force_SOURCES) \
+	$(sandbox_brute_force_binning_SOURCES) \
 	$(sandbox_brute_force_iter_SOURCES) \
 	$(sandbox_brute_force_multiple_SOURCES) \
 	$(sandbox_brute_force_rr_SOURCES) \
@@ -227,6 +237,7 @@ SOURCES = $(libpgraph_la_SOURCES) $(sandbox_blast_SOURCES) \
 	$(tests_test_dynamic_SOURCES)
 DIST_SOURCES = $(libpgraph_la_SOURCES) $(sandbox_blast_SOURCES) \
 	$(sandbox_brute_force_SOURCES) \
+	$(sandbox_brute_force_binning_SOURCES) \
 	$(sandbox_brute_force_iter_SOURCES) \
 	$(sandbox_brute_force_multiple_SOURCES) \
 	$(sandbox_brute_force_rr_SOURCES) \
@@ -396,6 +407,7 @@ libpgraph_la_SOURCES = src/combinations.c src/combinations.h \
 	src/dynamic.c src/dynamic.h
 sandbox_blast_SOURCES = sandbox/blast.cc
 sandbox_brute_force_SOURCES = sandbox/brute_force.cc
+sandbox_brute_force_binning_SOURCES = sandbox/brute_force_binning.cc
 sandbox_brute_force_iter_SOURCES = sandbox/brute_force_iter.cc
 sandbox_brute_force_multiple_SOURCES = sandbox/brute_force.cc
 sandbox_brute_force_rr_SOURCES = sandbox/brute_force.cc
@@ -513,6 +525,11 @@ sandbox/brute_force.$(OBJEXT): sandbox/$(am__dirstamp) \
 sandbox/brute_force$(EXEEXT): $(sandbox_brute_force_OBJECTS) $(sandbox_brute_force_DEPENDENCIES) sandbox/$(am__dirstamp)
 	@rm -f sandbox/brute_force$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_OBJECTS) $(sandbox_brute_force_LDADD) $(LIBS)
+sandbox/brute_force_binning.$(OBJEXT): sandbox/$(am__dirstamp) \
+	sandbox/$(DEPDIR)/$(am__dirstamp)
+sandbox/brute_force_binning$(EXEEXT): $(sandbox_brute_force_binning_OBJECTS) $(sandbox_brute_force_binning_DEPENDENCIES) sandbox/$(am__dirstamp)
+	@rm -f sandbox/brute_force_binning$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_binning_OBJECTS) $(sandbox_brute_force_binning_LDADD) $(LIBS)
 sandbox/brute_force_iter.$(OBJEXT): sandbox/$(am__dirstamp) \
 	sandbox/$(DEPDIR)/$(am__dirstamp)
 sandbox/brute_force_iter$(EXEEXT): $(sandbox_brute_force_iter_OBJECTS) $(sandbox_brute_force_iter_DEPENDENCIES) sandbox/$(am__dirstamp)
@@ -579,6 +596,7 @@ mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 	-rm -f sandbox/blast.$(OBJEXT)
 	-rm -f sandbox/brute_force.$(OBJEXT)
+	-rm -f sandbox/brute_force_binning.$(OBJEXT)
 	-rm -f sandbox/brute_force_iter.$(OBJEXT)
 	-rm -f sandbox/forest.$(OBJEXT)
 	-rm -f sandbox/io_into_shared_memory.$(OBJEXT)
@@ -600,6 +618,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/blast.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force_binning.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force_iter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/forest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/io_into_shared_memory.Po@am__quote@

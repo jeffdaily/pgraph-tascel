@@ -36,6 +36,7 @@ libpgraph_la_SOURCES += src/dynamic.h
 noinst_PROGRAMS =
 noinst_PROGRAMS += sandbox/blast
 noinst_PROGRAMS += sandbox/brute_force
+noinst_PROGRAMS += sandbox/brute_force_binning
 noinst_PROGRAMS += sandbox/brute_force_multiple
 noinst_PROGRAMS += sandbox/brute_force_rr
 noinst_PROGRAMS += sandbox/brute_force_rr_sorted
@@ -52,6 +53,7 @@ endif
 
 sandbox_blast_SOURCES                      = sandbox/blast.cc
 sandbox_brute_force_SOURCES                = sandbox/brute_force.cc
+sandbox_brute_force_binning_SOURCES        = sandbox/brute_force_binning.cc
 sandbox_brute_force_iter_SOURCES           = sandbox/brute_force_iter.cc
 sandbox_brute_force_multiple_SOURCES       = sandbox/brute_force.cc
 sandbox_brute_force_rr_SOURCES             = sandbox/brute_force.cc
