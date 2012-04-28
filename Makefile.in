@@ -37,6 +37,7 @@ build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = sandbox/blast$(EXEEXT) sandbox/brute_force$(EXEEXT) \
 	sandbox/brute_force_binning$(EXEEXT) \
+	sandbox/brute_force_costs$(EXEEXT) \
 	sandbox/brute_force_multiple$(EXEEXT) \
 	sandbox/brute_force_rr$(EXEEXT) \
 	sandbox/brute_force_rr_sorted$(EXEEXT) \
@@ -45,7 +46,7 @@ noinst_PROGRAMS = sandbox/blast$(EXEEXT) sandbox/brute_force$(EXEEXT) \
 	sandbox/brute_force_sorted_seq$(EXEEXT) \
 	sandbox/forest$(EXEEXT) sandbox/io_into_shared_memory$(EXEEXT) \
 	tests/test_combinations$(EXEEXT) tests/test_dynamic$(EXEEXT) \
-	$(am__EXEEXT_1)
+	tests/test_read$(EXEEXT) $(am__EXEEXT_1)
 @HAVE_UTC_ITER_TRUE@am__append_1 = sandbox/brute_force_iter
 subdir = .
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
@@ -97,6 +98,14 @@ sandbox_brute_force_binning_OBJECTS =  \
 	$(am_sandbox_brute_force_binning_OBJECTS)
 sandbox_brute_force_binning_LDADD = $(LDADD)
 sandbox_brute_force_binning_DEPENDENCIES = libpgraph.la \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
+am_sandbox_brute_force_costs_OBJECTS =  \
+	sandbox/sandbox_brute_force_costs-brute_force.$(OBJEXT)
+sandbox_brute_force_costs_OBJECTS =  \
+	$(am_sandbox_brute_force_costs_OBJECTS)
+sandbox_brute_force_costs_LDADD = $(LDADD)
+sandbox_brute_force_costs_DEPENDENCIES = libpgraph.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 am_sandbox_brute_force_iter_OBJECTS =  \
@@ -179,6 +188,11 @@ tests_test_dynamic_OBJECTS = $(am_tests_test_dynamic_OBJECTS)
 tests_test_dynamic_LDADD = $(LDADD)
 tests_test_dynamic_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am_tests_test_read_OBJECTS = tests/test_read.$(OBJEXT)
+tests_test_read_OBJECTS = $(am_tests_test_read_OBJECTS)
+tests_test_read_LDADD = $(LDADD)
+tests_test_read_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__depfiles_maybe = depfiles
@@ -224,6 +238,7 @@ am__v_GEN_0 = @echo "  GEN   " $@;
 SOURCES = $(libpgraph_la_SOURCES) $(sandbox_blast_SOURCES) \
 	$(sandbox_brute_force_SOURCES) \
 	$(sandbox_brute_force_binning_SOURCES) \
+	$(sandbox_brute_force_costs_SOURCES) \
 	$(sandbox_brute_force_iter_SOURCES) \
 	$(sandbox_brute_force_multiple_SOURCES) \
 	$(sandbox_brute_force_rr_SOURCES) \
@@ -234,10 +249,11 @@ SOURCES = $(libpgraph_la_SOURCES) $(sandbox_blast_SOURCES) \
 	$(sandbox_forest_SOURCES) \
 	$(sandbox_io_into_shared_memory_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
-	$(tests_test_dynamic_SOURCES)
+	$(tests_test_dynamic_SOURCES) $(tests_test_read_SOURCES)
 DIST_SOURCES = $(libpgraph_la_SOURCES) $(sandbox_blast_SOURCES) \
 	$(sandbox_brute_force_SOURCES) \
 	$(sandbox_brute_force_binning_SOURCES) \
+	$(sandbox_brute_force_costs_SOURCES) \
 	$(sandbox_brute_force_iter_SOURCES) \
 	$(sandbox_brute_force_multiple_SOURCES) \
 	$(sandbox_brute_force_rr_SOURCES) \
@@ -248,7 +264,7 @@ DIST_SOURCES = $(libpgraph_la_SOURCES) $(sandbox_blast_SOURCES) \
 	$(sandbox_forest_SOURCES) \
 	$(sandbox_io_into_shared_memory_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
-	$(tests_test_dynamic_SOURCES)
+	$(tests_test_dynamic_SOURCES) $(tests_test_read_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -395,7 +411,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I m4
 AM_CFLAGS = 
-AM_CXXFLAGS = 
+# this flag is supported by g++ and icpc
+AM_CXXFLAGS = -Wno-deprecated
 AM_CPPFLAGS = $(TASCEL_CPPFLAGS) $(GA_CPPFLAGS) $(PT_MPI_CPPFLAGS) \
 	$(GMP_CPPFLAGS) -I$(top_srcdir)/src
 AM_LDFLAGS = $(TASCEL_LDFLAGS) $(GA_LDFLAGS) $(PT_MPI_LDFLAGS) \
@@ -408,6 +425,7 @@ libpgraph_la_SOURCES = src/combinations.c src/combinations.h \
 sandbox_blast_SOURCES = sandbox/blast.cc
 sandbox_brute_force_SOURCES = sandbox/brute_force.cc
 sandbox_brute_force_binning_SOURCES = sandbox/brute_force_binning.cc
+sandbox_brute_force_costs_SOURCES = sandbox/brute_force.cc
 sandbox_brute_force_iter_SOURCES = sandbox/brute_force_iter.cc
 sandbox_brute_force_multiple_SOURCES = sandbox/brute_force.cc
 sandbox_brute_force_rr_SOURCES = sandbox/brute_force.cc
@@ -419,6 +437,8 @@ sandbox_forest_SOURCES = sandbox/forest.cc
 sandbox_io_into_shared_memory_SOURCES = sandbox/io_into_shared_memory.c
 tests_test_combinations_SOURCES = tests/test_combinations.cc
 tests_test_dynamic_SOURCES = tests/test_dynamic.c
+tests_test_read_SOURCES = tests/test_read.cc
+sandbox_brute_force_costs_CPPFLAGS = $(AM_CPPFLAGS) -DDUMP_COSTS=1
 sandbox_brute_force_multiple_CPPFLAGS = $(AM_CPPFLAGS) -DMULTIPLE_PAIRS_PER_TASK=1
 sandbox_brute_force_rr_CPPFLAGS = $(AM_CPPFLAGS) -DROUND_ROBIN_SEQUENCE_PAIRS=1
 sandbox_brute_force_rr_sorted_CPPFLAGS = $(AM_CPPFLAGS) -DROUND_ROBIN_SEQUENCE_PAIRS=1 -DSORT_TASKS_LOCALLY=1
@@ -530,6 +550,11 @@ sandbox/brute_force_binning.$(OBJEXT): sandbox/$(am__dirstamp) \
 sandbox/brute_force_binning$(EXEEXT): $(sandbox_brute_force_binning_OBJECTS) $(sandbox_brute_force_binning_DEPENDENCIES) sandbox/$(am__dirstamp)
 	@rm -f sandbox/brute_force_binning$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_binning_OBJECTS) $(sandbox_brute_force_binning_LDADD) $(LIBS)
+sandbox/sandbox_brute_force_costs-brute_force.$(OBJEXT):  \
+	sandbox/$(am__dirstamp) sandbox/$(DEPDIR)/$(am__dirstamp)
+sandbox/brute_force_costs$(EXEEXT): $(sandbox_brute_force_costs_OBJECTS) $(sandbox_brute_force_costs_DEPENDENCIES) sandbox/$(am__dirstamp)
+	@rm -f sandbox/brute_force_costs$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_costs_OBJECTS) $(sandbox_brute_force_costs_LDADD) $(LIBS)
 sandbox/brute_force_iter.$(OBJEXT): sandbox/$(am__dirstamp) \
 	sandbox/$(DEPDIR)/$(am__dirstamp)
 sandbox/brute_force_iter$(EXEEXT): $(sandbox_brute_force_iter_OBJECTS) $(sandbox_brute_force_iter_DEPENDENCIES) sandbox/$(am__dirstamp)
@@ -591,6 +616,11 @@ tests/test_dynamic.$(OBJEXT): tests/$(am__dirstamp) \
 tests/test_dynamic$(EXEEXT): $(tests_test_dynamic_OBJECTS) $(tests_test_dynamic_DEPENDENCIES) tests/$(am__dirstamp)
 	@rm -f tests/test_dynamic$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(tests_test_dynamic_OBJECTS) $(tests_test_dynamic_LDADD) $(LIBS)
+tests/test_read.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+tests/test_read$(EXEEXT): $(tests_test_read_OBJECTS) $(tests_test_read_DEPENDENCIES) tests/$(am__dirstamp)
+	@rm -f tests/test_read$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_read_OBJECTS) $(tests_test_read_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -600,6 +630,7 @@ mostlyclean-compile:
 	-rm -f sandbox/brute_force_iter.$(OBJEXT)
 	-rm -f sandbox/forest.$(OBJEXT)
 	-rm -f sandbox/io_into_shared_memory.$(OBJEXT)
+	-rm -f sandbox/sandbox_brute_force_costs-brute_force.$(OBJEXT)
 	-rm -f sandbox/sandbox_brute_force_multiple-brute_force.$(OBJEXT)
 	-rm -f sandbox/sandbox_brute_force_rr-brute_force.$(OBJEXT)
 	-rm -f sandbox/sandbox_brute_force_rr_sorted-brute_force.$(OBJEXT)
@@ -612,6 +643,7 @@ mostlyclean-compile:
 	-rm -f src/dynamic.lo
 	-rm -f tests/test_combinations.$(OBJEXT)
 	-rm -f tests/test_dynamic.$(OBJEXT)
+	-rm -f tests/test_read.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
@@ -622,6 +654,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force_iter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/forest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/io_into_shared_memory.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sandbox_brute_force_costs-brute_force.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sandbox_brute_force_multiple-brute_force.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sandbox_brute_force_rr-brute_force.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sandbox_brute_force_rr_sorted-brute_force.Po@am__quote@
@@ -632,6 +665,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/dynamic.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_combinations.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_dynamic.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_read.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -686,6 +720,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
+
+sandbox/sandbox_brute_force_costs-brute_force.o: sandbox/brute_force.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_costs_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sandbox/sandbox_brute_force_costs-brute_force.o -MD -MP -MF sandbox/$(DEPDIR)/sandbox_brute_force_costs-brute_force.Tpo -c -o sandbox/sandbox_brute_force_costs-brute_force.o `test -f 'sandbox/brute_force.cc' || echo '$(srcdir)/'`sandbox/brute_force.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) sandbox/$(DEPDIR)/sandbox_brute_force_costs-brute_force.Tpo sandbox/$(DEPDIR)/sandbox_brute_force_costs-brute_force.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sandbox/brute_force.cc' object='sandbox/sandbox_brute_force_costs-brute_force.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_costs_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sandbox/sandbox_brute_force_costs-brute_force.o `test -f 'sandbox/brute_force.cc' || echo '$(srcdir)/'`sandbox/brute_force.cc
+
+sandbox/sandbox_brute_force_costs-brute_force.obj: sandbox/brute_force.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_costs_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sandbox/sandbox_brute_force_costs-brute_force.obj -MD -MP -MF sandbox/$(DEPDIR)/sandbox_brute_force_costs-brute_force.Tpo -c -o sandbox/sandbox_brute_force_costs-brute_force.obj `if test -f 'sandbox/brute_force.cc'; then $(CYGPATH_W) 'sandbox/brute_force.cc'; else $(CYGPATH_W) '$(srcdir)/sandbox/brute_force.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) sandbox/$(DEPDIR)/sandbox_brute_force_costs-brute_force.Tpo sandbox/$(DEPDIR)/sandbox_brute_force_costs-brute_force.Po
+@am__fastdepCXX_FALSE@	$(AM_V_CXX) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sandbox/brute_force.cc' object='sandbox/sandbox_brute_force_costs-brute_force.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_costs_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sandbox/sandbox_brute_force_costs-brute_force.obj `if test -f 'sandbox/brute_force.cc'; then $(CYGPATH_W) 'sandbox/brute_force.cc'; else $(CYGPATH_W) '$(srcdir)/sandbox/brute_force.cc'; fi`
 
 sandbox/sandbox_brute_force_multiple-brute_force.o: sandbox/brute_force.cc
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_multiple_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sandbox/sandbox_brute_force_multiple-brute_force.o -MD -MP -MF sandbox/$(DEPDIR)/sandbox_brute_force_multiple-brute_force.Tpo -c -o sandbox/sandbox_brute_force_multiple-brute_force.o `test -f 'sandbox/brute_force.cc' || echo '$(srcdir)/'`sandbox/brute_force.cc

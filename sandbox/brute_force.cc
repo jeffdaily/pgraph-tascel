@@ -15,8 +15,10 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <strstream>
 #include <vector>
@@ -49,6 +51,10 @@ using namespace tascel;
 #define SORT_SEQUENCES 0
 #endif
 
+#ifndef DUMP_COSTS
+#define DUMP_COSTS 0
+#endif
+
 #define ARG_LEN_MAX 1024
 
 #define MPI_CHECK(what) do {                              \
@@ -71,6 +77,9 @@ int **ins[NUM_WORKERS];
 vector<string> sequences;
 ProcGroup* pgrp = NULL;
 UniformTaskCollSplitHybrid* utcs[NUM_WORKERS];
+#if DUMP_COSTS
+ofstream out[NUM_WORKERS];
+#endif
 
 bool longest_string_first(const string &i, const string &j) {
     return i.size() > j.size();
@@ -217,6 +226,15 @@ static int trank(int thd)
     return (theTwoSided().getProcRank().toInt() * NUM_WORKERS) + thd;
 }
 
+#if DUMP_COSTS
+static string get_filename(int thd)
+{
+    ostringstream str;
+    str << "cost." << trank(thd) << ".txt";
+    return str.str();
+}
+#endif
+
 #if MULTIPLE_PAIRS_PER_TASK
 typedef struct {
     unsigned long id;
@@ -314,6 +332,15 @@ static void alignment_task(
             ++stats[thd].edge_counts;
         }
         t = MPI_Wtime() - t;
+#if DUMP_COSTS
+        out[thd]
+            << seq_id[0] << "\t"
+            << seq_id[1] << "\t"
+            << sequences[seq_id[0]].size() << "\t"
+            << sequences[seq_id[1]].size() << "\t"
+            << sequences[seq_id[0]].size()*sequences[seq_id[1]].size() << "\t"
+            << t << endl;
+#endif
         stats[thd].align_times_tot += t;
         stats[thd].align_times_min = MIN(stats[thd].align_times_min,t);
         stats[thd].align_times_max = MAX(stats[thd].align_times_max,t);
@@ -593,6 +620,7 @@ int main(int argc, char **argv)
         max_seq_len = max(max_seq_len, sequence.size());
     }
     sequence.clear();
+    delete [] file_buffer;
 #if SORT_SEQUENCES
     double *sort_times = new double[nprocs];
     double  sort_time = MPI_Wtime();
@@ -715,6 +743,9 @@ int main(int argc, char **argv)
     unsigned long global_count = 0;
     for (int worker=0; worker<NUM_WORKERS; ++worker)
     {
+#if DUMP_COSTS
+        out[worker].open(get_filename(worker).c_str());
+#endif
         UniformTaskCollSplitHybrid*& utc = utcs[worker];
         TslFuncRegTbl *frt = new TslFuncRegTbl();
         TslFunc tf = frt->add(alignment_task);
@@ -876,12 +907,16 @@ int main(int argc, char **argv)
     MPI_Barrier(comm);
 
     /* clean up */
-    delete [] file_buffer;
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
         free_tbl(tbl[worker], NROW);
         free_int(del[worker], NROW);
         free_int(ins[worker], NROW);
+        delete utcs[worker];
+#if DUMP_COSTS
+        out[worker].close();
+#endif
     }
+    delete pgrp;
 
     TascelConfig::finalize();
     MPI_Comm_free(&comm);

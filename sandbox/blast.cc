@@ -389,12 +389,23 @@ int main(int argc, char **argv)
      * strings, essentially doubling the memory requirement */
     file_buffer = new char[file_size];
 
+#define MPIIO_COLLECTIVE 0
+#if MPIIO_COLLECTIVE
     /* all procs read the entire file */
     MPI_CHECK(MPI_File_open(comm, const_cast<char*>(all_argv[1].c_str()),
-                MPI_MODE_RDONLY|MPI_MODE_UNIQUE_OPEN,
-                MPI_INFO_NULL, &fh));
+                MPI_MODE_RDONLY|MPI_MODE_UNIQUE_OPEN, MPI_INFO_NULL, &fh));
     MPI_CHECK(MPI_File_read_all(fh, file_buffer, file_size, MPI_CHAR, &status));
     MPI_CHECK(MPI_File_close(&fh));
+#else
+    /* process 0 reads file, broadcasts */
+    if (0 == rank) {
+        MPI_CHECK(MPI_File_open(MPI_COMM_SELF, const_cast<char*>(all_argv[1].c_str()),
+                    MPI_MODE_RDONLY|MPI_MODE_UNIQUE_OPEN, MPI_INFO_NULL, &fh));
+        MPI_CHECK(MPI_File_read(fh, file_buffer, file_size, MPI_CHAR, &status));
+        MPI_CHECK(MPI_File_close(&fh));
+    }
+    MPI_CHECK(MPI_Bcast(file_buffer, file_size, MPI_CHAR, 0, comm));
+#endif
 
     /* each process counts how many '>' characters are in the file_buffer */
     for (int i=0; i<file_size; ++i) {
