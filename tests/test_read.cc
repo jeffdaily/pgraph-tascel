@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 
 #include <cassert>
+#include <climits>
 #include <cstring>
 #include <iostream>
 #include <string>
@@ -38,7 +39,6 @@ int main(int argc, char **argv)
 {
     MPI_Comm comm = MPI_COMM_NULL;
     int provided;
-    vector<string> all_argv;
     long file_size = -1;
     char *file_buffer = NULL;
     MPI_File fh;
@@ -58,34 +58,13 @@ int main(int argc, char **argv)
     MPI_CHECK(MPI_Comm_rank(comm, &rank));
     MPI_CHECK(MPI_Comm_size(comm, &nprocs));
 
-    /* MPI standard does not guarantee all procs receive argc and argv */
-    if (0 == rank) {
-        MPI_CHECK(MPI_Bcast(&argc, 1, MPI_INT, 0, comm));
-        for (int i=0; i<argc; ++i) {
-            int length = strlen(argv[i])+1;
-            MPI_CHECK(MPI_Bcast(&length, 1, MPI_INT, 0, comm));
-            MPI_CHECK(MPI_Bcast(argv[i], length, MPI_CHAR, 0, comm));
-            all_argv.push_back(argv[i]);
-        }
-    } else {
-        int all_argc;
-        MPI_CHECK(MPI_Bcast(&all_argc, 1, MPI_INT, 0, comm));
-        for (int i=0; i<all_argc; ++i) {
-            int length;
-            char buffer[ARG_LEN_MAX];
-            MPI_CHECK(MPI_Bcast(&length, 1, MPI_INT, 0, comm));
-            MPI_CHECK(MPI_Bcast(buffer, length, MPI_CHAR, 0, comm));
-            all_argv.push_back(buffer);
-        }
-    }
-
     /* sanity check that we got the correct number of arguments */
-    if (all_argv.size() <= 1 || all_argv.size() >= 3) {
+    if (argc <= 1 || argc >= 3) {
         if (0 == rank) {
-            if (all_argv.size() <= 1) {
+            if (argc <= 1) {
                 printf("missing input file\n");
             }
-            else if (all_argv.size() >= 3) {
+            else if (argc >= 3) {
                 printf("too many arguments\n");
             }
             printf("usage: test_read sequence_file\n");
@@ -98,7 +77,7 @@ int main(int argc, char **argv)
     /* we don't want all procs to stat the file! */
     if (0 == rank) {
         struct stat st;
-        assert(0 == stat(all_argv[0].c_str(), &st));
+        assert(0 == stat(argv[1], &st));
         file_size = st.st_size;
     }
 
@@ -110,45 +89,19 @@ int main(int argc, char **argv)
 
     /* allocate a buffer for the file, of the entire size */
     file_buffer = new char[file_size];
-    MPI_Datatype newtype = MPI_CHAR;
-    int newsize = 0;
-    if (file_size > sizeof(int)) {
-        if (0 == file_size % sizeof(long long)) {
-            newtype = MPI_LONG_LONG_INT;
-            newsize = file_size / sizeof(long long);
-        }
-        else if (0 == file_size % sizeof(long)) {
-            newtype = MPI_LONG;
-            newsize = file_size / sizeof(long);
-        }
-        else if (0 == file_size % sizeof(int)) {
-            newtype = MPI_INT;
-            newsize = file_size / sizeof(int);
-        }
-        else if (0 == file_size % sizeof(short)) {
-            newtype = MPI_SHORT;
-            newsize = file_size / sizeof(short);
-        }
-        else {
-            if (0 == rank) {
-                cout << "odd file size > 2GB " << file_size << endl;
-            }
-            MPI_Finalize();
-            return 1;
-        }
-    }
-    if (newsize > sizeof(int)) {
-        if (0 == rank) {
-            cout << "file size still > 2GB " << newsize << endl;
-        }
-        MPI_Finalize();
-        return 1;
-    }
-
+    char *current_file_buffer = file_buffer;
     /* all procs read the entire file */
-    MPI_CHECK(MPI_File_open(comm, const_cast<char*>(all_argv[1].c_str()),
+    /* read the file in INT_MAX chunks due to MPI 'int' interface */
+    MPI_CHECK(MPI_File_open(comm, argv[1],
                 MPI_MODE_RDONLY|MPI_MODE_UNIQUE_OPEN, MPI_INFO_NULL, &fh));
-    MPI_CHECK(MPI_File_read_all(fh, file_buffer, newsize, newtype, &status));
+    int count;
+    do {
+        MPI_CHECK(MPI_File_read_all(fh, current_file_buffer,
+                    INT_MAX, MPI_CHAR, &status));
+        MPI_CHECK(MPI_Get_count(&status, MPI_CHAR, &count));
+        current_file_buffer += INT_MAX;
+    }
+    while (count == INT_MAX);
     MPI_CHECK(MPI_File_close(&fh));
 
     /* each process counts how many '>' characters are in the file_buffer */
@@ -167,6 +120,7 @@ int main(int argc, char **argv)
     }
 
     /* clean up */
+    delete [] file_buffer;
     MPI_Comm_free(&comm);
     MPI_Finalize();
 
