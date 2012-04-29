@@ -5,15 +5,16 @@
  * stealing. Each MPI task reads the input file.
  */
 #include <mpi.h>
+#include <sys/stat.h>
+
 #include <tascel.h>
 #include <tascel/UniformTaskCollection.h>
 #include <tascel/UniformTaskCollSplitHybrid.h>
 
-#include <algorithm>
+#include <cassert>
 #include <cfloat>
-#include <cmath>
+#include <climits>
 #include <cstdio>
-#include <cstdlib>
 #include <cstring>
 #include <iomanip>
 #include <iostream>
@@ -274,7 +275,6 @@ int main(int argc, char **argv)
 {
     MPI_Comm comm = MPI_COMM_NULL;
     int provided;
-    vector<string> all_argv;
     long file_size = -1;
     char *file_buffer = NULL;
     MPI_File fh;
@@ -306,34 +306,13 @@ int main(int argc, char **argv)
     /* initialize dynamic code */
     init_map(SIGMA);
 
-    /* MPI standard does not guarantee all procs receive argc and argv */
-    if (0 == rank) {
-        MPI_CHECK(MPI_Bcast(&argc, 1, MPI_INT, 0, comm));
-        for (int i=0; i<argc; ++i) {
-            int length = strlen(argv[i])+1;
-            MPI_CHECK(MPI_Bcast(&length, 1, MPI_INT, 0, comm));
-            MPI_CHECK(MPI_Bcast(argv[i], length, MPI_CHAR, 0, comm));
-            all_argv.push_back(argv[i]);
-        }
-    } else {
-        int all_argc;
-        MPI_CHECK(MPI_Bcast(&all_argc, 1, MPI_INT, 0, comm));
-        for (int i=0; i<all_argc; ++i) {
-            int length;
-            char buffer[ARG_LEN_MAX];
-            MPI_CHECK(MPI_Bcast(&length, 1, MPI_INT, 0, comm));
-            MPI_CHECK(MPI_Bcast(buffer, length, MPI_CHAR, 0, comm));
-            all_argv.push_back(buffer);
-        }
-    }
-
 #if DEBUG
     /* print the command line arguments */
     for (int i=0; i<nprocs; ++i) {
         if (i == rank) {
             int j;
-            for (j=0; j<all_argv.size(); ++j) {
-                printf("[%d] argv[%d]=%s\n", rank, j, all_argv[j].c_str());
+            for (j=0; j<argc; ++j) {
+                printf("[%d] argv[%d]=%s\n", rank, j, argv[j]);
             }
         }
         MPI_Barrier(comm);
@@ -341,12 +320,12 @@ int main(int argc, char **argv)
 #endif
 
     /* sanity check that we got the correct number of arguments */
-    if (all_argv.size() <= 1 || all_argv.size() >= 4) {
+    if (argc <= 1 || argc >= 4) {
         if (0 == rank) {
-            if (all_argv.size() <= 1) {
+            if (argc <= 1) {
                 printf("missing input file\n");
             }
-            else if (all_argv.size() >= 4) {
+            else if (argc >= 4) {
                 printf("too many arguments\n");
             }
             printf("usage: brute_force sequence_file [combinations_per_task]\n");
@@ -358,24 +337,9 @@ int main(int argc, char **argv)
 
     /* process 0 open the file locally to determine its size */
     if (0 == rank) {
-        FILE *file = fopen(all_argv[1].c_str(), "r");
-        if (NULL == file) {
-            printf("unable to open file on process 0\n");
-            MPI_Abort(comm, 1);
-        }
-        if (0 != fseek(file, 0, SEEK_END)) {
-            printf("unable to seek to end of file on process 0\n");
-            MPI_Abort(comm, 1);
-        }
-        file_size = ftell(file);
-        if (-1 == file_size) {
-            printf("unable to get size of file on process 0\n");
-            MPI_Abort(comm, 1);
-        }
-        if (0 != fclose(file)) {
-            printf("unable to get close file on process 0\n");
-            MPI_Abort(comm, 1);
-        }
+        struct stat st;
+        assert(0 == stat(argv[1], &st));
+        file_size = st.st_size;
     }
 
     /* the file_size is broadcast to all */
@@ -388,23 +352,49 @@ int main(int argc, char **argv)
      * the entire input file and then parse the buffer into a vector of
      * strings, essentially doubling the memory requirement */
     file_buffer = new char[file_size];
+    char *current_file_buffer = file_buffer;
+    long file_size_remaining = file_size;
 
-#define MPIIO_COLLECTIVE 0
+#define MPIIO_COLLECTIVE 1
 #if MPIIO_COLLECTIVE
     /* all procs read the entire file */
-    MPI_CHECK(MPI_File_open(comm, const_cast<char*>(all_argv[1].c_str()),
+    /* read the file in INT_MAX chunks due to MPI 'int' interface */
+    MPI_CHECK(MPI_File_open(comm, argv[1],
                 MPI_MODE_RDONLY|MPI_MODE_UNIQUE_OPEN, MPI_INFO_NULL, &fh));
-    MPI_CHECK(MPI_File_read_all(fh, file_buffer, file_size, MPI_CHAR, &status));
+    int last_read_size;
+    do {
+        MPI_CHECK(MPI_File_read_all(fh, file_buffer,
+                    INT_MAX, MPI_CHAR, &status));
+        MPI_CHECK(MPI_Get_count(&status, MPI_CHAR, &last_read_size));
+        current_file_buffer += last_read_size;
+        file_size_remaining -= last_read_size;
+    }
+    while (file_size_remaining > 0);
     MPI_CHECK(MPI_File_close(&fh));
 #else
     /* process 0 reads file, broadcasts */
+    /* read the file in INT_MAX chunks due to MPI 'int' interface */
     if (0 == rank) {
-        MPI_CHECK(MPI_File_open(MPI_COMM_SELF, const_cast<char*>(all_argv[1].c_str()),
+        MPI_CHECK(MPI_File_open(MPI_COMM_SELF, argv[1],
                     MPI_MODE_RDONLY|MPI_MODE_UNIQUE_OPEN, MPI_INFO_NULL, &fh));
-        MPI_CHECK(MPI_File_read(fh, file_buffer, file_size, MPI_CHAR, &status));
+    }
+    int last_read_size;
+    do {
+        if (0 == rank) {
+            MPI_CHECK(MPI_File_read_all(fh, file_buffer,
+                        INT_MAX, MPI_CHAR, &status));
+            MPI_CHECK(MPI_Get_count(&status, MPI_CHAR, &last_read_size));
+        }
+        MPI_CHECK(MPI_Bcast(&last_read_size, 1, MPI_INT, 0, comm));
+        MPI_CHECK(MPI_Bcast(current_file_buffer, last_read_size,
+                    MPI_CHAR, 0, comm));
+        current_file_buffer += last_read_size;
+        file_size_remaining -= last_read_size;
+    }
+    while (file_size_remaining > 0);
+    if (0 == rank) {
         MPI_CHECK(MPI_File_close(&fh));
     }
-    MPI_CHECK(MPI_Bcast(file_buffer, file_size, MPI_CHAR, 0, comm));
 #endif
 
     /* each process counts how many '>' characters are in the file_buffer */
@@ -509,8 +499,8 @@ int main(int argc, char **argv)
     }
 
     long selectivity = 1;
-    if (all_argv.size() == 3) {
-      selectivity = atol(all_argv[2].c_str());
+    if (argc == 3) {
+      selectivity = atol(argv[2]);
     }
     assert(selectivity > 0);
     unsigned long ntasks = sequences.size() * (unsigned long)selectivity;
