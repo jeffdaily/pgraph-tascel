@@ -90,18 +90,30 @@ int main(int argc, char **argv)
     /* allocate a buffer for the file, of the entire size */
     file_buffer = new char[file_size];
     char *current_file_buffer = file_buffer;
+    long file_size_remaining = file_size;
+
     /* all procs read the entire file */
     /* read the file in INT_MAX chunks due to MPI 'int' interface */
     MPI_CHECK(MPI_File_open(comm, argv[1],
                 MPI_MODE_RDONLY|MPI_MODE_UNIQUE_OPEN, MPI_INFO_NULL, &fh));
     int count;
+    if (0 == rank) {
+        cout << "INT_MAX=" << INT_MAX << endl;
+    }
     do {
         MPI_CHECK(MPI_File_read_all(fh, current_file_buffer,
                     INT_MAX, MPI_CHAR, &status));
         MPI_CHECK(MPI_Get_count(&status, MPI_CHAR, &count));
-        current_file_buffer += INT_MAX;
+        for (int p=0; p<nprocs; ++p) {
+            if (p == rank) {
+                cout << p << " read " << count << " bytes" << endl;
+            }
+            MPI_Barrier(comm);
+        }
+        current_file_buffer += count;
+        file_size_remaining -= count;
     }
-    while (count == INT_MAX);
+    while (file_size_remaining > 0);
     MPI_CHECK(MPI_File_close(&fh));
 
     /* each process counts how many '>' characters are in the file_buffer */
