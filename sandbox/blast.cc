@@ -355,19 +355,43 @@ int main(int argc, char **argv)
     char *current_file_buffer = file_buffer;
     long file_size_remaining = file_size;
 
-#define MPIIO_COLLECTIVE 1
+#define MPIIO_COLLECTIVE 0
 #if MPIIO_COLLECTIVE
     /* all procs read the entire file */
     /* read the file in INT_MAX chunks due to MPI 'int' interface */
     MPI_CHECK(MPI_File_open(comm, argv[1],
                 MPI_MODE_RDONLY|MPI_MODE_UNIQUE_OPEN, MPI_INFO_NULL, &fh));
     int last_read_size;
+    int read_count = 0;
+    int amount_to_read = 0;
+    if (file_size < INT_MAX) {
+        amount_to_read = file_size;
+    }
+    else {
+        amount_to_read = INT_MAX;
+    }
     do {
         MPI_CHECK(MPI_File_read_all(fh, file_buffer,
-                    INT_MAX, MPI_CHAR, &status));
+                    amount_to_read, MPI_CHAR, &status));
         MPI_CHECK(MPI_Get_count(&status, MPI_CHAR, &last_read_size));
         current_file_buffer += last_read_size;
         file_size_remaining -= last_read_size;
+        ++read_count;
+        if (file_size_remaining < INT_MAX) {
+            amount_to_read = file_size_remaining;
+        }
+        else {
+            amount_to_read = INT_MAX;
+        }
+#if 1
+        for (int p=0; p<nprocs; ++p) {
+            if (p == rank) {
+                printf("[%d] pass %d read %d bytes\n",
+                        rank, read_count, last_read_size);
+            }
+            MPI_Barrier(comm);
+        }
+#endif
     }
     while (file_size_remaining > 0);
     MPI_CHECK(MPI_File_close(&fh));
@@ -379,10 +403,18 @@ int main(int argc, char **argv)
                     MPI_MODE_RDONLY|MPI_MODE_UNIQUE_OPEN, MPI_INFO_NULL, &fh));
     }
     int last_read_size;
+    int read_count = 0;
+    int amount_to_read = 0;
+    if (file_size < INT_MAX) {
+        amount_to_read = file_size;
+    }
+    else {
+        amount_to_read = INT_MAX;
+    }
     do {
         if (0 == rank) {
             MPI_CHECK(MPI_File_read_all(fh, file_buffer,
-                        INT_MAX, MPI_CHAR, &status));
+                        amount_to_read, MPI_CHAR, &status));
             MPI_CHECK(MPI_Get_count(&status, MPI_CHAR, &last_read_size));
         }
         MPI_CHECK(MPI_Bcast(&last_read_size, 1, MPI_INT, 0, comm));
@@ -390,10 +422,37 @@ int main(int argc, char **argv)
                     MPI_CHAR, 0, comm));
         current_file_buffer += last_read_size;
         file_size_remaining -= last_read_size;
+        ++read_count;
+        if (file_size_remaining < INT_MAX) {
+            amount_to_read = file_size_remaining;
+        }
+        else {
+            amount_to_read = INT_MAX;
+        }
+#if 1
+        for (int p=0; p<nprocs; ++p) {
+            if (p == rank) {
+                printf("[%d] pass %d read %d bytes\n",
+                        rank, read_count, last_read_size);
+            }
+            MPI_Barrier(comm);
+        }
+#endif
     }
     while (file_size_remaining > 0);
     if (0 == rank) {
+        printf("closing the file\n");
         MPI_CHECK(MPI_File_close(&fh));
+    }
+#endif
+
+#if 1
+    /* print the seg_count on each process */
+    for (int i=0; i<nprocs; ++i) {
+        if (i == rank) {
+            printf("[%d] finished reading\n", rank);
+        }
+        MPI_Barrier(comm);
     }
 #endif
 
@@ -403,7 +462,7 @@ int main(int argc, char **argv)
             ++seg_count;
         }
     }
-#if DEBUG
+#if 1
     /* print the seg_count on each process */
     for (int i=0; i<nprocs; ++i) {
         if (i == rank) {
@@ -457,7 +516,7 @@ int main(int argc, char **argv)
     }
     delete [] sort_times;
 #endif
-#if DEBUG
+#if 1
     /* print the seg_count on each process */
     for (int i=0; i<nprocs; ++i) {
         if (i == rank) {
@@ -491,6 +550,10 @@ int main(int argc, char **argv)
         MPI_Barrier(comm);
     }
 #endif
+    TascelConfig::finalize();
+    MPI_Comm_free(&comm);
+    MPI_Finalize();
+
     /* how many combinations of sequences are there? */
     nCk = binomial_coefficient(sequences.size(), 2);
     if (0 == trank(0)) {
