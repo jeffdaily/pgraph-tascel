@@ -355,21 +355,25 @@ int main(int argc, char **argv)
     char *current_file_buffer = file_buffer;
     long file_size_remaining = file_size;
 
+    int chunk_size = INT_MAX / 4;
 #define MPIIO_COLLECTIVE 1
 #define MPIIO_ZERO 0
 #if MPIIO_COLLECTIVE
+    if (0 == rank) {
+        printf("reading file using collective MPI-IO\n");
+    }
     /* all procs read the entire file */
-    /* read the file in INT_MAX chunks due to MPI 'int' interface */
+    /* read the file in chunk_size chunks due to MPI 'int' interface */
     MPI_CHECK(MPI_File_open(comm, argv[1],
                 MPI_MODE_RDONLY|MPI_MODE_UNIQUE_OPEN, MPI_INFO_NULL, &fh));
     int last_read_size;
     int read_count = 0;
     int amount_to_read = 0;
-    if (file_size < INT_MAX) {
+    if (file_size < chunk_size) {
         amount_to_read = file_size;
     }
     else {
-        amount_to_read = INT_MAX;
+        amount_to_read = chunk_size;
     }
     do {
         MPI_CHECK(MPI_File_read_all(fh, current_file_buffer,
@@ -378,11 +382,11 @@ int main(int argc, char **argv)
         current_file_buffer += last_read_size;
         file_size_remaining -= last_read_size;
         ++read_count;
-        if (file_size_remaining < INT_MAX) {
+        if (file_size_remaining < chunk_size) {
             amount_to_read = file_size_remaining;
         }
         else {
-            amount_to_read = INT_MAX;
+            amount_to_read = chunk_size;
         }
 #if 1
         for (int p=0; p<nprocs; ++p) {
@@ -397,8 +401,11 @@ int main(int argc, char **argv)
     while (file_size_remaining > 0);
     MPI_CHECK(MPI_File_close(&fh));
 #elif MPIIO_ZERO
+    if (0 == rank) {
+        printf("reading file using MPI-IO on rank 0 and MPI_Bcast\n");
+    }
     /* process 0 reads file, broadcasts */
-    /* read the file in INT_MAX chunks due to MPI 'int' interface */
+    /* read the file in chunk_size chunks due to MPI 'int' interface */
     if (0 == rank) {
         MPI_CHECK(MPI_File_open(MPI_COMM_SELF, argv[1],
                     MPI_MODE_RDONLY|MPI_MODE_UNIQUE_OPEN, MPI_INFO_NULL, &fh));
@@ -406,11 +413,11 @@ int main(int argc, char **argv)
     int last_read_size;
     int read_count = 0;
     int amount_to_read = 0;
-    if (file_size < INT_MAX) {
+    if (file_size < chunk_size) {
         amount_to_read = file_size;
     }
     else {
-        amount_to_read = INT_MAX;
+        amount_to_read = chunk_size;
     }
     do {
         if (0 == rank) {
@@ -424,11 +431,11 @@ int main(int argc, char **argv)
         current_file_buffer += last_read_size;
         file_size_remaining -= last_read_size;
         ++read_count;
-        if (file_size_remaining < INT_MAX) {
+        if (file_size_remaining < chunk_size) {
             amount_to_read = file_size_remaining;
         }
         else {
-            amount_to_read = INT_MAX;
+            amount_to_read = chunk_size;
         }
 #if 1
         for (int p=0; p<nprocs; ++p) {
@@ -446,8 +453,11 @@ int main(int argc, char **argv)
         MPI_CHECK(MPI_File_close(&fh));
     }
 #else
+    if (0 == rank) {
+        printf("reading file using posix IO on rank 0 and MPI_Bcast\n");
+    }
     /* process 0 reads file using posix IO, broadcasts */
-    /* read the file in INT_MAX chunks due to MPI 'int' interface */
+    /* read the file in chunk_size chunks due to MPI 'int' interface */
     FILE *file = NULL;
     if (0 == rank) {
         file = fopen(argv[1], "rb");
@@ -455,11 +465,11 @@ int main(int argc, char **argv)
     int last_read_size;
     int read_count = 0;
     int amount_to_read = 0;
-    if (file_size < INT_MAX) {
+    if (file_size < chunk_size) {
         amount_to_read = file_size;
     }
     else {
-        amount_to_read = INT_MAX;
+        amount_to_read = chunk_size;
     }
     do {
         if (0 == rank) {
@@ -472,11 +482,11 @@ int main(int argc, char **argv)
         current_file_buffer += last_read_size;
         file_size_remaining -= last_read_size;
         ++read_count;
-        if (file_size_remaining < INT_MAX) {
+        if (file_size_remaining < chunk_size) {
             amount_to_read = file_size_remaining;
         }
         else {
-            amount_to_read = INT_MAX;
+            amount_to_read = chunk_size;
         }
 #if 1
         for (int p=0; p<nprocs; ++p) {
