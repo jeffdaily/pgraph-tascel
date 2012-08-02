@@ -25,6 +25,7 @@
 #include <utility>
 #include <vector>
 
+#include "mpix.h"
 #include "timer.h"
 
 #define ARG_LEN_MAX 1024
@@ -36,7 +37,6 @@ typedef uint64_t idx_t;
 
 int rank;
 int nprocs;
-int check_count;
 vector<string> sequences;
 #define VEC_BINS 0
 #if VEC_BINS
@@ -77,17 +77,6 @@ static inline int prefix_hash(const string &seq, const idx_t &j)
     return hash;
 }
 
-#define MPI_CHECK(what) do {                              \
-    int __err;                                            \
-    __err = what;                                         \
-    ++check_count;                                        \
-    if (MPI_SUCCESS != __err) {                           \
-        printf("[%d] FAILED FILE=%s LINE=%d:" #what "\n", \
-                rank, __FILE__, __LINE__);                \
-        MPI_Abort(comm, check_count);                     \
-    }                                                     \
-} while (0)
-
 
 int main(int argc, char **argv)
 {
@@ -100,8 +89,6 @@ int main(int argc, char **argv)
     long seg_count = 0;
     idx_t max_seq_len = 0;
     idx_t tot_seq_len = 0;
-
-    check_count = 0;
 
     timer_init();
 

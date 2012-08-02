@@ -39,14 +39,16 @@ noinst_PROGRAMS = sandbox/blast$(EXEEXT) sandbox/brute_force$(EXEEXT) \
 	sandbox/brute_force_binning$(EXEEXT) \
 	sandbox/brute_force_costs$(EXEEXT) \
 	sandbox/brute_force_multiple$(EXEEXT) \
+	sandbox/brute_force_pairs$(EXEEXT) \
 	sandbox/brute_force_rr$(EXEEXT) \
 	sandbox/brute_force_rr_sorted$(EXEEXT) \
 	sandbox/brute_force_rr_sorted_seq$(EXEEXT) \
 	sandbox/brute_force_sorted$(EXEEXT) \
 	sandbox/brute_force_sorted_seq$(EXEEXT) \
-	sandbox/forest$(EXEEXT) sandbox/io_into_shared_memory$(EXEEXT) \
-	tests/test_combinations$(EXEEXT) tests/test_dynamic$(EXEEXT) \
-	tests/test_read$(EXEEXT) $(am__EXEEXT_1)
+	sandbox/forest$(EXEEXT) sandbox/sort_pairs$(EXEEXT) \
+	sandbox/unique_pairs$(EXEEXT) tests/test_combinations$(EXEEXT) \
+	tests/test_dynamic$(EXEEXT) tests/test_read$(EXEEXT) \
+	$(am__EXEEXT_1)
 @HAVE_UTC_ITER_TRUE@am__append_1 = sandbox/brute_force_iter
 subdir = .
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
@@ -74,7 +76,8 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libpgraph_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
-am_libpgraph_la_OBJECTS = src/combinations.lo src/dynamic.lo
+am_libpgraph_la_OBJECTS = src/combinations.lo src/dynamic.lo \
+	src/mpix.lo
 libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
@@ -124,6 +127,14 @@ sandbox_brute_force_multiple_LDADD = $(LDADD)
 sandbox_brute_force_multiple_DEPENDENCIES = libpgraph.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
+am_sandbox_brute_force_pairs_OBJECTS =  \
+	sandbox/brute_force_pairs.$(OBJEXT)
+sandbox_brute_force_pairs_OBJECTS =  \
+	$(am_sandbox_brute_force_pairs_OBJECTS)
+sandbox_brute_force_pairs_LDADD = $(LDADD)
+sandbox_brute_force_pairs_DEPENDENCIES = libpgraph.la \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_sandbox_brute_force_rr_OBJECTS =  \
 	sandbox/sandbox_brute_force_rr-brute_force.$(OBJEXT)
 sandbox_brute_force_rr_OBJECTS = $(am_sandbox_brute_force_rr_OBJECTS)
@@ -167,14 +178,16 @@ sandbox_forest_OBJECTS = $(am_sandbox_forest_OBJECTS)
 sandbox_forest_LDADD = $(LDADD)
 sandbox_forest_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_sandbox_io_into_shared_memory_OBJECTS =  \
-	sandbox/io_into_shared_memory.$(OBJEXT)
-sandbox_io_into_shared_memory_OBJECTS =  \
-	$(am_sandbox_io_into_shared_memory_OBJECTS)
-sandbox_io_into_shared_memory_LDADD = $(LDADD)
-sandbox_io_into_shared_memory_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+am_sandbox_sort_pairs_OBJECTS = sandbox/sort_pairs.$(OBJEXT)
+sandbox_sort_pairs_OBJECTS = $(am_sandbox_sort_pairs_OBJECTS)
+sandbox_sort_pairs_LDADD = $(LDADD)
+sandbox_sort_pairs_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am_sandbox_unique_pairs_OBJECTS = sandbox/unique_pairs.$(OBJEXT)
+sandbox_unique_pairs_OBJECTS = $(am_sandbox_unique_pairs_OBJECTS)
+sandbox_unique_pairs_LDADD = $(LDADD)
+sandbox_unique_pairs_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_tests_test_combinations_OBJECTS =  \
 	tests/test_combinations.$(OBJEXT)
 tests_test_combinations_OBJECTS =  \
@@ -241,13 +254,14 @@ SOURCES = $(libpgraph_la_SOURCES) $(sandbox_blast_SOURCES) \
 	$(sandbox_brute_force_costs_SOURCES) \
 	$(sandbox_brute_force_iter_SOURCES) \
 	$(sandbox_brute_force_multiple_SOURCES) \
+	$(sandbox_brute_force_pairs_SOURCES) \
 	$(sandbox_brute_force_rr_SOURCES) \
 	$(sandbox_brute_force_rr_sorted_SOURCES) \
 	$(sandbox_brute_force_rr_sorted_seq_SOURCES) \
 	$(sandbox_brute_force_sorted_SOURCES) \
 	$(sandbox_brute_force_sorted_seq_SOURCES) \
-	$(sandbox_forest_SOURCES) \
-	$(sandbox_io_into_shared_memory_SOURCES) \
+	$(sandbox_forest_SOURCES) $(sandbox_sort_pairs_SOURCES) \
+	$(sandbox_unique_pairs_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_read_SOURCES)
 DIST_SOURCES = $(libpgraph_la_SOURCES) $(sandbox_blast_SOURCES) \
@@ -256,13 +270,14 @@ DIST_SOURCES = $(libpgraph_la_SOURCES) $(sandbox_blast_SOURCES) \
 	$(sandbox_brute_force_costs_SOURCES) \
 	$(sandbox_brute_force_iter_SOURCES) \
 	$(sandbox_brute_force_multiple_SOURCES) \
+	$(sandbox_brute_force_pairs_SOURCES) \
 	$(sandbox_brute_force_rr_SOURCES) \
 	$(sandbox_brute_force_rr_sorted_SOURCES) \
 	$(sandbox_brute_force_rr_sorted_seq_SOURCES) \
 	$(sandbox_brute_force_sorted_SOURCES) \
 	$(sandbox_brute_force_sorted_seq_SOURCES) \
-	$(sandbox_forest_SOURCES) \
-	$(sandbox_io_into_shared_memory_SOURCES) \
+	$(sandbox_forest_SOURCES) $(sandbox_sort_pairs_SOURCES) \
+	$(sandbox_unique_pairs_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_read_SOURCES)
 ETAGS = etags
@@ -421,20 +436,23 @@ LDADD = libpgraph.la $(TASCEL_LIBS) $(GA_LIBS) $(PT_MPI_LIBS) \
 	$(GMP_LIBS) $(GA_FLIBS)
 noinst_LTLIBRARIES = libpgraph.la
 libpgraph_la_SOURCES = src/combinations.c src/combinations.h \
-	src/dynamic.c src/dynamic.h
+	src/dynamic.c src/dynamic.h src/mpix.c src/mpix.h
 sandbox_blast_SOURCES = sandbox/blast.cc
 sandbox_brute_force_SOURCES = sandbox/brute_force.cc
 sandbox_brute_force_binning_SOURCES = sandbox/brute_force_binning.cc
 sandbox_brute_force_costs_SOURCES = sandbox/brute_force.cc
 sandbox_brute_force_iter_SOURCES = sandbox/brute_force_iter.cc
 sandbox_brute_force_multiple_SOURCES = sandbox/brute_force.cc
+sandbox_brute_force_pairs_SOURCES = sandbox/brute_force_pairs.cc
 sandbox_brute_force_rr_SOURCES = sandbox/brute_force.cc
 sandbox_brute_force_rr_sorted_SOURCES = sandbox/brute_force.cc
 sandbox_brute_force_rr_sorted_seq_SOURCES = sandbox/brute_force.cc
 sandbox_brute_force_sorted_SOURCES = sandbox/brute_force.cc
 sandbox_brute_force_sorted_seq_SOURCES = sandbox/brute_force.cc
 sandbox_forest_SOURCES = sandbox/forest.cc
-sandbox_io_into_shared_memory_SOURCES = sandbox/io_into_shared_memory.c
+sandbox_sort_pairs_SOURCES = sandbox/sort_pairs.cc
+sandbox_unique_pairs_SOURCES = sandbox/unique_pairs.cc
+#sandbox_io_into_shared_memory_SOURCES      = sandbox/io_into_shared_memory.c
 tests_test_combinations_SOURCES = tests/test_combinations.cc
 tests_test_dynamic_SOURCES = tests/test_dynamic.c
 tests_test_read_SOURCES = tests/test_read.cc
@@ -518,6 +536,7 @@ src/$(DEPDIR)/$(am__dirstamp):
 	@: > src/$(DEPDIR)/$(am__dirstamp)
 src/combinations.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/dynamic.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/mpix.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 libpgraph.la: $(libpgraph_la_OBJECTS) $(libpgraph_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK)  $(libpgraph_la_OBJECTS) $(libpgraph_la_LIBADD) $(LIBS)
 
@@ -565,6 +584,11 @@ sandbox/sandbox_brute_force_multiple-brute_force.$(OBJEXT):  \
 sandbox/brute_force_multiple$(EXEEXT): $(sandbox_brute_force_multiple_OBJECTS) $(sandbox_brute_force_multiple_DEPENDENCIES) sandbox/$(am__dirstamp)
 	@rm -f sandbox/brute_force_multiple$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_multiple_OBJECTS) $(sandbox_brute_force_multiple_LDADD) $(LIBS)
+sandbox/brute_force_pairs.$(OBJEXT): sandbox/$(am__dirstamp) \
+	sandbox/$(DEPDIR)/$(am__dirstamp)
+sandbox/brute_force_pairs$(EXEEXT): $(sandbox_brute_force_pairs_OBJECTS) $(sandbox_brute_force_pairs_DEPENDENCIES) sandbox/$(am__dirstamp)
+	@rm -f sandbox/brute_force_pairs$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_pairs_OBJECTS) $(sandbox_brute_force_pairs_LDADD) $(LIBS)
 sandbox/sandbox_brute_force_rr-brute_force.$(OBJEXT):  \
 	sandbox/$(am__dirstamp) sandbox/$(DEPDIR)/$(am__dirstamp)
 sandbox/brute_force_rr$(EXEEXT): $(sandbox_brute_force_rr_OBJECTS) $(sandbox_brute_force_rr_DEPENDENCIES) sandbox/$(am__dirstamp)
@@ -595,11 +619,16 @@ sandbox/forest.$(OBJEXT): sandbox/$(am__dirstamp) \
 sandbox/forest$(EXEEXT): $(sandbox_forest_OBJECTS) $(sandbox_forest_DEPENDENCIES) sandbox/$(am__dirstamp)
 	@rm -f sandbox/forest$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_forest_OBJECTS) $(sandbox_forest_LDADD) $(LIBS)
-sandbox/io_into_shared_memory.$(OBJEXT): sandbox/$(am__dirstamp) \
+sandbox/sort_pairs.$(OBJEXT): sandbox/$(am__dirstamp) \
 	sandbox/$(DEPDIR)/$(am__dirstamp)
-sandbox/io_into_shared_memory$(EXEEXT): $(sandbox_io_into_shared_memory_OBJECTS) $(sandbox_io_into_shared_memory_DEPENDENCIES) sandbox/$(am__dirstamp)
-	@rm -f sandbox/io_into_shared_memory$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(sandbox_io_into_shared_memory_OBJECTS) $(sandbox_io_into_shared_memory_LDADD) $(LIBS)
+sandbox/sort_pairs$(EXEEXT): $(sandbox_sort_pairs_OBJECTS) $(sandbox_sort_pairs_DEPENDENCIES) sandbox/$(am__dirstamp)
+	@rm -f sandbox/sort_pairs$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_sort_pairs_OBJECTS) $(sandbox_sort_pairs_LDADD) $(LIBS)
+sandbox/unique_pairs.$(OBJEXT): sandbox/$(am__dirstamp) \
+	sandbox/$(DEPDIR)/$(am__dirstamp)
+sandbox/unique_pairs$(EXEEXT): $(sandbox_unique_pairs_OBJECTS) $(sandbox_unique_pairs_DEPENDENCIES) sandbox/$(am__dirstamp)
+	@rm -f sandbox/unique_pairs$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_unique_pairs_OBJECTS) $(sandbox_unique_pairs_LDADD) $(LIBS)
 tests/$(am__dirstamp):
 	@$(MKDIR_P) tests
 	@: > tests/$(am__dirstamp)
@@ -628,8 +657,8 @@ mostlyclean-compile:
 	-rm -f sandbox/brute_force.$(OBJEXT)
 	-rm -f sandbox/brute_force_binning.$(OBJEXT)
 	-rm -f sandbox/brute_force_iter.$(OBJEXT)
+	-rm -f sandbox/brute_force_pairs.$(OBJEXT)
 	-rm -f sandbox/forest.$(OBJEXT)
-	-rm -f sandbox/io_into_shared_memory.$(OBJEXT)
 	-rm -f sandbox/sandbox_brute_force_costs-brute_force.$(OBJEXT)
 	-rm -f sandbox/sandbox_brute_force_multiple-brute_force.$(OBJEXT)
 	-rm -f sandbox/sandbox_brute_force_rr-brute_force.$(OBJEXT)
@@ -637,10 +666,14 @@ mostlyclean-compile:
 	-rm -f sandbox/sandbox_brute_force_rr_sorted_seq-brute_force.$(OBJEXT)
 	-rm -f sandbox/sandbox_brute_force_sorted-brute_force.$(OBJEXT)
 	-rm -f sandbox/sandbox_brute_force_sorted_seq-brute_force.$(OBJEXT)
+	-rm -f sandbox/sort_pairs.$(OBJEXT)
+	-rm -f sandbox/unique_pairs.$(OBJEXT)
 	-rm -f src/combinations.$(OBJEXT)
 	-rm -f src/combinations.lo
 	-rm -f src/dynamic.$(OBJEXT)
 	-rm -f src/dynamic.lo
+	-rm -f src/mpix.$(OBJEXT)
+	-rm -f src/mpix.lo
 	-rm -f tests/test_combinations.$(OBJEXT)
 	-rm -f tests/test_dynamic.$(OBJEXT)
 	-rm -f tests/test_read.$(OBJEXT)
@@ -652,8 +685,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force_binning.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force_iter.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force_pairs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/forest.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/io_into_shared_memory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sandbox_brute_force_costs-brute_force.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sandbox_brute_force_multiple-brute_force.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sandbox_brute_force_rr-brute_force.Po@am__quote@
@@ -661,8 +694,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sandbox_brute_force_rr_sorted_seq-brute_force.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sandbox_brute_force_sorted-brute_force.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sandbox_brute_force_sorted_seq-brute_force.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sort_pairs.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/unique_pairs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/combinations.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/dynamic.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/mpix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_combinations.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_dynamic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_read.Po@am__quote@

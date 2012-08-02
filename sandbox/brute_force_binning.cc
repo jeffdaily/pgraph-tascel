@@ -24,26 +24,13 @@
 
 #include "combinations.h"
 #include "dynamic.h"
+#include "mpix.h"
 
 using namespace std;
 using namespace tascel;
 
-#define ARG_LEN_MAX 1024
-
-#define MPI_CHECK(what) do {                              \
-    int __err;                                            \
-    __err = what;                                         \
-    ++check_count;                                        \
-    if (MPI_SUCCESS != __err) {                           \
-        printf("[%d] FAILED FILE=%s LINE=%d:" #what "\n", \
-                rank, __FILE__, __LINE__);                \
-        MPI_Abort(comm, check_count);                     \
-    }                                                     \
-} while (0)
-
 int rank = 0;
 int nprocs = 0;
-int check_count = 0;
 vector<string> sequences;
 ProcGroup* pgrp = NULL;
 UniformTaskCollSplitHybrid* utcs[NUM_WORKERS];
@@ -183,8 +170,6 @@ int main(int argc, char **argv)
     size_t max_seq_len = 0;
     unsigned long nCk;
     TslFuncRegTbl *frt = new TslFuncRegTbl();
-
-    check_count = 0;
 
     /* initialize MPI */
 #if defined(THREADED)

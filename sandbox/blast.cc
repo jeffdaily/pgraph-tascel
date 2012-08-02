@@ -22,80 +22,23 @@
 #include <strstream>
 #include <vector>
 
+#include "AlignStats.h"
 #include "combinations.h"
 #include "dynamic.h"
+#include "mpix.h"
 
 using namespace std;
 using namespace tascel;
 
-#define ARG_LEN_MAX 1024
-
-#define MPI_CHECK(what) do {                              \
-    int __err;                                            \
-    __err = what;                                         \
-    ++check_count;                                        \
-    if (MPI_SUCCESS != __err) {                           \
-        printf("[%d] FAILED FILE=%s LINE=%d:" #what "\n", \
-                rank, __FILE__, __LINE__);                \
-        MPI_Abort(comm, check_count);                     \
-    }                                                     \
-} while (0)
-
 int rank = 0;
 int nprocs = 0;
-int check_count = 0;
 cell_t **tbl[NUM_WORKERS];
 int **del[NUM_WORKERS];
 int **ins[NUM_WORKERS];
 vector<string> sequences;
 ProcGroup* pgrp = NULL;
 UniformTaskCollSplitHybrid* utcs[NUM_WORKERS];
-
-class AlignStats {
-    public:
-        unsigned long edge_counts;
-        unsigned long align_counts;
-        double align_times_tot;
-        double align_times_min;
-        double align_times_max;
-
-        AlignStats()
-            : edge_counts(0)
-            , align_counts(0)
-            , align_times_tot(0.0)
-            , align_times_min(DBL_MAX)
-            , align_times_max(DBL_MIN)
-        { }
-
-        AlignStats& operator +=(const AlignStats &other) {
-            edge_counts += other.edge_counts;
-            align_counts += other.align_counts;
-            align_times_tot += other.align_times_tot;
-            align_times_min = MIN(align_times_min,other.align_times_min);
-            align_times_max = MAX(align_times_max,other.align_times_max);
-            return *this;
-        }
-
-        string getHeader() const {
-            return "  Edges Alignments   Total_Time     Min_Time     Max_Time     Avg_Time";
-        }
-
-        friend ostream& operator << (ostream &os, const AlignStats &stats) {
-            int p = os.precision();
-            os.precision(4);
-            os << setw(7) << stats.edge_counts
-               << setw(11) << stats.align_counts
-               << setw(13) << fixed << showpoint << stats.align_times_tot
-               << setw(13) << fixed << showpoint << stats.align_times_min
-               << setw(13) << fixed << showpoint << stats.align_times_max
-               << setw(13) << fixed << showpoint << (stats.align_times_tot/stats.align_counts);
-            os.precision(p); // undo state change
-            return os;
-        }
-};
-
 AlignStats stats[NUM_WORKERS];
-
 // Synchronization for worker threads
 pthread_barrier_t workersStart, workersEnd;
 // Synchronization for server thread
@@ -103,6 +46,7 @@ pthread_barrier_t serverStart, serverEnd;
 static pthread_t threadHandles[NUM_WORKERS + NUM_SERVERS];
 static unsigned threadRanks[NUM_WORKERS + NUM_SERVERS];
 volatile bool serverEnabled = true;
+
 
 void *serverThd(void *args)
 {
@@ -204,6 +148,8 @@ static void alignment_task(
     int is_edge_answer = 0;
     double t = 0;
     unsigned long i;
+    int sscore;
+    int maxLen;
 
     seq_id[0] = task_id / sequences.size();
     seq_id[1] = task_id % sequences.size();
@@ -220,7 +166,7 @@ static void alignment_task(
         is_edge_answer = is_edge(result,
                 sequences[seq_id[0]].c_str(), sequences[seq_id[0]].size(),
                 sequences[seq_id[1]].c_str(), sequences[seq_id[1]].size(),
-                param);
+                param, &sscore, &maxLen);
         ++stats[thd].align_counts;
 
         if (is_edge_answer) {
@@ -237,8 +183,8 @@ static void alignment_task(
         }
         t = MPI_Wtime() - t;
         stats[thd].align_times_tot += t;
-        stats[thd].align_times_min = MIN(stats[thd].align_times_min,t);
-        stats[thd].align_times_max = MAX(stats[thd].align_times_max,t);
+        stats[thd].calc_min(t);
+        stats[thd].calc_max(t);
     }
 }
 
@@ -282,8 +228,6 @@ int main(int argc, char **argv)
     long seg_count = 0;
     size_t max_seq_len = 0;
     unsigned long nCk;
-
-    check_count = 0;
 
     /* initialize MPI */
 #if defined(THREADED)

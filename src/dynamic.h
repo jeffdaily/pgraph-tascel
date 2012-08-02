@@ -23,8 +23,7 @@ extern "C" {
 #define PROW(i) ((i-1)%2)
 #define BLOSUM62(map, ch1, ch2) \
         blosum62[map[ch1-'A']][map[ch2-'A']]
-#define NEG_ADD(x, y) \
-        (((y)<0)&&((x)<(INT_MIN-y)) ? INT_MIN : (x)+(y))
+#define NEG_ADD(x, y) (((y)<0)&&((x)<(INT_MIN-y)) ? INT_MIN : (x)+(y))
 #define MIN(x, y) (((x)<(y))? (x) : (y))
 #define MAX(x, y) (((x)>(y))? (x) : (y))
 #define MIN_VAL (-20000000)
@@ -61,6 +60,10 @@ void free_tbl(cell_t **tbl, int nrow);
 int **alloc_int(int nrow, int ncol);
 void free_int(int **tbl, int nrow);
 
+void affine_gap_align_old(
+        const char *s1, size_t s1Len,
+        const char *s2, size_t s2Len,
+        cell_t *result, cell_t **tbl, int **del, int **ins);
 void affine_gap_align(
         const char *s1, size_t s1Len,
         const char *s2, size_t s2Len,
@@ -71,7 +74,7 @@ void print_row(cell_t **tbl, int i, int ncol);
 int is_edge(const cell_t result,
         const char *s1, size_t s1Len,
         const char *s2, size_t s2Len,
-        const is_edge_param_t param);
+        const is_edge_param_t param, int *sscore, int *maxLen);
 
 #ifdef __cplusplus
 }
