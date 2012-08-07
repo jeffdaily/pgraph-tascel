@@ -161,7 +161,23 @@ void mpix_read_file(
 
     }
 
+#   define BCAST_IN_CHUNKS 1
+#   if BCAST_IN_CHUNKS
+    /* bcast file contents in 1GB chunks */
+    long chunk_size = 1073741824;
+    long offset = 0;
+    while (offset < file_size) {
+        long message_size = chunk_size;
+        if (offset+chunk_size > file_size) {
+            message_size = file_size % chunk_size;
+        }
+        MPI_CHECK(MPI_Bcast(&file_buffer[offset],
+                    message_size, MPI_CHAR, 0, comm));
+        offset += chunk_size;
+    }
+#   else
     /* bcast file contents */
     MPI_CHECK(MPI_Bcast(file_buffer, file_size, MPI_CHAR, 0, comm));
+#   endif
 #endif
 }
