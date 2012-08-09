@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -170,6 +171,10 @@ void mpix_read_file(
         long message_size = chunk_size;
         if (offset+chunk_size > file_size) {
             message_size = file_size % chunk_size;
+        }
+        if (0 == rank) {
+            printf("broadcasting chunk %ld->%ld message_size=%ld\n",
+                    offset, offset+message_size, message_size);
         }
         MPI_CHECK(MPI_Bcast(&file_buffer[offset],
                     message_size, MPI_CHAR, 0, comm));

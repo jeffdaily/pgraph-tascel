@@ -6,6 +6,7 @@
 #include <cassert>
 #include <cerrno>
 #include <cmath>
+#include <cstdlib>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -79,8 +80,8 @@ char* read_file(const string &filename)
 
 int main(int argc, char **argv)
 {
-    if (argc != 4) {
-        cout << "usage: <progname> input_dir output_dir max_id" << endl;
+    if (argc != 4 && argc != 5) {
+        cout << "usage: <progname> input_dir output_dir max_id (start_id)" << endl;
         return 1;
     }
 
@@ -92,10 +93,16 @@ int main(int argc, char **argv)
     size_t width = static_cast<size_t>(log10(file_count)+0.5);
     size_t pc_total = 0;
     size_t new_total = 0;
-    size_t interval = 100000;
+    size_t interval = 500000;
     size_t lo = 0;
     size_t hi = interval;
     size_t max_id = atoi(argv[3]);
+
+    if (argc == 5) {
+        lo = atoi(argv[4]);
+        hi += lo;
+        cout << "starting interval at " << lo << endl;
+    }
 
     cout << fixed << setprecision(3);
 
@@ -135,7 +142,7 @@ int main(int argc, char **argv)
 #endif
     cout << "MAX SEQ ID = " << max_id << endl;
 
-    while (hi < max_id) {
+    while (lo < max_id) {
         set<pair<int,int> > pairs;
         cout << "processing interval " << lo << "->" << hi << endl;
         for (size_t i=0; i<file_count; ++i) {
@@ -147,7 +154,9 @@ int main(int argc, char **argv)
             int count = static_cast<int>(count_f);
             cout << "processing " << setw(width) << i+1 << "/" << file_count
                 << " " << infile << endl;
+#if INTERACTIVE_PROGRESS
             cout << "\t0%" << flush;
+#endif
             char *buffer = read_file(infile);
             assert(buffer);
             for (size_t j=0; j<size; j+=9) {
@@ -158,9 +167,11 @@ int main(int argc, char **argv)
                 assert(id2 >= 0 && size_t(id2) <= max_id);
                 assert(newline == '\n');
                 ++pc;
+#if INTERACTIVE_PROGRESS
                 if (pc%100000 == 0) {
                     cout << "\r" << flush << "\t" << (100.0*pc/count) << "%" << flush;
                 }
+#endif
                 if (id1 > id2) {
                     int tmp = id1;
                     id1 = id2;
@@ -172,7 +183,9 @@ int main(int argc, char **argv)
                 }
             }
             delete [] buffer;
+#if INTERACTIVE_PROGRESS
             cout << "\r" << flush;
+#endif
         }
 
         ostringstream str;
@@ -185,7 +198,9 @@ int main(int argc, char **argv)
             cout << "writing " << outfile
                 << " (" << pairs.size() << " pairs)" << endl;
         }
+#if INTERACTIVE_PROGRESS
         cout << "\t0%" << flush;
+#endif
         new_total += pairs.size();
         size_t pc = 0;
         ofstream out(outfile.c_str(), ios::binary|ios::trunc);
@@ -196,15 +211,19 @@ int main(int argc, char **argv)
         for (set<pair<int,int> >::iterator it=pairs.begin();
                 it!=pairs.end(); ++it) {
             pc += 1;
+#if INTERACTIVE_PROGRESS
             if (pc%10000 == 0) {
                 cout << "\r" << flush << "\t" << (100.0*pc/pairs.size()) << "%" << flush;
             }
+#endif
             char *newline = "\n";
             out.write(reinterpret_cast<const char*>(&(it->first)), sizeof(int));
             out.write(reinterpret_cast<const char*>(&(it->second)), sizeof(int));
             out.write(newline, 1);
         }
+#if INTERACTIVE_PROGRESS
         cout << "\r" << flush;
+#endif
         out.close();
         pairs.clear();
         lo += interval;

@@ -32,7 +32,7 @@
 using namespace std;
 using namespace tascel;
 
-#define DEBUG 0
+#define DEBUG 1
 
 #ifndef SORT_TASKS_LOCALLY
 #define SORT_TASKS_LOCALLY 0
@@ -463,7 +463,15 @@ int main(int argc, char **argv)
     }
 
     /* read sequence file on all procs */
+    if (0 == rank) {
+        cout << "reading sequence file " << all_argv[1] << endl;
+    }
+    double timer = MPI_Wtime();
     mpix_read_file(comm, all_argv[1], file_buffer, file_size);
+    timer = MPI_Wtime() - timer;
+    if (0 == rank) {
+        cout << "finished reading sequence file in " << timer << " seconds" << endl;
+    }
 
     /* each process indexes the file_buffer */
     parse_sequence_buffer(file_buffer, file_size, max_seq_len);
@@ -544,6 +552,8 @@ int main(int argc, char **argv)
                 pair_file_buffer);
         populate_times[worker] = MPI_Wtime() - populate_times[worker];
     }
+    /* finished with pair file */
+    delete [] pair_file_buffer;
 #if DEBUG
     double *g_populate_times = new double[nprocs*NUM_WORKERS];
     MPI_CHECK(MPI_Gather(populate_times, NUM_WORKERS, MPI_DOUBLE,
