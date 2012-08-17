@@ -55,6 +55,7 @@ noinst_PROGRAMS += sandbox/unique_pairs
 noinst_PROGRAMS += tests/test_combinations
 noinst_PROGRAMS += tests/test_dynamic
 noinst_PROGRAMS += tests/test_read
+noinst_PROGRAMS += tests/test_read_serial
 if HAVE_UTC_ITER
 noinst_PROGRAMS += sandbox/brute_force_iter
 endif
@@ -78,6 +79,7 @@ sandbox_unique_pairs_SOURCES               = sandbox/unique_pairs.cc
 tests_test_combinations_SOURCES            = tests/test_combinations.cc
 tests_test_dynamic_SOURCES                 = tests/test_dynamic.c
 tests_test_read_SOURCES                    = tests/test_read.cc
+tests_test_read_serial_SOURCES             = tests/test_read_serial.cc
 
 sandbox_brute_force_costs_CPPFLAGS         = $(AM_CPPFLAGS) -DDUMP_COSTS=1
 sandbox_brute_force_multiple_CPPFLAGS      = $(AM_CPPFLAGS) -DMULTIPLE_PAIRS_PER_TASK=1

@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
@@ -91,21 +92,36 @@ void mpix_print_sync(MPI_Comm comm, const string &name, const string &what)
 }
 
 
+void mpix_print_sync(MPI_Comm comm, const string &what)
+{
+    int rank;
+    int size;
+
+    MPI_CHECK(MPI_Comm_rank(comm, &rank));
+    MPI_CHECK(MPI_Comm_size(comm, &size));
+
+    for (int i=0; i<size; ++i) {
+        if (i == rank) {
+            cout << "[" << rank << "] " << what << endl;
+        }
+        MPI_Barrier(comm);
+    }
+}
+
+
 /**
- * Collectively read a file.
+ * Collectively return size of the given file.
  *
- * All processes within the MPI_Comm instance will receive the entire contents
- * of the file.
+ * All processes within the MPI_Comm instance will receive the file size.
  *
  * @param[in] comm instance
  * @param[in] file_name to open
- * @param[out] file_buffer to store file contents
- * @param[out] file_size of the given file
+ *
+ * @return the file size
  */
-void mpix_read_file(
-        MPI_Comm comm, const string &file_name,
-        char* &file_buffer, long &file_size)
+unsigned long mpix_get_file_size(MPI_Comm comm, const string &file_name)
 {
+    unsigned long file_size;
     int rank;
     int size;
 
@@ -128,21 +144,130 @@ void mpix_read_file(
 
     /* the file_size is broadcast to all */
     MPI_CHECK(MPI_Bcast(&file_size, 1, MPI_LONG, 0, comm));
+#if 0
     if (0 == rank) {
         printf("file_size=%ld\n", file_size);
     }
+#endif
+    mpix_print_sync(comm, "file_size", file_size);
+
+    return file_size;
+}
+
+
+/**
+ * Collectively read a file.
+ *
+ * All processes within the MPI_Comm instance will receive the entire contents
+ * of the file.
+ *
+ * @param[in] comm instance
+ * @param[in] file_name to open
+ * @param[out] file_buffer to store file contents
+ * @param[out] file_size of the given file
+ */
+void mpix_read_file(
+        MPI_Comm comm, const string &file_name,
+        char* &file_buffer, unsigned long &file_size, long chunk_size)
+{
+    //mpix_read_file_mpiio(comm, file_name, file_buffer, file_size, chunk_size);
+    mpix_read_file_bcast(comm, file_name, file_buffer, file_size, chunk_size);
+}
+
+
+/**
+ * Collectively read an entire file using MPI_File_read_all().
+ *
+ * All processes within the MPI_Comm instance will receive the entire contents
+ * of the file.
+ *
+ * @param[in] comm instance
+ * @param[in] file_name to open
+ * @param[out] file_buffer to store file contents
+ * @param[out] file_size of the given file
+ */
+void mpix_read_file_mpiio(
+        MPI_Comm comm, const string &file_name,
+        char* &file_buffer, unsigned long &file_size, long chunk_size)
+{
+    int rank;
+    int size;
+    MPI_Status status;
+    MPI_File fh;
+
+    MPI_CHECK(MPI_Comm_rank(comm, &rank));
+    MPI_CHECK(MPI_Comm_size(comm, &size));
 
     /* allocate a buffer for the file, of the entire size */
+    file_size = mpix_get_file_size(comm, file_name);
     file_buffer = new char[file_size];
 
-#if MPIX_READ_FILE_ALL
-    /* all procs read the entire file */
-    MPI_CHECK(MPI_File_open(comm, const_cast<char*>(file_name.c_str()),
-                MPI_MODE_RDONLY|MPI_MODE_UNIQUE_OPEN,
-                MPI_INFO_NULL, &fh));
-    MPI_CHECK(MPI_File_read_all(fh, file_buffer, file_size, MPI_CHAR, &status));
-    MPI_CHECK(MPI_File_close(&fh));
-#else
+    if (file_size > chunk_size) {
+        long offset = 0;
+        int count = 0;
+
+        /* read file contents in chunks */
+        MPI_CHECK(MPI_File_open(comm, const_cast<char*>(file_name.c_str()),
+                    MPI_MODE_RDONLY|MPI_MODE_UNIQUE_OPEN,
+                    MPI_INFO_NULL, &fh));
+        while (offset < file_size) {
+            long message_size = chunk_size;
+            if (offset+chunk_size > file_size) {
+                message_size = file_size % chunk_size;
+            }
+            if (0 == rank) {
+                printf("reading chunk %ld->%ld message_size=%ld\n",
+                        offset, offset+message_size, message_size);
+            }
+            MPI_CHECK(MPI_File_read_at_all(fh, offset, file_buffer+offset,
+                        message_size, MPI_CHAR, &status));
+            MPI_CHECK(MPI_Get_count(&status, MPI_CHAR, &count));
+            assert(count == message_size);
+            offset += count;
+        }
+    }
+    else {
+        int count = 0;
+
+        /* all procs read the entire file */
+        MPI_CHECK(MPI_File_open(comm, const_cast<char*>(file_name.c_str()),
+                    /*MPI_MODE_RDONLY|MPI_MODE_UNIQUE_OPEN,*/
+                    MPI_MODE_RDONLY,
+                    MPI_INFO_NULL, &fh));
+        MPI_CHECK(MPI_File_read_at_all(fh, 0, file_buffer,
+                    file_size, MPI_CHAR, &status));
+        MPI_CHECK(MPI_Get_count(&status, MPI_CHAR, &count));
+        assert(count == file_size);
+        MPI_CHECK(MPI_File_close(&fh));
+    }
+}
+
+
+/**
+ * Collectively read a file using process 0 and bcast.
+ *
+ * All processes within the MPI_Comm instance will receive the entire contents
+ * of the file.
+ *
+ * @param[in] comm instance
+ * @param[in] file_name to open
+ * @param[out] file_buffer to store file contents
+ * @param[out] file_size of the given file
+ */
+void mpix_read_file_bcast(
+        MPI_Comm comm, const string &file_name,
+        char* &file_buffer, unsigned long &file_size, long chunk_size)
+{
+    int rank;
+    int size;
+
+    MPI_CHECK(MPI_Comm_rank(comm, &rank));
+    MPI_CHECK(MPI_Comm_size(comm, &size));
+
+    /* allocate a buffer for the file, of the entire size */
+    file_size = mpix_get_file_size(comm, file_name);
+    file_buffer = new char[file_size];
+
     if (0 == rank) {
         FILE *file = NULL;
         size_t read_count = 0;
@@ -162,27 +287,25 @@ void mpix_read_file(
 
     }
 
-#   define BCAST_IN_CHUNKS 1
-#   if BCAST_IN_CHUNKS
-    /* bcast file contents in 1GB chunks */
-    long chunk_size = 1073741824;
-    long offset = 0;
-    while (offset < file_size) {
-        long message_size = chunk_size;
-        if (offset+chunk_size > file_size) {
-            message_size = file_size % chunk_size;
+    if (file_size > chunk_size) {
+        /* bcast file contents in chunks */
+        long offset = 0;
+        while (offset < file_size) {
+            long message_size = chunk_size;
+            if (offset+chunk_size > file_size) {
+                message_size = file_size % chunk_size;
+            }
+            if (0 == rank) {
+                printf("broadcasting chunk %ld->%ld message_size=%ld\n",
+                        offset, offset+message_size, message_size);
+            }
+            MPI_CHECK(MPI_Bcast(&file_buffer[offset],
+                        message_size, MPI_CHAR, 0, comm));
+            offset += chunk_size;
         }
-        if (0 == rank) {
-            printf("broadcasting chunk %ld->%ld message_size=%ld\n",
-                    offset, offset+message_size, message_size);
-        }
-        MPI_CHECK(MPI_Bcast(&file_buffer[offset],
-                    message_size, MPI_CHAR, 0, comm));
-        offset += chunk_size;
     }
-#   else
-    /* bcast file contents */
-    MPI_CHECK(MPI_Bcast(file_buffer, file_size, MPI_CHAR, 0, comm));
-#   endif
-#endif
+    else {
+        /* bcast entire file contents */
+        MPI_CHECK(MPI_Bcast(file_buffer, file_size, MPI_CHAR, 0, comm));
+    }
 }

@@ -87,41 +87,98 @@ int main(int argc, char **argv)
         printf("file_size=%ld\n", file_size);
     }
 
+    if (0 == rank) {
+        FILE *file = NULL;
+        size_t read_count = 0;
+        unsigned long my_seg_count = 0;
+        char *file_buffer_dup = new char[file_size];
+
+        file = fopen(argv[1], "r");
+        if (NULL == file) {
+            perror("fopen");
+            printf("unable to open file on process 0\n");
+            MPI_Abort(comm, 1);
+        }
+        printf("process 0 opened file\n");
+
+        read_count = fread(file_buffer, file_size, 1, file);
+        if (0 == read_count) {
+            printf("unable to read file on process 0\n");
+            MPI_Abort(comm, 1);
+        }
+        printf("process 0 read file\n");
+
+        fclose(file);
+        
+        assert(file_buffer[0] == '>');
+        ++my_seg_count;
+        for (int i=1; i<file_size; ++i) {
+            if (file_buffer[i] == '>' && file_buffer[i-1] == '\n') {
+                ++my_seg_count;
+            }
+        }
+
+        printf("[0] my_seg_count=%lu\n", my_seg_count);
+
+        delete [] file_buffer_dup;
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+
     /* allocate a buffer for the file, of the entire size */
     file_buffer = new char[file_size];
     char *current_file_buffer = file_buffer;
+    MPI_Offset offset = 0;
     long file_size_remaining = file_size;
 
     /* all procs read the entire file */
     /* read the file in INT_MAX chunks due to MPI 'int' interface */
     MPI_CHECK(MPI_File_open(comm, argv[1],
                 MPI_MODE_RDONLY|MPI_MODE_UNIQUE_OPEN, MPI_INFO_NULL, &fh));
-    int count;
     if (0 == rank) {
         cout << "INT_MAX=" << INT_MAX << endl;
     }
+    //int chunk_size = INT_MAX;
+    //int chunk_size = 8192;
+    int chunk_size = 536870912; // 0.5 GB
     do {
-        MPI_CHECK(MPI_File_read_all(fh, current_file_buffer,
-                    INT_MAX, MPI_CHAR, &status));
-        MPI_CHECK(MPI_Get_count(&status, MPI_CHAR, &count));
+        int count;
+        int count_result;
+        if (file_size_remaining > chunk_size) {
+            count = chunk_size;
+        }
+        else {
+            count = file_size_remaining;
+        }
+        MPI_CHECK(MPI_File_read_at_all(fh, offset, current_file_buffer,
+                    count, MPI_CHAR, &status));
+        MPI_CHECK(MPI_Get_count(&status, MPI_CHAR, &count_result));
         for (int p=0; p<nprocs; ++p) {
             if (p == rank) {
-                cout << p << " read " << count << " bytes" << endl;
+                cout << p << " read " << count_result << " bytes" << endl;
             }
             MPI_Barrier(comm);
         }
-        current_file_buffer += count;
-        file_size_remaining -= count;
+        offset += count_result;
+        current_file_buffer += count_result;
+        file_size_remaining -= count_result;
     }
     while (file_size_remaining > 0);
     MPI_CHECK(MPI_File_close(&fh));
 
     /* each process counts how many '>' characters are in the file_buffer */
-    for (int i=0; i<file_size; ++i) {
-        if (file_buffer[i] == '>') {
+    assert(file_buffer[0] == '>');
+    ++seg_count;
+    for (int i=1; i<file_size; ++i) {
+        if (file_buffer[i] == '>' && file_buffer[i-1] == '\n') {
             ++seg_count;
+#if 1
+            if (seg_count % 10000 == 0) {
+                MPI_Barrier(MPI_COMM_WORLD);
+            }
+#endif
         }
     }
+    MPI_Barrier(MPI_COMM_WORLD);
 
     /* print the seg_count on each process */
     for (int i=0; i<nprocs; ++i) {
@@ -130,6 +187,8 @@ int main(int argc, char **argv)
         }
         MPI_Barrier(comm);
     }
+
+
 
     /* clean up */
     delete [] file_buffer;

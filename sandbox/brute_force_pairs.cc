@@ -4,10 +4,14 @@
  * A first attempt at a brute force alignment of an input dataset using work
  * stealing. Each MPI task reads the input file.
  */
+#define _GNU_SOURCE
+#include <pthread.h>
 #include <mpi.h>
 #include <tascel.h>
 #include <tascel/UniformTaskCollection.h>
 #include <tascel/UniformTaskCollSplitHybrid.h>
+
+#include <assert.h>
 
 #include <algorithm>
 #include <cfloat>
@@ -46,12 +50,29 @@ using namespace tascel;
 #define DUMP_COSTS 0
 #endif
 
+class Sequence {
+    public:
+        unsigned long index;
+        unsigned long size;
+
+        bool operator < (const Sequence &seq) {
+            return index < seq.index;
+        }
+
+        friend ostream& operator << (ostream &os, const Sequence &seq) {
+            os << "Sequence(" << seq.index << "," << seq.size << ")";
+            return os;
+        }
+};
+
 int rank = 0;
 int nprocs = 0;
 cell_t **tbl[NUM_WORKERS];
 int **del[NUM_WORKERS];
 int **ins[NUM_WORKERS];
-vector<string> sequences;
+char *sequence_buffer = NULL;
+unsigned long sequence_buffer_size = 0;
+vector<Sequence> sequences;
 size_t max_seq_len = 0;
 ProcGroup* pgrp = NULL;
 UniformTaskCollSplitHybrid* utcs[NUM_WORKERS];
@@ -76,40 +97,75 @@ bool longest_string_first(const string &i, const string &j)
 }
 
 
+bool smallest_index_first(const Sequence &i, const Sequence &j)
+{
+    return i.index < j.index;
+}
+
+
 /* each process indexes the file_buffer */
-void parse_sequence_buffer(char *file_buffer, long file_size, size_t &max_seq_len)
+void parse_sequence_buffer(char *file_buffer, unsigned long file_size,
+        size_t &max_seq_len, MPI_Comm comm)
 {
     long seg_count = 0;
-    istrstream input_stream(const_cast<const char*>(file_buffer), file_size);
-    string line;
-    string sequence;
+    Sequence sequence;
+    bool is_comment = false;
+    unsigned long i = 0;
+
+    MPI_Barrier(comm);
 
     /* each process counts how many '>' characters are in the file_buffer */
-    for (int i=0; i<file_size; ++i) {
-        if (file_buffer[i] == '>') {
+    mpix_print_sync(comm, "each process counts how many '>' characters are in the file_buffer");
+    assert(file_buffer[0] == '>');
+    ++seg_count;
+    for (i=1; i<file_size; ++i) {
+        if (file_buffer[i] == '>' && file_buffer[i-1] == '\n') {
             ++seg_count;
+#if 0
+            if (seg_count % 10000 == 0) {
+                mpix_print_sync(comm, "seg_count so far", seg_count);
+            }
+#endif
+        }
+    }
+    mpix_print_sync(comm, "seg_count", seg_count);
+
+    sequences.reserve(seg_count);
+    mpix_print_sync(comm, "sequences.reserve(seg_count);");
+
+    assert(file_buffer[0] == '>');
+    is_comment = true;
+    for (i=1; i<file_size; ++i) {
+        if (file_buffer[i] == '>' && file_buffer[i-1] == '\n') {
+            assert(!is_comment);
+            is_comment = true;
+        }
+        else if (file_buffer[i] == '\n') {
+            if (is_comment) {
+                is_comment = false;
+                sequence.index = i+1;
+            }
+            else {
+                assert(i > sequence.index);
+                sequence.size = i - sequence.index;
+                sequences.push_back(sequence);
+                max_seq_len = max(max_seq_len, sequence.size);
+                if (0 == rank && sequences.size() % 100000 == 0) {
+                    printf("processed %lu sequences\n", sequences.size());
+                }
+            }
         }
     }
 
-    sequences.reserve(seg_count);
-    while (getline(input_stream, line)) {
-        if (line[0] == '>') {
-            if (!sequence.empty()) {
-                sequences.push_back(sequence);
-                max_seq_len = max(max_seq_len, sequence.size());
-            }
-            sequence.clear();
-            continue;
-        }
-        sequence += line;
+    MPI_Barrier(comm);
+    if (0 == rank) {
+        printf("processed %lu sequences\n", sequences.size());
+        printf("seg_count=%lu\n", seg_count);
     }
-    /* add the last sequence in the file since we wouldn't encounter another
-     * '>' character but rather an EOF */
-    if (!sequence.empty()) {
-        sequences.push_back(sequence);
-        max_seq_len = max(max_seq_len, sequence.size());
-    }
-    sequence.clear();
+    MPI_Barrier(comm);
+
+    assert(sequences.size() == seg_count);
+    mpix_print_sync(comm, "finished parsing sequences");
 }
 
 
@@ -118,7 +174,7 @@ void sort_sequences(MPI_Comm comm)
     double *sort_times = new double[nprocs];
     double  sort_time = MPI_Wtime();
     /* sort the sequences, largest first */
-    sort(sequences.begin(), sequences.end(), longest_string_first);
+    sort(sequences.begin(), sequences.end(), smallest_index_first);
     sort_time = MPI_Wtime() - sort_time;
     MPI_CHECK(MPI_Gather(&sort_time, 1, MPI_DOUBLE, sort_times, 1, MPI_DOUBLE, 0, comm));
     if (0 == rank) {
@@ -292,19 +348,28 @@ static void alignment_task(
     try {
     seq_id[0] = desc->id1;
     seq_id[1] = desc->id2;
+#if DEBUG
+    cout << trank(thd) << ": testing " << seq_id[0] << " " << seq_id[1]
+        << " " << sequences.at(seq_id[0])
+        << " " << sequences.at(seq_id[1]) << endl;
+    assert(seq_id[0] < sequences.size());
+    assert(seq_id[1] < sequences.size());
+#endif
     t = MPI_Wtime();
+#if 0
     affine_gap_align(
-            sequences.at(seq_id[0]).c_str(),
-            sequences.at(seq_id[0]).size(),
-            sequences.at(seq_id[1]).c_str(),
-            sequences.at(seq_id[1]).size(),
+            &sequence_buffer[sequences.at(seq_id[0]).index],
+            sequences.at(seq_id[0]).size,
+            &sequence_buffer[sequences.at(seq_id[1]).index],
+            sequences.at(seq_id[1]).size,
             &result, tbl[thd], del[thd], ins[thd]);
     is_edge_answer = is_edge(result,
-            sequences.at(seq_id[0]).c_str(),
-            sequences.at(seq_id[0]).size(),
-            sequences.at(seq_id[1]).c_str(),
-            sequences.at(seq_id[1]).size(),
+            &sequence_buffer[sequences.at(seq_id[0]).index],
+            sequences.at(seq_id[0]).size,
+            &sequence_buffer[sequences.at(seq_id[1]).index],
+            sequences.at(seq_id[1]).size,
             param, &sscore, &maxLen);
+#endif
     ++stats[thd].align_counts;
     } catch (std::out_of_range &ex) {
         cerr << "[" << trank(thd) << "] seq_id[0] = " << seq_id[0] << endl;
@@ -404,9 +469,7 @@ int main(int argc, char **argv)
     MPI_Comm comm = MPI_COMM_NULL;
     int provided;
     vector<string> all_argv;
-    long file_size = -1;
-    char *file_buffer = NULL;
-    long pair_file_size = -1;
+    unsigned long pair_file_size = 0;
     char *pair_file_buffer = NULL;
     unsigned long nCk;
 
@@ -467,15 +530,18 @@ int main(int argc, char **argv)
         cout << "reading sequence file " << all_argv[1] << endl;
     }
     double timer = MPI_Wtime();
-    mpix_read_file(comm, all_argv[1], file_buffer, file_size);
+    mpix_read_file(comm, all_argv[1], sequence_buffer, sequence_buffer_size, INT_MAX);
     timer = MPI_Wtime() - timer;
+    mpix_print_sync(comm, "sequence_buffer_size", sequence_buffer_size);
+    mpix_print_sync(comm, "sequence_buffer[0]", sequence_buffer[0]);
+    mpix_print_sync(comm, "sequence_buffer[-1]", sequence_buffer[sequence_buffer_size-1]);
+    mpix_print_sync(comm, "sequence_buffer[-2]", sequence_buffer[sequence_buffer_size-2]);
     if (0 == rank) {
         cout << "finished reading sequence file in " << timer << " seconds" << endl;
     }
 
     /* each process indexes the file_buffer */
-    parse_sequence_buffer(file_buffer, file_size, max_seq_len);
-    delete [] file_buffer;
+    parse_sequence_buffer(sequence_buffer, sequence_buffer_size, max_seq_len, comm);
 
 #if SORT_SEQUENCES
     sort_sequences(comm);
@@ -604,11 +670,13 @@ int main(int argc, char **argv)
     pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
 //#endif
 
+
     pthread_barrier_init(&workersStart, 0, NUM_WORKERS);
     pthread_barrier_init(&workersEnd, 0, NUM_WORKERS);
     pthread_barrier_init(&serverStart, 0, NUM_SERVERS + 1);
     pthread_barrier_init(&serverEnd, 0, NUM_SERVERS + 1);
     asm("mfence");
+    mpix_print_sync(comm, "before pthread_create");
     for (unsigned i = 1; i < NUM_WORKERS; ++i) {
       pthread_create(&threadHandles[i], NULL, workerThd, &threadRanks[i]);
     }
@@ -708,6 +776,8 @@ int main(int argc, char **argv)
         edges[worker].close();
     }
     delete pgrp;
+
+    delete [] sequence_buffer;
 
     TascelConfig::finalize();
     MPI_Comm_free(&comm);

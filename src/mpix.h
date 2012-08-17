@@ -28,10 +28,14 @@ extern int check_count;
 } while (0)
 
 void mpix_bcast_argv(MPI_Comm comm, int argc, char **argv, vector<string> &all_argv);
-void mpix_read_file(MPI_Comm comm, const string &file_name, char* &file_buffer, long &file_size);
+unsigned long mpix_get_file_size(MPI_Comm comm, const string &file_name);
+void mpix_read_file(MPI_Comm comm, const string &file_name, char* &file_buffer, unsigned long &file_size, long chunk_size=1073741824);
+void mpix_read_file_bcast(MPI_Comm comm, const string &file_name, char* &file_buffer, unsigned long &file_size, long chunk_size=1073741824);
+void mpix_read_file_mpiio(MPI_Comm comm, const string &file_name, char* &file_buffer, unsigned long &file_size, long chunk_size=1073741824);
 
 void mpix_print_sync(MPI_Comm comm, const string &name, const vector<string> &what);
 void mpix_print_sync(MPI_Comm comm, const string &name, const string &what);
+void mpix_print_sync(MPI_Comm comm, const string &what);
 
 template <class T>
 void mpix_print_sync(MPI_Comm comm, const string &name, const T &what)
