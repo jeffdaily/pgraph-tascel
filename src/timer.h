@@ -44,7 +44,7 @@ static __inline__ unsigned long long rdtsc(void)
 #   undef HAVE_SYS_TIME_H
 #   define HAVE_SYS_TIME_H 1
 #   include <sys/time.h>
-#elif define(HAVE_WINDOWS_H)
+#elif defined(HAVE_WINDOWS_H)
 #   undef HAVE_WINDOWS_H
 #   define HAVE_WINDOWS_H 1
 #   include <windows.h>

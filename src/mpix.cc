@@ -170,8 +170,8 @@ void mpix_read_file(
         MPI_Comm comm, const string &file_name,
         char* &file_buffer, unsigned long &file_size, long chunk_size)
 {
-    //mpix_read_file_mpiio(comm, file_name, file_buffer, file_size, chunk_size);
-    mpix_read_file_bcast(comm, file_name, file_buffer, file_size, chunk_size);
+    mpix_read_file_mpiio(comm, file_name, file_buffer, file_size, chunk_size);
+    //mpix_read_file_bcast(comm, file_name, file_buffer, file_size, chunk_size);
 }
 
 

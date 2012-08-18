@@ -36,7 +36,9 @@
 using namespace std;
 using namespace tascel;
 
-#define DEBUG 1
+#define DEBUG 0
+
+#define CACHE_RESULTS 1
 
 #ifndef SORT_TASKS_LOCALLY
 #define SORT_TASKS_LOCALLY 0
@@ -65,6 +67,25 @@ class Sequence {
         }
 };
 
+class EdgeResult {
+    public:
+        unsigned long id1;
+        unsigned long id2;
+        double a;
+        double b;
+        double c;
+
+        EdgeResult(unsigned long id1, unsigned long id2, double a, double b, double c) : id1(id1), id2(id2), a(a), b(b), c(c) {}
+
+        friend ostream& operator << (ostream &os, const EdgeResult &edge) {
+            os << edge.id1 << "\t" << edge.id2 << "\t"
+                << edge.a << "\t"
+                << edge.b << "\t"
+                << edge.c;
+            return os;
+        }
+};
+
 int rank = 0;
 int nprocs = 0;
 cell_t **tbl[NUM_WORKERS];
@@ -79,7 +100,11 @@ UniformTaskCollSplitHybrid* utcs[NUM_WORKERS];
 #if DUMP_COSTS
 ofstream out[NUM_WORKERS];
 #endif
+#if CACHE_RESULTS
+vector<EdgeResult> edge_results[NUM_WORKERS];
+#else
 ofstream edges[NUM_WORKERS];
+#endif
 AlignStats stats[NUM_WORKERS];
 // Synchronization for worker threads
 pthread_barrier_t workersStart, workersEnd;
@@ -115,7 +140,9 @@ void parse_sequence_buffer(char *file_buffer, unsigned long file_size,
     MPI_Barrier(comm);
 
     /* each process counts how many '>' characters are in the file_buffer */
+#if DEBUG
     mpix_print_sync(comm, "each process counts how many '>' characters are in the file_buffer");
+#endif
     assert(file_buffer[0] == '>');
     ++seg_count;
     for (i=1; i<file_size; ++i) {
@@ -150,7 +177,7 @@ void parse_sequence_buffer(char *file_buffer, unsigned long file_size,
                 sequence.size = i - sequence.index;
                 sequences.push_back(sequence);
                 max_seq_len = max(max_seq_len, sequence.size);
-                if (0 == rank && sequences.size() % 100000 == 0) {
+                if (0 == rank && sequences.size() % 1000000 == 0) {
                     printf("processed %lu sequences\n", sequences.size());
                 }
             }
@@ -290,12 +317,21 @@ static string get_filename(int thd)
 #endif
 
 
+#if CACHE_RESULTS
+static string get_edges_filename(int rank)
+{
+    ostringstream str;
+    str << "edges." << rank << ".txt";
+    return str.str();
+}
+#else
 static string get_edges_filename(int thd)
 {
     ostringstream str;
     str << "edges." << trank(thd) << ".txt";
     return str.str();
 }
+#endif
 
 
 typedef struct {
@@ -356,7 +392,7 @@ static void alignment_task(
     assert(seq_id[1] < sequences.size());
 #endif
     t = MPI_Wtime();
-#if 0
+#if 1
     affine_gap_align(
             &sequence_buffer[sequences.at(seq_id[0]).index],
             sequences.at(seq_id[0]).size,
@@ -392,10 +428,18 @@ static void alignment_task(
             << 1.0*result.score/sscore << ")"
             << endl;
 #endif
+#if CACHE_RESULTS
+        edge_results[thd].push_back(EdgeResult(
+                    seq_id[0], seq_id[1], 
+                    1.0*result.alen/maxLen,
+                    1.0*result.ndig/result.alen,
+                    1.0*result.score/sscore));
+#else
         edges[thd] << seq_id[0] << "\t" << seq_id[1] << "\t"
             << 1.0*result.alen/maxLen << "\t"
             << 1.0*result.ndig/result.alen << "\t"
             << 1.0*result.score/sscore << endl;
+#endif
         ++stats[thd].edge_counts;
     }
     t = MPI_Wtime() - t;
@@ -472,6 +516,7 @@ int main(int argc, char **argv)
     unsigned long pair_file_size = 0;
     char *pair_file_buffer = NULL;
     unsigned long nCk;
+    double timer;
 
     /* initialize MPI */
 #if defined(THREADED)
@@ -529,19 +574,30 @@ int main(int argc, char **argv)
     if (0 == rank) {
         cout << "reading sequence file " << all_argv[1] << endl;
     }
-    double timer = MPI_Wtime();
+    MPI_Barrier(comm);
+    timer = MPI_Wtime();
     mpix_read_file(comm, all_argv[1], sequence_buffer, sequence_buffer_size, INT_MAX);
+    MPI_Barrier(comm);
     timer = MPI_Wtime() - timer;
+#if DEBUG
     mpix_print_sync(comm, "sequence_buffer_size", sequence_buffer_size);
     mpix_print_sync(comm, "sequence_buffer[0]", sequence_buffer[0]);
     mpix_print_sync(comm, "sequence_buffer[-1]", sequence_buffer[sequence_buffer_size-1]);
     mpix_print_sync(comm, "sequence_buffer[-2]", sequence_buffer[sequence_buffer_size-2]);
+#endif
     if (0 == rank) {
         cout << "finished reading sequence file in " << timer << " seconds" << endl;
     }
 
     /* each process indexes the file_buffer */
+    MPI_Barrier(comm);
+    timer = MPI_Wtime();
     parse_sequence_buffer(sequence_buffer, sequence_buffer_size, max_seq_len, comm);
+    MPI_Barrier(comm);
+    timer = MPI_Wtime() - timer;
+    if (0 == rank) {
+        cout << "finished parsing sequence file in " << timer << " seconds" << endl;
+    }
 
 #if SORT_SEQUENCES
     sort_sequences(comm);
@@ -567,9 +623,18 @@ int main(int argc, char **argv)
     }
 
     /* read pair file on all procs */
+    MPI_Barrier(comm);
+    timer = MPI_Wtime();
     mpix_read_file(comm, all_argv[2], pair_file_buffer, pair_file_size);
+    MPI_Barrier(comm);
+    timer = MPI_Wtime() - timer;
+    if (0 == rank) {
+        cout << "finished reading pair file in " << timer << " seconds" << endl;
+    }
     double size_check = 1.0 * pair_file_size / (sizeof(int)*2+sizeof(char));
-    mpix_print_sync(comm, "size_check", size_check);
+    if (0 == rank) {
+        cout << "size_check " << size_check << endl;
+    }
     assert(floor(size_check) == size_check);
 
     unsigned long ntasks = (unsigned long)size_check;
@@ -602,7 +667,11 @@ int main(int argc, char **argv)
 #if DUMP_COSTS
         out[worker].open(get_filename(worker).c_str());
 #endif
+#if CACHE_RESULTS
+        edge_results[worker].reserve(tasks_per_worker);
+#else
         edges[worker].open(get_edges_filename(worker).c_str());
+#endif
         UniformTaskCollSplitHybrid*& utc = utcs[worker];
         TslFuncRegTbl *frt = new TslFuncRegTbl();
         TslFunc tf = frt->add(alignment_task);
@@ -676,7 +745,9 @@ int main(int argc, char **argv)
     pthread_barrier_init(&serverStart, 0, NUM_SERVERS + 1);
     pthread_barrier_init(&serverEnd, 0, NUM_SERVERS + 1);
     asm("mfence");
+#if DEBUG
     mpix_print_sync(comm, "before pthread_create");
+#endif
     for (unsigned i = 1; i < NUM_WORKERS; ++i) {
       pthread_create(&threadHandles[i], NULL, workerThd, &threadRanks[i]);
     }
@@ -764,7 +835,10 @@ int main(int argc, char **argv)
     amBarrier();
     MPI_Barrier(comm);
 
-    /* clean up */
+#if CACHE_RESULTS
+    ofstream out(get_edges_filename(rank).c_str());
+#endif
+    /* clean up and output*/
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
         free_tbl(tbl[worker], NROW);
         free_int(del[worker], NROW);
@@ -773,8 +847,17 @@ int main(int argc, char **argv)
 #if DUMP_COSTS
         out[worker].close();
 #endif
+#if CACHE_RESULTS
+        for (size_t i=0,limit=edge_results[worker].size(); i<limit; ++i) {
+            out << edge_results[worker][i] << endl;
+        }
+#else
         edges[worker].close();
+#endif
     }
+#if CACHE_RESULTS
+    out.close();
+#endif
     delete pgrp;
 
     delete [] sequence_buffer;

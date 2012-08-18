@@ -1,6 +1,7 @@
 /**
  * @author jeff.daily@pnnl.gov
  */
+#include <stdio.h>
 #include <sys/stat.h>
 
 #include <cassert>
