@@ -61,6 +61,7 @@ AS_IF([test x$with_mpi_wrappers = xyes], [PT_MPI_UNWRAP])
 # Checks for libraries.
 TASCEL_REQUIRE
 GA_CHECK_PACKAGE([gmp], [gmp.h], [gmp], [__gmpz_bin_uiui])
+GA_CHECK_PACKAGE([armci], [armci.h], [armci], [ARMCI_Init])
 
 # Checks for header files.
 
@@ -124,10 +125,14 @@ AC_MSG_NOTICE([                   CPP=$CPP])
 AC_MSG_NOTICE([              CPPFLAGS=$CPPFLAGS])
 AC_MSG_NOTICE([               LDFLAGS=$LDFLAGS])
 AC_MSG_NOTICE([                  LIBS=$LIBS])
-AC_MSG_NOTICE([           GA_CPPFLAGS=$GA_CPPFLAGS])
-AC_MSG_NOTICE([            GA_LDFLAGS=$GA_LDFLAGS])
-AC_MSG_NOTICE([               GA_LIBS=$GA_LIBS])
-AC_MSG_NOTICE([              GA_FLIBS=$GA_FLIBS])
+AC_MSG_NOTICE([        ARMCI_CPPFLAGS=$ARMCI_CPPFLAGS])
+AC_MSG_NOTICE([         ARMCI_LDFLAGS=$ARMCI_LDFLAGS])
+AC_MSG_NOTICE([            ARMCI_LIBS=$ARMCI_LIBS])
+AC_MSG_NOTICE([           ARMCI_FLIBS=$ARMCI_FLIBS])
+dnl AC_MSG_NOTICE([           GA_CPPFLAGS=$GA_CPPFLAGS])
+dnl AC_MSG_NOTICE([            GA_LDFLAGS=$GA_LDFLAGS])
+dnl AC_MSG_NOTICE([               GA_LIBS=$GA_LIBS])
+dnl AC_MSG_NOTICE([              GA_FLIBS=$GA_FLIBS])
 AC_MSG_NOTICE([       TASCEL_CPPFLAGS=$TASCEL_CPPFLAGS])
 AC_MSG_NOTICE([        TASCEL_LDFLAGS=$TASCEL_LDFLAGS])
 AC_MSG_NOTICE([           TASCEL_LIBS=$TASCEL_LIBS])

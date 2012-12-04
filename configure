@@ -663,6 +663,11 @@ build_vendor
 build_cpu
 build
 LIBTOOL
+HAVE_ARMCI_FALSE
+HAVE_ARMCI_TRUE
+ARMCI_CPPFLAGS
+ARMCI_LDFLAGS
+ARMCI_LIBS
 HAVE_GMP_FALSE
 HAVE_GMP_TRUE
 GMP_CPPFLAGS
@@ -779,6 +784,7 @@ with_mpi
 enable_dependency_tracking
 with_tascel
 with_gmp
+with_armci
 enable_shared
 enable_static
 with_pic
@@ -1438,6 +1444,7 @@ Optional Packages:
   --with-tascel[=ARG]     specify location of tascel install and/or other
                           flags
   --with-gmp[=ARG]        specify location of gmp install and/or other flags
+  --with-armci[=ARG]      specify location of armci install and/or other flags
   --with-pic[=PKGS]       try to use only PIC/non-PIC objects [default=use
                           both]
   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
@@ -6569,6 +6576,255 @@ fi
 else
   HAVE_GMP_TRUE='#'
   HAVE_GMP_FALSE=
+fi
+
+
+
+
+
+
+
+
+
+
+
+ARMCI_LIBS=
+ARMCI_LDFLAGS=
+ARMCI_CPPFLAGS=
+
+# Check whether --with-armci was given.
+if test "${with_armci+set}" = set; then :
+  withval=$with_armci;
+else
+  with_armci=yes
+fi
+
+case $with_armci in #(
+  yes) :
+     ;; #(
+  no) :
+     ;; #(
+  *) :
+    if ac_fn_cxx_compute_int "$LINENO" "(long int) (sizeof (void*))" "ga_arg_parse_sizeof_voidp"        ""; then :
+
+fi
+
+for arg in $with_armci ; do
+    case $arg in #(
+  yes) :
+     ;; #(
+  no) :
+     ;; #(
+  -l*) :
+    ARMCI_LIBS="$ARMCI_LIBS $arg" ;; #(
+  -L*) :
+    ARMCI_LDFLAGS="$ARMCI_LDFLAGS $arg" ;; #(
+  -WL*) :
+    ARMCI_LDFLAGS="$ARMCI_LDFLAGS $arg" ;; #(
+  -Wl*) :
+    ARMCI_LDFLAGS="$ARMCI_LDFLAGS $arg" ;; #(
+  -I*) :
+    ARMCI_CPPFLAGS="$ARMCI_CPPFLAGS $arg" ;; #(
+  *.a) :
+    ARMCI_LIBS="$ARMCI_LIBS $arg" ;; #(
+  *.so) :
+    ARMCI_LIBS="$ARMCI_LIBS $arg" ;; #(
+  *lib) :
+    if test -d $arg; then :
+  ARMCI_LDFLAGS="$ARMCI_LDFLAGS -L$arg"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_armci not parsed" >&5
+$as_echo "$as_me: WARNING: $arg of with_armci not parsed" >&2;}
+fi ;; #(
+  *lib/) :
+    if test -d $arg; then :
+  ARMCI_LDFLAGS="$ARMCI_LDFLAGS -L$arg"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_armci not parsed" >&5
+$as_echo "$as_me: WARNING: $arg of with_armci not parsed" >&2;}
+fi ;; #(
+  *lib64) :
+    if test -d $arg; then :
+  ARMCI_LDFLAGS="$ARMCI_LDFLAGS -L$arg"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_armci not parsed" >&5
+$as_echo "$as_me: WARNING: $arg of with_armci not parsed" >&2;}
+fi ;; #(
+  *lib64/) :
+    if test -d $arg; then :
+  ARMCI_LDFLAGS="$ARMCI_LDFLAGS -L$arg"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_armci not parsed" >&5
+$as_echo "$as_me: WARNING: $arg of with_armci not parsed" >&2;}
+fi ;; #(
+  *include) :
+    if test -d $arg; then :
+  ARMCI_CPPFLAGS="$ARMCI_CPPFLAGS -I$arg"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_armci not parsed" >&5
+$as_echo "$as_me: WARNING: $arg of with_armci not parsed" >&2;}
+fi ;; #(
+  *include/) :
+    if test -d $arg; then :
+  ARMCI_CPPFLAGS="$ARMCI_CPPFLAGS -I$arg"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_armci not parsed" >&5
+$as_echo "$as_me: WARNING: $arg of with_armci not parsed" >&2;}
+fi ;; #(
+  *include64) :
+    if test -d $arg; then :
+  ARMCI_CPPFLAGS="$ARMCI_CPPFLAGS -I$arg"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_armci not parsed" >&5
+$as_echo "$as_me: WARNING: $arg of with_armci not parsed" >&2;}
+fi ;; #(
+  *include64/) :
+    if test -d $arg; then :
+  ARMCI_CPPFLAGS="$ARMCI_CPPFLAGS -I$arg"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_armci not parsed" >&5
+$as_echo "$as_me: WARNING: $arg of with_armci not parsed" >&2;}
+fi ;; #(
+  *) :
+    ga_arg_parse_ok=no ;;
+esac
+# $arg didn't fit the most common cases
+# check for subdirectories e.g. lib,include
+    if test "x$ga_arg_parse_ok" = xno; then :
+  if test "x$ga_arg_parse_sizeof_voidp" = x8; then :
+  if test -d $arg/lib64; then :
+  ARMCI_LDFLAGS="$ARMCI_LDFLAGS -L$arg/lib64"; ga_arg_parse_ok=yes
+elif test -d $arg/lib; then :
+  ARMCI_LDFLAGS="$ARMCI_LDFLAGS -L$arg/lib"; ga_arg_parse_ok=yes
+fi
+             if test -d $arg/include64; then :
+  ARMCI_CPPFLAGS="$ARMCI_CPPFLAGS -I$arg/include64"; ga_arg_parse_ok=yes
+elif test -d $arg/include; then :
+  ARMCI_CPPFLAGS="$ARMCI_CPPFLAGS -I$arg/include"; ga_arg_parse_ok=yes
+fi
+else
+  if test -d $arg/lib; then :
+  ARMCI_LDFLAGS="$ARMCI_LDFLAGS -L$arg/lib"; ga_arg_parse_ok=yes
+fi
+             if test -d $arg/include; then :
+  ARMCI_CPPFLAGS="$ARMCI_CPPFLAGS -I$arg/include"; ga_arg_parse_ok=yes
+fi
+fi
+fi
+# $arg still unknown, look for "lib" and "include" anywhere...
+    if test "x$ga_arg_parse_ok" = xno; then :
+  case $arg in #(
+  *lib*) :
+    if test -d $arg; then :
+  ARMCI_LDFLAGS="$ARMCI_LDFLAGS -L$arg"; ga_arg_parse_ok=yes
+fi ;; #(
+  *include*) :
+    if test -d $arg; then :
+  ARMCI_CPPFLAGS="$ARMCI_CPPFLAGS -I$arg"; ga_arg_parse_ok=yes
+fi ;; #(
+  *) :
+     ;;
+esac
+fi
+# warn user that $arg fell through
+     if test "x$ga_arg_parse_ok" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_armci not parsed" >&5
+$as_echo "$as_me: WARNING: $arg of with_armci not parsed" >&2;}
+fi
+done ;;
+esac
+# Check for header.
+ga_save_CPPFLAGS="$CPPFLAGS"; CPPFLAGS="$CPPFLAGS $ARMCI_CPPFLAGS"
+ac_fn_cxx_check_header_mongrel "$LINENO" "armci.h" "ac_cv_header_armci_h" "$ac_includes_default"
+if test "x$ac_cv_header_armci_h" = xyes; then :
+
+fi
+
+
+CPPFLAGS="$ga_save_CPPFLAGS"
+# Check for library.
+ga_save_LIBS="$LIBS"; LIBS="$ARMCI_LIBS $LIBS"
+ga_save_LDFLAGS="$LDFLAGS"; LDFLAGS="$LDFLAGS $ARMCI_LDFLAGS"
+ga_save_CPPFLAGS="$CPPFLAGS"; CPPFLAGS="$CPPFLAGS $ARMCI_CPPFLAGS"
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing ARMCI_Init" >&5
+$as_echo_n "checking for library containing ARMCI_Init... " >&6; }
+if ${ga_cv_search_ARMCI_Init+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ga_func_search_save_LIBS=$LIBS
+     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char ARMCI_Init ();
+int
+main ()
+{
+return ARMCI_Init ();
+  ;
+  return 0;
+}
+_ACEOF
+     for ga_lib in '' armci
+     do
+        if test -z "$ga_lib"; then
+            ga_res="none required"
+        else
+            ga_res=-l$ga_lib
+            LIBS="-l$ga_lib  $ga_func_search_save_LIBS"
+        fi
+        if ac_fn_cxx_try_link "$LINENO"; then :
+  ga_cv_search_ARMCI_Init=$ga_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+        if ${ga_cv_search_ARMCI_Init+:} false; then :
+  break
+fi
+     done
+     if ${ga_cv_search_ARMCI_Init+:} false; then :
+
+else
+  ga_cv_search_ARMCI_Init=no
+fi
+     rm conftest.$ac_ext
+     LIBS=$ga_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ga_cv_search_ARMCI_Init" >&5
+$as_echo "$ga_cv_search_ARMCI_Init" >&6; }
+ga_res=$ga_cv_search_ARMCI_Init
+if test "$ga_res" != no; then :
+  test "$ga_res" = "none required" || LIBS="$ga_res $LIBS"
+
+fi
+
+LIBS="$ga_save_LIBS"
+LDFLAGS="$ga_save_LDFLAGS"
+CPPFLAGS="$ga_save_CPPFLAGS"
+if test "x$ga_cv_search_ARMCI_Init" != xno; then :
+
+     if test "x$ga_cv_search_ARMCI_Init" != "xnone required"; then :
+  as_fn_append ARMCI_LIBS $ga_cv_search_ARMCI_Init
+fi
+
+$as_echo "#define HAVE_ARMCI 1" >>confdefs.h
+
+
+
+
+fi
+ if test "x$ga_cv_search_ARMCI_Init" != xno; then
+  HAVE_ARMCI_TRUE=
+  HAVE_ARMCI_FALSE='#'
+else
+  HAVE_ARMCI_TRUE='#'
+  HAVE_ARMCI_FALSE=
 fi
 
 
@@ -17163,6 +17419,10 @@ if test -z "${HAVE_GMP_TRUE}" && test -z "${HAVE_GMP_FALSE}"; then
   as_fn_error $? "conditional \"HAVE_GMP\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${HAVE_ARMCI_TRUE}" && test -z "${HAVE_ARMCI_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_ARMCI\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 
 : "${CONFIG_STATUS=./config.status}"
 ac_write_fail=0
@@ -19709,14 +19969,14 @@ $as_echo "$as_me:               CPPFLAGS=$CPPFLAGS" >&6;}
 $as_echo "$as_me:                LDFLAGS=$LDFLAGS" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:                   LIBS=$LIBS" >&5
 $as_echo "$as_me:                   LIBS=$LIBS" >&6;}
-{ $as_echo "$as_me:${as_lineno-$LINENO}:            GA_CPPFLAGS=$GA_CPPFLAGS" >&5
-$as_echo "$as_me:            GA_CPPFLAGS=$GA_CPPFLAGS" >&6;}
-{ $as_echo "$as_me:${as_lineno-$LINENO}:             GA_LDFLAGS=$GA_LDFLAGS" >&5
-$as_echo "$as_me:             GA_LDFLAGS=$GA_LDFLAGS" >&6;}
-{ $as_echo "$as_me:${as_lineno-$LINENO}:                GA_LIBS=$GA_LIBS" >&5
-$as_echo "$as_me:                GA_LIBS=$GA_LIBS" >&6;}
-{ $as_echo "$as_me:${as_lineno-$LINENO}:               GA_FLIBS=$GA_FLIBS" >&5
-$as_echo "$as_me:               GA_FLIBS=$GA_FLIBS" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:         ARMCI_CPPFLAGS=$ARMCI_CPPFLAGS" >&5
+$as_echo "$as_me:         ARMCI_CPPFLAGS=$ARMCI_CPPFLAGS" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:          ARMCI_LDFLAGS=$ARMCI_LDFLAGS" >&5
+$as_echo "$as_me:          ARMCI_LDFLAGS=$ARMCI_LDFLAGS" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:             ARMCI_LIBS=$ARMCI_LIBS" >&5
+$as_echo "$as_me:             ARMCI_LIBS=$ARMCI_LIBS" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:            ARMCI_FLIBS=$ARMCI_FLIBS" >&5
+$as_echo "$as_me:            ARMCI_FLIBS=$ARMCI_FLIBS" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:        TASCEL_CPPFLAGS=$TASCEL_CPPFLAGS" >&5
 $as_echo "$as_me:        TASCEL_CPPFLAGS=$TASCEL_CPPFLAGS" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:         TASCEL_LDFLAGS=$TASCEL_LDFLAGS" >&5

@@ -4,6 +4,8 @@
  * A first attempt at a brute force alignment of an input dataset using work
  * stealing. Each MPI task reads the input file.
  */
+#include "config.h"
+
 #include <mpi.h>
 #include <tascel.h>
 #include <tascel/UniformTaskCollection.h>
@@ -57,75 +59,44 @@ using namespace tascel;
 #define DUMP_COSTS 0
 #endif
 
-#ifndef OUTPUT_EDGES
-#define OUTPUT_EDGES 0
+#ifndef USE_ARMCI
+#define USE_ARMCI 1
 #endif
-//#define SEP "\t"
-#define SEP ","
-#define CACHE_RESULTS 1
-#define ALL_RESULTS 1
 
-#if OUTPUT_EDGES
-class EdgeResult {
+#if USE_ARMCI
+#   if HAVE_ARMCI
+#include <armci.h>
+#   else
+#       error ARMCI requested but configure --with-armci failed
+#   endif
+#endif
+
+class SequenceIndex
+{
     public:
-        unsigned long id1;
-        unsigned long id2;
-        double a;
-        double b;
-        double c;
-#if ALL_RESULTS
-        bool is_edge;
-#endif
-
-        EdgeResult(
-                unsigned long id1, unsigned long id2,
-                double a, double b, double c
-#if ALL_RESULTS
-                ,bool is_edge
-#endif
-                )
-            : id1(id1)
-            , id2(id2)
-            , a(a)
-            , b(b)
-            , c(c)
-#if ALL_RESULTS
-            , is_edge(is_edge)
-#endif
-        {}
-
-        friend ostream& operator << (ostream &os, const EdgeResult &edge) {
-            os << edge.id1
-                << SEP << edge.id2
-                << SEP << edge.a
-                << SEP << edge.b
-                << SEP << edge.c
-#if ALL_RESULTS
-                << SEP << edge.is_edge
-#endif
-                ;
-            return os;
-        }
+        int owner;
+        char *address;
+        unsigned long length;
 };
-#endif
+ostream& operator << (ostream &os, const SequenceIndex &s) {
+    string seq(s.address, s.length);
+    return os << s.owner << '\t' << s.length << '\t' << seq;
+}
 
 int rank = 0;
 int nprocs = 0;
 cell_t **tbl[NUM_WORKERS];
 int **del[NUM_WORKERS];
 int **ins[NUM_WORKERS];
-vector<string> sequences;
+char *sequences_local;
+map<unsigned long, SequenceIndex> sequences_index;
+map<unsigned long, char*> sequences_cache[NUM_WORKERS];
+unsigned long cache_miss=0;
+unsigned long cache_hit=0;
 ProcGroup* pgrp = NULL;
 UniformTaskCollSplitHybrid* utcs[NUM_WORKERS];
 #if DUMP_COSTS
 ofstream out[NUM_WORKERS];
-#endif
-#if OUTPUT_EDGES
-#if CACHE_RESULTS
-vector<EdgeResult> edge_results[NUM_WORKERS];
-#else
-ofstream edges[NUM_WORKERS];
-#endif
 #endif
 AlignStats stats[NUM_WORKERS];
 // Synchronization for worker threads
@@ -237,26 +208,6 @@ static string get_filename(int thd)
 }
 #endif
 
-
-#if OUTPUT_EDGES
-#if CACHE_RESULTS
-static string get_edges_filename(int rank)
-{
-    ostringstream str;
-    str << "edges." << rank << ".txt";
-    return str.str();
-}
-#else
-static string get_edges_filename(int thd)
-{
-    ostringstream str;
-    str << "edges." << trank(thd) << ".txt";
-    return str.str();
-}
-#endif
-#endif
-
-
 #if MULTIPLE_PAIRS_PER_TASK
 typedef struct {
     unsigned long id;
@@ -330,21 +281,44 @@ static void alignment_task(
         }
 #endif
         t = MPI_Wtime();
-        affine_gap_align(
-                sequences[seq_id[0]].c_str(), sequences[seq_id[0]].size(),
-                sequences[seq_id[1]].c_str(), sequences[seq_id[1]].size(),
-                &result, tbl[thd], del[thd], ins[thd]);
-        param.AOL = 8;
-        param.SIM = 4;
-        param.OS = 3;
-        is_edge_answer = is_edge(result,
-                sequences[seq_id[0]].c_str(), sequences[seq_id[0]].size(),
-                sequences[seq_id[1]].c_str(), sequences[seq_id[1]].size(),
-                param, &sscore, &maxLen);
-        ++stats[thd].align_counts;
-
-        if (is_edge_answer || ALL_RESULTS)
         {
+            int owner[2];
+            char *seq[2];
+            unsigned long size[2];
+            SequenceIndex index[2];
+
+            for (size_t z=0; z<2; ++z) {
+                index[z] = sequences_index[seq_id[z]];
+                owner[z] = index[z].owner;
+                size[z] = index[z].length;
+                seq[z] = index[z].address;
+
+                if (owner[z] == rank) {
+                    // do nothing, we're good
+                }
+                else if (sequences_cache[thd].count(seq_id[z]) == 1) {
+                    seq[z] = sequences_cache[thd][seq_id[z]];
+                }
+                else {
+                    void *src = seq[z];
+                    seq[z] = (char*)ARMCI_Malloc_local(size[z]);
+                    ARMCI_Get(src, seq[z], size[z], owner[z]);
+                    sequences_cache[thd][seq_id[z]] = seq[z];
+                }
+            }
+            affine_gap_align(
+                    seq[0], size[0], seq[1], size[1],
+                    &result, tbl[thd], del[thd], ins[thd]);
+            param.AOL = 8;
+            param.SIM = 4;
+            param.OS = 3;
+            is_edge_answer = is_edge(result,
+                    seq[0], size[0], seq[1], size[1],
+                    param, &sscore, &maxLen);
+            ++stats[thd].align_counts;
+        }
+
+        if (is_edge_answer) {
 #if DEBUG
             cout << trank(thd)
                 << ": aligned " << seq_id[0] << " " << seq_id[1]
@@ -354,46 +328,16 @@ static void alignment_task(
                 << result.alen << ")"
                 << ": edge? " << is_edge_answer << endl;
 #endif
-#if OUTPUT_EDGES
-#if CACHE_RESULTS
-            edge_results[thd].push_back(EdgeResult(
-                        seq_id[0], seq_id[1],
-#if 0
-                        1.0*result.alen/maxLen,
-                        1.0*result.ndig/result.alen,
-                        1.0*result.score/sscore
-#else
-                        result.alen,
-                        result.ndig,
-                        result.score
-#endif
-#if ALL_RESULTS
-                        ,is_edge_answer
-#endif
-                        ));
-#else
-            edges[thd] << seq_id[0] << SEP << seq_id[1] << SEP
-                << 1.0*result.alen/maxLen << SEP
-                << 1.0*result.ndig/result.alen << SEP
-                << 1.0*result.score/sscore
-#if ALL_RESULTS
-                << SEP << is_edge_answer
-#endif
-                << endl;
-#endif
-#endif
-            if (is_edge_answer) {
-                ++stats[thd].edge_counts;
-            }
+            ++stats[thd].edge_counts;
         }
         t = MPI_Wtime() - t;
 #if DUMP_COSTS
         out[thd]
-            << seq_id[0] << SEP
-            << seq_id[1] << SEP
-            << sequences[seq_id[0]].size() << SEP
-            << sequences[seq_id[1]].size() << SEP
-            << sequences[seq_id[0]].size()*sequences[seq_id[1]].size() << SEP
+            << seq_id[0] << "\t"
+            << seq_id[1] << "\t"
+            << sequences[seq_id[0]].size() << "\t"
+            << sequences[seq_id[1]].size() << "\t"
+            << sequences[seq_id[0]].size()*sequences[seq_id[1]].size() << "\t"
             << t << endl;
 #endif
         stats[thd].align_times_tot += t;
@@ -533,6 +477,9 @@ int main(int argc, char **argv)
     MPI_CHECK(MPI_Comm_rank(comm, &rank));
     MPI_CHECK(MPI_Comm_size(comm, &nprocs));
 
+    /* initialize ARMCI */
+    ARMCI_Init();
+
     /* initialize tascel */
     TascelConfig::initialize(NUM_WORKERS, comm);
     pgrp = ProcGroup::construct();
@@ -624,7 +571,9 @@ int main(int argc, char **argv)
     /* TODO: this is not memory efficient since we allocate a buffer to read
      * the entire input file and then parse the buffer into a vector of
      * strings, essentially doubling the memory requirement */
-    file_buffer = new char[file_size];
+    char **ptr_arr = (char**)malloc(nprocs*sizeof(char*));
+    ARMCI_Malloc((void**)ptr_arr, file_size);
+    file_buffer = ptr_arr[rank];
 
     /* all procs read the entire file */
     MPI_CHECK(MPI_File_open(comm, const_cast<char*>(all_argv[1].c_str()),
@@ -634,9 +583,34 @@ int main(int argc, char **argv)
     MPI_CHECK(MPI_File_close(&fh));
 
     /* each process counts how many '>' characters are in the file_buffer */
-    for (int i=0; i<file_size; ++i) {
-        if (file_buffer[i] == '>') {
+    int p=0;
+    bool in_comment = false;
+    while (p<file_size) {
+        if (file_buffer[p] == '>') {
             ++seg_count;
+            /* skip ahead to next line */
+            while (file_buffer[p] != '\n' && p < file_size) {
+                ++p;
+            }
+            if (p < file_size) {
+                ++p; /* skip to next line past newline */
+            }
+        }
+        else {
+            size_t length = 0;
+            SequenceIndex index;
+            index.owner = rank;
+            index.address = &file_buffer[p];
+            /* skip ahead to next segment */
+            while (p < file_size && file_buffer[p] != '>') {
+                if (file_buffer[p] != '\n') {
+                    ++length;
+                }
+                ++p;
+            }
+            index.length = length;
+            max_seq_len = max(max_seq_len, length);
+            sequences_index[seg_count-1] = index;
         }
     }
 #if DEBUG
@@ -644,36 +618,19 @@ int main(int argc, char **argv)
     for (int i=0; i<nprocs; ++i) {
         if (i == rank) {
             printf("[%d] seg_count=%ld\n", rank, seg_count);
+            printf("[%d] max_seq_len=%ld\n", rank, max_seq_len);
         }
         MPI_Barrier(comm);
     }
+    /* print each segment and its length */
+    if (0 == rank) {
+        for (int i=0; i<seg_count; ++i) {
+            cout << sequences_index[i] << endl;
+        }
+    }
+    MPI_Barrier(comm);
 #endif
 
-    /* TODO declare these at the top */
-    /* each process indexes the file_buffer */
-    istrstream input_stream(const_cast<const char*>(file_buffer), file_size);
-    string line;
-    string sequence;
-    sequences.reserve(seg_count);
-    while (getline(input_stream, line)) {
-        if (line[0] == '>') {
-            if (!sequence.empty()) {
-                sequences.push_back(sequence);
-                max_seq_len = max(max_seq_len, sequence.size());
-            }
-            sequence.clear();
-            continue;
-        }
-        sequence += line;
-    }
-    /* add the last sequence in the file since we wouldn't encounter another
-     * '>' character but rather an EOF */
-    if (!sequence.empty()) {
-        sequences.push_back(sequence);
-        max_seq_len = max(max_seq_len, sequence.size());
-    }
-    sequence.clear();
-    delete [] file_buffer;
 #if SORT_SEQUENCES
     double *sort_times = new double[nprocs];
     double  sort_time = MPI_Wtime();
@@ -699,7 +656,7 @@ int main(int argc, char **argv)
     for (int i=0; i<nprocs; ++i) {
         if (i == rank) {
             printf("[%d] sequences.size()=%ld sequences.capacity()=%ld\n",
-                    rank, long(sequences.size()), long(sequences.capacity()));
+                    rank, long(sequences_index.size()), long(sequences.capacity()));
         }
         MPI_Barrier(comm);
     }
@@ -729,10 +686,10 @@ int main(int argc, char **argv)
     }
 #endif
     /* how many combinations of sequences are there? */
-    nCk = binomial_coefficient(sequences.size(), 2);
+    nCk = binomial_coefficient(sequences_index.size(), 2);
     if (0 == trank(0)) {
         printf("brute force %lu C 2 has %lu combinations\n",
-                sequences.size(), nCk);
+                sequences_index.size(), nCk);
     }
 
 #if MULTIPLE_PAIRS_PER_TASK
@@ -798,13 +755,6 @@ int main(int argc, char **argv)
     {
 #if DUMP_COSTS
         out[worker].open(get_filename(worker).c_str());
-#endif
-#if OUTPUT_EDGES
-#if CACHE_RESULTS
-        edge_results[worker].reserve(tasks_per_worker);
-#else
-        edges[worker].open(get_edges_filename(worker).c_str());
-#endif
 #endif
         UniformTaskCollSplitHybrid*& utc = utcs[worker];
         TslFuncRegTbl *frt = new TslFuncRegTbl();
@@ -966,11 +916,6 @@ int main(int argc, char **argv)
     amBarrier();
     MPI_Barrier(comm);
 
-#if OUTPUT_EDGES
-#if CACHE_RESULTS
-    ofstream edge_out(get_edges_filename(rank).c_str());
-#endif
-#endif
     /* clean up */
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
         free_tbl(tbl[worker], NROW);
@@ -980,24 +925,11 @@ int main(int argc, char **argv)
 #if DUMP_COSTS
         out[worker].close();
 #endif
-#if OUTPUT_EDGES
-#if CACHE_RESULTS
-        for (size_t i=0,limit=edge_results[worker].size(); i<limit; ++i) {
-            edge_out << edge_results[worker][i] << endl;
-        }
-#else
-        edges[worker].close();
-#endif
-#endif
     }
-#if OUTPUT_EDGES
-#if CACHE_RESULTS
-    edge_out.close();
-#endif
-#endif
     delete pgrp;
 
     TascelConfig::finalize();
+    ARMCI_Finalize();
     MPI_Comm_free(&comm);
     MPI_Finalize();
 

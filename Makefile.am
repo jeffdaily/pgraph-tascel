@@ -8,22 +8,25 @@ AM_LDFLAGS =
 LDADD =
 
 AM_CPPFLAGS += $(TASCEL_CPPFLAGS)
-AM_CPPFLAGS += $(GA_CPPFLAGS)
+#AM_CPPFLAGS += $(GA_CPPFLAGS)
+AM_CPPFLAGS += $(ARMCI_CPPFLAGS)
 AM_CPPFLAGS += $(PT_MPI_CPPFLAGS)
 AM_CPPFLAGS += $(GMP_CPPFLAGS)
 AM_CPPFLAGS += -I$(top_srcdir)/src
 
 AM_LDFLAGS += $(TASCEL_LDFLAGS)
-AM_LDFLAGS += $(GA_LDFLAGS)
+#AM_LDFLAGS += $(GA_LDFLAGS)
+AM_LDFLAGS += $(ARMCI_LDFLAGS)
 AM_LDFLAGS += $(PT_MPI_LDFLAGS)
 AM_LDFLAGS += $(GMP_LDFLAGS)
 
 LDADD += libpgraph.la
 LDADD += $(TASCEL_LIBS)
-LDADD += $(GA_LIBS)
+#LDADD += $(GA_LIBS)
+LDADD += $(ARMCI_LIBS)
 LDADD += $(PT_MPI_LIBS)
 LDADD += $(GMP_LIBS)
-LDADD += $(GA_FLIBS)
+#LDADD += $(GA_FLIBS)
 
 noinst_LTLIBRARIES =
 noinst_LTLIBRARIES += libpgraph.la
@@ -39,6 +42,7 @@ libpgraph_la_SOURCES += src/mpix.h
 noinst_PROGRAMS =
 noinst_PROGRAMS += sandbox/blast
 noinst_PROGRAMS += sandbox/brute_force
+noinst_PROGRAMS += sandbox/brute_force_armci
 noinst_PROGRAMS += sandbox/brute_force_binning
 noinst_PROGRAMS += sandbox/brute_force_costs
 noinst_PROGRAMS += sandbox/brute_force_multiple
@@ -62,6 +66,7 @@ endif
 
 sandbox_blast_SOURCES                      = sandbox/blast.cc
 sandbox_brute_force_SOURCES                = sandbox/brute_force.cc
+sandbox_brute_force_armci_SOURCES          = sandbox/brute_force_armci.cc
 sandbox_brute_force_binning_SOURCES        = sandbox/brute_force_binning.cc
 sandbox_brute_force_costs_SOURCES          = sandbox/brute_force.cc
 sandbox_brute_force_iter_SOURCES           = sandbox/brute_force_iter.cc
