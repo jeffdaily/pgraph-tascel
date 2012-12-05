@@ -3,10 +3,13 @@
 
 #include <iomanip>
 #include <iostream>
+#include <string>
 
 using std::fixed;
+using std::ostream;
 using std::setw;
 using std::showpoint;
+using std::string;
 
 #define MIN(x, y) (((x)<(y))? (x) : (y))
 #define MAX(x, y) (((x)>(y))? (x) : (y))

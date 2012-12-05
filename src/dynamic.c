@@ -406,19 +406,17 @@ int is_edge(
     }
 
     nmatch = result.ndig;
+    *_sscore = sscore;
+    *_maxLen = maxLen;
 
     /* order the condition in strict->loose way, performance perspective
      * comparison using integers, no overflow could happen */
     if ((result.alen*100 >= param.AOL * maxLen)
             && (nmatch*100 >= param.SIM * result.alen)
             && (result.score*100 >= param.OS * sscore)) {
-        *_sscore = sscore;
-        *_maxLen = maxLen;
         return TRUE;
     }
     else {
-        *_sscore = 0;
-        *_maxLen = 0;
         return FALSE;
     }
 }

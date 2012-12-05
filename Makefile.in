@@ -61,6 +61,7 @@ noinst_PROGRAMS = sandbox/blast$(EXEEXT) sandbox/brute_force$(EXEEXT) \
 	sandbox/brute_force_rr$(EXEEXT) \
 	sandbox/brute_force_rr_sorted$(EXEEXT) \
 	sandbox/brute_force_rr_sorted_seq$(EXEEXT) \
+	sandbox/brute_force_serial$(EXEEXT) \
 	sandbox/brute_force_sorted$(EXEEXT) \
 	sandbox/brute_force_sorted_seq$(EXEEXT) \
 	sandbox/forest$(EXEEXT) sandbox/sort_pairs$(EXEEXT) \
@@ -185,6 +186,14 @@ sandbox_brute_force_rr_sorted_seq_LDADD = $(LDADD)
 sandbox_brute_force_rr_sorted_seq_DEPENDENCIES = libpgraph.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am_sandbox_brute_force_serial_OBJECTS =  \
+	sandbox/brute_force_serial.$(OBJEXT)
+sandbox_brute_force_serial_OBJECTS =  \
+	$(am_sandbox_brute_force_serial_OBJECTS)
+sandbox_brute_force_serial_LDADD = $(LDADD)
+sandbox_brute_force_serial_DEPENDENCIES = libpgraph.la \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_sandbox_brute_force_sorted_OBJECTS =  \
 	sandbox/sandbox_brute_force_sorted-brute_force.$(OBJEXT)
 sandbox_brute_force_sorted_OBJECTS =  \
@@ -298,6 +307,7 @@ SOURCES = $(libpgraph_la_SOURCES) $(sandbox_blast_SOURCES) \
 	$(sandbox_brute_force_rr_SOURCES) \
 	$(sandbox_brute_force_rr_sorted_SOURCES) \
 	$(sandbox_brute_force_rr_sorted_seq_SOURCES) \
+	$(sandbox_brute_force_serial_SOURCES) \
 	$(sandbox_brute_force_sorted_SOURCES) \
 	$(sandbox_brute_force_sorted_seq_SOURCES) \
 	$(sandbox_forest_SOURCES) $(sandbox_sort_pairs_SOURCES) \
@@ -316,6 +326,7 @@ DIST_SOURCES = $(libpgraph_la_SOURCES) $(sandbox_blast_SOURCES) \
 	$(sandbox_brute_force_rr_SOURCES) \
 	$(sandbox_brute_force_rr_sorted_SOURCES) \
 	$(sandbox_brute_force_rr_sorted_seq_SOURCES) \
+	$(sandbox_brute_force_serial_SOURCES) \
 	$(sandbox_brute_force_sorted_SOURCES) \
 	$(sandbox_brute_force_sorted_seq_SOURCES) \
 	$(sandbox_forest_SOURCES) $(sandbox_sort_pairs_SOURCES) \
@@ -507,6 +518,7 @@ sandbox_brute_force_pairs_SOURCES = sandbox/brute_force_pairs.cc
 sandbox_brute_force_rr_SOURCES = sandbox/brute_force.cc
 sandbox_brute_force_rr_sorted_SOURCES = sandbox/brute_force.cc
 sandbox_brute_force_rr_sorted_seq_SOURCES = sandbox/brute_force.cc
+sandbox_brute_force_serial_SOURCES = sandbox/brute_force_serial.cc
 sandbox_brute_force_sorted_SOURCES = sandbox/brute_force.cc
 sandbox_brute_force_sorted_seq_SOURCES = sandbox/brute_force.cc
 sandbox_forest_SOURCES = sandbox/forest.cc
@@ -668,6 +680,11 @@ sandbox/sandbox_brute_force_rr_sorted_seq-brute_force.$(OBJEXT):  \
 sandbox/brute_force_rr_sorted_seq$(EXEEXT): $(sandbox_brute_force_rr_sorted_seq_OBJECTS) $(sandbox_brute_force_rr_sorted_seq_DEPENDENCIES) $(EXTRA_sandbox_brute_force_rr_sorted_seq_DEPENDENCIES) sandbox/$(am__dirstamp)
 	@rm -f sandbox/brute_force_rr_sorted_seq$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_rr_sorted_seq_OBJECTS) $(sandbox_brute_force_rr_sorted_seq_LDADD) $(LIBS)
+sandbox/brute_force_serial.$(OBJEXT): sandbox/$(am__dirstamp) \
+	sandbox/$(DEPDIR)/$(am__dirstamp)
+sandbox/brute_force_serial$(EXEEXT): $(sandbox_brute_force_serial_OBJECTS) $(sandbox_brute_force_serial_DEPENDENCIES) $(EXTRA_sandbox_brute_force_serial_DEPENDENCIES) sandbox/$(am__dirstamp)
+	@rm -f sandbox/brute_force_serial$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_serial_OBJECTS) $(sandbox_brute_force_serial_LDADD) $(LIBS)
 sandbox/sandbox_brute_force_sorted-brute_force.$(OBJEXT):  \
 	sandbox/$(am__dirstamp) sandbox/$(DEPDIR)/$(am__dirstamp)
 sandbox/brute_force_sorted$(EXEEXT): $(sandbox_brute_force_sorted_OBJECTS) $(sandbox_brute_force_sorted_DEPENDENCIES) $(EXTRA_sandbox_brute_force_sorted_DEPENDENCIES) sandbox/$(am__dirstamp)
@@ -728,6 +745,7 @@ mostlyclean-compile:
 	-rm -f sandbox/brute_force_binning.$(OBJEXT)
 	-rm -f sandbox/brute_force_iter.$(OBJEXT)
 	-rm -f sandbox/brute_force_pairs.$(OBJEXT)
+	-rm -f sandbox/brute_force_serial.$(OBJEXT)
 	-rm -f sandbox/forest.$(OBJEXT)
 	-rm -f sandbox/sandbox_brute_force_costs-brute_force.$(OBJEXT)
 	-rm -f sandbox/sandbox_brute_force_multiple-brute_force.$(OBJEXT)
@@ -758,6 +776,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force_binning.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force_iter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force_pairs.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force_serial.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/forest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sandbox_brute_force_costs-brute_force.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sandbox_brute_force_multiple-brute_force.Po@am__quote@
