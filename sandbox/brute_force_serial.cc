@@ -122,18 +122,22 @@ static void alignment_task(unsigned long seq_id[2])
     is_edge_param_t param;
     int is_edge_answer = 0;
     double t = 0;
-    unsigned long i;
-    int sscore;
-    int maxLen;
+    unsigned long i = 0;
+    int sscore = 0;
+    int maxLen = 0;
+
+    result.score = 0;
+    result.ndig = 0;
+    result.alen = 0;
+    param.AOL = 8;
+    param.SIM = 4;
+    param.OS = 3;
 
     t = timespec_diff();
     affine_gap_align(
             sequences[seq_id[0]].c_str(), sequences[seq_id[0]].size(),
             sequences[seq_id[1]].c_str(), sequences[seq_id[1]].size(),
             &result, tbl, del, ins);
-    param.AOL = 8;
-    param.SIM = 4;
-    param.OS = 3;
     is_edge_answer = is_edge(result,
             sequences[seq_id[0]].c_str(), sequences[seq_id[0]].size(),
             sequences[seq_id[1]].c_str(), sequences[seq_id[1]].size(),
@@ -152,6 +156,8 @@ static void alignment_task(unsigned long seq_id[2])
 #endif
 #if OUTPUT_EDGES
 #if CACHE_RESULTS
+        assert(maxLen);
+        assert(result.alen);
         edge_results.push_back(EdgeResult(
                     seq_id[0], seq_id[1],
 #if 1
@@ -196,6 +202,9 @@ int main(int argc, char **argv)
     long seg_count = 0;
     size_t max_seq_len = 0;
     unsigned long nCk;
+    unsigned long nalignments;
+    bool use_combinations = true;
+    int fixed_size = 0;
 
     /* initialize dynamic code */
     init_map(SIGMA);
@@ -215,8 +224,13 @@ int main(int argc, char **argv)
         else if (argc >= 4) {
             printf("too many arguments\n");
         }
-        printf("usage: brute_force sequence_file [combinations_per_task]\n");
+        printf("usage: brute_force_serial sequence_file fixed\n");
         return 1;
+    }
+
+    if (argc >= 3) {
+        fixed_size = atoi(argv[2]);
+        use_combinations = false;
     }
 
     /* process 0 open the file locally to determine its size */
@@ -304,16 +318,17 @@ int main(int argc, char **argv)
 #endif
     /* how many combinations of sequences are there? */
     nCk = binomial_coefficient(sequences.size(), 2);
-    printf("brute force %lu C 2 has %lu combinations\n",
-            sequences.size(), nCk);
 
-    double selectivity = 1.0;
-    if (argc == 3) {
-      selectivity  = fabs(min(1.0,atof(argv[2])));
+    if (use_combinations) {
+        nalignments = nCk;
+        printf("brute force %lu C 2 has %lu combinations\n",
+                sequences.size(), nCk);
     }
-    unsigned long nalignments = (long)(0.5+selectivity*nCk);
-    printf("selectivity=%lf\n", selectivity);
-    printf("nalignments=%lu\n", nalignments);
+    else {
+        printf("aligning the first %lu against all %lu for %lu alignments\n",
+                fixed_size, sequences.size(), sequences.size()*fixed_size);
+        nalignments = sequences.size() * fixed_size;
+    }
 
     /* some more dynamic initialization */
     assert(NROW == 2);
@@ -331,40 +346,73 @@ int main(int argc, char **argv)
     /* perform the alignments */
     double mytimer = timespec_diff();
     unsigned long seq_id[2];
-    k_combination(0, 2, seq_id);
-    for (unsigned long i=0; i<nalignments; ++i) {
-        alignment_task(seq_id);
-        next_combination(2, seq_id);
+    if (use_combinations) {
+        k_combination(0, 2, seq_id);
+        for (unsigned long i=0; i<nalignments; ++i) {
+            alignment_task(seq_id);
+            next_combination(2, seq_id);
+        }
+    }
+    else {
+        printf("fixed_size=%d\n",fixed_size);
+        for (unsigned long i=0; i<sequences.size(); ++i) {
+            for (unsigned long j=0; j<fixed_size; ++j) {
+                seq_id[0] = i;
+                seq_id[1] = j;
+                alignment_task(seq_id);
+            }
+        }
     }
     mytimer = timespec_diff(mytimer);
     cout << "mytimer=" << mytimer << endl;
-
     cout << stats.getHeader() << endl;      
     cout << stats << endl;
-
+    if (use_combinations) {
 #if OUTPUT_EDGES
 #if CACHE_RESULTS
-    ofstream edge_out("edges.txt");
+        ofstream edge_out("edges.txt");
+        for (size_t i=0,limit=edge_results.size(); i<limit; ++i) {
+            edge_out << edge_results[i] << endl;
+        }
+        edge_out.close();
+#else
+        edges.close();
 #endif
 #endif
+    }
+    else {
+        unsigned long e=0;
+        ofstream out("edges_fixed.csv");
+        out << "id";
+        for (unsigned long i=0; i<fixed_size; i++) {
+            out << "," << i << "_alen/maxlen"
+                << "," << i << "_ndig/alen"
+                << "," << i << "_score/sscore";
+        }
+        out << ",class" << endl;
+        for (unsigned long i=0; i<sequences.size(); ++i) {
+            out << i;
+            bool is_homologous = false;
+            for (unsigned long j=0; j<fixed_size; ++j) {
+                EdgeResult r = edge_results[e++];
+                out << "," << r.a
+                    << "," << r.b
+                    << "," << r.c;
+                is_homologous = is_homologous || r.is_edge;
+            }
+            if (is_homologous) {
+                out << "," << "Homologous" << endl;
+            }
+            else {
+                out << "," << "Not" << endl;
+            }
+        }
+        out.close();
+    }
     /* clean up */
     free_tbl(tbl, NROW);
     free_int(del, NROW);
     free_int(ins, NROW);
-#if OUTPUT_EDGES
-#if CACHE_RESULTS
-    for (size_t i=0,limit=edge_results.size(); i<limit; ++i) {
-        edge_out << edge_results[i] << endl;
-    }
-#else
-    edges.close();
-#endif
-#endif
-#if OUTPUT_EDGES
-#if CACHE_RESULTS
-    edge_out.close();
-#endif
-#endif
 
     return 0;
 }

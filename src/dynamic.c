@@ -390,12 +390,10 @@ int is_edge(
     int maxLen;
     int nmatch;
 
-    if (result.score <= 0) {
-        return FALSE;
-    }
-
     /* DO NOT need to compute the sscore value every time, if the later check
      * failed at the first step, the sscore computation is wasted */
+    assert(s1Len);
+    assert(s2Len);
     if (s1Len > s2Len) {
         maxLen = s1Len;
         sscore = self_score(s1, s1Len);
@@ -411,7 +409,10 @@ int is_edge(
 
     /* order the condition in strict->loose way, performance perspective
      * comparison using integers, no overflow could happen */
-    if ((result.alen*100 >= param.AOL * maxLen)
+    if (result.score <= 0) {
+        return FALSE;
+    }
+    else if ((result.alen*100 >= param.AOL * maxLen)
             && (nmatch*100 >= param.SIM * result.alen)
             && (result.score*100 >= param.OS * sscore)) {
         return TRUE;
