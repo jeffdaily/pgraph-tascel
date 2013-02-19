@@ -4,6 +4,8 @@
  * A first attempt at a brute force alignment of an input dataset using work
  * stealing. Each MPI task reads the input file.
  */
+#include "config.h"
+
 #include <mpi.h>
 #include <tascel.h>
 #include <tascel/UniformTaskCollection.h>
@@ -456,14 +458,14 @@ int main(int argc, char **argv)
     amBarrier();
 
 #if defined(THREADED)
-//#if defined(SET_AFFINITY)
+#if defined(SET_AFFINITY)
     cpu_set_t cpuset;
     pthread_t thread;
     CPU_ZERO(&cpuset);
     thread = pthread_self();
     CPU_SET(0, &cpuset);
     pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
-//#endif
+#endif
 
     pthread_barrier_init(&workersStart, 0, NUM_WORKERS);
     pthread_barrier_init(&workersEnd, 0, NUM_WORKERS);

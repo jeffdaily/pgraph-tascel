@@ -3,6 +3,8 @@
  *
  * Serially perform sequence alignment. No work stealing. No threading.
  */
+#include "config.h"
+
 #include <sys/time.h>
 
 #include <algorithm>

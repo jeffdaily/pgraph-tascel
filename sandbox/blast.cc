@@ -4,8 +4,11 @@
  * A first attempt at a brute force alignment of an input dataset using work
  * stealing. Each MPI task reads the input file.
  */
+#include "config.h"
+
 #include <mpi.h>
 #include <sys/stat.h>
+#include <pthread.h>
 
 #include <tascel.h>
 #include <tascel/UniformTaskCollection.h>

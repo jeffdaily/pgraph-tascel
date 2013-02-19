@@ -9,6 +9,8 @@
  *
  * This involves binning the suffix prefixes for each input sequence.
  */
+#include "config.h"
+
 #include <mpi.h>
 
 #include <stdint.h>

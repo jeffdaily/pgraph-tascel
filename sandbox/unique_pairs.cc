@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <dirent.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -154,7 +156,7 @@ int main(int argc, char **argv)
             if (pc%10000 == 0) {
                 cout << "\r" << flush << "\t" << (100.0*pc/pairs_size) << "%" << flush;
             }
-            char *newline = "\n";
+            const char *newline = "\n";
             out.write(reinterpret_cast<const char*>(&(it->first)), sizeof(int));
             out.write(reinterpret_cast<const char*>(&(it->second)), sizeof(int));
             out.write(newline, 1);
