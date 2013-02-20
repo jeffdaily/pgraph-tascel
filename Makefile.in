@@ -67,7 +67,8 @@ noinst_PROGRAMS = sandbox/blast$(EXEEXT) sandbox/brute_force$(EXEEXT) \
 	sandbox/forest$(EXEEXT) sandbox/sort_pairs$(EXEEXT) \
 	sandbox/unique_pairs$(EXEEXT) tests/test_combinations$(EXEEXT) \
 	tests/test_dynamic$(EXEEXT) tests/test_read$(EXEEXT) \
-	tests/test_read_serial$(EXEEXT) $(am__EXEEXT_1)
+	tests/test_read_fasta$(EXEEXT) tests/test_read_serial$(EXEEXT) \
+	$(am__EXEEXT_1)
 @HAVE_UTC_ITER_TRUE@am__append_1 = sandbox/brute_force_iter
 subdir = .
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
@@ -96,7 +97,7 @@ LTLIBRARIES = $(noinst_LTLIBRARIES)
 libpgraph_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
 am_libpgraph_la_OBJECTS = src/combinations.lo src/dynamic.lo \
-	src/mpix.lo
+	src/mpix.lo src/io.lo
 libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -248,6 +249,12 @@ tests_test_read_LDADD = $(LDADD)
 tests_test_read_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
+am_tests_test_read_fasta_OBJECTS = tests/test_read_fasta.$(OBJEXT)
+tests_test_read_fasta_OBJECTS = $(am_tests_test_read_fasta_OBJECTS)
+tests_test_read_fasta_LDADD = $(LDADD)
+tests_test_read_fasta_DEPENDENCIES = libpgraph.la \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_tests_test_read_serial_OBJECTS = tests/test_read_serial.$(OBJEXT)
 tests_test_read_serial_OBJECTS = $(am_tests_test_read_serial_OBJECTS)
 tests_test_read_serial_LDADD = $(LDADD)
@@ -314,6 +321,7 @@ SOURCES = $(libpgraph_la_SOURCES) $(sandbox_blast_SOURCES) \
 	$(sandbox_unique_pairs_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_read_SOURCES) \
+	$(tests_test_read_fasta_SOURCES) \
 	$(tests_test_read_serial_SOURCES)
 DIST_SOURCES = $(libpgraph_la_SOURCES) $(sandbox_blast_SOURCES) \
 	$(sandbox_brute_force_SOURCES) \
@@ -333,6 +341,7 @@ DIST_SOURCES = $(libpgraph_la_SOURCES) $(sandbox_blast_SOURCES) \
 	$(sandbox_unique_pairs_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_read_SOURCES) \
+	$(tests_test_read_fasta_SOURCES) \
 	$(tests_test_read_serial_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
@@ -506,7 +515,8 @@ LDADD = libpgraph.la $(TASCEL_LIBS) $(ARMCI_LIBS) $(PT_MPI_LIBS) \
 #LDADD += $(GA_FLIBS)
 noinst_LTLIBRARIES = libpgraph.la
 libpgraph_la_SOURCES = src/combinations.c src/combinations.h \
-	src/dynamic.c src/dynamic.h src/mpix.c src/mpix.h
+	src/dynamic.c src/dynamic.h src/mpix.c src/mpix.h src/io.cc \
+	src/io.h
 sandbox_blast_SOURCES = sandbox/blast.cc
 sandbox_brute_force_SOURCES = sandbox/brute_force.cc
 sandbox_brute_force_armci_SOURCES = sandbox/brute_force_armci.cc
@@ -528,6 +538,7 @@ sandbox_unique_pairs_SOURCES = sandbox/unique_pairs.cc
 tests_test_combinations_SOURCES = tests/test_combinations.cc
 tests_test_dynamic_SOURCES = tests/test_dynamic.c
 tests_test_read_SOURCES = tests/test_read.cc
+tests_test_read_fasta_SOURCES = tests/test_read_fasta.cc
 tests_test_read_serial_SOURCES = tests/test_read_serial.cc
 sandbox_brute_force_costs_CPPFLAGS = $(AM_CPPFLAGS) -DDUMP_COSTS=1
 sandbox_brute_force_multiple_CPPFLAGS = $(AM_CPPFLAGS) -DMULTIPLE_PAIRS_PER_TASK=1
@@ -608,8 +619,9 @@ src/$(DEPDIR)/$(am__dirstamp):
 src/combinations.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/dynamic.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/mpix.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/io.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 libpgraph.la: $(libpgraph_la_OBJECTS) $(libpgraph_la_DEPENDENCIES) $(EXTRA_libpgraph_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(LINK)  $(libpgraph_la_OBJECTS) $(libpgraph_la_LIBADD) $(LIBS)
+	$(AM_V_CXXLD)$(CXXLINK)  $(libpgraph_la_OBJECTS) $(libpgraph_la_LIBADD) $(LIBS)
 
 clean-noinstPROGRAMS:
 	@list='$(noinst_PROGRAMS)'; test -n "$$list" || exit 0; \
@@ -731,6 +743,11 @@ tests/test_read.$(OBJEXT): tests/$(am__dirstamp) \
 tests/test_read$(EXEEXT): $(tests_test_read_OBJECTS) $(tests_test_read_DEPENDENCIES) $(EXTRA_tests_test_read_DEPENDENCIES) tests/$(am__dirstamp)
 	@rm -f tests/test_read$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_read_OBJECTS) $(tests_test_read_LDADD) $(LIBS)
+tests/test_read_fasta.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+tests/test_read_fasta$(EXEEXT): $(tests_test_read_fasta_OBJECTS) $(tests_test_read_fasta_DEPENDENCIES) $(EXTRA_tests_test_read_fasta_DEPENDENCIES) tests/$(am__dirstamp)
+	@rm -f tests/test_read_fasta$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_read_fasta_OBJECTS) $(tests_test_read_fasta_LDADD) $(LIBS)
 tests/test_read_serial.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 tests/test_read_serial$(EXEEXT): $(tests_test_read_serial_OBJECTS) $(tests_test_read_serial_DEPENDENCIES) $(EXTRA_tests_test_read_serial_DEPENDENCIES) tests/$(am__dirstamp)
@@ -760,11 +777,14 @@ mostlyclean-compile:
 	-rm -f src/combinations.lo
 	-rm -f src/dynamic.$(OBJEXT)
 	-rm -f src/dynamic.lo
+	-rm -f src/io.$(OBJEXT)
+	-rm -f src/io.lo
 	-rm -f src/mpix.$(OBJEXT)
 	-rm -f src/mpix.lo
 	-rm -f tests/test_combinations.$(OBJEXT)
 	-rm -f tests/test_dynamic.$(OBJEXT)
 	-rm -f tests/test_read.$(OBJEXT)
+	-rm -f tests/test_read_fasta.$(OBJEXT)
 	-rm -f tests/test_read_serial.$(OBJEXT)
 
 distclean-compile:
@@ -789,10 +809,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/unique_pairs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/combinations.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/dynamic.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/io.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/mpix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_combinations.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_dynamic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_read.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_read_fasta.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_read_serial.Po@am__quote@
 
 .c.o:

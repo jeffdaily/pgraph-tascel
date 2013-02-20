@@ -23,7 +23,7 @@ extern int check_count;
     if (MPI_SUCCESS != __err) {                           \
         printf("[%d] FAILED FILE=%s LINE=%d:" #what "\n", \
                 rank, __FILE__, __LINE__);                \
-        MPI_Abort(comm, check_count);                     \
+        MPI_Abort(MPI_COMM_WORLD, check_count);           \
     }                                                     \
 } while (0)
 
