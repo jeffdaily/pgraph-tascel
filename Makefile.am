@@ -36,7 +36,7 @@ libpgraph_la_SOURCES += src/combinations.c
 libpgraph_la_SOURCES += src/combinations.h
 libpgraph_la_SOURCES += src/dynamic.c
 libpgraph_la_SOURCES += src/dynamic.h
-libpgraph_la_SOURCES += src/mpix.c
+libpgraph_la_SOURCES += src/mpix.cc
 libpgraph_la_SOURCES += src/mpix.h
 libpgraph_la_SOURCES += src/io.cc
 libpgraph_la_SOURCES += src/io.h
@@ -44,7 +44,9 @@ libpgraph_la_SOURCES += src/io.h
 noinst_PROGRAMS =
 noinst_PROGRAMS += sandbox/blast
 noinst_PROGRAMS += sandbox/brute_force
+if HAVE_ARMCI
 noinst_PROGRAMS += sandbox/brute_force_armci
+endif
 noinst_PROGRAMS += sandbox/brute_force_binning
 noinst_PROGRAMS += sandbox/brute_force_costs
 noinst_PROGRAMS += sandbox/brute_force_multiple

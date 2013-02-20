@@ -31,6 +31,7 @@ AC_MSG_NOTICE([C compiler])
 AC_MSG_NOTICE
 
 PT_PROG_MPICC
+AC_USE_SYSTEM_EXTENSIONS
 
 AS_IF([test x$with_mpi_wrappers = xyes],
     [PT_MPI_UNWRAP],
@@ -40,9 +41,28 @@ AS_IF([test x$with_mpi_wrappers = xyes],
 #GA_REQUIRE
 
 # Checks for header files.
-AC_CHECK_HEADERS([limits.h stdlib.h])
+AC_CHECK_HEADERS([limits.h])
+AC_CHECK_HEADERS([pthread.h])
+AC_CHECK_HEADERS([sched.h])
+AC_CHECK_HEADERS([stdlib.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
+AC_CHECK_TYPES([pthread_barrier_t], [], [], [[#include <pthread.h>]])
+AM_CONDITIONAL([HAVE_PTHREAD_BARRIER_T],
+               [test "x$ac_cv_type_pthread_barrier_t" = xyes])
+AH_BOTTOM([#if !HAVE_PTHREAD_BARRIER_T
+#include "pthread_fixes.h"
+#endif])
+
+AC_CHECK_FUNCS([sched_setaffinity])
+AC_CHECK_FUNCS([pthread_setaffinity_np])
+AS_CASE([$ac_cv_func_sched_setaffinity:$ac_cv_func_pthread_setaffinity_np],
+        [yes:yes],
+        [AC_DEFINE([SET_AFFINITY], [1], [whether affinity is supported])])
+dnl         [set_affinity=1],
+dnl         [set_affinity=0])
+dnl AC_DEFINE_UNQUOTED([SET_AFFINITY], [$set_affinity],
+dnl                    [whether affinity is supported])
 
 # Checks for library functions.
 
