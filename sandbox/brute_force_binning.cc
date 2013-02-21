@@ -34,16 +34,15 @@ using namespace tascel;
 int rank = 0;
 int nprocs = 0;
 vector<string> sequences;
-ProcGroup* pgrp = NULL;
-UniformTaskCollSplitHybrid* utcs[NUM_WORKERS];
-ofstream out[NUM_WORKERS];
+UniformTaskCollSplitHybrid** utcs = 0;
+static pthread_t *threadHandles = 0;
+static unsigned *threadRanks = 0;
+ofstream *out = 0;
 
 // Synchronization for worker threads
 pthread_barrier_t workersStart, workersEnd;
 // Synchronization for server thread
 pthread_barrier_t serverStart, serverEnd;
-static pthread_t threadHandles[NUM_WORKERS + NUM_SERVERS];
-static unsigned threadRanks[NUM_WORKERS + NUM_SERVERS];
 volatile bool serverEnabled = true;
 
 void *serverThd(void *args)
@@ -185,8 +184,11 @@ int main(int argc, char **argv)
     MPI_CHECK(MPI_Comm_size(comm, &nprocs));
 
     /* initialize tascel */
-    TascelConfig::initialize(NUM_WORKERS, comm);
-    pgrp = ProcGroup::construct();
+    TascelConfig::initialize(NUM_WORKERS_DEFAULT, comm);
+    utcs = new UniformTaskCollSplitHybrid*[NUM_WORKERS];
+    threadHandles = new pthread_t[NUM_WORKERS + NUM_SERVERS];
+    threadRanks = new unsigned[NUM_WORKERS + NUM_SERVERS];
+    out = new ofstream[NUM_WORKERS];
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
         threadRanks[worker] = worker;
     }
@@ -439,7 +441,6 @@ int main(int argc, char **argv)
         UniformTaskCollSplitHybrid*& utc = utcs[i];
         delete utc;
     }
-    delete pgrp;
     delete frt;
 
     TascelConfig::finalize();

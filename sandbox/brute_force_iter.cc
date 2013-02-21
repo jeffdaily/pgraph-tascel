@@ -34,19 +34,18 @@ using namespace tascel;
 
 int rank = 0;
 int nprocs = 0;
-cell_t **tbl[NUM_WORKERS];
-int **del[NUM_WORKERS];
-int **ins[NUM_WORKERS];
+cell_t ***tbl = 0;
+int ***del = 0;
+int ***ins = 0;
+UniformTaskCollIter** utcs = 0;
+AlignStats *stats = 0;
+static pthread_t *threadHandles = 0;
+static unsigned *threadRanks = 0;
 vector<string> sequences;
-ProcGroup* pgrp = NULL;
-UniformTaskCollIter* utcs[NUM_WORKERS];
-AlignStats stats[NUM_WORKERS];
 // Synchronization for worker threads
 pthread_barrier_t workersStart, workersEnd;
 // Synchronization for server thread
 pthread_barrier_t serverStart, serverEnd;
-static pthread_t threadHandles[NUM_WORKERS + NUM_SERVERS];
-static unsigned threadRanks[NUM_WORKERS + NUM_SERVERS];
 volatile bool serverEnabled = true;
 
 
@@ -224,8 +223,14 @@ int main(int argc, char **argv)
     MPI_CHECK(MPI_Comm_size(comm, &nprocs));
 
     /* initialize tascel */
-    TascelConfig::initialize(NUM_WORKERS, comm);
-    pgrp = ProcGroup::construct();
+    TascelConfig::initialize(NUM_WORKERS_DEFAULT, comm);
+    tbl = new cell_t**[NUM_WORKERS];
+    del = new int**[NUM_WORKERS];
+    ins = new int**[NUM_WORKERS];
+    utcs = new UniformTaskCollIter*[NUM_WORKERS];
+    stats = new AlignStats[NUM_WORKERS];
+    threadHandles = new pthread_t[NUM_WORKERS + NUM_SERVERS];
+    threadRanks = new unsigned[NUM_WORKERS + NUM_SERVERS];
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
         threadRanks[worker] = worker;
     }

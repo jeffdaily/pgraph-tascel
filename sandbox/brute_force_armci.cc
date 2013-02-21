@@ -85,26 +85,25 @@ ostream& operator << (ostream &os, const SequenceIndex &s) {
 
 int rank = 0;
 int nprocs = 0;
-cell_t **tbl[NUM_WORKERS];
-int **del[NUM_WORKERS];
-int **ins[NUM_WORKERS];
+cell_t ***tbl = 0;
+int ***del = 0;
+int ***ins = 0;
+UniformTaskCollSplitHybrid** utcs = 0;
+AlignStats *stats = 0;
+static pthread_t *threadHandles = 0;
+static unsigned *threadRanks = 0;
+map<unsigned long, char*> *sequences_cache;
 char *sequences_local;
 map<unsigned long, SequenceIndex> sequences_index;
-map<unsigned long, char*> sequences_cache[NUM_WORKERS];
 unsigned long cache_miss=0;
 unsigned long cache_hit=0;
-ProcGroup* pgrp = NULL;
-UniformTaskCollSplitHybrid* utcs[NUM_WORKERS];
 #if DUMP_COSTS
 ofstream out[NUM_WORKERS];
 #endif
-AlignStats stats[NUM_WORKERS];
 // Synchronization for worker threads
 pthread_barrier_t workersStart, workersEnd;
 // Synchronization for server thread
 pthread_barrier_t serverStart, serverEnd;
-static pthread_t threadHandles[NUM_WORKERS + NUM_SERVERS];
-static unsigned threadRanks[NUM_WORKERS + NUM_SERVERS];
 volatile bool serverEnabled = true;
 #if MULTIPLE_PAIRS_PER_TASK
 unsigned long combinations_per_task=0;
@@ -481,8 +480,15 @@ int main(int argc, char **argv)
     ARMCI_Init();
 
     /* initialize tascel */
-    TascelConfig::initialize(NUM_WORKERS, comm);
-    pgrp = ProcGroup::construct();
+    TascelConfig::initialize(NUM_WORKERS_DEFAULT, comm);
+    tbl = new cell_t**[NUM_WORKERS];
+    del = new int**[NUM_WORKERS];
+    ins = new int **[NUM_WORKERS];
+    utcs = new UniformTaskCollSplitHybrid*[NUM_WORKERS];
+    stats = new AlignStats[NUM_WORKERS];
+    threadHandles = new pthread_t[NUM_WORKERS + NUM_SERVERS];
+    threadRanks = new unsigned[NUM_WORKERS + NUM_SERVERS];
+    sequences_cache = new map<unsigned long, char*>[NUM_WORKERS];
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
         threadRanks[worker] = worker;
     }
@@ -926,7 +932,6 @@ int main(int argc, char **argv)
         out[worker].close();
 #endif
     }
-    delete pgrp;
 
     TascelConfig::finalize();
     ARMCI_Finalize();
