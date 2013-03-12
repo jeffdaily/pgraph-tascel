@@ -101,7 +101,7 @@ LTLIBRARIES = $(noinst_LTLIBRARIES)
 libpgraph_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
 am_libpgraph_la_OBJECTS = src/combinations.lo src/dynamic.lo \
-	src/mpix.lo src/io.lo
+	src/mpix.lo src/io.lo src/Sequence.lo src/SequenceDatabase.lo
 libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -554,7 +554,8 @@ LDADD = libpgraph.la $(TASCEL_LIBS) $(ARMCI_LIBS) $(PT_MPI_LIBS) \
 noinst_LTLIBRARIES = libpgraph.la
 libpgraph_la_SOURCES = src/combinations.c src/combinations.h \
 	src/dynamic.c src/dynamic.h src/mpix.cc src/mpix.h src/io.cc \
-	src/io.h
+	src/io.h src/Sequence.cc src/Sequence.h \
+	src/SequenceDatabase.cc src/SequenceDatabase.h
 sandbox_blast_SOURCES = sandbox/blast.cc
 sandbox_brute_force_SOURCES = sandbox/brute_force.cc
 sandbox_brute_force_armci_SOURCES = sandbox/brute_force_armci.cc
@@ -660,6 +661,9 @@ src/combinations.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/dynamic.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/mpix.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/io.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/Sequence.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/SequenceDatabase.lo: src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
 libpgraph.la: $(libpgraph_la_OBJECTS) $(libpgraph_la_DEPENDENCIES) $(EXTRA_libpgraph_la_DEPENDENCIES) 
 	$(AM_V_CXXLD)$(CXXLINK)  $(libpgraph_la_OBJECTS) $(libpgraph_la_LIBADD) $(LIBS)
 
@@ -821,6 +825,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sandbox_brute_force_sorted_seq-brute_force.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sort_pairs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/unique_pairs.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Sequence.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabase.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/combinations.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/dynamic.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/io.Plo@am__quote@

@@ -12,18 +12,16 @@ using std::endl;
 using std::string;
 using std::vector;
 
-extern int check_count;
 
 #define ARG_LEN_MAX 1024
 
 #define MPI_CHECK(what) do {                              \
     int __err;                                            \
     __err = what;                                         \
-    ++check_count;                                        \
     if (MPI_SUCCESS != __err) {                           \
         printf("[%d] FAILED FILE=%s LINE=%d:" #what "\n", \
                 rank, __FILE__, __LINE__);                \
-        MPI_Abort(MPI_COMM_WORLD, check_count);           \
+        MPI_Abort(MPI_COMM_WORLD, -1);                    \
     }                                                     \
 } while (0)
 

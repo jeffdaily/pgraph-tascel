@@ -114,12 +114,14 @@ class EdgeResult {
 
 int rank = 0;
 int nprocs = 0;
-cell_t **tbl[NUM_WORKERS];
-int **del[NUM_WORKERS];
-int **ins[NUM_WORKERS];
+cell_t ***tbl;
+int ***del;
+int ***ins;
+UniformTaskCollSplitHybrid **utcs;
+AlignStats *stats;
+static pthread_t *threadHandles;
+static unsigned *threadRanks;
 vector<string> sequences;
-ProcGroup* pgrp = NULL;
-UniformTaskCollSplitHybrid* utcs[NUM_WORKERS];
 #if DUMP_COSTS
 ofstream out[NUM_WORKERS];
 #endif
@@ -130,13 +132,10 @@ vector<EdgeResult> edge_results[NUM_WORKERS];
 ofstream edges[NUM_WORKERS];
 #endif
 #endif
-AlignStats stats[NUM_WORKERS];
 // Synchronization for worker threads
 pthread_barrier_t workersStart, workersEnd;
 // Synchronization for server thread
 pthread_barrier_t serverStart, serverEnd;
-static pthread_t threadHandles[NUM_WORKERS + NUM_SERVERS];
-static unsigned threadRanks[NUM_WORKERS + NUM_SERVERS];
 volatile bool serverEnabled = true;
 #if MULTIPLE_PAIRS_PER_TASK
 unsigned long combinations_per_task=0;
@@ -539,7 +538,13 @@ int main(int argc, char **argv)
 
     /* initialize tascel */
     TascelConfig::initialize(NUM_WORKERS, comm);
-    pgrp = ProcGroup::construct();
+    tbl = new cell_t**[NUM_WORKERS];
+    del = new int**[NUM_WORKERS];
+    ins = new int**[NUM_WORKERS];
+    utcs = new UniformTaskCollSplitHybrid*[NUM_WORKERS];
+    stats = new AlignStats[NUM_WORKERS];
+    threadHandles = new pthread_t[NUM_WORKERS + NUM_SERVERS];
+    threadRanks = new unsigned[NUM_WORKERS + NUM_SERVERS];
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
         threadRanks[worker] = worker;
     }
@@ -999,7 +1004,6 @@ int main(int argc, char **argv)
     edge_out.close();
 #endif
 #endif
-    delete pgrp;
 
     TascelConfig::finalize();
     MPI_Comm_free(&comm);

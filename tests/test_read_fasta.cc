@@ -9,7 +9,7 @@
 
 #include <mpi.h>
 
-#include "io.h"
+#include "SequenceDatabase.h"
 #include "mpix.h"
 
 using std::vector;
@@ -70,7 +70,7 @@ int main(int argc, char **argv)
     }
     printf("memory budget=%ld\n", budget);
 
-    read_fasta(argv[1], budget, sequences);
+    SequenceDatabase sd(argv[1], budget);
 
     /* clean up */
     MPI_Comm_free(&comm);

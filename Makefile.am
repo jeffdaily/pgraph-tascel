@@ -40,6 +40,10 @@ libpgraph_la_SOURCES += src/mpix.cc
 libpgraph_la_SOURCES += src/mpix.h
 libpgraph_la_SOURCES += src/io.cc
 libpgraph_la_SOURCES += src/io.h
+libpgraph_la_SOURCES += src/Sequence.cc
+libpgraph_la_SOURCES += src/Sequence.h
+libpgraph_la_SOURCES += src/SequenceDatabase.cc
+libpgraph_la_SOURCES += src/SequenceDatabase.h
 
 noinst_PROGRAMS =
 noinst_PROGRAMS += sandbox/blast

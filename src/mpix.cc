@@ -19,9 +19,6 @@ using std::string;
 using std::vector;
 
 
-int check_count=0;
-
-
 /* MPI standard does not guarantee all procs receive argc and argv */
 void mpix_bcast_argv(
         MPI_Comm comm, int argc, char **argv, vector<string> &all_argv)
