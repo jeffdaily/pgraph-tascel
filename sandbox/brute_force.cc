@@ -114,22 +114,22 @@ class EdgeResult {
 
 int rank = 0;
 int nprocs = 0;
-cell_t ***tbl;
-int ***del;
-int ***ins;
-UniformTaskCollSplitHybrid **utcs;
-AlignStats *stats;
-static pthread_t *threadHandles;
-static unsigned *threadRanks;
+cell_t ***tbl = 0;
+int ***del = 0;
+int ***ins = 0;
+UniformTaskCollSplitHybrid** utcs = 0;
+AlignStats *stats = 0;
+static pthread_t *threadHandles = 0;
+static unsigned *threadRanks = 0;
 vector<string> sequences;
 #if DUMP_COSTS
-ofstream out[NUM_WORKERS];
+ofstream *out = 0;
 #endif
 #if OUTPUT_EDGES
 #if CACHE_RESULTS
-vector<EdgeResult> edge_results[NUM_WORKERS];
+vector<EdgeResult> *edge_results = 0;
 #else
-ofstream edges[NUM_WORKERS];
+ofstream *edges = 0;
 #endif
 #endif
 // Synchronization for worker threads
@@ -537,14 +537,24 @@ int main(int argc, char **argv)
     MPI_CHECK(MPI_Comm_size(comm, &nprocs));
 
     /* initialize tascel */
-    TascelConfig::initialize(NUM_WORKERS, comm);
+    TascelConfig::initialize(NUM_WORKERS_DEFAULT, comm);
     tbl = new cell_t**[NUM_WORKERS];
     del = new int**[NUM_WORKERS];
-    ins = new int**[NUM_WORKERS];
+    ins = new int **[NUM_WORKERS];
     utcs = new UniformTaskCollSplitHybrid*[NUM_WORKERS];
     stats = new AlignStats[NUM_WORKERS];
     threadHandles = new pthread_t[NUM_WORKERS + NUM_SERVERS];
     threadRanks = new unsigned[NUM_WORKERS + NUM_SERVERS];
+#if DUMP_COSTS
+    out = new ofstream[NUM_WORKERS];
+#endif
+#if OUTPUT_EDGES
+#if CACHE_RESULTS
+    edge_results = new vector<EdgeResult>[NUM_WORKERS];
+#else
+    edges = new ofstream[NUM_WORKERS];
+#endif
+#endif
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
         threadRanks[worker] = worker;
     }

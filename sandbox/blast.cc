@@ -35,13 +35,13 @@ using namespace tascel;
 
 int rank = 0;
 int nprocs = 0;
-cell_t ***tbl;
-int ***del;
-int ***ins;
-UniformTaskCollSplitHybrid **utcs;
-AlignStats *stats;
-static pthread_t *threadHandles;
-static unsigned *threadRanks;
+cell_t ***tbl = 0;
+int ***del = 0;
+int ***ins = 0;
+UniformTaskCollSplitHybrid** utcs = 0;
+AlignStats *stats = 0;
+static pthread_t *threadHandles = 0;
+static unsigned *threadRanks = 0;
 vector<string> sequences;
 // Synchronization for worker threads
 pthread_barrier_t workersStart, workersEnd;
@@ -243,7 +243,7 @@ int main(int argc, char **argv)
     MPI_CHECK(MPI_Comm_size(comm, &nprocs));
 
     /* initialize tascel */
-    TascelConfig::initialize(NUM_WORKERS, comm);
+    TascelConfig::initialize(NUM_WORKERS_DEFAULT, comm);
     tbl = new cell_t**[NUM_WORKERS];
     del = new int**[NUM_WORKERS];
     ins = new int**[NUM_WORKERS];
