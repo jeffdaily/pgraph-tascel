@@ -1,10 +1,18 @@
 #include <mpi.h>
 
+#include <cassert>
+#include <fstream>
+#include <sstream>
 #include <string>
+#include <utility>
 
+#include "Sequence.h"
 #include "SequenceDatabase.h"
 #include "mpix.h"
 
+using std::ifstream;
+using std::make_pair;
+using std::ostringstream;
 using std::string;
 
 
@@ -14,7 +22,9 @@ SequenceDatabaseException::SequenceDatabaseException(
         const char *function,
         const char *message) throw()
 {
-
+    ostringstream oss;
+    oss << file << ": " << function << ": " << line << ": " << message;
+    this->message = oss.str();
 }
 
 
@@ -26,7 +36,7 @@ SequenceDatabaseException::~SequenceDatabaseException() throw()
 
 const char* SequenceDatabaseException::what() const throw()
 {
-
+    return this->message.c_str();
 }
 
 
@@ -35,7 +45,7 @@ SequenceDatabase::SequenceDatabase(const string &filename, size_t budget)
     :   filename(filename)
     ,   budget(budget)
 {
-
+    read_and_parse_fasta();
 }
 
 
@@ -55,21 +65,49 @@ size_t SequenceDatabase::get_global_count() const
 
 void SequenceDatabase::read_and_parse_fasta()
 {
-    MPI_Offset filesize;
-    MPI_Offset localsize;
-    MPI_Offset start;
-    MPI_Offset end;
+    MPI_Offset filesize=0;
+    MPI_Offset localsize=0;
+    MPI_Offset start=0;
+    MPI_Offset end=0;
     MPI_Offset overlap=1024;
-    MPI_File in;
-    int rank;
-    int size;
-    char *chunk;
-    int ierr;
+    MPI_File in=MPI_FILE_NULL;
+    int rank=0;
+    int size=0;
+    char *chunk=NULL;
+    int ierr=0;
+    MPI_Datatype offset_type=0;
+    vector<MPI_Offset> index;
+    unsigned long count;
+    size_t sid=0;
 
     ierr = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_CHECK(ierr);
     ierr = MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_CHECK(ierr);
+
+    offset_type = MPI_DATATYPE_NULL;
+    if      (sizeof(MPI_Offset) == sizeof(int))  { offset_type = MPI_INT; }
+    else if (sizeof(MPI_Offset) == sizeof(long)) { offset_type = MPI_LONG; }
+    else if (sizeof(MPI_Offset) == sizeof(long long)) { offset_type =  
+        MPI_LONG_LONG; }
+    else { MPI_Abort(MPI_COMM_WORLD, 1); }
+
+    if (0 == rank) {
+        index_file(index);
+        count = index.size();
+        ierr = MPI_Bcast(&count, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+        MPI_CHECK(ierr);
+        ierr = MPI_Bcast(&index[0], count, offset_type, 0, MPI_COMM_WORLD);
+        MPI_CHECK(ierr);
+    }
+    else {
+        ierr = MPI_Bcast(&count, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+        MPI_CHECK(ierr);
+        index.resize(count);
+        ierr = MPI_Bcast(&index[0], count, offset_type, 0, MPI_COMM_WORLD);
+        MPI_CHECK(ierr);
+    }
+
     ierr = MPI_File_open(MPI_COMM_WORLD, const_cast<char*>(filename.c_str()),
             MPI_MODE_RDONLY, MPI_INFO_NULL, &in);
     MPI_CHECK(ierr);
@@ -78,55 +116,99 @@ void SequenceDatabase::read_and_parse_fasta()
 
     ierr = MPI_File_get_size(in, &filesize);
     MPI_CHECK(ierr);
-    if (budget > filesize) {
-        start = 0;
-        end = filesize;
-        localsize = filesize+1;
-    }
-    else {
+    start = 0;
+    end = filesize;
+    localsize = filesize;
+    if (budget <= filesize) {
+        size_t i=0;
+        size_t j=0;
+
         localsize = filesize/size;
         if (localsize > budget) {
             SEQUENCE_DATABASE_EXCEPTION(
                     "sequence memory budget not sufficient");
         }
         start = rank * localsize;
-        /* we fudge the margins based on the memory budget specified */
-        start = start - ((budget-localsize)/2);
-        end   = end   + ((budget-localsize)/2);
-        /* except ranks near the end */
-        if (end > filesize) end = filesize;
-        /* except ranks near the front */
-        if (start < 0) start = 0;
-        localsize = end - start + 1;
+        /* find the first offset >= to our start */
+        i = 0;
+        while (i<count && index[i] < start) {
+            ++i;
+        }
+        /* find the first offset >= to our start+localsize */
+        j = i;
+        while (j<count && index[j] < start+localsize) {
+            ++j;
+        }
+        /* at this point i and/or j may point past the end of the index */
+        if (i >= count) {
+            i = count-1; /* reasonable? point to last sequence ID? */
+        }
+        sid = i;
+        start = index[i];
+        if (j >= count) {
+            end = filesize;
+        }
+        else {
+            end = index[j];
+        }
+        localsize = end - start;
     }
 
-
     /* allocate memory */
-    chunk = new char[localsize];
+    local_cache.resize(localsize);
 
     /* everyone reads in their part */
-    MPI_File_read_at_all(in, start, chunk, localsize, MPI_CHAR,
-            MPI_STATUS_IGNORE);
+    ierr = MPI_File_read_at_all(in, start, &local_cache[0], localsize,
+            MPI_CHAR, MPI_STATUS_IGNORE);
+    MPI_CHECK(ierr);
 
-    /* figure out where first valid sequence begins */
-    MPI_Offset first_valid_index = 0;
-    MPI_Offset last_valid_index = 0;
-    MPI_Offset maybe_last_valid_index = 0;
+    /* everyone can close the file now */
+    ierr = MPI_File_close(&in);
+    MPI_CHECK(ierr);
 
-    for (MPI_Offset i=0; i<localsize; ++i) {
-        if (chunk[i] == '>') {
-            if (0 == first_valid_index) {
-                first_valid_index = i;
+    assert(local_cache.front() == '>');
+    assert(local_cache.back()  != '>');
+
+    /* parse local cache into Sequence instances */
+    {
+        size_t label_index=0;
+        size_t data_index=0;
+        size_t data_length=0;
+        for (size_t i=0; i<local_cache.size(); ++i) {
+            if (local_cache[i] == '>') {
+                label_index = i;
+                data_index = i;
+                data_length = 0;
             }
-            if (i > maybe_last_valid_index) {
-                last_valid_index = maybe_last_valid_index;
-                maybe_last_valid_index = i;
+            else if (local_cache[i] == '\n') {
+                if (label_index == data_index) {
+                    data_index = i+1;
+                }
+                else {
+                    data_length = i - data_index;
+                    sequences.insert(make_pair(sid++,
+                            Sequence(&local_cache[data_index], data_length)));
+                }
             }
         }
     }
-
-    mpix_print_sync(MPI_COMM_WORLD, "first_valid_index", first_valid_index);
-    mpix_print_sync(MPI_COMM_WORLD, "last_valid_index", last_valid_index);
-
-    return;
 }
+
+
+void SequenceDatabase::index_file(vector<MPI_Offset> &index)
+{
+    string line;
+    ifstream fin;
+
+    fin.open(filename.c_str());
+    while (fin) {
+        long pos = fin.tellg();
+        getline(fin, line);
+        if (line[0] == '>') {
+            index.push_back(pos);
+        }
+    }
+
+    fin.close();
+}
+

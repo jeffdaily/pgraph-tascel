@@ -4,12 +4,14 @@
 #include <stdint.h>
 
 #include <exception>
+#include <map>
 #include <string>
 #include <vector>
 
 #include "Sequence.h"
 
 using std::exception;
+using std::map;
 using std::string;
 using std::vector;
 
@@ -56,17 +58,20 @@ class SequenceDatabase
         size_t get_local_count() const;
 
         /**
-         * Returns how many sequences are stored total on every process.
+         * Returns how many sequences are stored collectively by every process.
          *
-         * @return how many sequences are stored total on every process.
+         * @return how many sequences are stored collectively by every process.
          */
         size_t get_global_count() const;
 
     private:
         void read_and_parse_fasta();
+        void index_file(vector<MPI_Offset> &index);
 
         string filename;
         size_t budget;
+        vector<char> local_cache;
+        map<size_t,Sequence> sequences;
 };
 
 #endif /* SEQUENCE_DATABASE_H_ */

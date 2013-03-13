@@ -5,6 +5,8 @@
  */
 #include <cstdlib>
 #include <cassert>
+#include <iostream>
+#include <sstream>
 #include <vector>
 
 #include <mpi.h>
@@ -12,18 +14,31 @@
 #include "SequenceDatabase.h"
 #include "mpix.h"
 
+using std::cerr;
+using std::cout;
+using std::endl;
+using std::exit;
+using std::istringstream;
 using std::vector;
+
+
+static void sync_exit(int value, MPI_Comm comm)
+{
+        MPI_Comm_free(&comm);
+        MPI_Finalize();
+        exit(value);
+}
 
 
 int main(int argc, char **argv)
 {
     MPI_Comm comm = MPI_COMM_NULL;
-    int provided;
+    int provided = 0;
     int rank = 0;
     int nprocs = 0;
     vector<string> sequences;
-    long budget;
-    size_t budget_strlen;
+    long budget = 0;
+    char budget_multiplier = 0;
 
     /* initialize MPI */
 #if defined(THREADED)
@@ -41,34 +56,39 @@ int main(int argc, char **argv)
     if (argc <= 2 || argc >= 4) {
         if (0 == rank) {
             if (argc <= 1) {
-                printf("missing input file\n");
+                cerr << "missing input file" << endl;
             }
             if (argc <= 2) {
-                printf("missing memory budget\n");
+                cerr << "missing memory budget" << endl;
             }
             else if (argc >= 4) {
-                printf("too many arguments\n");
+                cerr << "too many arguments" << endl;
             }
-            printf("usage: test_read_fasta sequence_file memory_budget\n");
+            cerr << "usage: " << argv[0]
+                << " sequence_file memory_budget" << endl;
         }
-        MPI_Comm_free(&comm);
-        MPI_Finalize();
-        return 1;
+        sync_exit(1, comm);
     }
-    budget_strlen = strlen(argv[2]);
-    printf("budget_strlen=%d\n", (int)budget_strlen);
-    if (argv[2][budget_strlen-1] == 'm' || argv[2][budget_strlen-1] == 'M') {
-        argv[2][budget_strlen-1]= '\0';
-        budget = atol(argv[2]) * 1048576;
+    
+    {
+        istringstream iss(argv[2]);
+        iss >> budget >> budget_multiplier;
+        if (budget <= 0) {
+            cerr << "memory budget must be positive real number" << endl;
+            sync_exit(1, comm);
+        }
     }
-    else if (argv[2][budget_strlen-1] == 'g' || argv[2][budget_strlen-1] == 'G') {
-        argv[2][budget_strlen-1]= '\0';
-        budget = atol(argv[2]) * 1073741824;
+
+    if (budget_multiplier == 'k' || budget_multiplier == 'K') {
+        budget *= 1024; /* kilobyte */
     }
-    else {
-        budget = atol(argv[2]);
+    else if (budget_multiplier == 'm' || budget_multiplier == 'M') {
+        budget *= 1048576; /* megabyte */
     }
-    printf("memory budget=%ld\n", budget);
+    else if (budget_multiplier == 'g' || budget_multiplier == 'G') {
+        budget *= 1073741824; /* gigabyte */
+    }
+    printf("memory budget=%ld bytes\n", budget);
 
     SequenceDatabase sd(argv[1], budget);
 

@@ -1,8 +1,10 @@
 #ifndef SEQUENCE_H_
 #define SEQUENCE_H_
 
+#include <iostream>
 #include <string>
 
+using std::ostream;
 using std::string;
 
 
@@ -17,24 +19,30 @@ class Sequence
 {
     public:
         /** default */
-        explicit Sequence();
+        Sequence();
 
         /** shallow copy; new instance does not own the data */
-        explicit Sequence(const Sequence &seq);
+        Sequence(const Sequence &seq);
 
         /** from a std::string */
-        explicit Sequence(const string &seq);
+        Sequence(const string &seq);
 
         /** from character sequence; new instance does not own the data */
-        Sequence(const char *seq, size_t n);
+        Sequence(const char *seq);
+
+        /** from character sequence; new instance does not own the data */
+        Sequence(const char *seq, size_t len);
 
         /** delete data, if owner */
         virtual ~Sequence();
+
+        friend ostream& operator << (ostream &os, const Sequence &s);
 
     private:
         bool is_owner;      /**< whether this instance should delete the data */
         const char *data;   /**< character sequence */
         size_t size;        /**< length of character sequence */
 };
+
 
 #endif /* SEQUENCE_H_ */

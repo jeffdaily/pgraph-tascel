@@ -2,6 +2,7 @@
 #define MPIX_H_
 
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -9,6 +10,7 @@
 
 using std::cout;
 using std::endl;
+using std::ostringstream;
 using std::string;
 using std::vector;
 
@@ -55,6 +57,34 @@ void mpix_print_sync(MPI_Comm comm, const string &name, const T &what)
     }
     delete [] all_what;
     MPI_Barrier(comm);
+}
+
+template <class Collection>
+string vec_to_string(
+        const Collection &collection,
+        char const * delimiter=",",
+        const string &name="")
+{
+    typedef typename Collection::const_iterator iter;
+    std::ostringstream os;
+    iter beg = collection.begin();
+    iter end = collection.end();
+
+    if (!name.empty()) {
+        os << name << "=";
+    }
+
+    if (beg == end) {
+        os << "{}";
+    } else {
+        os << "{" << *(beg++);
+        for (; beg != end; ++beg) {
+            os << delimiter << *beg;
+        }
+        os << "}";
+    }
+
+    return os.str();
 }
 
 #endif /* MPIX_H_ */
