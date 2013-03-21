@@ -21,7 +21,7 @@ using std::vector;
 
 /* MPI standard does not guarantee all procs receive argc and argv */
 void mpix_bcast_argv(
-        MPI_Comm comm, int argc, char **argv, vector<string> &all_argv)
+        int argc, char **argv, vector<string> &all_argv, MPI_Comm comm)
 {
     int rank;
 
@@ -116,11 +116,11 @@ void mpix_print_sync(MPI_Comm comm, const string &what)
  *
  * @return the file size
  */
-unsigned long mpix_get_file_size(MPI_Comm comm, const string &file_name)
+unsigned long mpix_get_file_size(const string &file_name, MPI_Comm comm)
 {
-    unsigned long file_size;
-    int rank;
-    int size;
+    MPI_Offset file_size=0;
+    int rank=0;
+    int size=0;
 
     MPI_CHECK(MPI_Comm_rank(comm, &rank));
     MPI_CHECK(MPI_Comm_size(comm, &size));
@@ -140,7 +140,7 @@ unsigned long mpix_get_file_size(MPI_Comm comm, const string &file_name)
     }
 
     /* the file_size is broadcast to all */
-    MPI_CHECK(MPI_Bcast(&file_size, 1, MPI_LONG, 0, comm));
+    mpix_bcast(file_size);
 #if 0
     if (0 == rank) {
         printf("file_size=%ld\n", file_size);
@@ -196,7 +196,7 @@ void mpix_read_file_mpiio(
     MPI_CHECK(MPI_Comm_size(comm, &size));
 
     /* allocate a buffer for the file, of the entire size */
-    file_size = mpix_get_file_size(comm, file_name);
+    file_size = mpix_get_file_size(file_name, comm);
     file_buffer = new char[file_size];
 
     if (file_size > chunk_size) {
@@ -262,7 +262,7 @@ void mpix_read_file_bcast(
     MPI_CHECK(MPI_Comm_size(comm, &size));
 
     /* allocate a buffer for the file, of the entire size */
-    file_size = mpix_get_file_size(comm, file_name);
+    file_size = mpix_get_file_size(file_name, comm);
     file_buffer = new char[file_size];
 
     if (0 == rank) {

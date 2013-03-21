@@ -557,7 +557,7 @@ int main(int argc, char **argv)
     param.OS = 30;
 
     /* MPI standard does not guarantee all procs receive argc and argv */
-    mpix_bcast_argv(comm, argc, argv, all_argv);
+    mpix_bcast_argv(argc, argv, all_argv, comm);
 
 #if DEBUG
     /* print the command line arguments */
