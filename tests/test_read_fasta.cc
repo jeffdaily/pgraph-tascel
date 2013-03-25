@@ -52,7 +52,7 @@ int main(int argc, char **argv)
     MPI_CHECK(MPI_Comm_size(comm, &nprocs));
 
     /* sanity check that we got the correct number of arguments */
-    printf("argc=%d\n", argc);
+    cout << "argc=" << argc << endl;
     if (argc <= 2 || argc >= 4) {
         if (0 == rank) {
             if (argc <= 1) {
@@ -88,9 +88,13 @@ int main(int argc, char **argv)
     else if (budget_multiplier == 'g' || budget_multiplier == 'G') {
         budget *= 1073741824; /* gigabyte */
     }
-    printf("memory budget=%ld bytes\n", budget);
+    cout << "memory budget=" << budget << " bytes" << endl;
 
     SequenceDatabase sd(argv[1], budget);
+    mpix_print_sync(comm, "local_count", sd.get_local_count());
+    mpix_print_sync(comm, "global_count", sd.get_global_count());
+    Sequence &s = sd.get_sequence(0);
+    mpix_print_sync(comm, "seq 0", string(s));
 
     /* clean up */
     MPI_Comm_free(&comm);

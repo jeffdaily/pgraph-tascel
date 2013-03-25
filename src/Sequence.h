@@ -36,6 +36,9 @@ class Sequence
         /** delete data, if owner */
         virtual ~Sequence();
 
+        /** overload of string cast */
+        operator string() const;
+
         friend ostream& operator << (ostream &os, const Sequence &s);
 
     private:

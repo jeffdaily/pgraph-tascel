@@ -50,6 +50,12 @@ Sequence::~Sequence()
 }
 
 
+Sequence::operator string() const
+{
+    return string(data, size);
+}
+
+
 ostream& operator << (ostream &os, const Sequence &s)
 {
     for (size_t i=0; i<s.size; ++i) {

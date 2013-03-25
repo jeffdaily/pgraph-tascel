@@ -45,10 +45,15 @@ class SequenceDatabase
          * memory budget.
          *
          * @pre !filename.empty()
-         * @param filename the file to open (fasta format)
-         * @param budget the memory budget, 0 for unlimited
+         * @param[in] filename the file to open (fasta format)
+         * @param[in] budget the memory budget, 0 for unlimited
          */
         explicit SequenceDatabase(const string &filename, size_t budget);
+
+        /**
+         * Destroys the SequenceDatabase.
+         */
+        ~SequenceDatabase();
 
         /**
          * Returns how many sequences are stored on this process.
@@ -64,14 +69,29 @@ class SequenceDatabase
          */
         size_t get_global_count() const;
 
+        /**
+         * Returns a reference to the Sequence based on the global index i.
+         *
+         * @param[in] i the index based on the global count of sequences
+         * @return the Sequence reference (owned by this SequenceDatabase)
+         */
+        Sequence& get_sequence(size_t i);
+
     private:
         void read_and_parse_fasta();
         void index_file(vector<MPI_Offset> &index);
 
-        string filename;
         size_t budget;
-        vector<char> local_cache;
+        string file_name;
+        MPI_Offset file_size;
+        vector<MPI_Offset> global_file_index;
+        vector<int> global_owner;
+        vector<char*> global_address;
+        char *local_cache;
+        MPI_Offset local_cache_size;
+        vector<char*> global_cache;
         map<size_t,Sequence> sequences;
+        map<size_t,char*> remote_cache;
 };
 
 #endif /* SEQUENCE_DATABASE_H_ */
