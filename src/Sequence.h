@@ -36,6 +36,9 @@ class Sequence
         /** delete data, if owner */
         virtual ~Sequence();
 
+        /** affine gap align, returning score, #matches, and align length */
+        void align(const Sequence &that, int &score, int &ndig, int &alen);
+
         /** overload of string cast */
         operator string() const;
 

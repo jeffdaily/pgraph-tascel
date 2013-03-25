@@ -3,6 +3,8 @@
 #include <iostream>
 #include <string>
 
+#include "dynamic.h"
+
 #include "Sequence.h"
 
 using std::string;
@@ -47,6 +49,27 @@ Sequence::~Sequence()
         delete [] data;
     }
     data = NULL;
+}
+
+
+void Sequence::align(const Sequence &that, int &score, int &ndig, int &alen)
+{
+    cell_t result;
+    cell_t **tbl = alloc_tbl(2, this->size > that.size ? this->size : that.size);
+    int **del = alloc_int(2, this->size > that.size ? this->size : that.size);
+    int **ins = alloc_int(2, this->size > that.size ? this->size : that.size);
+
+    affine_gap_align(this->data, this->size, that.data, that.size, &result,
+            tbl, del, ins);
+
+    free_tbl(tbl, 2);
+    free_int(del, 2);
+    free_int(ins, 2);
+
+    /* return */
+    score = result.score;
+    ndig = result.ndig;
+    alen = result.alen;
 }
 
 

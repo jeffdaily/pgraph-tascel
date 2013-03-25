@@ -93,8 +93,15 @@ int main(int argc, char **argv)
     SequenceDatabase sd(argv[1], budget);
     mpix_print_sync(comm, "local_count", sd.get_local_count());
     mpix_print_sync(comm, "global_count", sd.get_global_count());
-    Sequence &s = sd.get_sequence(0);
-    mpix_print_sync(comm, "seq 0", string(s));
+    Sequence &s1 = sd.get_sequence(0);
+    mpix_print_sync(comm, "seq 0", string(s1));
+    Sequence &s2 = sd.get_sequence(1);
+    mpix_print_sync(comm, "seq 0", string(s2));
+    int score,ndig,alen;
+    s1.align(s2, score, ndig, alen);
+    mpix_print_sync(comm, "score", score);
+    mpix_print_sync(comm, "ndig", ndig);
+    mpix_print_sync(comm, "alen", alen);
 
     /* clean up */
     MPI_Comm_free(&comm);

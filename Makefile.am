@@ -45,6 +45,9 @@ libpgraph_la_SOURCES += src/Sequence.h
 libpgraph_la_SOURCES += src/SequenceDatabase.cc
 libpgraph_la_SOURCES += src/SequenceDatabase.h
 
+bin_PROGRAMS =
+bin_PROGRAMS += apps/align
+
 noinst_PROGRAMS =
 noinst_PROGRAMS += sandbox/blast
 noinst_PROGRAMS += sandbox/brute_force
@@ -73,6 +76,8 @@ noinst_PROGRAMS += tests/test_read_serial
 if HAVE_UTC_ITER
 noinst_PROGRAMS += sandbox/brute_force_iter
 endif
+
+apps_align_SOURCES = apps/align.cc
 
 sandbox_blast_SOURCES                      = sandbox/blast.cc
 sandbox_brute_force_SOURCES                = sandbox/brute_force.cc

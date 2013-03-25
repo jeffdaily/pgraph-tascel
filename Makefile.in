@@ -51,6 +51,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+bin_PROGRAMS = apps/align$(EXEEXT)
 noinst_PROGRAMS = sandbox/blast$(EXEEXT) sandbox/brute_force$(EXEEXT) \
 	$(am__EXEEXT_1) sandbox/brute_force_binning$(EXEEXT) \
 	sandbox/brute_force_costs$(EXEEXT) \
@@ -107,13 +108,20 @@ AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+am__installdirs = "$(DESTDIR)$(bindir)"
 @HAVE_ARMCI_TRUE@am__EXEEXT_1 = sandbox/brute_force_armci$(EXEEXT)
 @HAVE_UTC_ITER_TRUE@am__EXEEXT_2 = sandbox/brute_force_iter$(EXEEXT)
-PROGRAMS = $(noinst_PROGRAMS)
+PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
+am_apps_align_OBJECTS = apps/align.$(OBJEXT)
+apps_align_OBJECTS = $(am_apps_align_OBJECTS)
+apps_align_LDADD = $(LDADD)
+am__DEPENDENCIES_1 =
+apps_align_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_sandbox_blast_OBJECTS = sandbox/blast.$(OBJEXT)
 sandbox_blast_OBJECTS = $(am_sandbox_blast_OBJECTS)
 sandbox_blast_LDADD = $(LDADD)
-am__DEPENDENCIES_1 =
 sandbox_blast_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
@@ -319,8 +327,8 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(libpgraph_la_SOURCES) $(sandbox_blast_SOURCES) \
-	$(sandbox_brute_force_SOURCES) \
+SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
+	$(sandbox_blast_SOURCES) $(sandbox_brute_force_SOURCES) \
 	$(sandbox_brute_force_armci_SOURCES) \
 	$(sandbox_brute_force_binning_SOURCES) \
 	$(sandbox_brute_force_costs_SOURCES) \
@@ -339,8 +347,8 @@ SOURCES = $(libpgraph_la_SOURCES) $(sandbox_blast_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_read_SOURCES) \
 	$(tests_test_read_fasta_SOURCES) \
 	$(tests_test_read_serial_SOURCES)
-DIST_SOURCES = $(libpgraph_la_SOURCES) $(sandbox_blast_SOURCES) \
-	$(sandbox_brute_force_SOURCES) \
+DIST_SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
+	$(sandbox_blast_SOURCES) $(sandbox_brute_force_SOURCES) \
 	$(sandbox_brute_force_armci_SOURCES) \
 	$(sandbox_brute_force_binning_SOURCES) \
 	$(sandbox_brute_force_costs_SOURCES) \
@@ -556,6 +564,7 @@ libpgraph_la_SOURCES = src/combinations.c src/combinations.h \
 	src/dynamic.c src/dynamic.h src/mpix.cc src/mpix.h src/io.cc \
 	src/io.h src/Sequence.cc src/Sequence.h \
 	src/SequenceDatabase.cc src/SequenceDatabase.h
+apps_align_SOURCES = apps/align.cc
 sandbox_blast_SOURCES = sandbox/blast.cc
 sandbox_brute_force_SOURCES = sandbox/brute_force.cc
 sandbox_brute_force_armci_SOURCES = sandbox/brute_force_armci.cc
@@ -666,6 +675,55 @@ src/SequenceDatabase.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
 libpgraph.la: $(libpgraph_la_OBJECTS) $(libpgraph_la_DEPENDENCIES) $(EXTRA_libpgraph_la_DEPENDENCIES) 
 	$(AM_V_CXXLD)$(CXXLINK)  $(libpgraph_la_OBJECTS) $(libpgraph_la_LIBADD) $(LIBS)
+install-binPROGRAMS: $(bin_PROGRAMS)
+	@$(NORMAL_INSTALL)
+	@list='$(bin_PROGRAMS)'; test -n "$(bindir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(bindir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(bindir)" || exit 1; \
+	fi; \
+	for p in $$list; do echo "$$p $$p"; done | \
+	sed 's/$(EXEEXT)$$//' | \
+	while read p p1; do if test -f $$p \
+	 || test -f $$p1 \
+	  ; then echo "$$p"; echo "$$p"; else :; fi; \
+	done | \
+	sed -e 'p;s,.*/,,;n;h' \
+	    -e 's|.*|.|' \
+	    -e 'p;x;s,.*/,,;s/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/' | \
+	sed 'N;N;N;s,\n, ,g' | \
+	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1 } \
+	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
+	    if ($$2 == $$4) files[d] = files[d] " " $$1; \
+	    else { print "f", $$3 "/" $$4, $$1; } } \
+	  END { for (d in files) print "f", d, files[d] }' | \
+	while read type dir files; do \
+	    if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
+	    test -z "$$files" || { \
+	    echo " $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL_PROGRAM) $$files '$(DESTDIR)$(bindir)$$dir'"; \
+	    $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL_PROGRAM) $$files "$(DESTDIR)$(bindir)$$dir" || exit $$?; \
+	    } \
+	; done
+
+uninstall-binPROGRAMS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(bin_PROGRAMS)'; test -n "$(bindir)" || list=; \
+	files=`for p in $$list; do echo "$$p"; done | \
+	  sed -e 'h;s,^.*/,,;s/$(EXEEXT)$$//;$(transform)' \
+	      -e 's/$$/$(EXEEXT)/' \
+	`; \
+	test -n "$$list" || exit 0; \
+	echo " ( cd '$(DESTDIR)$(bindir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(bindir)" && rm -f $$files
+
+clean-binPROGRAMS:
+	@list='$(bin_PROGRAMS)'; test -n "$$list" || exit 0; \
+	echo " rm -f" $$list; \
+	rm -f $$list || exit $$?; \
+	test -n "$(EXEEXT)" || exit 0; \
+	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
+	echo " rm -f" $$list; \
+	rm -f $$list
 
 clean-noinstPROGRAMS:
 	@list='$(noinst_PROGRAMS)'; test -n "$$list" || exit 0; \
@@ -675,6 +733,17 @@ clean-noinstPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
+apps/$(am__dirstamp):
+	@$(MKDIR_P) apps
+	@: > apps/$(am__dirstamp)
+apps/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) apps/$(DEPDIR)
+	@: > apps/$(DEPDIR)/$(am__dirstamp)
+apps/align.$(OBJEXT): apps/$(am__dirstamp) \
+	apps/$(DEPDIR)/$(am__dirstamp)
+apps/align$(EXEEXT): $(apps_align_OBJECTS) $(apps_align_DEPENDENCIES) $(EXTRA_apps_align_DEPENDENCIES) apps/$(am__dirstamp)
+	@rm -f apps/align$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_OBJECTS) $(apps_align_LDADD) $(LIBS)
 sandbox/$(am__dirstamp):
 	@$(MKDIR_P) sandbox
 	@: > sandbox/$(am__dirstamp)
@@ -800,6 +869,7 @@ tests/test_read_serial$(EXEEXT): $(tests_test_read_serial_OBJECTS) $(tests_test_
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f apps/*.$(OBJEXT)
 	-rm -f sandbox/*.$(OBJEXT)
 	-rm -f src/*.$(OBJEXT)
 	-rm -f src/*.lo
@@ -808,6 +878,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/blast.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force_armci.Po@am__quote@
@@ -988,6 +1059,7 @@ mostlyclean-libtool:
 
 clean-libtool:
 	-rm -rf .libs _libs
+	-rm -rf apps/.libs apps/_libs
 	-rm -rf sandbox/.libs sandbox/_libs
 	-rm -rf src/.libs src/_libs
 	-rm -rf tests/.libs tests/_libs
@@ -1214,6 +1286,9 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(LTLIBRARIES) $(PROGRAMS) config.h
 installdirs:
+	for dir in "$(DESTDIR)$(bindir)"; do \
+	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
+	done
 install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
@@ -1240,6 +1315,8 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-rm -f apps/$(DEPDIR)/$(am__dirstamp)
+	-rm -f apps/$(am__dirstamp)
 	-rm -f sandbox/$(DEPDIR)/$(am__dirstamp)
 	-rm -f sandbox/$(am__dirstamp)
 	-rm -f src/$(DEPDIR)/$(am__dirstamp)
@@ -1252,12 +1329,12 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-libtool clean-noinstLTLIBRARIES \
-	clean-noinstPROGRAMS mostlyclean-am
+clean-am: clean-binPROGRAMS clean-generic clean-libtool \
+	clean-noinstLTLIBRARIES clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf sandbox/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf apps/$(DEPDIR) sandbox/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -1280,7 +1357,7 @@ install-dvi: install-dvi-am
 
 install-dvi-am:
 
-install-exec-am:
+install-exec-am: install-binPROGRAMS
 
 install-html: install-html-am
 
@@ -1305,7 +1382,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf sandbox/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf apps/$(DEPDIR) sandbox/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
@@ -1322,27 +1399,27 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am:
+uninstall-am: uninstall-binPROGRAMS
 
 .MAKE: all install-am install-strip
 
 .PHONY: CTAGS GTAGS TAGS all all-am am--refresh check check-am clean \
-	clean-cscope clean-generic clean-libtool \
+	clean-binPROGRAMS clean-cscope clean-generic clean-libtool \
 	clean-noinstLTLIBRARIES clean-noinstPROGRAMS cscope \
 	cscopelist-am ctags ctags-am dist dist-all dist-bzip2 \
 	dist-gzip dist-lzip dist-shar dist-tarZ dist-xz dist-zip \
 	distcheck distclean distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags distcleancheck \
 	distdir distuninstallcheck dvi dvi-am html html-am info \
-	info-am install install-am install-data install-data-am \
-	install-dvi install-dvi-am install-exec install-exec-am \
-	install-html install-html-am install-info install-info-am \
-	install-man install-pdf install-pdf-am install-ps \
-	install-ps-am install-strip installcheck installcheck-am \
-	installdirs maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-compile mostlyclean-generic \
-	mostlyclean-libtool pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am
+	info-am install install-am install-binPROGRAMS install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags tags-am uninstall uninstall-am uninstall-binPROGRAMS
 
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
