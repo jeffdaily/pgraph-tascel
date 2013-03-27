@@ -13,6 +13,7 @@ AM_CPPFLAGS += $(ARMCI_CPPFLAGS)
 AM_CPPFLAGS += $(PT_MPI_CPPFLAGS)
 AM_CPPFLAGS += $(GMP_CPPFLAGS)
 AM_CPPFLAGS += -I$(top_srcdir)/src
+AM_CPPFLAGS += -I$(top_srcdir)/src/suffixtree
 
 AM_LDFLAGS += $(TASCEL_LDFLAGS)
 #AM_LDFLAGS += $(GA_LDFLAGS)
@@ -52,10 +53,33 @@ libpgraph_la_SOURCES += src/Sequence.cc
 libpgraph_la_SOURCES += src/Sequence.h
 libpgraph_la_SOURCES += src/SequenceDatabase.cc
 libpgraph_la_SOURCES += src/SequenceDatabase.h
+libpgraph_la_SOURCES += src/suffixtree/bucket.c
+libpgraph_la_SOURCES += src/suffixtree/bucket.h
+libpgraph_la_SOURCES += src/suffixtree/cfg.c
+libpgraph_la_SOURCES += src/suffixtree/cfg.h
+libpgraph_la_SOURCES += src/suffixtree/dynamic.c
+libpgraph_la_SOURCES += src/suffixtree/dynamic.h
+libpgraph_la_SOURCES += src/suffixtree/elib.c
+libpgraph_la_SOURCES += src/suffixtree/elib.h
+libpgraph_la_SOURCES += src/suffixtree/lib.c
+libpgraph_la_SOURCES += src/suffixtree/lib.h
+libpgraph_la_SOURCES += src/suffixtree/loadseq.c
+libpgraph_la_SOURCES += src/suffixtree/loadseq.h
+libpgraph_la_SOURCES += src/suffixtree/pairs.c
+libpgraph_la_SOURCES += src/suffixtree/pairs.h
+libpgraph_la_SOURCES += src/suffixtree/search.c
+libpgraph_la_SOURCES += src/suffixtree/search.h
+libpgraph_la_SOURCES += src/suffixtree/stree.c
+libpgraph_la_SOURCES += src/suffixtree/stree.h
+libpgraph_la_SOURCES += src/suffixtree/uFind.c
+libpgraph_la_SOURCES += src/suffixtree/uFind.h
+libpgraph_la_SOURCES += src/suffixtree/wlib.c
+libpgraph_la_SOURCES += src/suffixtree/wlib.h
 libpgraph_la_SOURCES += src/timer.h
 
 bin_PROGRAMS =
 bin_PROGRAMS += apps/align
+bin_PROGRAMS += apps/ccd
 
 noinst_PROGRAMS =
 noinst_PROGRAMS += sandbox/blast
@@ -87,6 +111,7 @@ noinst_PROGRAMS += sandbox/brute_force_iter
 endif
 
 apps_align_SOURCES = apps/align.cc
+apps_ccd_SOURCES = apps/ccd.c
 
 sandbox_blast_SOURCES                      = sandbox/blast.cc
 sandbox_brute_force_SOURCES                = sandbox/brute_force.cc

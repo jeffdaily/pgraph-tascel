@@ -51,7 +51,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = apps/align$(EXEEXT)
+bin_PROGRAMS = apps/align$(EXEEXT) apps/ccd$(EXEEXT)
 noinst_PROGRAMS = sandbox/blast$(EXEEXT) sandbox/brute_force$(EXEEXT) \
 	$(am__EXEEXT_1) sandbox/brute_force_binning$(EXEEXT) \
 	sandbox/brute_force_costs$(EXEEXT) \
@@ -102,7 +102,13 @@ LTLIBRARIES = $(noinst_LTLIBRARIES)
 libpgraph_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
 am_libpgraph_la_OBJECTS = src/combinations.lo src/dynamic.lo src/io.lo \
-	src/mpix.lo src/Sequence.lo src/SequenceDatabase.lo
+	src/mpix.lo src/Sequence.lo src/SequenceDatabase.lo \
+	src/suffixtree/bucket.lo src/suffixtree/cfg.lo \
+	src/suffixtree/dynamic.lo src/suffixtree/elib.lo \
+	src/suffixtree/lib.lo src/suffixtree/loadseq.lo \
+	src/suffixtree/pairs.lo src/suffixtree/search.lo \
+	src/suffixtree/stree.lo src/suffixtree/uFind.lo \
+	src/suffixtree/wlib.lo
 libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -117,6 +123,12 @@ apps_align_OBJECTS = $(am_apps_align_OBJECTS)
 apps_align_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
 apps_align_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
+am_apps_ccd_OBJECTS = apps/ccd.$(OBJEXT)
+apps_ccd_OBJECTS = $(am_apps_ccd_OBJECTS)
+apps_ccd_LDADD = $(LDADD)
+apps_ccd_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 am_sandbox_blast_OBJECTS = sandbox/blast.$(OBJEXT)
@@ -328,7 +340,8 @@ am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
-	$(sandbox_blast_SOURCES) $(sandbox_brute_force_SOURCES) \
+	$(apps_ccd_SOURCES) $(sandbox_blast_SOURCES) \
+	$(sandbox_brute_force_SOURCES) \
 	$(sandbox_brute_force_armci_SOURCES) \
 	$(sandbox_brute_force_binning_SOURCES) \
 	$(sandbox_brute_force_costs_SOURCES) \
@@ -348,7 +361,8 @@ SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
 	$(tests_test_read_fasta_SOURCES) \
 	$(tests_test_read_serial_SOURCES)
 DIST_SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
-	$(sandbox_blast_SOURCES) $(sandbox_brute_force_SOURCES) \
+	$(apps_ccd_SOURCES) $(sandbox_blast_SOURCES) \
+	$(sandbox_brute_force_SOURCES) \
 	$(sandbox_brute_force_armci_SOURCES) \
 	$(sandbox_brute_force_binning_SOURCES) \
 	$(sandbox_brute_force_costs_SOURCES) \
@@ -551,7 +565,8 @@ AM_CFLAGS =
 AM_CXXFLAGS = -Wno-deprecated
 #AM_CPPFLAGS += $(GA_CPPFLAGS)
 AM_CPPFLAGS = $(TASCEL_CPPFLAGS) $(ARMCI_CPPFLAGS) $(PT_MPI_CPPFLAGS) \
-	$(GMP_CPPFLAGS) -I$(top_srcdir)/src
+	$(GMP_CPPFLAGS) -I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/suffixtree
 #AM_LDFLAGS += $(GA_LDFLAGS)
 AM_LDFLAGS = $(TASCEL_LDFLAGS) $(ARMCI_LDFLAGS) $(PT_MPI_LDFLAGS) \
 	$(GMP_LDFLAGS)
@@ -566,8 +581,20 @@ libpgraph_la_SOURCES = src/AlignStats.h src/blosum/blosum40.h \
 	src/blosum/blosum90.h src/combinations.c src/combinations.h \
 	src/dynamic.c src/dynamic.h src/io.cc src/io.h src/mpix.cc \
 	src/mpix.h src/pthread_fixes.h src/Sequence.cc src/Sequence.h \
-	src/SequenceDatabase.cc src/SequenceDatabase.h src/timer.h
+	src/SequenceDatabase.cc src/SequenceDatabase.h \
+	src/suffixtree/bucket.c src/suffixtree/bucket.h \
+	src/suffixtree/cfg.c src/suffixtree/cfg.h \
+	src/suffixtree/dynamic.c src/suffixtree/dynamic.h \
+	src/suffixtree/elib.c src/suffixtree/elib.h \
+	src/suffixtree/lib.c src/suffixtree/lib.h \
+	src/suffixtree/loadseq.c src/suffixtree/loadseq.h \
+	src/suffixtree/pairs.c src/suffixtree/pairs.h \
+	src/suffixtree/search.c src/suffixtree/search.h \
+	src/suffixtree/stree.c src/suffixtree/stree.h \
+	src/suffixtree/uFind.c src/suffixtree/uFind.h \
+	src/suffixtree/wlib.c src/suffixtree/wlib.h src/timer.h
 apps_align_SOURCES = apps/align.cc
+apps_ccd_SOURCES = apps/ccd.c
 sandbox_blast_SOURCES = sandbox/blast.cc
 sandbox_brute_force_SOURCES = sandbox/brute_force.cc
 sandbox_brute_force_armci_SOURCES = sandbox/brute_force_armci.cc
@@ -676,6 +703,34 @@ src/mpix.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/Sequence.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/SequenceDatabase.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
+src/suffixtree/$(am__dirstamp):
+	@$(MKDIR_P) src/suffixtree
+	@: > src/suffixtree/$(am__dirstamp)
+src/suffixtree/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/suffixtree/$(DEPDIR)
+	@: > src/suffixtree/$(DEPDIR)/$(am__dirstamp)
+src/suffixtree/bucket.lo: src/suffixtree/$(am__dirstamp) \
+	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
+src/suffixtree/cfg.lo: src/suffixtree/$(am__dirstamp) \
+	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
+src/suffixtree/dynamic.lo: src/suffixtree/$(am__dirstamp) \
+	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
+src/suffixtree/elib.lo: src/suffixtree/$(am__dirstamp) \
+	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
+src/suffixtree/lib.lo: src/suffixtree/$(am__dirstamp) \
+	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
+src/suffixtree/loadseq.lo: src/suffixtree/$(am__dirstamp) \
+	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
+src/suffixtree/pairs.lo: src/suffixtree/$(am__dirstamp) \
+	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
+src/suffixtree/search.lo: src/suffixtree/$(am__dirstamp) \
+	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
+src/suffixtree/stree.lo: src/suffixtree/$(am__dirstamp) \
+	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
+src/suffixtree/uFind.lo: src/suffixtree/$(am__dirstamp) \
+	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
+src/suffixtree/wlib.lo: src/suffixtree/$(am__dirstamp) \
+	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
 libpgraph.la: $(libpgraph_la_OBJECTS) $(libpgraph_la_DEPENDENCIES) $(EXTRA_libpgraph_la_DEPENDENCIES) 
 	$(AM_V_CXXLD)$(CXXLINK)  $(libpgraph_la_OBJECTS) $(libpgraph_la_LIBADD) $(LIBS)
 install-binPROGRAMS: $(bin_PROGRAMS)
@@ -747,6 +802,11 @@ apps/align.$(OBJEXT): apps/$(am__dirstamp) \
 apps/align$(EXEEXT): $(apps_align_OBJECTS) $(apps_align_DEPENDENCIES) $(EXTRA_apps_align_DEPENDENCIES) apps/$(am__dirstamp)
 	@rm -f apps/align$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_OBJECTS) $(apps_align_LDADD) $(LIBS)
+apps/ccd.$(OBJEXT): apps/$(am__dirstamp) \
+	apps/$(DEPDIR)/$(am__dirstamp)
+apps/ccd$(EXEEXT): $(apps_ccd_OBJECTS) $(apps_ccd_DEPENDENCIES) $(EXTRA_apps_ccd_DEPENDENCIES) apps/$(am__dirstamp)
+	@rm -f apps/ccd$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(apps_ccd_OBJECTS) $(apps_ccd_LDADD) $(LIBS)
 sandbox/$(am__dirstamp):
 	@$(MKDIR_P) sandbox
 	@: > sandbox/$(am__dirstamp)
@@ -876,12 +936,15 @@ mostlyclean-compile:
 	-rm -f sandbox/*.$(OBJEXT)
 	-rm -f src/*.$(OBJEXT)
 	-rm -f src/*.lo
+	-rm -f src/suffixtree/*.$(OBJEXT)
+	-rm -f src/suffixtree/*.lo
 	-rm -f tests/*.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/ccd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/blast.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force_armci.Po@am__quote@
@@ -905,6 +968,17 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/dynamic.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/io.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/mpix.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/bucket.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/cfg.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/dynamic.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/elib.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/lib.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/loadseq.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/pairs.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/search.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/stree.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/uFind.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/wlib.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_combinations.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_dynamic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_read.Po@am__quote@
@@ -1065,6 +1139,7 @@ clean-libtool:
 	-rm -rf apps/.libs apps/_libs
 	-rm -rf sandbox/.libs sandbox/_libs
 	-rm -rf src/.libs src/_libs
+	-rm -rf src/suffixtree/.libs src/suffixtree/_libs
 	-rm -rf tests/.libs tests/_libs
 
 distclean-libtool:
@@ -1324,6 +1399,8 @@ distclean-generic:
 	-rm -f sandbox/$(am__dirstamp)
 	-rm -f src/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/$(am__dirstamp)
+	-rm -f src/suffixtree/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/suffixtree/$(am__dirstamp)
 	-rm -f tests/$(DEPDIR)/$(am__dirstamp)
 	-rm -f tests/$(am__dirstamp)
 
@@ -1337,7 +1414,7 @@ clean-am: clean-binPROGRAMS clean-generic clean-libtool \
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf apps/$(DEPDIR) sandbox/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf apps/$(DEPDIR) sandbox/$(DEPDIR) src/$(DEPDIR) src/suffixtree/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -1385,7 +1462,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf apps/$(DEPDIR) sandbox/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf apps/$(DEPDIR) sandbox/$(DEPDIR) src/$(DEPDIR) src/suffixtree/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
