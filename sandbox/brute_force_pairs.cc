@@ -36,7 +36,6 @@
 
 using namespace std;
 using namespace tascel;
-using namespace pgraph;
 
 #define DEBUG 0
 

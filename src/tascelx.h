@@ -11,7 +11,11 @@
 #include <tascel/UniformTaskCollSplitHybrid.h>
 
 using namespace tascel;
+/* For now, the pgraph namespace is only used in pthread_fixes.h header.
+ * Once we properly namespace all of pgraph, this #if can be removed. */
+#if !HAVE_PTHREAD_BARRIER_T
 using namespace pgraph;
+#endif
 
 /**
  * Sets the current thread's affinity using pthread_setaffinity_np.

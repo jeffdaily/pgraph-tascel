@@ -36,7 +36,10 @@
 
 #include <pthread.h>
 
-namespace pgraph {
+//namespace {
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // Android doesn't provide pthread_barrier_t for now.
 #ifndef PTHREAD_BARRIER_SERIAL_THREAD
@@ -94,6 +97,9 @@ int pthread_yield(void) {
   return 0;
 }
 
-}  // namespace
+//}  // namespace
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // GOOGLE_BREAKPAD_COMMON_ANDROID_TESTING_PTHREAD_FIXES_H
