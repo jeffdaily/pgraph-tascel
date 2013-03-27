@@ -29,6 +29,7 @@
 #include "combinations.h"
 #include "dynamic.h"
 #include "mpix.h"
+#include "tascelx.h"
 
 using namespace std;
 using namespace tascel;
@@ -76,87 +77,19 @@ int ***del = 0;
 int ***ins = 0;
 UniformTaskCollSplitHybrid** utcs = 0;
 AlignStats *stats = 0;
-static pthread_t *threadHandles = 0;
-static unsigned *threadRanks = 0;
 vector<string> sequences;
 vector<EdgeResult> *edge_results = 0;
+
+#if defined(THREADED)
+static pthread_t *threadHandles = 0;
+static unsigned *threadRanks = 0;
 // Synchronization for worker threads
 pthread_barrier_t workersStart, workersEnd;
 // Synchronization for server thread
 pthread_barrier_t serverStart, serverEnd;
 volatile bool serverEnabled = true;
-
-
-void *serverThd(void *args)
-{
-#if defined(SET_AFFINITY)
-    cpu_set_t cpuset;
-    pthread_t thread;
-    CPU_ZERO(&cpuset);
-    thread = pthread_self();
-    CPU_SET(NUM_WORKERS, &cpuset);
-    //int ret = pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
-    int ret = sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
 #endif
 
-    // When enabled execute any active messages that arrive
-    while (1) {
-        pthread_barrier_wait(&serverStart);
-        while (serverEnabled) {
-            AmListenObjCodelet<NullMutex>* lcodelet;
-            if((lcodelet=theAm().amListeners[0]->progress()) != NULL) {
-                lcodelet->execute();
-            }
-            Codelet* codelet;
-            if ((codelet = serverDispatcher.progress()) != NULL) {
-                codelet->execute();
-                // Assume that codelet was an AmRequest and needs to be freed
-                delete reinterpret_cast<AmRequest*>(codelet);
-            }
-        }
-        pthread_barrier_wait(&serverEnd);
-    }
-    return NULL;
-}
-
-void *workerThd(void *args)
-{
-    const unsigned threadRank = *(unsigned*)args;
-
-#if defined(SET_AFFINITY)
-    cpu_set_t cpuset;
-    pthread_t thread;
-    CPU_ZERO(&cpuset);
-    thread = pthread_self();
-    CPU_SET(threadRank, &cpuset);
-    int ret = pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
-#endif
-
-    while (1) {
-        pthread_barrier_wait(&workersStart);
-        utcs[threadRank]->process(threadRank);
-        pthread_barrier_wait(&workersEnd);
-    }
-
-    return NULL;
-}
-
-void amBarrier()
-{
-    int epoch = pgrp->signalBarrier();
-    while(!pgrp->testBarrier(epoch)) {
-        AmListenObjCodelet<NullMutex>* codelet;
-        if((codelet=theAm().amListeners[0]->progress()) != NULL) {
-            codelet->execute();
-        }
-    }
-}
-
-void amBarrierThd()
-{
-    int epoch = pgrp->signalBarrier();
-    while(!pgrp->testBarrier(epoch)) { }
-}
 
 static int trank(int thd)
 {
@@ -317,12 +250,14 @@ int main(int argc, char **argv)
     ins = new int **[NUM_WORKERS];
     utcs = new UniformTaskCollSplitHybrid*[NUM_WORKERS];
     stats = new AlignStats[NUM_WORKERS];
+    edge_results = new vector<EdgeResult>[NUM_WORKERS];
+#if defined(THREADED)
     threadHandles = new pthread_t[NUM_WORKERS + NUM_SERVERS];
     threadRanks = new unsigned[NUM_WORKERS + NUM_SERVERS];
-    edge_results = new vector<EdgeResult>[NUM_WORKERS];
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
         threadRanks[worker] = worker;
     }
+#endif
 
     /* initialize dynamic code */
     init_map(SIGMA);
@@ -590,28 +525,23 @@ int main(int argc, char **argv)
     amBarrier();
 
 #if defined(THREADED)
-#if defined(SET_AFFINITY)
-    cpu_set_t cpuset;
-    pthread_t thread;
-    CPU_ZERO(&cpuset);
-    thread = pthread_self();
-    CPU_SET(0, &cpuset);
-    pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
-#endif
-
+    set_affinity(0);
     pthread_barrier_init(&workersStart, 0, NUM_WORKERS);
     pthread_barrier_init(&workersEnd, 0, NUM_WORKERS);
     pthread_barrier_init(&serverStart, 0, NUM_SERVERS + 1);
     pthread_barrier_init(&serverEnd, 0, NUM_SERVERS + 1);
     asm("mfence");
     for (unsigned i = 1; i < NUM_WORKERS; ++i) {
-      pthread_create(&threadHandles[i], NULL, workerThd, &threadRanks[i]);
+        worker_thread_args *args = new worker_thread_args(
+                threadRanks[i], utcs[i], &workersStart, &workersEnd);;
+        pthread_create(&threadHandles[i], NULL, worker_thread, args);
     }
-    pthread_create(&threadHandles[NUM_WORKERS], NULL,
-           serverThd, &threadRanks[NUM_WORKERS]);
-#endif
-
-#if defined(THREADED)
+    {
+        server_thread_args *args = new server_thread_args(
+                &serverEnabled, &serverStart, &serverEnd);
+        pthread_create(&threadHandles[NUM_WORKERS], NULL,
+           server_thread, args);
+    }
     serverEnabled = true;
     pthread_barrier_wait(&serverStart);
     MPI_Barrier(comm);
