@@ -1,9 +1,13 @@
 /**
+ * @file dynamic.h
+ *
  * @author andy.cj.wu@gmail.com
  * @author jeff.daily@pnnl.gov
  *
  * Copyright 2010 Washington State University. All rights reserved.
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
+ *
+ * @todo TODO remove SIGMA and NROW; dynamically assign alphabet
  */
 #ifndef DYNAMIC_H_
 #define DYNAMIC_H_
@@ -17,7 +21,6 @@ extern "C" {
 #include <assert.h>
 #include <limits.h>
 
-/** @todo TODO remove SIGMA and NROW; dynamically assign alphabet */
 #define SIGMA 26 /**< size of alphabet */
 #define NROW 2 /**< number of rows in dynamic programming table, always 2 */
 

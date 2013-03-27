@@ -1,3 +1,10 @@
+/**
+ * @file AlignStats.h
+ *
+ * @author jeff.daily@pnnl.gov
+ *
+ * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
+ */
 #ifndef ALIGNSTATS_H_
 #define ALIGNSTATS_H_
 

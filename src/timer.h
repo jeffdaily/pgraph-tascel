@@ -1,3 +1,12 @@
+/**
+ * @file timer.h
+ *
+ * @author jeff.daily@pnnl.gov
+ *
+ * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
+ *
+ * Use CPU instructions and inline assembly to query tics and/or wall clock.
+ */
 #ifndef __TIMER_H__
 #define __TIMER_H__
 

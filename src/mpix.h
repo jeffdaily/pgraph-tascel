@@ -1,5 +1,9 @@
 /**
- * @authoer jeff.daily@pnnl.gov
+ * @file mpix.h
+ *
+ * @author jeff.daily@pnnl.gov
+ *
+ * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  *
  * Templated and/or overloaded MPI functions with intelligent default
  * parameters.

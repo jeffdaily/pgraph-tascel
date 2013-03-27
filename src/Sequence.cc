@@ -1,3 +1,10 @@
+/**
+ * @file Sequence.cc
+ *
+ * @author jeff.daily@pnnl.gov
+ *
+ * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
+ */
 #include <cassert>
 #include <cstring>
 #include <iostream>

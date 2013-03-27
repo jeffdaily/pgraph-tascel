@@ -1,3 +1,10 @@
+/**
+ * @file Sequence.h
+ *
+ * @author jeff.daily@pnnl.gov
+ *
+ * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
+ */
 #ifndef SEQUENCE_H_
 #define SEQUENCE_H_
 

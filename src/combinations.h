@@ -1,3 +1,10 @@
+/**
+ * @file combinations.h
+ *
+ * @author jeff.daily@pnnl.gov
+ *
+ * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
+ */
 #ifndef _COMBINATIONS_H_
 #define _COMBINATIONS_H_
 

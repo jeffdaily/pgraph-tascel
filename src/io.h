@@ -1,3 +1,10 @@
+/**
+ * @file io.h
+ *
+ * @author jeff.daily@pnnl.gov
+ *
+ * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
+ */
 #ifndef FASTA_IO_H_
 #define FASTA_IO_H_
 

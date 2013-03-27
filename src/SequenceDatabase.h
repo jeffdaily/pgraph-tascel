@@ -1,3 +1,10 @@
+/**
+ * @file SequenceDatabase.h
+ *
+ * @author jeff.daily@pnnl.gov
+ *
+ * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
+ */
 #ifndef SEQUENCE_DATABASE_H_
 #define SEQUENCE_DATABASE_H_
 
