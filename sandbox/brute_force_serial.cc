@@ -27,6 +27,7 @@
 #include "dynamic.h"
 
 using namespace std;
+using namespace pgraph;
 
 #if USE_CLOCK_GETTTIME
 double timespec_diff(double time_past=0.0)

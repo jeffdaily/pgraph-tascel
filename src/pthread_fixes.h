@@ -36,7 +36,7 @@
 
 #include <pthread.h>
 
-namespace {
+namespace pgraph {
 
 // Android doesn't provide pthread_barrier_t for now.
 #ifndef PTHREAD_BARRIER_SERIAL_THREAD

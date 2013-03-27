@@ -30,6 +30,7 @@
 
 using namespace std;
 using namespace tascel;
+using namespace pgraph;
 
 
 int rank = 0;

@@ -19,6 +19,7 @@
 #include <vector>
 
 using namespace std;
+using namespace pgraph;
 
 
 /* check if a string ends with another string */

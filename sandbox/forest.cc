@@ -34,6 +34,7 @@
 #define W 4
 
 using namespace std;
+using namespace pgraph;
 typedef uint64_t idx_t;
 #define MAX(A,B) (A) > (B) ? (A) : (B)
 

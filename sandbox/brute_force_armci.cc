@@ -32,6 +32,7 @@
 
 using namespace std;
 using namespace tascel;
+using namespace pgraph;
 
 #ifndef MULTIPLE_PAIRS_PER_TASK
 #define MULTIPLE_PAIRS_PER_TASK 0
