@@ -5,8 +5,23 @@
  * Copyright 2010 Washington State University. All rights reserved.
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  */
+#include <assert.h>
+
+#include "blosum/blosum40.h"
+#include "blosum/blosum45.h"
 #include "blosum/blosum62.h"
+#include "blosum/blosum75.h"
+#include "blosum/blosum80.h"
+#include "blosum/blosum90.h"
 #include "dynamic.h"
+
+#define CROW(i) ((i)%2)
+#define PROW(i) ((i-1)%2)
+#define BLOSUM(map, ch1, ch2) blosum[map[ch1-'A']][map[ch2-'A']]
+#define NEG_ADD(x, y) (((y)<0)&&((x)<(INT_MIN-y)) ? INT_MIN : (x)+(y))
+#define MIN(x, y) (((x)<(y))? (x) : (y))
+#define MAX(x, y) (((x)>(y))? (x) : (y))
+#define MIN_VAL (-20000000)
 
 /* J stands for '*', 'O' and 'U' are dummy ones to make 26 */
 static char AA[] = {'A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I',
@@ -14,7 +29,27 @@ static char AA[] = {'A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I',
                     'B', 'Z', 'X', 'J', 'O', 'U'
                    };
 
+/** mapping from protein character to blosum index */
 static int map[SIGMA];
+
+/** points to selected blosum table (default blosum62) */
+static int (*blosum)[24] = blosum62; 
+
+
+void init_blosum(int number)
+{
+    switch (number) {
+        case 40: blosum = blosum40; break;
+        case 45: blosum = blosum45; break;
+        case 62: blosum = blosum62; break;
+        case 75: blosum = blosum75; break;
+        case 80: blosum = blosum80; break;
+        case 90: blosum = blosum90; break;
+        default: fprintf(stderr, "invalid blosum number (%d)\n", number);
+                 assert(0);
+    }
+}
+
 
 void init_map(int nAA)
 {
@@ -24,6 +59,7 @@ void init_map(int nAA)
     }
 }
 
+
 int self_score(const char *s, size_t ns)
 {
     size_t i;
@@ -32,22 +68,19 @@ int self_score(const char *s, size_t ns)
 
     for (i = 0; i < ns; i++) {
         j = map[s[i] - 'A'];
-        score += blosum62[j][j];
+        score += blosum[j][j];
     }
 
     return score;
 }
 
-/*--------------------------------------------*
- * alloc 2-dimension cell_t array.
- * @param nrow -
- * @param ncol - strlen(s2), alloc ONE more
- *               dor dynamic align.
- *--------------------------------------------*/
+
 cell_t **alloc_tbl(int nrow, int ncol)
 {
     int i;
     cell_t **tbl = NULL;
+
+    assert(2 == nrow);
 
     tbl = (cell_t **)malloc(nrow * sizeof(cell_t *));
     for (i = 0; i < nrow; i++) {
@@ -59,12 +92,6 @@ cell_t **alloc_tbl(int nrow, int ncol)
 }
 
 
-/*--------------------------------------------*
- * alloc 2-dimension int array.
- * @param nrow -
- * @param ncol - strlen(s2), alloc ONE more
- *               dor dynamic align.
- *--------------------------------------------*/
 int **alloc_int(int nrow, int ncol)
 {
     int **tbl = NULL;
@@ -80,7 +107,6 @@ int **alloc_int(int nrow, int ncol)
 }
 
 
-/* free function, symetric to allocTBL() */
 void free_tbl(cell_t **tbl, int nrow)
 {
     int i;
@@ -91,7 +117,6 @@ void free_tbl(cell_t **tbl, int nrow)
 }
 
 
-/* free function, symetric to allocINT() */
 void free_int(int **tbl, int nrow)
 {
     int i;
@@ -102,21 +127,11 @@ void free_int(int **tbl, int nrow)
 }
 
 
-/*------------------------------------------------------------*
- * Implementation of affine gap pairwise sequence alignment, it
- * is a space efficient version: only two rows are required; also
- * mem for all dynamic tables are allocated ONLY ONCE.
- *
- * @param s1 - sequence s1
- * @param s1Len - sequence length of <s1>, strlen(s1)
- * @param s2 - sequence s2
- * @param s2Len - sequence length of <s2>, strlen(s2)
- * @param result - alignment result <score, ndig, alen>
- * @param tbl - pre-allocated score table
- * @param del - pre-allocated deletion table
- * @param ins - pre-allocated insertion table
- *------------------------------------------------------------*/
-void affine_gap_align_old(const char *s1, size_t s1Len, const char *s2, size_t s2Len, cell_t *result, cell_t **tbl, int **del, int **ins)
+void affine_gap_align_old(
+        const char *s1, size_t s1Len,
+        const char *s2, size_t s2Len,
+        cell_t *result,
+        cell_t **tbl, int **del, int **ins)
 {
     int i, j;
     int maxScore;
@@ -149,7 +164,7 @@ void affine_gap_align_old(const char *s1, size_t s1Len, const char *s2, size_t s
 
     for (i = 1; i <= s1Len; i++) {
         char ch1 = s1[i-1];
-        int *BlosumRow = blosum62[map[ch1 - 'A']];
+        int *BlosumRow = blosum[map[ch1 - 'A']];
 
         int cr = CROW(i);
         int pr = PROW(i);
@@ -230,21 +245,12 @@ void affine_gap_align_old(const char *s1, size_t s1Len, const char *s2, size_t s
 }
 
 
-/*------------------------------------------------------------*
- * Implementation of affine gap pairwise sequence alignment, it
- * is a space efficient version: only two rows are required; also
- * mem for all dynamic tables are allocated ONLY ONCE.
- *
- * @param s1 - sequence s1
- * @param s1Len - sequence length of <s1>, strlen(s1)
- * @param s2 - sequence s2
- * @param s2Len - sequence length of <s2>, strlen(s2)
- * @param result - alignment result <score, ndig, alen>
- * @param tbl - pre-allocated score table
- * @param del - pre-allocated deletion table
- * @param ins - pre-allocated insertion table
- *------------------------------------------------------------*/
-void affine_gap_align(const char *s1, size_t s1Len, const char *s2, size_t s2Len, cell_t *result, cell_t **tbl, int **del, int **ins){
+void affine_gap_align(
+        const char *s1, size_t s1Len,
+        const char *s2, size_t s2Len,
+        cell_t *result,
+        cell_t **tbl, int **del, int **ins)
+{
     int i, j;
     int cr, pr;
     int dig, up, left, maxScore;
@@ -309,7 +315,7 @@ void affine_gap_align(const char *s1, size_t s1Len, const char *s2, size_t s2Len
             maxScore = (up >= left)? up : left;
             
             /* blosum62[map[ch1-'A']][map[ch2-'A']]; */
-            dig = pI[j-1].score + BLOSUM62(map, ch1, ch2); 
+            dig = pI[j-1].score + BLOSUM(map, ch1, ch2); 
             if(dig >= maxScore) maxScore = dig;
             tI[j].score = maxScore;
 
@@ -353,6 +359,7 @@ void print_row(cell_t **tbl, int i, int ncol)
     }
     printf("]\n");
 }
+
 
 int is_edge(
         const cell_t result,

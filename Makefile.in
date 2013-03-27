@@ -591,8 +591,9 @@ libpgraph_la_SOURCES = src/AlignStats.h src/blosum/blosum40.h \
 	src/suffixtree/pairs.c src/suffixtree/pairs.h \
 	src/suffixtree/search.c src/suffixtree/search.h \
 	src/suffixtree/stree.c src/suffixtree/stree.h \
-	src/suffixtree/uFind.c src/suffixtree/uFind.h \
-	src/suffixtree/wlib.c src/suffixtree/wlib.h src/timer.h
+	src/suffixtree/type.h src/suffixtree/uFind.c \
+	src/suffixtree/uFind.h src/suffixtree/wlib.c \
+	src/suffixtree/wlib.h src/timer.h
 apps_align_SOURCES = apps/align.cc
 apps_ccd_SOURCES = apps/ccd.c
 sandbox_blast_SOURCES = sandbox/blast.cc

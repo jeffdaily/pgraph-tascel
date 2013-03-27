@@ -71,6 +71,7 @@ libpgraph_la_SOURCES += src/suffixtree/search.c
 libpgraph_la_SOURCES += src/suffixtree/search.h
 libpgraph_la_SOURCES += src/suffixtree/stree.c
 libpgraph_la_SOURCES += src/suffixtree/stree.h
+libpgraph_la_SOURCES += src/suffixtree/type.h
 libpgraph_la_SOURCES += src/suffixtree/uFind.c
 libpgraph_la_SOURCES += src/suffixtree/uFind.h
 libpgraph_la_SOURCES += src/suffixtree/wlib.c
