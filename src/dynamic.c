@@ -5,7 +5,7 @@
  * Copyright 2010 Washington State University. All rights reserved.
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  */
-#include "blosum62.h"
+#include "blosum/blosum62.h"
 #include "dynamic.h"
 
 /* J stands for '*', 'O' and 'U' are dummy ones to make 26 */

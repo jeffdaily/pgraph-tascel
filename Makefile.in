@@ -101,8 +101,8 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libpgraph_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
-am_libpgraph_la_OBJECTS = src/combinations.lo src/dynamic.lo \
-	src/mpix.lo src/io.lo src/Sequence.lo src/SequenceDatabase.lo
+am_libpgraph_la_OBJECTS = src/combinations.lo src/dynamic.lo src/io.lo \
+	src/mpix.lo src/Sequence.lo src/SequenceDatabase.lo
 libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -560,10 +560,13 @@ LDADD = libpgraph.la $(TASCEL_LIBS) $(ARMCI_LIBS) $(PT_MPI_LIBS) \
 	$(GMP_LIBS)
 #LDADD += $(GA_FLIBS)
 noinst_LTLIBRARIES = libpgraph.la
-libpgraph_la_SOURCES = src/combinations.c src/combinations.h \
-	src/dynamic.c src/dynamic.h src/mpix.cc src/mpix.h src/io.cc \
-	src/io.h src/Sequence.cc src/Sequence.h \
-	src/SequenceDatabase.cc src/SequenceDatabase.h
+libpgraph_la_SOURCES = src/AlignStats.h src/blosum/blosum40.h \
+	src/blosum/blosum45.h src/blosum/blosum62.h \
+	src/blosum/blosum75.h src/blosum/blosum80.h \
+	src/blosum/blosum90.h src/combinations.c src/combinations.h \
+	src/dynamic.c src/dynamic.h src/io.cc src/io.h src/mpix.cc \
+	src/mpix.h src/pthread_fixes.h src/Sequence.cc src/Sequence.h \
+	src/SequenceDatabase.cc src/SequenceDatabase.h src/timer.h
 apps_align_SOURCES = apps/align.cc
 sandbox_blast_SOURCES = sandbox/blast.cc
 sandbox_brute_force_SOURCES = sandbox/brute_force.cc
@@ -668,8 +671,8 @@ src/$(DEPDIR)/$(am__dirstamp):
 	@: > src/$(DEPDIR)/$(am__dirstamp)
 src/combinations.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/dynamic.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
-src/mpix.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/io.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/mpix.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/Sequence.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/SequenceDatabase.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
