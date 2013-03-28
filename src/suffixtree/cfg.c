@@ -25,21 +25,25 @@ int get_config_val(const char *config_file, const char *key)
 
     while (fgets(line, CFG_MAX_LINE_LEN, fp)) {
         /* comment line starts with '#' */
-        if (strchr(line, COMMENT)) continue;
+        if (strchr(line, COMMENT)) {
+            continue;
+        }
 
         /* empty line */
-        if (line[0] == '\n') continue;
+        if (line[0] == '\n') {
+            continue;
+        }
 
         /* config line */
         if (strstr(line, key)) {
             p = line;
-            while(isspace(*p++));
+            while (isspace(*p++));
 
             /* %*s used to skip the first item */
             sscanf(p, "%*s %d\n", &val);
             fclose(fp);
             return val;
-        }  
+        }
     }
 
     fclose(fp);

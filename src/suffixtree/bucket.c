@@ -29,8 +29,8 @@ static inline size_t entry_index(const char *kmer, int k)
     int i;
     size_t value = 0;
 
-    for (i=0; i<k; ++i) {
-        value = value*SIGMA + (kmer[i] - 'A');
+    for (i = 0; i < k; ++i) {
+        value = value * SIGMA + (kmer[i] - 'A');
     }
 
     return value;
@@ -40,25 +40,25 @@ static inline size_t entry_index(const char *kmer, int k)
 void init_buckets(bucket_t *buckets, size_t size)
 {
     size_t i;
-    for(i=0; i<size; ++i){
-        buckets[i].suffixes = NULL; 
-        buckets[i].size = 0; 
+    for (i = 0; i < size; ++i) {
+        buckets[i].suffixes = NULL;
+        buckets[i].size = 0;
     }
 }
 
 
 void slide_window(const char *s, size_t s_len, int sid,
-        bucket_t *buckets, size_t buckets_size, suffix_t *suffixes,
-        int window_size)
+                  bucket_t *buckets, size_t buckets_size, suffix_t *suffixes,
+                  int window_size)
 {
     size_t i;
     size_t stop_index = s_len - window_size - 1;
-   
+
     /** @todo TODO consider returning an error to handle instead? */
     assert(s_len >= window_size);
 
-    for(i=0; i<=stop_index; ++i){
-        size_t bucket_index = entry_index(s+i, window_size);
+    for (i = 0; i <= stop_index; ++i) {
+        size_t bucket_index = entry_index(s + i, window_size);
         assert(bucket_index < buckets_size);
         /* prefixed in the suffix list for the given bucket */
         suffixes[_suffix_count].sid = sid;
@@ -72,17 +72,17 @@ void slide_window(const char *s, size_t s_len, int sid,
 
 
 void build_buckets(sequence_t *sequences, size_t n_sequences,
-        bucket_t *buckets, size_t n_buckets,
-        suffix_t *suffixes, size_t n_suffixes,
-        int window_size)
+                   bucket_t *buckets, size_t n_buckets,
+                   suffix_t *suffixes, size_t n_suffixes,
+                   int window_size)
 {
     size_t i;
     init_buckets(buckets, n_buckets);
-    
+
     /* slide k-mers for every sequence and bucket them */
-    for (i=0; i<n_sequences; ++i) {
+    for (i = 0; i < n_sequences; ++i) {
         slide_window(sequences[i].str, sequences[i].strLen, i,
-                buckets, n_buckets, suffixes, window_size);
+                     buckets, n_buckets, suffixes, window_size);
     }
 
     printf("_suffix_count=%zu\n", _suffix_count);
@@ -102,7 +102,7 @@ size_t print_suffixes(suffix_t *suffixes)
     size_t i = 0;
 
     printf("->");
-    for(p = suffixes; p != NULL; p = p->next){
+    for (p = suffixes; p != NULL; p = p->next) {
         printf("[%d, %d]\t", p->sid, p->pid);
         ++i;
     }

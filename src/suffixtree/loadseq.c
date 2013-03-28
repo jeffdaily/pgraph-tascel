@@ -22,15 +22,15 @@
 #define MAX_LINE_LEN 16384
 
 void load_all_sequences(
-        const char *fileName,
-        size_t sequence_count, sequence_t *sequences,
-        size_t *_n_chars, size_t *_max_seq_len)
+    const char *fileName,
+    size_t sequence_count, sequence_t *sequences,
+    size_t *_n_chars, size_t *_max_seq_len)
 {
     FILE *fp = NULL;
     char *line = NULL;
     size_t line_max = 0;
     size_t line_len = 0;
-    size_t i = 0; 
+    size_t i = 0;
     size_t max_seq_len = 0;
     size_t n_chars = 0;
 
@@ -38,27 +38,28 @@ void load_all_sequences(
         /* Use maximum line size of MAX_LINE_LEN.  If LINE_MAX is bigger than
          * our limit, sysconf() can't report a smaller limit. */
         line_max = MAX_LINE_LEN;
-    } else {
+    }
+    else {
         long limit = sysconf(_SC_LINE_MAX);
         line_max = (limit < 0 || limit > MAX_LINE_LEN) ?
-            MAX_LINE_LEN : (int)limit;
+                   MAX_LINE_LEN : (int)limit;
     }
     /* line_max + 1 leaves room for nul byte added by fgets */
-    line = emalloc(line_max+1);
+    line = emalloc(line_max + 1);
 
-    fp = efopen(fileName, "r"); 
+    fp = efopen(fileName, "r");
 
-    while (fgets(line, line_max+1, fp)) {
-        line_len = strlen(line); 
+    while (fgets(line, line_max + 1, fp)) {
+        line_len = strlen(line);
         assert(line_len <= line_max);
         /* add an '$' end to each seq */
-        line[line_len-1] = '\0';
+        line[line_len - 1] = '\0';
 
         if (line[0] == FASTA_FLAG) {
             sequences[i].gid = estrdup(line);
         }
         else if (isalpha(line[0])) {
-            line[line_len-1] = DOLLAR;
+            line[line_len - 1] = DOLLAR;
             line[line_len] = '\0';
             /* strlen does not include the '\0' */
             sequences[i].strLen = line_len;
@@ -66,11 +67,11 @@ void load_all_sequences(
             if (line_len > max_seq_len) {
                 max_seq_len = line_len;
             }
-            sequences[i].str = estrdup(line); 
+            sequences[i].str = estrdup(line);
             ++i;
         }
         else {
-            warn("empty line in fasta file? will continue!!"); 
+            warn("empty line in fasta file? will continue!!");
         }
     }
 
@@ -94,8 +95,8 @@ void print_sequence(sequence_t *sequences, size_t index)
 void free_sequences(sequence_t *sequences, size_t size)
 {
     size_t i;
-    for(i=0; i<size; ++i){
+    for (i = 0; i < size; ++i) {
         free(sequences[i].gid);
         free(sequences[i].str);
-    } 
+    }
 }
