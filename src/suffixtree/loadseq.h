@@ -41,8 +41,8 @@ typedef struct {
  * @param[out] max_seq_len longest sequence parsed from fasta file
  */
 void load_all_sequences(const char *file_name,
-        size_t sequence_count, sequence_t *sequences,
-        size_t *n_chars, size_t *max_seq_len);
+                        size_t sequence_count, sequence_t *sequences,
+                        size_t *n_chars, size_t *max_seq_len);
 
 
 /**

@@ -27,7 +27,7 @@
 --brackets=linux
 --indent-classes
 --indent-switches
---indent-namespaces
+#--indent-namespaces
 --indent-col1-comments
 --max-instatement-indent=40
 --pad-oper

@@ -34,12 +34,12 @@ void print_pairs();
  * @param[in] param -
  */
 void genPairs(stnode_t *stNodes, int *srtIndex, int nStNodes, sequence_t *seqs, int nSeqs,
-                int maxSeqLen, ufind_t *uSet, int *dup, param_t *param);
+              int maxSeqLen, ufind_t *uSet, int *dup, param_t *param);
 
 /**
- * This function implements the pair generation algorithm for leaf nodes. 
+ * This function implements the pair generation algorithm for leaf nodes.
  *
- *    BEGIN - intra/inter cross. O/W - intra cross. 
+ *    BEGIN - intra/inter cross. O/W - intra cross.
  *
  * @param lset -
  * @param seqs -

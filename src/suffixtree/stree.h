@@ -47,7 +47,7 @@ typedef struct {
  * @return @todo TODO
  */
 int build_tree(sequence_t *sequences, size_t n_sequences, suffix_t *suffixes,
-        int depth, int window_size, stnode_t *st_nodes, int *st_index);
+               int depth, int window_size, stnode_t *st_nodes, int *st_index);
 
 
 

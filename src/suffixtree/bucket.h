@@ -56,8 +56,8 @@ void init_buckets(bucket_t *bucket, size_t size);
  * @param[in] window_size slide window size
  */
 void slide_window(const char *s, size_t s_len, int sid,
-        bucket_t *buckets, size_t buckets_size, suffix_t *suffixes,
-        int window_size);
+                  bucket_t *buckets, size_t buckets_size, suffix_t *suffixes,
+                  int window_size);
 
 
 /**
@@ -72,9 +72,9 @@ void slide_window(const char *s, size_t s_len, int sid,
  * @param[in] window_size slide window size
  */
 void build_buckets(sequence_t *seqs, size_t nseqs,
-        bucket_t *buckets, size_t buckets_size,
-        suffix_t *suffixes, size_t suffix_count,
-        int window_size);
+                   bucket_t *buckets, size_t buckets_size,
+                   suffix_t *suffixes, size_t suffix_count,
+                   int window_size);
 
 
 /**

@@ -15,7 +15,7 @@
 
 
 /**
- * Sorts the buckets according to their size. 
+ * Sorts the buckets according to their size.
  *
  * @param[in] buckets array of all buckets to be sorted
  * @param[in] n_buckets #(buckets)

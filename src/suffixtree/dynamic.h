@@ -14,7 +14,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif 
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,7 +24,9 @@ extern "C" {
 #define SIGMA 26U /**< size of alphabet */
 #define NROW 2U /**< number of rows in dynamic programming table, always 2 */
 
-enum {OPEN = -10, GAP = -1};
+enum {
+    OPEN = -10, GAP = -1
+};
 enum {NO = 0, YES = 1};
 enum {FALSE = 0, TRUE = 1};
 
@@ -122,9 +124,9 @@ void free_int(int **tbl, int nrow);
  * @param[in] ins pre-allocated insertion table
  */
 void affine_gap_align(
-        const char *s1, size_t s1Len,
-        const char *s2, size_t s2Len,
-        cell_t *result, cell_t **tbl, int **del, int **ins);
+    const char *s1, size_t s1Len,
+    const char *s2, size_t s2Len,
+    cell_t *result, cell_t **tbl, int **del, int **ins);
 
 
 /**
@@ -152,12 +154,12 @@ void print_row(cell_t **tbl, int i, int ncol);
  * @return TRUE if this is an edge, FALSE otherwise
  */
 int is_edge(const cell_t result,
-        const char *s1, size_t s1Len,
-        const char *s2, size_t s2Len,
-        const param_t param, int *sscore, int *maxLen);
+            const char *s1, size_t s1Len,
+            const char *s2, size_t s2Len,
+            const param_t param, int *sscore, int *maxLen);
 
 #ifdef __cplusplus
 }
-#endif 
+#endif
 
 #endif /* DYNAMIC_H_ */
