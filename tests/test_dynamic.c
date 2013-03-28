@@ -1,3 +1,10 @@
+/**
+ * @file test_dynamic.c
+ *
+ * @author jeff.daily@pnnl.gov
+ *
+ * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
+ */
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
