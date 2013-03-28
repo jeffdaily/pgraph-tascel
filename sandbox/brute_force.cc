@@ -421,7 +421,7 @@ unsigned long populate_tasks_rr(
     unsigned long remainder = ntasks % (nprocs*NUM_WORKERS);
 
     /* distribute remainder tasks to first 'remainder' workers */
-    if (wrank < remainder) {
+    if (wrank < long(remainder)) {
         ++tasks_per_worker;
     }
 
@@ -703,7 +703,7 @@ int main(int argc, char **argv)
     if (0 == rank) {
         double tally = 0;
         cout << "rank sort_time" << endl;
-        for(unsigned i=0; i<nprocs; i++) {
+        for(int i=0; i<nprocs; i++) {
             tally += sort_times[i];
             cout << std::setw(4) << std::right << i
                 << setw(14) << fixed << sort_times[i] << endl;
@@ -948,7 +948,7 @@ int main(int argc, char **argv)
     if (0 == rank) {
         AlignStats totals;
         cout << " pid" << rstats[0].getHeader() << endl;      
-        for(unsigned i=0; i<nprocs*NUM_WORKERS; i++) {
+        for(int i=0; i<nprocs*NUM_WORKERS; i++) {
             totals += rstats[i];
             cout << std::setw(4) << std::right << i << rstats[i] << endl;
         }
@@ -959,7 +959,7 @@ int main(int argc, char **argv)
     rstats=NULL;
 
     StealingStats stt[NUM_WORKERS];
-    for(unsigned i=0; i<NUM_WORKERS; i++) {
+    for(int i=0; i<NUM_WORKERS; i++) {
       stt[i] = utcs[i]->getStats();
     }
 
@@ -972,7 +972,7 @@ int main(int argc, char **argv)
     if (0 == rank) {
       StealingStats tstt;
       cout<<" pid "<<rstt[0].formatString()<<endl;      
-      for(unsigned i=0; i<nprocs*NUM_WORKERS; i++) {
+      for(int i=0; i<nprocs*NUM_WORKERS; i++) {
 	tstt += rstt[i];
 	cout<<std::setw(4)<<std::right<<i<<rstt[i]<<endl;
       }

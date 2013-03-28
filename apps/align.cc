@@ -122,7 +122,6 @@ static void alignment_task(
     is_edge_param_t param;
     int is_edge_answer = 0;
     double t = 0;
-    unsigned long i;
     int sscore;
     int maxLen;
 
@@ -222,7 +221,6 @@ unsigned long populate_tasks(
 int main(int argc, char **argv)
 {
     MPI_Comm comm = MPI_COMM_NULL;
-    int provided;
     vector<string> all_argv;
     long file_size = -1;
     char *file_buffer = NULL;
@@ -234,8 +232,12 @@ int main(int argc, char **argv)
 
     /* initialize MPI */
 #if defined(THREADED)
-    MPI_CHECK(MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided));
-    assert(provided == MPI_THREAD_MULTIPLE);
+    {
+        int provided;
+        MPI_CHECK(MPI_Init_thread(&argc, &argv,
+                    MPI_THREAD_MULTIPLE, &provided));
+        assert(provided == MPI_THREAD_MULTIPLE);
+    }
 #else
     MPI_CHECK(MPI_Init(&argc, &argv));
 #endif
@@ -466,7 +468,6 @@ int main(int argc, char **argv)
     /* the tascel part */
     double populate_times[NUM_WORKERS];
     unsigned long count[NUM_WORKERS];
-    unsigned long global_count = 0;
     for (int worker=0; worker<NUM_WORKERS; ++worker)
     {
         edge_results[worker].reserve(tasks_per_worker);
@@ -578,7 +579,7 @@ int main(int argc, char **argv)
     if (0 == rank) {
         AlignStats totals;
         cout << " pid" << rstats[0].getHeader() << endl;      
-        for(unsigned i=0; i<nprocs*NUM_WORKERS; i++) {
+        for(int i=0; i<nprocs*NUM_WORKERS; i++) {
             totals += rstats[i];
             cout << std::setw(4) << std::right << i << rstats[i] << endl;
         }
@@ -589,7 +590,7 @@ int main(int argc, char **argv)
     rstats=NULL;
 
     StealingStats stt[NUM_WORKERS];
-    for(unsigned i=0; i<NUM_WORKERS; i++) {
+    for(int i=0; i<NUM_WORKERS; i++) {
       stt[i] = utcs[i]->getStats();
     }
 
@@ -602,7 +603,7 @@ int main(int argc, char **argv)
     if (0 == rank) {
       StealingStats tstt;
       cout<<" pid "<<rstt[0].formatString()<<endl;      
-      for(unsigned i=0; i<nprocs*NUM_WORKERS; i++) {
+      for(int i=0; i<nprocs*NUM_WORKERS; i++) {
 	tstt += rstt[i];
 	cout<<std::setw(4)<<std::right<<i<<rstt[i]<<endl;
       }

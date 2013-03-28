@@ -58,7 +58,7 @@ void genPairs(stnode_t *stNodes, int *srtIndex, int nStNodes, sequence_t *seqs, 
 
                 /* init dup[] for the internal node */
                 for(r = 0; r < nSeqs; r++) dup[r] = -1;
-                
+
                 /* pairs generation loop for internal node */
                 for(m = sIndex+1; m < eIndex; m++){
                     for(n = m+1; n <= eIndex; n++){
@@ -66,9 +66,8 @@ void genPairs(stnode_t *stNodes, int *srtIndex, int nStNodes, sequence_t *seqs, 
                             if(stNodes[m].lset[s]){
                                 for(t = 0; t < SIGMA; t++){
                                     if(stNodes[n].lset[t]){
-                                       if(s != t){
+                                        if(s != t){
                                             for(p = stNodes[m].lset[s]; p != NULL; p = p->next){
-                                            
                                                 /* eliminate pairs */ 
                                                 if(dup[p->sid] == -1){
                                                     dup[p->sid] = p->sid;
@@ -81,7 +80,7 @@ void genPairs(stnode_t *stNodes, int *srtIndex, int nStNodes, sequence_t *seqs, 
                                                     f2 = q->sid;
                                                     s1Len = seqs[f1].strLen - 1;
                                                     s2Len = seqs[f2].strLen - 1;
-                                                    
+
                                                     if(f1 == f2) continue;
                                                     continue;
 
@@ -92,13 +91,13 @@ void genPairs(stnode_t *stNodes, int *srtIndex, int nStNodes, sequence_t *seqs, 
                                                         if(s1Len <= s2Len){
                                                             if(100*s1Len < cutOff*s2Len) continue;
                                                             affine_gap_align(seqs[f1].str, s1Len,
-                                                                           seqs[f2].str, s2Len,
-                                                                           &result, tbl, del, ins);
+                                                                    seqs[f2].str, s2Len,
+                                                                    &result, tbl, del, ins);
                                                         }else{
                                                             if(100*s2Len < cutOff*s1Len) continue;
                                                             affine_gap_align(seqs[f2].str, s2Len,
-                                                                           seqs[f1].str, s1Len,
-                                                                           &result, tbl, del, ins);
+                                                                    seqs[f1].str, s1Len,
+                                                                    &result, tbl, del, ins);
 
                                                         }
 
@@ -118,9 +117,6 @@ void genPairs(stnode_t *stNodes, int *srtIndex, int nStNodes, sequence_t *seqs, 
                         }
                     }
                 }
-    
-
-
 
                 /* merge the lsets of subtree */ 
                 for(m = 0; m < SIGMA; m++){
@@ -154,22 +150,11 @@ void genPairs(stnode_t *stNodes, int *srtIndex, int nStNodes, sequence_t *seqs, 
     free_int(ins, NROW);
 }
 
-/*---------------------------------------------------------------*
- * This function implements the pair generation algorithm for leaf
- * nodes. 
- *
- *    BEGIN - intra/inter cross. O/W - intra cross. 
- *
- * @param lset -
- * @param seqs -
- * @param nSeqs -
- * @param tbl -
- * @param ins -
- * @param del -
- *---------------------------------------------------------------*/
-void procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, int **del, ufind_t *uSet, param_t *param){
-    int i;
-    int j;
+
+void procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, int **del, ufind_t *uSet, param_t *param)
+{
+    size_t i;
+    size_t j;
     suffix_t *p = NULL;
     suffix_t *q = NULL;
     int f1, f2;
