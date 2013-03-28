@@ -12,7 +12,6 @@
 
 #include <stddef.h>
 
-#define MAX_LINE_LEN 100000
 #define FASTA_FLAG '>'
 #define DOLLAR 'U' /* dollar delimiter */
 #define BEGIN 'O'  /* it is oh, not zero */

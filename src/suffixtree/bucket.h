@@ -30,7 +30,7 @@ typedef struct suffix {
  */
 typedef struct {
     suffix_t *suffixes; /**< suffix array of zero or more suffixes */
-    int size;           /**< number of suffixes */
+    size_t size;        /**< number of suffixes */
 } bucket_t;
 
 

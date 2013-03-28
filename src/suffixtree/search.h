@@ -13,7 +13,16 @@
 #include "bucket.h"
 #include "stree.h"
 
-void cntSort4Bkt(bucket_t *bkt, int bktSize);
+
+/**
+ * Sorts the buckets according to their size. 
+ *
+ * @param[in] buckets array of all buckets to be sorted
+ * @param[in] n_buckets #(buckets)
+ */
+void count_sort_buckets(bucket_t *buckets, size_t n_buckets);
+
+
 void countSort(stnode_t *stNodes, int *srtNdIndex, int nStNodes, int maxSeqLen);
 
 int bktCmp(const void *vp1, const void *vp2);

@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
     printf("Bucketing finished in <%lld> secs\n", (long long)(t2-t1));
     
     (void) time(&t1);
-    cntSort4Bkt(buckets, n_buckets);
+    count_sort_buckets(buckets, n_buckets);
     //qsort(buckets, n_buckets, sizeof *buckets, bktCmp);
     (void) time(&t2);
     printf("Bucketing sorted in <%lld> secs\n", (long long)(t2-t1));

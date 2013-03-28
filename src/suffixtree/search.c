@@ -12,61 +12,61 @@
 #include "search.h"
 #include "stree.h"
 
-/* -----------------------------------------------------------*
- * sort the bucket lists according to their size. 
- *
- * @param bkt - bkt struct {bktList, size}
- * @param bktSize - #(bktList)
- * -----------------------------------------------------------*/
-void cntSort4Bkt(bucket_t *bkt, int bktSize){
-    int *cnt = NULL;
-    int i;
-    bucket_t *nBkt = NULL;
-    int maxBktSize = 0;
 
-    /* find the maximum size for bktSize */
-    for(i = 0; i < bktSize; i++){
-        if(bkt[i].size > maxBktSize) maxBktSize = bkt[i].size;
+void count_sort_buckets(bucket_t *buckets, size_t n_buckets)
+{
+    int *count = NULL;
+    size_t i = 0;
+    bucket_t *new_buckets = NULL;
+    size_t max_bucket_size = 0;
+
+    /* find the maximum size for n_buckets */
+    for (i=0; i<n_buckets; ++i) {
+        if (buckets[i].size > max_bucket_size) {
+            max_bucket_size = buckets[i].size;
+        }
     }
-    /* +1 for counters *cnt */
-    maxBktSize++;
+    /* +1 for counters *count */
+    ++max_bucket_size;
 
-    cnt = emalloc(maxBktSize*(sizeof *cnt));
-    nBkt = emalloc(bktSize*(sizeof *nBkt));
+    count = emalloc(max_bucket_size*sizeof(int));
+    new_buckets = emalloc(n_buckets*sizeof(bucket_t));
 
     /* init counter */
-    for(i = 0; i < maxBktSize; i++){
-        cnt[i] = 0;
+    for (i=0; i<max_bucket_size; ++i){
+        count[i] = 0;
     }
     
     /* counting */
-    for(i = 0; i < bktSize; i++){
-        if(bkt[i].size >= maxBktSize){
-            printf("[Cnt=%d, mSize=%d]\n", bkt[i].size, maxBktSize); 
+    for (i=0; i<n_buckets; ++i) {
+        if (buckets[i].size >= max_bucket_size) {
+            printf("[Cnt=%zu, mSize=%zu]\n", buckets[i].size, max_bucket_size); 
             exit(0);
         }
-        cnt[bkt[i].size]++;
+        ++count[buckets[i].size];
     }
 
     /* prefix sum in a reverse way */
-    for(i = maxBktSize-2; i >= 0; i--){
-        cnt[i] += cnt[i+1];
+    for (i=max_bucket_size-2; i>0; --i) {
+        count[i] += count[i+1];
     }
+    count[i] += count[i+1]; /* for the i == 0 case */
     
-    /* put the bkt[] into nBkt[] in the descending order */
-    for(i = 0; i < bktSize; i++){
-        nBkt[cnt[bkt[i].size]-1] = bkt[i];
-        cnt[bkt[i].size]--;
+    /* put the buckets[] into new_buckets[] in the descending order */
+    for (i=0; i<n_buckets; ++i) {
+        new_buckets[count[buckets[i].size]-1] = buckets[i];
+        --count[buckets[i].size];
     }
 
     /* copy descending order back */
-    for(i = 0; i < bktSize; i++){
-        bkt[i] = nBkt[i];
+    for (i=0; i<n_buckets; ++i){
+        buckets[i] = new_buckets[i];
     }
     
-    free(cnt); 
-    free(nBkt); 
+    free(count); 
+    free(new_buckets); 
 }
+
 
 /* -----------------------------------------------------------*
  * counting sort based on the depth of the stNodes[i].

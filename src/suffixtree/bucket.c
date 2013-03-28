@@ -24,7 +24,7 @@ static size_t _suffix_count = 0;
  * @param[in] k slide window size
  * @return TODO todo
  */
-static size_t entry_index(const char *kmer, int k)
+static inline size_t entry_index(const char *kmer, int k)
 {
     int i;
     size_t value = 0;
@@ -51,13 +51,16 @@ void slide_window(const char *s, size_t s_len, int sid,
         bucket_t *buckets, size_t buckets_size, suffix_t *suffixes,
         int window_size)
 {
-    int i;
-    int stop_index = s_len - window_size - 1;
+    size_t i;
+    size_t stop_index = s_len - window_size - 1;
    
+    /** @todo TODO consider returning an error to handle instead? */
+    assert(s_len >= window_size);
+
     for(i=0; i<=stop_index; ++i){
         size_t bucket_index = entry_index(s+i, window_size);
         assert(bucket_index < buckets_size);
-        /* prefixed in the bucket list */
+        /* prefixed in the suffix list for the given bucket */
         suffixes[_suffix_count].sid = sid;
         suffixes[_suffix_count].pid = i;
         suffixes[_suffix_count].next = buckets[bucket_index].suffixes;
@@ -68,22 +71,22 @@ void slide_window(const char *s, size_t s_len, int sid,
 }
 
 
-void build_buckets(sequence_t *seqs, size_t nseqs,
-        bucket_t *buckets, size_t buckets_size,
-        suffix_t *suffixes, size_t suffixes_count,
+void build_buckets(sequence_t *sequences, size_t n_sequences,
+        bucket_t *buckets, size_t n_buckets,
+        suffix_t *suffixes, size_t n_suffixes,
         int window_size)
 {
     size_t i;
-    init_buckets(buckets, buckets_size);
+    init_buckets(buckets, n_buckets);
     
-    /* slide k-mers for every seqs, and bucket them */
-    for(i=0; i<nseqs; i++){
-        slide_window(seqs[i].str, seqs[i].strLen, i,
-                buckets, buckets_size, suffixes, window_size);
+    /* slide k-mers for every sequence and bucket them */
+    for (i=0; i<n_sequences; ++i) {
+        slide_window(sequences[i].str, sequences[i].strLen, i,
+                buckets, n_buckets, suffixes, window_size);
     }
 
     printf("_suffix_count=%zu\n", _suffix_count);
-    assert(_suffix_count == suffixes_count);
+    assert(_suffix_count == n_suffixes);
 }
 
 
