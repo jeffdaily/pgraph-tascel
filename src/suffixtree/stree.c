@@ -166,7 +166,7 @@ void printStnodes(stnode_t *stNodes, int stIndex, int blSize, int ind){
 
     sprintf(frFile, "./320k_tree/forest_%d", ind);
     fp = efopen(frFile, "a+");
-    fprintf(fp, "<stSize: %d, n_buckets: %d\n", stIndex, blSize);
+    fprintf(fp, "<stSize: %d, bktSize: %d\n", stIndex, blSize);
     for(i = 0; i< stIndex; i++){
         fprintf(fp, "=%d, %d", stNodes[i].depth, stNodes[i].rLeaf);    
         for(m = 0, j = 0; j < SIGMA; j++){
