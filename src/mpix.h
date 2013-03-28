@@ -87,15 +87,15 @@ MPIX_GET_MPI_DATATYPE_IMPL(unsigned long, MPI_UNSIGNED_LONG);
 MPIX_GET_MPI_DATATYPE_IMPL(unsigned long long, MPI_UNSIGNED_LONG_LONG);
 #endif
 #define MPIX_LIST2(A,B) A,B
-MPIX_GET_MPI_DATATYPE_IMPL(pair<MPIX_LIST2(float,int)>, MPI_FLOAT_INT);
-MPIX_GET_MPI_DATATYPE_IMPL(pair<MPIX_LIST2(double,int)>, MPI_DOUBLE_INT);
-MPIX_GET_MPI_DATATYPE_IMPL(pair<MPIX_LIST2(long double,int)>, MPI_LONG_DOUBLE_INT);
-MPIX_GET_MPI_DATATYPE_IMPL(pair<MPIX_LIST2(long,int)>, MPI_LONG_INT);
-MPIX_GET_MPI_DATATYPE_IMPL(pair<MPIX_LIST2(short,int)>, MPI_SHORT_INT);
-MPIX_GET_MPI_DATATYPE_IMPL(pair<MPIX_LIST2(int,int)>, MPI_2INT);
+MPIX_GET_MPI_DATATYPE_IMPL(pair<MPIX_LIST2(float, int)>, MPI_FLOAT_INT);
+MPIX_GET_MPI_DATATYPE_IMPL(pair<MPIX_LIST2(double, int)>, MPI_DOUBLE_INT);
+MPIX_GET_MPI_DATATYPE_IMPL(pair<MPIX_LIST2(long double, int)>, MPI_LONG_DOUBLE_INT);
+MPIX_GET_MPI_DATATYPE_IMPL(pair<MPIX_LIST2(long, int)>, MPI_LONG_INT);
+MPIX_GET_MPI_DATATYPE_IMPL(pair<MPIX_LIST2(short, int)>, MPI_SHORT_INT);
+MPIX_GET_MPI_DATATYPE_IMPL(pair<MPIX_LIST2(int, int)>, MPI_2INT);
 #undef MPIX_LIST2
-MPIX_GET_MPI_DATATYPE_IMPL(void*, MPI_UNSIGNED_LONG);
-MPIX_GET_MPI_DATATYPE_IMPL(char*, MPI_UNSIGNED_LONG);
+MPIX_GET_MPI_DATATYPE_IMPL(void *, MPI_UNSIGNED_LONG);
+MPIX_GET_MPI_DATATYPE_IMPL(char *, MPI_UNSIGNED_LONG);
 
 MPIX_GET_MPI_DATATYPE_IMPL_CONST(char, MPI_CHAR);
 MPIX_GET_MPI_DATATYPE_IMPL_CONST(short, MPI_SHORT);
@@ -115,42 +115,48 @@ MPIX_GET_MPI_DATATYPE_IMPL_CONST(unsigned long, MPI_UNSIGNED_LONG);
 MPIX_GET_MPI_DATATYPE_IMPL_CONST(unsigned long long, MPI_UNSIGNED_LONG_LONG);
 #endif
 #define MPIX_LIST2(A,B) A,B
-MPIX_GET_MPI_DATATYPE_IMPL_CONST(pair<MPIX_LIST2(float,int)>, MPI_FLOAT_INT);
-MPIX_GET_MPI_DATATYPE_IMPL_CONST(pair<MPIX_LIST2(double,int)>, MPI_DOUBLE_INT);
-MPIX_GET_MPI_DATATYPE_IMPL_CONST(pair<MPIX_LIST2(long double,int)>, MPI_LONG_DOUBLE_INT);
-MPIX_GET_MPI_DATATYPE_IMPL_CONST(pair<MPIX_LIST2(long,int)>, MPI_LONG_INT);
-MPIX_GET_MPI_DATATYPE_IMPL_CONST(pair<MPIX_LIST2(short,int)>, MPI_SHORT_INT);
-MPIX_GET_MPI_DATATYPE_IMPL_CONST(pair<MPIX_LIST2(int,int)>, MPI_2INT);
+MPIX_GET_MPI_DATATYPE_IMPL_CONST(pair<MPIX_LIST2(float, int)>, MPI_FLOAT_INT);
+MPIX_GET_MPI_DATATYPE_IMPL_CONST(pair<MPIX_LIST2(double, int)>, MPI_DOUBLE_INT);
+MPIX_GET_MPI_DATATYPE_IMPL_CONST(pair<MPIX_LIST2(long double, int)>, MPI_LONG_DOUBLE_INT);
+MPIX_GET_MPI_DATATYPE_IMPL_CONST(pair<MPIX_LIST2(long, int)>, MPI_LONG_INT);
+MPIX_GET_MPI_DATATYPE_IMPL_CONST(pair<MPIX_LIST2(short, int)>, MPI_SHORT_INT);
+MPIX_GET_MPI_DATATYPE_IMPL_CONST(pair<MPIX_LIST2(int, int)>, MPI_2INT);
 #undef MPIX_LIST2
-MPIX_GET_MPI_DATATYPE_IMPL_CONST(void*, MPI_UNSIGNED_LONG);
-MPIX_GET_MPI_DATATYPE_IMPL_CONST(char*, MPI_UNSIGNED_LONG);
+MPIX_GET_MPI_DATATYPE_IMPL_CONST(void *, MPI_UNSIGNED_LONG);
+MPIX_GET_MPI_DATATYPE_IMPL_CONST(char *, MPI_UNSIGNED_LONG);
 
 #if 0
 inline MPI_Datatype
-mpix_get_mpi_datatype(const void* &x)
+mpix_get_mpi_datatype(const void *&x)
 {
-    if      (sizeof(void*) == sizeof(int)) { return MPI_INT; }
-    else if (sizeof(void*) == sizeof(long)) { return MPI_LONG; }
+    if (sizeof(void *) == sizeof(int)) {
+        return MPI_INT;
+    }
+    else if (sizeof(void *) == sizeof(long)) {
+        return MPI_LONG;
+    }
 #if defined(MPI_LONG_LONG_INT) || (defined(MPI_VERSION) && MPI_VERSION >= 2)
-    else if (sizeof(void*) == sizeof(long long)) { return MPI_LONG_LONG_INT; }
+    else if (sizeof(void *) == sizeof(long long)) {
+        return MPI_LONG_LONG_INT;
+    }
 #endif
     else {
         printf("FAILED FILE=%s LINE=%d: unknown pointer datatype\n",
-                __FILE__, __LINE__);
+               __FILE__, __LINE__);
         MPI_Abort(MPI_COMM_WORLD, -1);
     }
 }
 #endif
 
 template <class T>
-void mpix_bcast(T &object, int root=0, MPI_Comm comm=MPI_COMM_WORLD)
+void mpix_bcast(T &object, int root = 0, MPI_Comm comm = MPI_COMM_WORLD)
 {
     MPI_Datatype datatype = mpix_get_mpi_datatype(object);
     MPI_CHECK_C(MPI_Bcast(&object, 1, datatype, root, comm));
 }
 
 template <class T>
-void mpix_bcast(vector<T> &object, int root=0, MPI_Comm comm=MPI_COMM_WORLD)
+void mpix_bcast(vector<T> &object, int root = 0, MPI_Comm comm = MPI_COMM_WORLD)
 {
     typedef typename vector<T>::size_type size_type;
 
@@ -175,18 +181,18 @@ void mpix_bcast(vector<T> &object, int root=0, MPI_Comm comm=MPI_COMM_WORLD)
 }
 
 template <class T>
-void mpix_allreduce(T &object, MPI_Op op, MPI_Comm comm=MPI_COMM_WORLD)
+void mpix_allreduce(T &object, MPI_Op op, MPI_Comm comm = MPI_COMM_WORLD)
 {
     MPI_Datatype datatype = mpix_get_mpi_datatype(object);
     MPI_CHECK_C(MPI_Allreduce(MPI_IN_PLACE, &object, 1, datatype, op, comm));
 }
 
 template <class T>
-void mpix_allreduce(vector<T> &object, MPI_Op op, MPI_Comm comm=MPI_COMM_WORLD)
+void mpix_allreduce(vector<T> &object, MPI_Op op, MPI_Comm comm = MPI_COMM_WORLD)
 {
     MPI_Datatype datatype = mpix_get_mpi_datatype(object[0]);
     MPI_CHECK_C(MPI_Allreduce(MPI_IN_PLACE, &object[0], object.size(),
-                datatype, op, comm));
+                              datatype, op, comm));
 }
 
 /* overloads of mpix_print_sync */
@@ -207,9 +213,9 @@ void mpix_print_sync(MPI_Comm comm, const string &name, const T &what)
 
     all_what = new T[size];
     MPI_CHECK(MPI_Gather(&what_copy, sizeof(T), MPI_CHAR, all_what, sizeof(T),
-                MPI_CHAR, 0, comm));
+                         MPI_CHAR, 0, comm));
     if (0 == rank) {
-        for (int i=0; i<size; ++i) {
+        for (int i = 0; i < size; ++i) {
             cout << "[" << i << "] " << name << "=" << all_what[i] << endl;
         }
     }
@@ -219,20 +225,20 @@ void mpix_print_sync(MPI_Comm comm, const string &name, const T &what)
 
 
 void mpix_bcast_argv(int argc, char **argv,
-        vector<string> &all_argv, MPI_Comm=MPI_COMM_WORLD);
+                     vector<string> &all_argv, MPI_Comm = MPI_COMM_WORLD);
 
 MPI_Offset mpix_get_file_size(
-        const string &file_name, MPI_Comm comm=MPI_COMM_WORLD);
+    const string &file_name, MPI_Comm comm = MPI_COMM_WORLD);
 
-void mpix_read_file(MPI_Comm comm, const string &file_name, char* &file_buffer, MPI_Offset &file_size, long chunk_size=1073741824);
-void mpix_read_file_bcast(MPI_Comm comm, const string &file_name, char* &file_buffer, MPI_Offset &file_size, long chunk_size=1073741824);
-void mpix_read_file_mpiio(MPI_Comm comm, const string &file_name, char* &file_buffer, MPI_Offset &file_size, long chunk_size=1073741824);
+void mpix_read_file(MPI_Comm comm, const string &file_name, char *&file_buffer, MPI_Offset &file_size, long chunk_size = 1073741824);
+void mpix_read_file_bcast(MPI_Comm comm, const string &file_name, char *&file_buffer, MPI_Offset &file_size, long chunk_size = 1073741824);
+void mpix_read_file_mpiio(MPI_Comm comm, const string &file_name, char *&file_buffer, MPI_Offset &file_size, long chunk_size = 1073741824);
 
 template <class Collection>
 string vec_to_string(
-        const Collection &collection,
-        char const * delimiter=",",
-        const string &name="")
+    const Collection &collection,
+    char const *delimiter = ",",
+    const string &name = "")
 {
     typedef typename Collection::const_iterator iter;
     std::ostringstream os;
@@ -245,7 +251,8 @@ string vec_to_string(
 
     if (beg == end) {
         os << "{}";
-    } else {
+    }
+    else {
         os << "{" << *(beg++);
         for (; beg != end; ++beg) {
             os << delimiter << *beg;

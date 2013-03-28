@@ -67,7 +67,7 @@ void Sequence::align(const Sequence &that, int &score, int &ndig, int &alen)
     int **ins = alloc_int(2, this->size > that.size ? this->size : that.size);
 
     affine_gap_align(this->data, this->size, that.data, that.size, &result,
-            tbl, del, ins);
+                     tbl, del, ins);
 
     free_tbl(tbl, 2);
     free_int(del, 2);
@@ -86,9 +86,9 @@ Sequence::operator string() const
 }
 
 
-ostream& operator << (ostream &os, const Sequence &s)
+ostream &operator << (ostream &os, const Sequence &s)
 {
-    for (size_t i=0; i<s.size; ++i) {
+    for (size_t i = 0; i < s.size; ++i) {
         os << s.data[i];
     }
     return os;

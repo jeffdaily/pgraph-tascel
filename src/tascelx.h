@@ -46,9 +46,9 @@ typedef struct server_thread_args {
     pthread_barrier_t *server_end;
 
     server_thread_args(
-            volatile bool *server_enabled,
-            pthread_barrier_t *server_start,
-            pthread_barrier_t *server_end)
+        volatile bool *server_enabled,
+        pthread_barrier_t *server_start,
+        pthread_barrier_t *server_end)
         :   server_enabled(server_enabled)
         ,   server_start(server_start)
         ,   server_end(server_end)
@@ -65,7 +65,7 @@ typedef struct server_thread_args {
  */
 static void *server_thread(void *_args)
 {
-    server_thread_args *args = (server_thread_args*)_args;
+    server_thread_args *args = (server_thread_args *)_args;
 
     set_affinity(NUM_WORKERS);
 
@@ -73,15 +73,15 @@ static void *server_thread(void *_args)
     while (1) {
         pthread_barrier_wait(args->server_start);
         while (*(args->server_enabled)) {
-            AmListenObjCodelet<NullMutex>* lcodelet;
-            if((lcodelet=theAm().amListeners[0]->progress()) != NULL) {
+            AmListenObjCodelet<NullMutex> *lcodelet;
+            if ((lcodelet = theAm().amListeners[0]->progress()) != NULL) {
                 lcodelet->execute();
             }
-            Codelet* codelet;
+            Codelet *codelet;
             if ((codelet = serverDispatcher.progress()) != NULL) {
                 codelet->execute();
                 // Assume that codelet was an AmRequest and needs to be freed
-                delete reinterpret_cast<AmRequest*>(codelet);
+                delete reinterpret_cast<AmRequest *>(codelet);
             }
         }
         pthread_barrier_wait(args->server_end);
@@ -101,12 +101,12 @@ typedef struct worker_thread_args {
     UniformTaskCollSplitHybrid *utcs;
     pthread_barrier_t *workers_start;
     pthread_barrier_t *workers_end;
-    
+
     worker_thread_args(
-            unsigned int rank,
-            UniformTaskCollSplitHybrid *utcs,
-            pthread_barrier_t *workers_start,
-            pthread_barrier_t *workers_end)
+        unsigned int rank,
+        UniformTaskCollSplitHybrid *utcs,
+        pthread_barrier_t *workers_start,
+        pthread_barrier_t *workers_end)
         :   rank(rank)
         ,   utcs(utcs)
         ,   workers_start(workers_start)
@@ -125,7 +125,7 @@ typedef struct worker_thread_args {
  */
 static void *worker_thread(void *_args)
 {
-    worker_thread_args *args = (worker_thread_args*)_args;
+    worker_thread_args *args = (worker_thread_args *)_args;
 
     set_affinity(args->rank);
 
@@ -145,9 +145,9 @@ static void *worker_thread(void *_args)
 static void amBarrier()
 {
     int epoch = pgrp->signalBarrier();
-    while(!pgrp->testBarrier(epoch)) {
-        AmListenObjCodelet<NullMutex>* codelet;
-        if((codelet=theAm().amListeners[0]->progress()) != NULL) {
+    while (!pgrp->testBarrier(epoch)) {
+        AmListenObjCodelet<NullMutex> *codelet;
+        if ((codelet = theAm().amListeners[0]->progress()) != NULL) {
             codelet->execute();
         }
     }
@@ -158,7 +158,7 @@ static void amBarrier()
 static void amBarrierThd()
 {
     int epoch = pgrp->signalBarrier();
-    while(!pgrp->testBarrier(epoch)) { }
+    while (!pgrp->testBarrier(epoch)) { }
 }
 
 #endif /* _TASCEL_X_H_ */

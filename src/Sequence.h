@@ -49,7 +49,7 @@ class Sequence
         /** overload of string cast */
         operator string() const;
 
-        friend ostream& operator << (ostream &os, const Sequence &s);
+        friend ostream &operator << (ostream &os, const Sequence &s);
 
     private:
         bool is_owner;      /**< whether this instance should delete the data */

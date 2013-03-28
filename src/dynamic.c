@@ -35,20 +35,33 @@ static char AA[] = {'A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I',
 static int map[SIGMA];
 
 /** points to selected blosum table (default blosum62) */
-static int (*blosum)[24] = blosum62; 
+static int (*blosum)[24] = blosum62;
 
 
 void init_blosum(int number)
 {
     switch (number) {
-        case 40: blosum = blosum40; break;
-        case 45: blosum = blosum45; break;
-        case 62: blosum = blosum62; break;
-        case 75: blosum = blosum75; break;
-        case 80: blosum = blosum80; break;
-        case 90: blosum = blosum90; break;
-        default: fprintf(stderr, "invalid blosum number (%d)\n", number);
-                 assert(0);
+        case 40:
+            blosum = blosum40;
+            break;
+        case 45:
+            blosum = blosum45;
+            break;
+        case 62:
+            blosum = blosum62;
+            break;
+        case 75:
+            blosum = blosum75;
+            break;
+        case 80:
+            blosum = blosum80;
+            break;
+        case 90:
+            blosum = blosum90;
+            break;
+        default:
+            fprintf(stderr, "invalid blosum number (%d)\n", number);
+            assert(0);
     }
 }
 
@@ -130,10 +143,10 @@ void free_int(int **tbl, int nrow)
 
 
 void affine_gap_align_old(
-        const char *s1, size_t s1Len,
-        const char *s2, size_t s2Len,
-        cell_t *result,
-        cell_t **tbl, int **del, int **ins)
+    const char *s1, size_t s1Len,
+    const char *s2, size_t s2Len,
+    cell_t *result,
+    cell_t **tbl, int **del, int **ins)
 {
     int i, j;
     int maxScore;
@@ -165,7 +178,7 @@ void affine_gap_align_old(
     maxRecord = tblCR + s2Len;
 
     for (i = 1; i <= s1Len; i++) {
-        char ch1 = s1[i-1];
+        char ch1 = s1[i - 1];
         int *BlosumRow = blosum[map[ch1 - 'A']];
 
         int cr = CROW(i);
@@ -192,7 +205,7 @@ void affine_gap_align_old(
         tblCR[0].alen  = Walen;
 
         for (j = 1; j <= s2Len; j++) {
-            char ch2    = s2[j-1];
+            char ch2    = s2[j - 1];
             int NWscore = Nscore;
             int NWndig  = Nndig;
             int NWalen  = Nalen;
@@ -248,10 +261,10 @@ void affine_gap_align_old(
 
 
 void affine_gap_align(
-        const char *s1, size_t s1Len,
-        const char *s2, size_t s2Len,
-        cell_t *result,
-        cell_t **tbl, int **del, int **ins)
+    const char *s1, size_t s1Len,
+    const char *s2, size_t s2Len,
+    cell_t *result,
+    cell_t **tbl, int **del, int **ins)
 {
     int i, j;
     int cr, pr;
@@ -262,7 +275,7 @@ void affine_gap_align(
     cell_t lastCol = {INT_MIN, 0, 0};
     cell_t lastRow = {INT_MIN, 0, 0};
 
-    assert(s1Len>0 && s2Len>0);
+    assert(s1Len > 0 && s2Len > 0);
 
     cr = 1;
     pr = 0;
@@ -276,76 +289,80 @@ void affine_gap_align(
     tbl[0][0].alen = 0;
     del[0][0] = 0;
     ins[0][0] = 0;
-    
+
     tI = tbl[0];
-    for(j = 1; j <= s2Len; j++){
-        tI[j].score = OPEN + j*GAP;
+    for (j = 1; j <= s2Len; j++) {
+        tI[j].score = OPEN + j * GAP;
         tI[j].ndig = 0;
         tI[j].alen = 0;
 
         del[0][j] = INT_MIN;
-        ins[0][j] = OPEN + j*GAP;
+        ins[0][j] = OPEN + j * GAP;
     }
 
 
-    for(i = 1; i <= s1Len; i++){
-        ch1 = s1[i-1];
+    for (i = 1; i <= s1Len; i++) {
+        ch1 = s1[i - 1];
         cr = CROW(i);
-        pr = PROW(i); 
+        pr = PROW(i);
 
         tI = tbl[cr];
         pI = tbl[pr];
 
         /* init first column of 3 tables */
-        tI[0].score = OPEN + i*GAP;
+        tI[0].score = OPEN + i * GAP;
         tI[0].ndig = 0;
         tI[0].alen = 0;
 
-        del[cr][0] = OPEN + i*GAP;
+        del[cr][0] = OPEN + i * GAP;
         ins[cr][0] = INT_MIN;
 
-        for(j = 1; j <= s2Len; j++){
-            ch2 = s2[j-1];
+        for (j = 1; j <= s2Len; j++) {
+            ch2 = s2[j - 1];
 
             /* overflow could happen, INT_MIN-1 = 2147483647
              * #define NEG_ADD(x, y) \
              *     (((y)<0)&&((x)<(INT_MIN-y)) ? INT_MIN : (x)+(y)) */
-            up = MAX(pI[j].score+OPEN+GAP, NEG_ADD(del[pr][j], GAP)); 
+            up = MAX(pI[j].score + OPEN + GAP, NEG_ADD(del[pr][j], GAP));
             del[cr][j] = up;
-            left = MAX(tI[j-1].score+OPEN+GAP, NEG_ADD(ins[cr][j-1], GAP));  
+            left = MAX(tI[j - 1].score + OPEN + GAP, NEG_ADD(ins[cr][j - 1], GAP));
             ins[cr][j] = left;
-            maxScore = (up >= left)? up : left;
-            
+            maxScore = (up >= left) ? up : left;
+
             /* blosum62[map[ch1-'A']][map[ch2-'A']]; */
-            dig = pI[j-1].score + BLOSUM(map, ch1, ch2); 
-            if(dig >= maxScore) maxScore = dig;
+            dig = pI[j - 1].score + BLOSUM(map, ch1, ch2);
+            if (dig >= maxScore) {
+                maxScore = dig;
+            }
             tI[j].score = maxScore;
 
-            #ifdef DEBUG
+#ifdef DEBUG
             printf("up=%d, left=%d, dig=%d, <%c,%c>\n", up, left, dig, ch1, ch2);
-            #endif
+#endif
 
-            if(maxScore == dig){
-                tI[j].ndig = pI[j-1].ndig + ((ch1 == ch2) ? 1 : 0);
-                tI[j].alen = pI[j-1].alen + 1;
-            }else if (maxScore == up){
+            if (maxScore == dig) {
+                tI[j].ndig = pI[j - 1].ndig + ((ch1 == ch2) ? 1 : 0);
+                tI[j].alen = pI[j - 1].alen + 1;
+            }
+            else if (maxScore == up) {
                 tI[j].ndig = pI[j].ndig;
                 tI[j].alen = pI[j].alen + 1;
-            }else{
-                tI[j].ndig = tI[j-1].ndig;
-                tI[j].alen = tI[j-1].alen + 1;
             }
-            
+            else {
+                tI[j].ndig = tI[j - 1].ndig;
+                tI[j].alen = tI[j - 1].alen + 1;
+            }
+
             /* track of the maximum last row */
-            if(i == s1Len){
+            if (i == s1Len) {
                 lastRow = (tI[j].score > lastRow.score) ? tI[j] : lastRow;
             }
         }
 
-        assert(j == (s2Len+1));
+        assert(j == (s2Len + 1));
 
         /* update the maximum of last column */
-        lastCol = (tI[s2Len].score > lastCol.score)? tI[s2Len] : lastCol; 
+        lastCol = (tI[s2Len].score > lastCol.score) ? tI[s2Len] : lastCol;
     } /* end of i loop */
 
     *result = (lastCol.score > lastRow.score) ? lastCol : lastRow;
@@ -364,9 +381,9 @@ void print_row(cell_t **tbl, int i, int ncol)
 
 
 int is_edge(
-        const cell_t result,
-        const char *s1, size_t s1Len, const char *s2, size_t s2Len,
-        const is_edge_param_t param, int *_sscore, int *_maxLen)
+    const cell_t result,
+    const char *s1, size_t s1Len, const char *s2, size_t s2Len,
+    const is_edge_param_t param, int *_sscore, int *_maxLen)
 {
     int sscore;
     int maxLen;
@@ -394,9 +411,9 @@ int is_edge(
     if (result.score <= 0) {
         return FALSE;
     }
-    else if ((result.alen*100 >= param.AOL * maxLen)
-            && (nmatch*100 >= param.SIM * result.alen)
-            && (result.score*100 >= param.OS * sscore)) {
+    else if ((result.alen * 100 >= param.AOL * maxLen)
+             && (nmatch * 100 >= param.SIM * result.alen)
+             && (result.score * 100 >= param.OS * sscore)) {
         return TRUE;
     }
     else {

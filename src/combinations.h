@@ -10,7 +10,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif 
+#endif
 
 unsigned long binomial_coefficient(unsigned long n, unsigned long k);
 void k_combination(unsigned long pos, unsigned long k, unsigned long *result);
@@ -22,6 +22,6 @@ void inc_combination2(unsigned long inc, unsigned long *combination);
 
 #ifdef __cplusplus
 }
-#endif 
+#endif
 
 #endif /* _COMBINATIONS_H_ */

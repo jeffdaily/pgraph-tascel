@@ -30,9 +30,9 @@ class SequenceDatabaseException : public exception
 {
     public:
         SequenceDatabaseException(const char *file, int line,
-                const char *function, const char *message) throw();
+                                  const char *function, const char *message) throw();
         virtual ~SequenceDatabaseException() throw();
-        virtual const char* what() const throw();
+        virtual const char *what() const throw();
     private:
         string message;
 };
@@ -82,7 +82,7 @@ class SequenceDatabase
          * @param[in] i the index based on the global count of sequences
          * @return the Sequence reference (owned by this SequenceDatabase)
          */
-        Sequence& get_sequence(size_t i);
+        Sequence &get_sequence(size_t i);
 
     private:
         void read_and_parse_fasta();
@@ -93,12 +93,12 @@ class SequenceDatabase
         MPI_Offset file_size;
         vector<MPI_Offset> global_file_index;
         vector<int> global_owner;
-        vector<char*> global_address;
+        vector<char *> global_address;
         char *local_cache;
         MPI_Offset local_cache_size;
-        vector<char*> global_cache;
-        map<size_t,Sequence> sequences;
-        map<size_t,char*> remote_cache;
+        vector<char *> global_cache;
+        map<size_t, Sequence> sequences;
+        map<size_t, char *> remote_cache;
 };
 
 #endif /* SEQUENCE_DATABASE_H_ */

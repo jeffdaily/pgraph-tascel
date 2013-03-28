@@ -26,10 +26,10 @@ using std::string;
 
 
 SequenceDatabaseException::SequenceDatabaseException(
-        const char *file,
-        int line,
-        const char *function,
-        const char *message) throw()
+    const char *file,
+    int line,
+    const char *function,
+    const char *message) throw()
 {
     ostringstream oss;
     oss << file << ": " << function << ": " << line << ": " << message;
@@ -43,7 +43,7 @@ SequenceDatabaseException::~SequenceDatabaseException() throw()
 }
 
 
-const char* SequenceDatabaseException::what() const throw()
+const char *SequenceDatabaseException::what() const throw()
 {
     return this->message.c_str();
 }
@@ -90,15 +90,15 @@ size_t SequenceDatabase::get_global_count() const
 
 void SequenceDatabase::read_and_parse_fasta()
 {
-    MPI_Offset start=0;
-    MPI_Offset end=0;
-    MPI_Offset budget=static_cast<MPI_Offset>(this->budget);
-    MPI_File in=MPI_FILE_NULL;
-    int rank=0;
-    int size=0;
-    int ierr=0;
+    MPI_Offset start = 0;
+    MPI_Offset end = 0;
+    MPI_Offset budget = static_cast<MPI_Offset>(this->budget);
+    MPI_File in = MPI_FILE_NULL;
+    int rank = 0;
+    int size = 0;
+    int ierr = 0;
     unsigned long count;
-    size_t sid=0;
+    size_t sid = 0;
 
     ierr = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_CHECK(ierr);
@@ -111,8 +111,8 @@ void SequenceDatabase::read_and_parse_fasta()
     mpix_bcast(global_file_index);
     count = global_file_index.size();
 
-    ierr = MPI_File_open(MPI_COMM_WORLD, const_cast<char*>(file_name.c_str()),
-            MPI_MODE_RDONLY, MPI_INFO_NULL, &in);
+    ierr = MPI_File_open(MPI_COMM_WORLD, const_cast<char *>(file_name.c_str()),
+                         MPI_MODE_RDONLY, MPI_INFO_NULL, &in);
     MPI_CHECK(ierr);
 
     /* figure out who reads what */
@@ -123,28 +123,28 @@ void SequenceDatabase::read_and_parse_fasta()
     end = file_size;
     local_cache_size = file_size;
     if (budget <= file_size) {
-        size_t i=0;
-        size_t j=0;
+        size_t i = 0;
+        size_t j = 0;
 
-        local_cache_size = file_size/size;
+        local_cache_size = file_size / size;
         if (local_cache_size > budget) {
             SEQUENCE_DATABASE_EXCEPTION(
-                    "sequence memory budget not sufficient");
+                "sequence memory budget not sufficient");
         }
         start = rank * local_cache_size;
         /* find the first offset >= to our start */
         i = 0;
-        while (i<count && global_file_index[i] < start) {
+        while (i < count && global_file_index[i] < start) {
             ++i;
         }
         /* find the first offset >= to our start+local_cache_size */
         j = i;
-        while (j<count && global_file_index[j] < start+local_cache_size) {
+        while (j < count && global_file_index[j] < start + local_cache_size) {
             ++j;
         }
         /* at this point i and/or j may point past the end of the index */
         if (i >= count) {
-            i = count-1; /* reasonable? point to last sequence ID? */
+            i = count - 1; /* reasonable? point to last sequence ID? */
         }
         sid = i;
         start = global_file_index[i];
@@ -159,12 +159,12 @@ void SequenceDatabase::read_and_parse_fasta()
 
     /* allocate one-sided memory */
     global_cache.resize(size);
-    ARMCI_Malloc((void**)&global_cache[0], local_cache_size);
+    ARMCI_Malloc((void **)&global_cache[0], local_cache_size);
     local_cache = global_cache[rank];
 
     /* everyone reads in their part */
     ierr = MPI_File_read_at_all(in, start, local_cache, local_cache_size,
-            MPI_CHAR, MPI_STATUS_IGNORE);
+                                MPI_CHAR, MPI_STATUS_IGNORE);
     MPI_CHECK(ierr);
 
     /* everyone can close the file now */
@@ -172,16 +172,16 @@ void SequenceDatabase::read_and_parse_fasta()
     MPI_CHECK(ierr);
 
     assert(local_cache[0] == '>');
-    assert(local_cache[local_cache_size-1] != '>');
+    assert(local_cache[local_cache_size - 1] != '>');
 
     global_owner.assign(global_file_index.size(), 0);
     global_address.assign(global_file_index.size(), 0);
     /* parse local cache into Sequence instances */
     {
-        size_t label_index=0;
-        size_t data_index=0;
-        size_t data_length=0;
-        for (MPI_Offset i=0; i<local_cache_size; ++i) {
+        size_t label_index = 0;
+        size_t data_index = 0;
+        size_t data_length = 0;
+        for (MPI_Offset i = 0; i < local_cache_size; ++i) {
             if (local_cache[i] == '>') {
                 label_index = i;
                 data_index = i;
@@ -189,14 +189,14 @@ void SequenceDatabase::read_and_parse_fasta()
             }
             else if (local_cache[i] == '\n') {
                 if (label_index == data_index) {
-                    data_index = i+1;
+                    data_index = i + 1;
                 }
                 else {
                     global_owner[sid] = rank;
                     global_address[sid] = &local_cache[data_index];
                     data_length = i - data_index;
                     sequences.insert(make_pair(sid++,
-                            Sequence(&local_cache[data_index], data_length)));
+                                               Sequence(&local_cache[data_index], data_length)));
                 }
             }
         }
@@ -227,29 +227,29 @@ void SequenceDatabase::index_file(vector<MPI_Offset> &index)
 }
 
 
-Sequence& SequenceDatabase::get_sequence(size_t i)
+Sequence &SequenceDatabase::get_sequence(size_t i)
 {
     MPI_Offset size;
 
     if (!sequences.count(i)) {
-        if (i-1 == global_file_index.size()) {
-            size = file_size-global_file_index[i];
+        if (i - 1 == global_file_index.size()) {
+            size = file_size - global_file_index[i];
         }
         else {
-            size = global_file_index[i+1]-global_file_index[i];
+            size = global_file_index[i + 1] - global_file_index[i];
         }
 
-        cout << "SequenceDatabase::get_sequence("<<i<<")"<<endl;
-        cout << "\tsize="<<size<<endl;
+        cout << "SequenceDatabase::get_sequence(" << i << ")" << endl;
+        cout << "\tsize=" << size << endl;
 
-        remote_cache[i] = (char*)ARMCI_Malloc_local(size);
+        remote_cache[i] = (char *)ARMCI_Malloc_local(size);
         (void)memset(remote_cache[i], '@', size);
         assert(NULL != remote_cache[i]);
-        cout << "ARMCI_Get(" << (void*)global_address[i]
-            << "," << (void*)remote_cache[i]
-            << "," << size
-            << "," << global_owner[i]
-            << ")" << endl;
+        cout << "ARMCI_Get(" << (void *)global_address[i]
+             << "," << (void *)remote_cache[i]
+             << "," << size
+             << "," << global_owner[i]
+             << ")" << endl;
         ARMCI_Get(global_address[i], remote_cache[i], size, global_owner[i]);
         sequences.insert(make_pair(i, Sequence(remote_cache[i], size)));
     }

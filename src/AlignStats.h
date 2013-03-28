@@ -21,7 +21,8 @@ using std::string;
 #define MIN(x, y) (((x)<(y))? (x) : (y))
 #define MAX(x, y) (((x)>(y))? (x) : (y))
 
-class AlignStats {
+class AlignStats
+{
     public:
         unsigned long edge_counts;
         unsigned long align_counts;
@@ -37,12 +38,12 @@ class AlignStats {
             , align_times_max(DBL_MIN)
         { }
 
-        AlignStats& operator +=(const AlignStats &other) {
+        AlignStats &operator +=(const AlignStats &other) {
             edge_counts += other.edge_counts;
             align_counts += other.align_counts;
             align_times_tot += other.align_times_tot;
-            align_times_min = MIN(align_times_min,other.align_times_min);
-            align_times_max = MAX(align_times_max,other.align_times_max);
+            align_times_min = MIN(align_times_min, other.align_times_min);
+            align_times_max = MAX(align_times_max, other.align_times_max);
             return *this;
         }
 
@@ -58,7 +59,7 @@ class AlignStats {
             return "  Edges Alignments   Total_Time     Min_Time     Max_Time     Avg_Time";
         }
 
-        friend ostream& operator << (ostream &os, const AlignStats &stats) {
+        friend ostream &operator << (ostream &os, const AlignStats &stats) {
             int p = os.precision();
             os.precision(4);
             os << setw(7) << stats.edge_counts
@@ -66,7 +67,7 @@ class AlignStats {
                << setw(13) << fixed << showpoint << stats.align_times_tot
                << setw(13) << fixed << showpoint << stats.align_times_min
                << setw(13) << fixed << showpoint << stats.align_times_max
-               << setw(13) << fixed << showpoint << (stats.align_times_tot/stats.align_counts);
+               << setw(13) << fixed << showpoint << (stats.align_times_tot / stats.align_counts);
             os.precision(p); // undo state change
             return os;
         }
