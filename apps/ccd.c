@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
 
     /* suffix tree construction & processing */
     (void) time(&t1);
-    buildForest(
+    build_forest(
             buckets,   n_buckets,
             sequences, n_sequences,
             maxSeqLen, union_set, &param);

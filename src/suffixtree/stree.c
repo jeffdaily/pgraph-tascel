@@ -19,7 +19,7 @@ int build_tree(
     stnode_t *st_nodes, int *st_index)
 {
     int diffPos;
-    int i;
+    size_t i;
     int j; /* store the index of the internal node */
     suffix_t **heads = NULL;
     suffix_t *p = NULL;
@@ -66,7 +66,7 @@ int build_tree(
         for (p = suffixes; p != NULL; p = q) {
             q = p->next;
             hIndex = sequences[p->sid].str[p->pid + diffPos] - 'A';
-            assert(hIndex < SIGMA && hIndex >= 0);
+            assert(hIndex >= 0 && (unsigned)hIndex < SIGMA);
 
             p->next = heads[hIndex];
             heads[hIndex] = p;
@@ -129,17 +129,9 @@ void compute_lset(suffix_t *suffixes, sequence_t *seqs, suffix_t **lset)
 }
 
 
-/* ---------------------------------------------------*
- * This function constructs tree, sort it, and generate
- * pairs.
- *
- * @param seqs -
- * @param nseqs -
- * @param suffixes -
- * @param blSize -
- * @param window_size -
- * ---------------------------------------------------*/
-void procBkt(sequence_t *seqs, int nseqs, suffix_t *suffixes, int blSize, int maxSeqLen, ufind_t *uSet, param_t *param, int ind)
+void process_bucket(sequence_t *sequences, size_t n_sequences,
+                    suffix_t *suffixes, size_t n_suffixes, size_t max_seq_len,
+                    ufind_t *union_set, param_t *param, int ind)
 {
 
     stnode_t *stNodes = NULL;
@@ -148,12 +140,13 @@ void procBkt(sequence_t *seqs, int nseqs, suffix_t *suffixes, int blSize, int ma
     int stIndex = 0;
     //int *dup = NULL;        /* duplicated entried reduction */
 
-    stNodes = ecalloc(2 * blSize, sizeof * stNodes);
+    stNodes = ecalloc(2 * n_suffixes, sizeof * stNodes);
 
-    build_tree(seqs, nseqs, suffixes, depth, param->window_size, stNodes, &stIndex);
+    build_tree(sequences, n_sequences, suffixes, depth, param->window_size,
+               stNodes, &stIndex);
 
     /* output stnodes into file */
-    printStnodes(stNodes, stIndex, blSize, ind);
+    print_stnodes(stNodes, stIndex, n_suffixes, ind);
 
     /* end of outputing tree */
     /* sort the stnodes in another array */
@@ -171,15 +164,15 @@ void procBkt(sequence_t *seqs, int nseqs, suffix_t *suffixes, int blSize, int ma
     free(stNodes);
 }
 
-void printStnodes(stnode_t *stNodes, int stIndex, int blSize, int ind)
-{
 
-    /* output the tree */
-    int i;
-    int j;
+/* output the tree */
+void print_stnodes(stnode_t *stNodes, int stIndex, int blSize, int ind)
+{
+    int i = 0;
+    size_t j = 0;
+    int m = 0;
     FILE *fp = NULL;
     suffix_t *p = NULL;
-    int m;
     char frFile[200];
 
 
@@ -193,7 +186,7 @@ void printStnodes(stnode_t *stNodes, int stIndex, int blSize, int ind)
             if (stNodes[i].lset[j]) {
                 fprintf(fp, "\n");
                 m++;
-                fprintf(fp, "%d ", j);
+                fprintf(fp, "%zu ", j);
                 for (p = stNodes[i].lset[j]; p != NULL; p = p->next) {
                     fprintf(fp, "[%d,%d] ", p->sid, p->pid);
                 }
@@ -206,47 +199,43 @@ void printStnodes(stnode_t *stNodes, int stIndex, int blSize, int ind)
 }
 
 
-/* ---------------------------------------------------*
- * build a tree for each bucket
- *
- * @param buckets - bucket
- * @param n_buckets -
- * @param seqs - global fasta seqs
- * @param nseqs -  #seqs in fasta file
- * @param window_size - slide window size
- * @param NN - #chars in all seqs
- * @param nStNodes - #stnodes in constructed forest
- * ---------------------------------------------------*/
-void buildForest(bucket_t *buckets, int n_buckets, sequence_t *seqs, int nseqs, int maxSeqLen, ufind_t *uSet, param_t *param)
+void build_forest(bucket_t *buckets, size_t n_buckets,
+                  sequence_t *sequences, size_t n_sequences,
+                  size_t max_seq_len, ufind_t *union_set, param_t *param)
 {
-    int i;
+    size_t i = 0;
+    size_t count = 0;
+    time_t t1 = 0;
+    time_t t2 = 0;
+#ifdef DEBUG
     int sum = 0;
-    int cnt = 0;
+#endif
 
-    for (i = 0; i < n_buckets; i++) {
+    for (i = 0; i < n_buckets; ++i) {
         if (buckets[i].suffixes) {
-            cnt++;
+            count++;
         }
     }
-    printf("cnt=%d\n", cnt);
+    printf("count=%zu\n", count);
 
-    for (i = 0; i < n_buckets; i++) {
-        //double time1 = timer();
+    (void) time(&t1);
+    for (i = 0; i < n_buckets; ++i) {
         if (buckets[i].suffixes) {
-            procBkt(seqs, nseqs, buckets[i].suffixes, buckets[i].size, maxSeqLen, uSet, param, i % 8192);
-
+            process_bucket(sequences, n_sequences,
+                    buckets[i].suffixes, buckets[i].size,
+                    max_seq_len, union_set, param, i % 8192);
 #ifdef DEBUG
             sum += print_suffixes(buckets[i]);
 #endif
         }
-
-        //double time2 = timer();
-        //printf("Time for loop <%d> = %lf\n", i, time2 - time1);
     }
+    (void) time(&t2);
 
-    //printf("Time for bucket loop = %lf\n", time2 - time1);
+    printf("Time for bucket loop = %lld\n", (long long)(t2 - t1));
 
+#ifdef DEBUG
     printf("sum=%d\n", sum);
+#endif
 }
 
 /* ---------------------------------------------------*
@@ -300,7 +289,7 @@ int nextDiffPos(sequence_t *seqs, suffix_t *suffixes, int depth, int window_size
 
 void printLset(suffix_t **lset)
 {
-    int i;
+    size_t i;
 
     printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
     for (i = 0; i < SIGMA; i++) {

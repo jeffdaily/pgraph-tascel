@@ -63,9 +63,39 @@ int build_tree(sequence_t *sequences, size_t n_sequences, suffix_t *suffixes,
 void compute_lset(suffix_t *suffixes, sequence_t *sequences, suffix_t **lset);
 
 
+/**
+ * Constructs the tree, sorts it, and generates pairs.
+ *
+ * @param[in] sequences -
+ * @param[in] n_sequences -
+ * @param[in] suffixes -
+ * @param[in] n_suffixes -
+ * @param[in] max_seq_len -
+ * @param[in] union_set -
+ * @param[in] param -
+ * @param[in] ind -
+ */
+void process_bucket(sequence_t *sequences, size_t n_sequences,
+                    suffix_t *suffixes, size_t n_suffixes, size_t max_seq_len,
+                    ufind_t *union_set, param_t *param, int ind);
 
-void procBkt(sequence_t *seqs, int nseqs, suffix_t *suffixes, int blSize, int maxSeqLen, ufind_t *uSet, param_t *param, int ind);
-void buildForest(bucket_t *bkt, int bktSize, sequence_t *seqs, int nseqs, int maxSeqLen, ufind_t *uSet, param_t *param);
+
+/**
+ * Builds a suffix tree for each bucket.
+ *
+ * @param buckets bucket
+ * @param n_buckets -
+ * @param seqs global fasta seqs
+ * @param nseqs  #seqs in fasta file
+ * @param window_size slide window size
+ * @param NN #chars in all seqs
+ * @param nStNodes #stnodes in constructed forest
+ */
+void build_forest(bucket_t *buckets, size_t n_buckets, sequence_t *sequences,
+                  size_t n_sequences, size_t max_seq_len, ufind_t *union_set,
+                  param_t *param);
+
+
 int nextDiffPos(sequence_t *seqs, suffix_t *lset, int depth, int k);
 
 
@@ -74,7 +104,7 @@ void freeLset(suffix_t *lset);
 void freeStNodes(stnode_t *stNodes, int size);
 
 
-void printStnodes(stnode_t *stNodes, int stIndex, int blSize, int ind);
+void print_stnodes(stnode_t *stNodes, int stIndex, int blSize, int ind);
 void printLset(suffix_t **lset);
 void printCnt(int *cnt, int size);
 void printStNode(stnode_t *stNodes, int i);
