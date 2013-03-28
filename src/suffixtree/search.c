@@ -1,21 +1,23 @@
+#include "bucket.h"
+#include "elib.h"
 #include "search.h"
+#include "stree.h"
 
-#pragma mta parallel off
 /* -----------------------------------------------------------*
  * sort the bucket lists according to their size. 
  *
- * @param bkt - bkt struct {bktList, bktCnt}
+ * @param bkt - bkt struct {bktList, size}
  * @param bktSize - #(bktList)
  * -----------------------------------------------------------*/
-void cntSort4Bkt(BKT *bkt, int bktSize){
+void cntSort4Bkt(bucket_t *bkt, int bktSize){
     int *cnt = NULL;
     int i;
-    BKT *nBkt = NULL;
+    bucket_t *nBkt = NULL;
     int maxBktSize = 0;
 
     /* find the maximum size for bktSize */
     for(i = 0; i < bktSize; i++){
-        if(bkt[i].bktCnt > maxBktSize) maxBktSize = bkt[i].bktCnt;
+        if(bkt[i].size > maxBktSize) maxBktSize = bkt[i].size;
     }
     /* +1 for counters *cnt */
     maxBktSize++;
@@ -30,11 +32,11 @@ void cntSort4Bkt(BKT *bkt, int bktSize){
     
     /* counting */
     for(i = 0; i < bktSize; i++){
-        if(bkt[i].bktCnt >= maxBktSize){
-            printf("[Cnt=%d, mSize=%d]\n", bkt[i].bktCnt, maxBktSize); 
+        if(bkt[i].size >= maxBktSize){
+            printf("[Cnt=%d, mSize=%d]\n", bkt[i].size, maxBktSize); 
             exit(0);
         }
-        cnt[bkt[i].bktCnt]++;
+        cnt[bkt[i].size]++;
     }
 
     /* prefix sum in a reverse way */
@@ -44,8 +46,8 @@ void cntSort4Bkt(BKT *bkt, int bktSize){
     
     /* put the bkt[] into nBkt[] in the descending order */
     for(i = 0; i < bktSize; i++){
-        nBkt[cnt[bkt[i].bktCnt]-1] = bkt[i];
-        cnt[bkt[i].bktCnt]--;
+        nBkt[cnt[bkt[i].size]-1] = bkt[i];
+        cnt[bkt[i].size]--;
     }
 
     /* copy descending order back */
@@ -65,7 +67,7 @@ void cntSort4Bkt(BKT *bkt, int bktSize){
  * @param nStNodes -
  * @param maxSeqLen -
  * -----------------------------------------------------------*/
-void countSort(STNODE *stNodes, int *srtIndex, int nStNodes, int maxSeqLen){
+void countSort(stnode_t *stNodes, int *srtIndex, int nStNodes, int maxSeqLen){
     int i;
     int *cnt = NULL;
     int depth;
@@ -107,14 +109,13 @@ void countSort(STNODE *stNodes, int *srtIndex, int nStNodes, int maxSeqLen){
  * @param vp1 -
  * @param vp2 -
  * -----------------------------------------------------------*/
-#pragma mta inline
 int bktCmp(const void *vp1, const void *vp2){
-    BKT *b1 = (BKT *)vp1;
-    BKT *b2 = (BKT *)vp2;
+    bucket_t *b1 = (bucket_t *)vp1;
+    bucket_t *b2 = (bucket_t *)vp2;
 
-    if(b1->bktCnt > b2->bktCnt){
+    if(b1->size > b2->size){
         return -1;
-    }else if (b1->bktCnt == b2->bktCnt){
+    }else if (b1->size == b2->size){
         return 0;
     }else{
         return 1;
@@ -125,6 +126,6 @@ int bktCmp(const void *vp1, const void *vp2){
 void printIntArr(int *srtIndex, int size){
     int i;
     for(i = 0; i < size; i++){
-        printf("strNdIndex[%ld]=%ld\n", i, srtIndex[i]);
+        printf("strNdIndex[%d]=%d\n", i, srtIndex[i]);
     }
 }

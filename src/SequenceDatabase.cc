@@ -92,11 +92,10 @@ void SequenceDatabase::read_and_parse_fasta()
 {
     MPI_Offset start=0;
     MPI_Offset end=0;
-    MPI_Offset overlap=1024;
+    MPI_Offset budget=static_cast<MPI_Offset>(this->budget);
     MPI_File in=MPI_FILE_NULL;
     int rank=0;
     int size=0;
-    char *chunk=NULL;
     int ierr=0;
     unsigned long count;
     size_t sid=0;
@@ -182,7 +181,7 @@ void SequenceDatabase::read_and_parse_fasta()
         size_t label_index=0;
         size_t data_index=0;
         size_t data_length=0;
-        for (size_t i=0; i<local_cache_size; ++i) {
+        for (MPI_Offset i=0; i<local_cache_size; ++i) {
             if (local_cache[i] == '>') {
                 label_index = i;
                 data_index = i;

@@ -1,11 +1,16 @@
+#include <errno.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "elib.h"
 
-#pragma mta parallel off
 
 static char *name = NULL;    /* program name */
 static size_t space = 0;     /* keep track of allocated mem */
 
-char *estrdup(char *s){
+char *estrdup(const char *s){
     char *t = NULL;
     int need;
 
@@ -21,12 +26,12 @@ char *estrdup(char *s){
 }
 
 
-void error(char *msg){
+void error(const char *msg){
     fprintf(stderr, "LOG - ERROR: %s\n", msg);
 }
 
 
-void eprintf(char *fmt, ...){
+void eprintf(const char *fmt, ...){
 
     va_list args;
     fflush(stdout);
@@ -71,7 +76,7 @@ void *ecalloc(size_t nmemb, size_t size){
 }
 
 
-void *efopen(char *fileName, char *mode){
+void *efopen(const char *fileName, const char *mode){
     FILE *fp = NULL;
 
     fp = fopen(fileName, mode);
@@ -82,12 +87,12 @@ void *efopen(char *fileName, char *mode){
 }
 
 
-void setProgName(char *str){
+void setProgName(const char *str){
     name = estrdup(str);
 }
 
 
-char *getProgName(void){
+const char *getProgName(void){
     return name;
 }
 

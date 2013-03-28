@@ -67,7 +67,7 @@ void mpix_print_sync(
 
     for (int i=0; i<size; ++i) {
         if (i == rank) {
-            int j;
+            size_t j;
             for (j=0; j<what.size(); ++j) {
                 cout << "[" << rank << "] "
                     << name << "[" << j << "]="
@@ -123,7 +123,7 @@ void mpix_print_sync(MPI_Comm comm, const string &what)
  *
  * @return the file size
  */
-unsigned long mpix_get_file_size(const string &file_name, MPI_Comm comm)
+MPI_Offset mpix_get_file_size(const string &file_name, MPI_Comm comm)
 {
     MPI_Offset file_size=0;
     int rank=0;
@@ -172,7 +172,7 @@ unsigned long mpix_get_file_size(const string &file_name, MPI_Comm comm)
  */
 void mpix_read_file(
         MPI_Comm comm, const string &file_name,
-        char* &file_buffer, unsigned long &file_size, long chunk_size)
+        char* &file_buffer, MPI_Offset &file_size, long chunk_size)
 {
     mpix_read_file_mpiio(comm, file_name, file_buffer, file_size, chunk_size);
     //mpix_read_file_bcast(comm, file_name, file_buffer, file_size, chunk_size);
@@ -192,7 +192,7 @@ void mpix_read_file(
  */
 void mpix_read_file_mpiio(
         MPI_Comm comm, const string &file_name,
-        char* &file_buffer, unsigned long &file_size, long chunk_size)
+        char* &file_buffer, MPI_Offset &file_size, long chunk_size)
 {
     int rank;
     int size;
@@ -260,7 +260,7 @@ void mpix_read_file_mpiio(
  */
 void mpix_read_file_bcast(
         MPI_Comm comm, const string &file_name,
-        char* &file_buffer, unsigned long &file_size, long chunk_size)
+        char* &file_buffer, MPI_Offset &file_size, long chunk_size)
 {
     int rank;
     int size;

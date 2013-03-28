@@ -93,7 +93,7 @@ cell_t ***tbl = 0;
 int ***del = 0;
 int ***ins = 0;
 char *sequence_buffer = NULL;
-unsigned long sequence_buffer_size = 0;
+MPI_Offset sequence_buffer_size = 0;
 vector<Sequence> sequences;
 size_t max_seq_len = 0;
 UniformTaskCollSplitHybrid** utcs = 0;
@@ -513,7 +513,7 @@ int main(int argc, char **argv)
     MPI_Comm comm = MPI_COMM_NULL;
     int provided;
     vector<string> all_argv;
-    unsigned long pair_file_size = 0;
+    MPI_Offset pair_file_size = 0;
     char *pair_file_buffer = NULL;
     unsigned long nCk;
     double timer;

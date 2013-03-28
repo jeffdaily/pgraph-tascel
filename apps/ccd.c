@@ -1,41 +1,38 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
 #include <unistd.h>
 
-#include "type.h"
-#include "loadseq.h"
-#include "type.h"
-#include "lib.h"
-#include "elib.h"
 #include "bucket.h"
-#include "stree.h"
 #include "cfg.h"
+#include "elib.h"
+#include "lib.h"
+#include "loadseq.h"
+#include "pairs.h"
 #include "search.h"
+#include "stree.h"
 #include "uFind.h"
 
 #define MAX_FILENAME_LEN 200
 
 static char gSeqFile[MAX_FILENAME_LEN];
 static char gCfgFile[MAX_FILENAME_LEN];
-static int gN;
+static size_t gN;
 
-#pragma mta parallel off
-int optCK(int argc, char **argv);
+static int optCK(int argc, char **argv);
 
 int main(int argc, char *argv[]){
-    SEQ *seqs = NULL;
-    STNODE *stNodes = NULL;
-    int nStNodes;
-    int maxSeqLen;
-    int NN;
-    BKT *bkt = NULL;     /* counters for *sf */
+    sequence_t *seqs = NULL;
+    size_t maxSeqLen;
+    size_t NN;
+    bucket_t *bkt = NULL;     /* counters for *sf */
     int bktSize;
-    SUFFIX *sf = NULL;
+    suffix_t *sf = NULL;
     int sfSize;
-    int exactMatchLen;   /* exact match length cutoff */
-    UF *uSet = NULL; 
+    ufind_t *uSet = NULL; 
     int singletons = 2;
-    PARAM param;
+    param_t param;
 
     setbuf(stdout, (char *)0);
 
@@ -46,19 +43,19 @@ int main(int argc, char *argv[]){
     }
 
     /* read in configurations */
-    param.k = getCfgVal(gCfgFile, "SlideWindowSize");   /* window size */
-    param.exactMatchLen = getCfgVal(gCfgFile, "ExactMatchLen");      /* exactMatchLen */ 
-    param.AOL = getCfgVal(gCfgFile, "AlignOverLongerSeq");
-    param.SIM = getCfgVal(gCfgFile, "MatchSimilarity");
-    param.OS = getCfgVal(gCfgFile, "OptimalScoreOverSelfScore");
+    param.window_size = get_config_val(gCfgFile, "SlideWindowSize");
+    param.exact_match_len = get_config_val(gCfgFile, "ExactMatchLen");
+    param.AOL = get_config_val(gCfgFile, "AlignOverLongerSeq");
+    param.SIM = get_config_val(gCfgFile, "MatchSimilarity");
+    param.OS = get_config_val(gCfgFile, "OptimalScoreOverSelfScore");
     
-    initMap(SIGMA);
+    init_map(SIGMA);
 
     printf("----------------------------------------------\n");
     printf("%-15s: %.32s\n", "fasta seq", gSeqFile);
     printf("%-15s: %.32s\n", "config file", gCfgFile);
-    printf("%-15s: %d\n", "slide size", param.k);
-    printf("%-15s: %d\n", "exactMatch len", param.exactMatchLen);
+    printf("%-15s: %d\n", "slide size", param.window_size);
+    printf("%-15s: %d\n", "exactMatch len", param.exact_match_len);
     printf("----------------------------------------------\n");
 
     seqs = emalloc(gN*(sizeof *seqs));
@@ -68,17 +65,18 @@ int main(int argc, char *argv[]){
      * load seqs 
      *------------*/
     (void) time(&t1);
-    loadAllSeqs(gSeqFile, gN, seqs, &NN, &maxSeqLen);
+    load_all_sequences(gSeqFile, gN, seqs, &NN, &maxSeqLen);
     (void) time(&t2);
-    printf("<%ld> amino acids are loaded in <%d> secs\n", NN, (int)t2-t1);
+    printf("<%zu> amino acids are loaded in <%lld> secs\n",
+            NN, (long long)(t2-t1));
 
 
 
     /* allocate mem for *bkt, *sf */
-    bktSize = power(SIGMA, param.k); /* bucket size */
+    bktSize = power(SIGMA, param.window_size); /* bucket size */
     bkt = emalloc(bktSize*(sizeof *bkt));
 
-    sfSize = NN - gN*param.k; /* NN includes '$' */
+    sfSize = NN - gN*param.window_size; /* NN includes '$' */
     sf = emalloc(sfSize*(sizeof *sf));
 
 
@@ -86,16 +84,16 @@ int main(int argc, char *argv[]){
      * build the bucket 
      *-------------------*/ 
     (void) time(&t1);
-    buildBkt(seqs, gN, bkt, bktSize, sf, sfSize, param.k); 
+    build_buckets(seqs, gN, bkt, bktSize, sf, sfSize, param.window_size); 
     (void) time(&t2);
-    printf("Bucketing finished in <%d> secs\n", (int)t2-t1);
+    printf("Bucketing finished in <%lld> secs\n", (long long)(t2-t1));
 
     
     (void) time(&t1);
     cntSort4Bkt(bkt, bktSize);
     //qsort(bkt, bktSize, sizeof *bkt, bktCmp);
     (void) time(&t2);
-    printf("Bucketing sorted in <%d> secs\n", (int)t2-t1);
+    printf("Bucketing sorted in <%lld> secs\n", (long long)(t2-t1));
 
 
     #ifdef DEBUG
@@ -113,8 +111,9 @@ int main(int argc, char *argv[]){
     (void) time(&t1);
     buildForest(bkt, bktSize, seqs, gN, maxSeqLen, uSet, &param);
     (void) time(&t2);
-    printf("Tree constructed and processed in <%d> secs\n", (int)t2-t1);
-    printPairs();
+    printf("Tree constructed and processed in <%lld> secs\n",
+            (long long)(t2-t1));
+    print_pairs();
 
     
     disp_all_clusters(uSet, gN, &singletons, ".", seqs); 
@@ -125,9 +124,7 @@ int main(int argc, char *argv[]){
     free(sf);
     free(bkt);
 
-    #ifndef CRAY_XMT
-    freeSeqs(seqs, gN);
-    #endif 
+    free_sequences(seqs, gN);
 
     free(seqs);
     free_union(uSet);
@@ -152,7 +149,7 @@ int optCK(int argc, char **argv){
                 cnt++;
                 break;
 		    case 'n':
-                gN = atoi(optarg);
+                gN = atol(optarg);
 			    cnt++;
 			    break;
 		}

@@ -1,159 +1,100 @@
+#include <assert.h>
+#include <stdlib.h>
+
 #include "bucket.h"
+#include "dynamic.h" /* for SIGMA */
+#include "loadseq.h"
 
-static int sfIndex = 0;
+/** @todo TODO doc */
+static size_t _suffix_count = 0;
 
-/* -----------------------------------------* 
- * Bkt here is essentially counters. Init 
- * them into zero.
+/**
+ * This function can be optimized if higher performance is required.
  *
- * @param bkt - headers for *suff
- * @param bktSize - bucket size
- * -----------------------------------------*/
-void initBkt(BKT *bkt, int bktSize){
+ * @param[in] kmer address of of k-mer string
+ * @param[in] k slide window size
+ * @return TODO todo
+ */
+static size_t entry_index(const char *kmer, int k)
+{
     int i;
-    for(i = 0; i < bktSize; i++){
-        bkt[i].bktList = NULL; 
-        bkt[i].bktCnt = 0; 
-    }
-}
+    size_t value = 0;
 
-
-/* -----------------------------------------* 
- * This function can be optimized if higher
- * performance is required.
- *
- * @param kmer - address of of k-mer string
- * @param k - slide window size
- * -----------------------------------------*/
-#pragma mta inline
-int entryIndex(char *kmer, int k){
-    int i;
-    int value = 0;
-
-    for(i = 0; i < k; i++){
+    for (i=0; i<k; ++i) {
         value = value*SIGMA + (kmer[i] - 'A');
     }
-    
+
     return value;
 }
 
 
-/* ----------------------------------------------*
- * Bucketing for str <sid>.
- *
- * @param str - seqence itself
- * @param strlen - including ending '$'
- * @param sid - string id. eg. 0, 1, 2, ..., N-1
- * @param bkt - headers for each bucket
- * @param bktSize - bucket size
- * @param sf - mem allocated for all buckets
- * @param k - slide window size
- * ----------------------------------------------*/
-#ifdef CRAY_XMT
-#pragma mta inline
-void slideWindow(char *str, int strLen, int sid, BKT *bkt, int bktSize, SUFFIX *sf, int k){
-    int i;
-    int stopIndex = strLen - k - 1;
-   
-    for(i = 0; i <= stopIndex; i++){
-        int bktIndex = entryIndex(str+i, k);
-
-        /* prefixed in the bucket list */
-        int j = int_fetch_add(&sfIndex, 1);
-        sf[j].sid = sid;
-        sf[j].pid = i;
-        sf[j].next = readfe(&(bkt[bktIndex].bktList));
-        writeef(&(bkt[bktIndex].bktList), &sf[j]);
-        bkt[bktIndex].bktCnt++;
+void init_buckets(bucket_t *buckets, size_t size)
+{
+    size_t i;
+    for(i=0; i<size; ++i){
+        buckets[i].suffixes = NULL; 
+        buckets[i].size = 0; 
     }
 }
 
-#endif 
 
-#ifndef CRAY_XMT
-void slideWindow(char *str, int strLen, int sid, BKT *bkt, int bktSize, SUFFIX *sf, int k){
+void slide_window(const char *s, size_t s_len, int sid,
+        bucket_t *buckets, size_t buckets_size, suffix_t *suffixes,
+        int window_size)
+{
     int i;
-    int stopIndex = strLen - k - 1;
-    int bktIndex;
+    int stop_index = s_len - window_size - 1;
    
-    for(i = 0; i <= stopIndex; i++){
-        bktIndex = entryIndex(str+i, k);
-
+    for(i=0; i<=stop_index; ++i){
+        size_t bucket_index = entry_index(s+i, window_size);
+        assert(bucket_index < buckets_size);
         /* prefixed in the bucket list */
-        sf[sfIndex].sid = sid;
-        sf[sfIndex].pid = i;
-        sf[sfIndex].next = bkt[bktIndex].bktList;
-        bkt[bktIndex].bktList = &sf[sfIndex];
-
-        bkt[bktIndex].bktCnt++;
-        sfIndex++;
+        suffixes[_suffix_count].sid = sid;
+        suffixes[_suffix_count].pid = i;
+        suffixes[_suffix_count].next = buckets[bucket_index].suffixes;
+        buckets[bucket_index].suffixes = &suffixes[_suffix_count];
+        buckets[bucket_index].size++;
+        _suffix_count++;
     }
 }
-#endif
 
 
-/* ----------------------------------------------*
- * This function is to bucket all seqs in buckets
- *
- * @param seqs - fasta seqs
- * @param nseqs - #(fasta seqs)
- * @param bkt - global bucket shared by all
- * @param bktSize - bucket size, which is <SIGMA^k>
- * @param suff - 
- * @param suffSize -
- * @param k - slide window size
- * ----------------------------------------------*/
-void buildBkt(SEQ *seqs, int nseqs, BKT *bkt, int bktSize, SUFFIX *sf, int sfSize, int k){
-#pragma mta assert no alias *seqs, *bkt, *sf
-    int i;
-    initBkt(bkt, bktSize);
+void build_buckets(sequence_t *seqs, size_t nseqs,
+        bucket_t *buckets, size_t buckets_size,
+        suffix_t *suffixes, size_t suffixes_count,
+        int window_size)
+{
+    size_t i;
+    init_buckets(buckets, buckets_size);
     
     /* slide k-mers for every seqs, and bucket them */
-    #pragma mta assert parallel
-    for(i = 0; i < nseqs; i++){
-        slideWindow(seqs[i].str, seqs[i].strLen, i, bkt, bktSize, sf, k);
+    for(i=0; i<nseqs; i++){
+        slide_window(seqs[i].str, seqs[i].strLen, i,
+                buckets, buckets_size, suffixes, window_size);
     }
 
-    printf("sfIndex=%d\n", sfIndex);
-    assert(sfIndex == sfSize);
+    printf("_suffix_count=%zu\n", _suffix_count);
+    assert(_suffix_count == suffixes_count);
 }
 
 
-/* ----------------------------------------------*
- * Print bucket bkt[bIndex].
- *
- * @param bkt - bucket pointers
- * @param bIndex - index for each bucket
- * ----------------------------------------------*/
-int printBkt(BKT *bkt, int bIndex){
-    SUFFIX *p = NULL;
-    int i = 0;
-
-    printf("->");
-    for(p = bkt[bIndex].bktList; p != NULL; p = p->next){
-        printf("[%d, %d]\t", p->sid, p->pid);
-        i++;
-    }
-    printf("\n");
-    return i;
+size_t print_bucket(bucket_t *buckets, size_t index)
+{
+    return print_suffixes(buckets[index].suffixes);
 }
 
 
-/* ----------------------------------------------*
- * Print a linked list.
- *
- * @param bkt - bucket pointers
- * @param bIndex - index for each bucket
- * ----------------------------------------------*/
-int printBktList(SUFFIX *bktList){
-    SUFFIX *p = NULL;
-    int i = 0;
+size_t print_suffixes(suffix_t *suffixes)
+{
+    suffix_t *p = NULL;
+    size_t i = 0;
 
     printf("->");
-    for(p = bktList; p != NULL; p=p->next){
+    for(p = suffixes; p != NULL; p = p->next){
         printf("[%d, %d]\t", p->sid, p->pid);
-        i++;
+        ++i;
     }
     printf("\n");
+
     return i;
 }

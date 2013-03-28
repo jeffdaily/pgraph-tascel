@@ -1,23 +1,19 @@
 #ifndef E_LIB_H_
 #define E_LIB_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdarg.h>
-#include <errno.h>
+#include <stddef.h>
 
 
-void eprintf(char *fmt, ...);
-void error(char *msg);
+void eprintf(const char *fmt, ...);
+void error(const char *msg);
 
-char *estrdup(char *s);
+char *estrdup(const char *s);
 void *emalloc(size_t n);
 void *ecalloc(size_t nmemb, size_t size);
-void *efopen(char *fileName, char *mode);
+void *efopen(const char *fileName, const char *mode);
 
-void setProgName(char *str);
-char *getProgName(void);
+void setProgName(const char *str);
+const char *getProgName(void);
 void printSpace(void);
 
 #endif /* end of elib.h */

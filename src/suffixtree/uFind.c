@@ -1,11 +1,15 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "elib.h"
 #include "uFind.h"
 
-#pragma mta parallel on
-struct ufind *init_union(int size) {
+ufind_t *init_union(int size) {
 	int i;
-	struct ufind *ufSet;
+	ufind_t *ufSet;
 
-	ufSet = emalloc(size*sizeof(struct ufind));
+	ufSet = emalloc(size*sizeof(ufind_t));
 
 	/* init all set elems */
 	for (i=0; i<size; i++) {
@@ -16,13 +20,11 @@ struct ufind *init_union(int size) {
 	return ufSet;
 }
 
-#pragma mta parallel off
-void free_union(struct ufind *uf){
+void free_union(ufind_t *uf){
     free(uf);
 }
 
-#pragma mta inline
-int find(struct ufind *ufSet, int elemIndex) {
+int find(ufind_t *ufSet, int elemIndex) {
 	int myParent;
 	myParent = ufSet[elemIndex].parent;
 
@@ -39,14 +41,12 @@ int find(struct ufind *ufSet, int elemIndex) {
 }
 
 
-#pragma mta inline
-void union_elems(struct ufind *ufSet, int elem1, int elem2) {
+void union_elems(ufind_t *ufSet, int elem1, int elem2) {
     merge_elems(ufSet, find(ufSet, elem1), find(ufSet, elem2));
 }
 
 /* can never been called outside of this file */
-#pragma mta inline
-void merge_elems(struct ufind *ufSet, int elem1, int elem2) {
+void merge_elems(ufind_t *ufSet, int elem1, int elem2) {
 	if (elem1!=elem2) {
 		if (ufSet[elem1].rank > ufSet[elem2].rank) {
 			ufSet[elem2].parent = elem1;
@@ -59,15 +59,15 @@ void merge_elems(struct ufind *ufSet, int elem1, int elem2) {
 	}
 }
 
-int disp_all_clusters(struct ufind *uf, int size, int *singletons, char *dir, SEQ *seqs) {
+int disp_all_clusters(ufind_t *uf, int size, int *singletons, char *dir, sequence_t *seqs) {
 	int i=0, iClusters=0;
-	struct clusters *clust;
+	cluster_t *clust;
 	struct link *temp, *temp_fix;
 	int root;
 	char s[200];
 	FILE *fp, *fp1, *tmp;
 
-	clust = emalloc(sizeof(struct clusters)*size);
+	clust = emalloc(sizeof(cluster_t)*size);
 
 	for (i=0; i<size; i++) {
 		clust[i].count=1;
@@ -158,7 +158,7 @@ int disp_all_clusters(struct ufind *uf, int size, int *singletons, char *dir, SE
 
 }
 
-void disp(struct ufind *ufSet, int size) {
+void disp(ufind_t *ufSet, int size) {
 	int i;
 	for (i=0; i<size; i++) {
 		if (i!=ufSet[i].parent)

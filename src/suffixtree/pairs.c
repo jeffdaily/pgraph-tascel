@@ -3,52 +3,42 @@ static int generatedPairs = 0;
 static int alignedPairs = 0;
 static int acceptedPairs = 0;
 
-void printPairs(){
-    printf("generatedPairs=%d, alignedPairs=%d, acceptedPairs=%d\n", generatedPairs, alignedPairs, acceptedPairs);
+void print_pairs()
+{
+    printf("generatedPairs=%d, alignedPairs=%d, acceptedPairs=%d\n",
+            generatedPairs, alignedPairs, acceptedPairs);
 }
 
-/*---------------------------------------------------------------*
- * Generate promising pairs for alignment. 
- *
- * @param stNodes -
- * @param srtIndex -
- * @param nStNodes -
- * @param seqs -
- * @param nSeqs -
- * @param maxSeqLen -
- * @param uSet -
- * @param dup -
- * @param param -
- *---------------------------------------------------------------*/
-#pragma mta parallel off
-void genPairs(STNODE *stNodes, int *srtIndex, int nStNodes, SEQ *seqs, int nSeqs, int maxSeqLen, UF *uSet, int *dup, PARAM *param){
+
+void genPairs(stnode_t *stNodes, int *srtIndex, int nStNodes, sequence_t *seqs, int nSeqs, int maxSeqLen, ufind_t *uSet, int *dup, param_t *param)
+{
     int i;
     int j;
     int r;
-    STNODE *stnode = NULL;
+    stnode_t *stnode = NULL;
     int sIndex, eIndex;
-    int nps = 0;
-    CELL **tbl = NULL;
+    cell_t **tbl = NULL;
     int **del = NULL;
     int **ins = NULL;
-    int m, n, s, t;
-    SUFFIX *p = NULL;
-    SUFFIX *q = NULL;
+    int n;
+    size_t m, s, t;
+    suffix_t *p = NULL;
+    suffix_t *q = NULL;
     int f1, f2;
     int s1Len, s2Len;
     int EM;
     int cutOff;         /* cut off value of filter 1 */
-    CELL result;
+    cell_t result;
 
     /* only two rows are allocated */
     assert(NROW == 2);
 
-    EM = param->exactMatchLen;
+    EM = param->exact_match_len;
     cutOff = param->AOL*param->SIM;
 
-    tbl = allocTBL(NROW, maxSeqLen);
-    del = allocINT(NROW, maxSeqLen);
-    ins = allocINT(NROW, maxSeqLen);
+    tbl = alloc_tbl(NROW, maxSeqLen);
+    del = alloc_int(NROW, maxSeqLen);
+    ins = alloc_int(NROW, maxSeqLen);
 
 
     /* srtIndex maintain an order of NON-increasing depth of stNodes[] */
@@ -56,9 +46,9 @@ void genPairs(STNODE *stNodes, int *srtIndex, int nStNodes, SEQ *seqs, int nSeqs
         sIndex = srtIndex[i];
         stnode = &stNodes[sIndex];
 
-        #ifdef DEBUG
+#ifdef DEBUG
         printf("stNode->depth=%d, stnode->rLeaf=%ld, sIndex=%ld\n", stnode->depth, stnode->rLeaf, sIndex);
-        #endif
+#endif
 
         if(stnode->depth >= EM-1){
             if(stnode->rLeaf == sIndex){ /* leaf node */
@@ -101,12 +91,12 @@ void genPairs(STNODE *stNodes, int *srtIndex, int nStNodes, SEQ *seqs, int nSeqs
                                                         alignedPairs++;
                                                         if(s1Len <= s2Len){
                                                             if(100*s1Len < cutOff*s2Len) continue;
-                                                            affineGapAlign(seqs[f1].str, s1Len,
+                                                            affine_gap_align(seqs[f1].str, s1Len,
                                                                            seqs[f2].str, s2Len,
                                                                            &result, tbl, del, ins);
                                                         }else{
                                                             if(100*s2Len < cutOff*s1Len) continue;
-                                                            affineGapAlign(seqs[f2].str, s2Len,
+                                                            affine_gap_align(seqs[f2].str, s2Len,
                                                                            seqs[f1].str, s1Len,
                                                                            &result, tbl, del, ins);
 
@@ -159,9 +149,9 @@ void genPairs(STNODE *stNodes, int *srtIndex, int nStNodes, SEQ *seqs, int nSeqs
     }  
 
     /* free */
-    freeTBL(tbl, NROW);
-    freeINT(del, NROW);
-    freeINT(ins, NROW);
+    free_tbl(tbl, NROW);
+    free_int(del, NROW);
+    free_int(ins, NROW);
 }
 
 /*---------------------------------------------------------------*
@@ -177,15 +167,14 @@ void genPairs(STNODE *stNodes, int *srtIndex, int nStNodes, SEQ *seqs, int nSeqs
  * @param ins -
  * @param del -
  *---------------------------------------------------------------*/
-#pragma mta parallel off
-void procLeaf(SUFFIX **lset, SEQ *seqs, int nSeqs, CELL **tbl, int **ins, int **del, UF *uSet, PARAM *param){
+void procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, int **del, ufind_t *uSet, param_t *param){
     int i;
     int j;
-    SUFFIX *p = NULL;
-    SUFFIX *q = NULL;
+    suffix_t *p = NULL;
+    suffix_t *q = NULL;
     int f1, f2;
     int s1Len, s2Len;
-    CELL result;
+    cell_t result;
     int cutOff;
 
     cutOff = param->AOL*param->SIM;
@@ -197,6 +186,8 @@ void procLeaf(SUFFIX **lset, SEQ *seqs, int nSeqs, CELL **tbl, int **ins, int **
                     for(q = p->next; q != NULL; q = q->next){
                         f1 = p->sid;
                         f2 = q->sid;
+                        assert(f1 < nSeqs);
+                        assert(f2 < nSeqs);
 
                         if(f1 == f2) continue;
                         continue;
@@ -210,12 +201,12 @@ void procLeaf(SUFFIX **lset, SEQ *seqs, int nSeqs, CELL **tbl, int **ins, int **
                             alignedPairs++;
                             if(s1Len <= s2Len){
                                 if(100*s1Len < cutOff*s2Len) continue;
-                                affineGapAlign(seqs[f1].str, s1Len,
+                                affine_gap_align(seqs[f1].str, s1Len,
                                                seqs[f2].str, s2Len,
                                                &result, tbl, del, ins);
                             }else{
                                 if(100*s2Len < cutOff*s1Len) continue;
-                                affineGapAlign(seqs[f2].str, s2Len,
+                                affine_gap_align(seqs[f2].str, s2Len,
                                                seqs[f1].str, s1Len,
                                                &result, tbl, del, ins);
 
@@ -252,12 +243,12 @@ void procLeaf(SUFFIX **lset, SEQ *seqs, int nSeqs, CELL **tbl, int **ins, int **
                                 alignedPairs++;
                                 if(s1Len <= s2Len){
                                     if(100*s1Len < cutOff*s2Len) continue;
-                                    affineGapAlign(seqs[f1].str, s1Len,
+                                    affine_gap_align(seqs[f1].str, s1Len,
                                                    seqs[f2].str, s2Len,
                                                    &result, tbl, del, ins);
                                 }else{
                                     if(100*s2Len < cutOff*s1Len) continue;
-                                    affineGapAlign(seqs[f2].str, s2Len,
+                                    affine_gap_align(seqs[f2].str, s2Len,
                                                    seqs[f1].str, s1Len,
                                                    &result, tbl, del, ins);
 
@@ -281,8 +272,7 @@ void procLeaf(SUFFIX **lset, SEQ *seqs, int nSeqs, CELL **tbl, int **ins, int **
 
 
 
-#pragma mta inline
-int isEdge(CELL *result, char *s1, int s1Len, char *s2, int s2Len, PARAM *param){
+int isEdge(cell_t *result, char *s1, int s1Len, char *s2, int s2Len, param_t *param){
     int sscore;
     int maxLen;
     int nmatch;
@@ -293,10 +283,10 @@ int isEdge(CELL *result, char *s1, int s1Len, char *s2, int s2Len, PARAM *param)
      * failed at the first step, the sscore computation is wasted */
     if(s1Len > s2Len){
         maxLen = s1Len;
-        sscore = selfScore(s1, s1Len);
+        sscore = self_score(s1, s1Len);
     }else{
         maxLen = s2Len;
-        sscore = selfScore(s2, s2Len);
+        sscore = self_score(s2, s2Len);
     }   
     
     nmatch = result->ndig;

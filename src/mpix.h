@@ -221,12 +221,12 @@ void mpix_print_sync(MPI_Comm comm, const string &name, const T &what)
 void mpix_bcast_argv(int argc, char **argv,
         vector<string> &all_argv, MPI_Comm=MPI_COMM_WORLD);
 
-unsigned long mpix_get_file_size(
+MPI_Offset mpix_get_file_size(
         const string &file_name, MPI_Comm comm=MPI_COMM_WORLD);
 
-void mpix_read_file(MPI_Comm comm, const string &file_name, char* &file_buffer, unsigned long &file_size, long chunk_size=1073741824);
-void mpix_read_file_bcast(MPI_Comm comm, const string &file_name, char* &file_buffer, unsigned long &file_size, long chunk_size=1073741824);
-void mpix_read_file_mpiio(MPI_Comm comm, const string &file_name, char* &file_buffer, unsigned long &file_size, long chunk_size=1073741824);
+void mpix_read_file(MPI_Comm comm, const string &file_name, char* &file_buffer, MPI_Offset &file_size, long chunk_size=1073741824);
+void mpix_read_file_bcast(MPI_Comm comm, const string &file_name, char* &file_buffer, MPI_Offset &file_size, long chunk_size=1073741824);
+void mpix_read_file_mpiio(MPI_Comm comm, const string &file_name, char* &file_buffer, MPI_Offset &file_size, long chunk_size=1073741824);
 
 template <class Collection>
 string vec_to_string(

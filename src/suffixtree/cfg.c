@@ -1,23 +1,28 @@
-#include "cfg.h"
+#include <ctype.h>
+#include <stdio.h>
+#include <string.h>
 
-#pragma mta parallel off
-int getCfgVal(char *cFile, char *key){
+#include "cfg.h"
+#include "elib.h"
+
+int get_config_val(const char *config_file, const char *key)
+{
     FILE *fp = NULL;
     char line[CFG_MAX_LINE_LEN];
     int val;
     char *p = NULL;
-    
-    fp = efopen(cFile, "r");
 
-    while(fgets(line, CFG_MAX_LINE_LEN, fp)){
+    fp = efopen(config_file, "r");
+
+    while (fgets(line, CFG_MAX_LINE_LEN, fp)) {
         /* comment line starts with '#' */
-        if(strchr(line, COMMENT)) continue;
+        if (strchr(line, COMMENT)) continue;
 
         /* empty line */
-        if(line[0] == '\n') continue;
+        if (line[0] == '\n') continue;
 
         /* config line */
-        if(strstr(line, key)) {
+        if (strstr(line, key)) {
             p = line;
             while(isspace(*p++));
 

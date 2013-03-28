@@ -101,8 +101,8 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libpgraph_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
-am_libpgraph_la_OBJECTS = src/combinations.lo src/dynamic.lo src/io.lo \
-	src/mpix.lo src/Sequence.lo src/SequenceDatabase.lo \
+am_libpgraph_la_OBJECTS = src/combinations.lo src/io.lo src/mpix.lo \
+	src/Sequence.lo src/SequenceDatabase.lo \
 	src/suffixtree/bucket.lo src/suffixtree/cfg.lo \
 	src/suffixtree/dynamic.lo src/suffixtree/elib.lo \
 	src/suffixtree/lib.lo src/suffixtree/loadseq.lo \
@@ -575,23 +575,24 @@ LDADD = libpgraph.la $(TASCEL_LIBS) $(ARMCI_LIBS) $(PT_MPI_LIBS) \
 	$(GMP_LIBS)
 #LDADD += $(GA_FLIBS)
 noinst_LTLIBRARIES = libpgraph.la
+#libpgraph_la_SOURCES += src/dynamic.c
+#libpgraph_la_SOURCES += src/dynamic.h
 libpgraph_la_SOURCES = src/AlignStats.h src/blosum/blosum40.h \
 	src/blosum/blosum45.h src/blosum/blosum62.h \
 	src/blosum/blosum75.h src/blosum/blosum80.h \
 	src/blosum/blosum90.h src/combinations.c src/combinations.h \
-	src/dynamic.c src/dynamic.h src/io.cc src/io.h src/mpix.cc \
-	src/mpix.h src/pthread_fixes.h src/Sequence.cc src/Sequence.h \
-	src/SequenceDatabase.cc src/SequenceDatabase.h \
-	src/suffixtree/bucket.c src/suffixtree/bucket.h \
-	src/suffixtree/cfg.c src/suffixtree/cfg.h \
-	src/suffixtree/dynamic.c src/suffixtree/dynamic.h \
-	src/suffixtree/elib.c src/suffixtree/elib.h \
-	src/suffixtree/lib.c src/suffixtree/lib.h \
-	src/suffixtree/loadseq.c src/suffixtree/loadseq.h \
-	src/suffixtree/pairs.c src/suffixtree/pairs.h \
-	src/suffixtree/search.c src/suffixtree/search.h \
-	src/suffixtree/stree.c src/suffixtree/stree.h \
-	src/suffixtree/type.h src/suffixtree/uFind.c \
+	src/io.cc src/io.h src/mpix.cc src/mpix.h src/pthread_fixes.h \
+	src/Sequence.cc src/Sequence.h src/SequenceDatabase.cc \
+	src/SequenceDatabase.h src/suffixtree/bucket.c \
+	src/suffixtree/bucket.h src/suffixtree/cfg.c \
+	src/suffixtree/cfg.h src/suffixtree/dynamic.c \
+	src/suffixtree/dynamic.h src/suffixtree/elib.c \
+	src/suffixtree/elib.h src/suffixtree/lib.c \
+	src/suffixtree/lib.h src/suffixtree/loadseq.c \
+	src/suffixtree/loadseq.h src/suffixtree/pairs.c \
+	src/suffixtree/pairs.h src/suffixtree/search.c \
+	src/suffixtree/search.h src/suffixtree/stree.c \
+	src/suffixtree/stree.h src/suffixtree/uFind.c \
 	src/suffixtree/uFind.h src/suffixtree/wlib.c \
 	src/suffixtree/wlib.h src/timer.h
 apps_align_SOURCES = apps/align.cc
@@ -698,7 +699,6 @@ src/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) src/$(DEPDIR)
 	@: > src/$(DEPDIR)/$(am__dirstamp)
 src/combinations.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
-src/dynamic.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/io.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/mpix.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/Sequence.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
@@ -966,7 +966,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Sequence.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabase.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/combinations.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/dynamic.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/io.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/mpix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/bucket.Plo@am__quote@

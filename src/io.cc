@@ -21,13 +21,13 @@ using std::string;
 using std::vector;
 
 
-void read_fasta(const char *filename, size_t budget, vector<string> &sequences)
+void read_fasta(const char *filename, size_t _budget, vector<string> &sequences)
 {
     MPI_Offset filesize;
     MPI_Offset localsize;
     MPI_Offset start;
     MPI_Offset end;
-    MPI_Offset overlap=1024;
+    MPI_Offset budget=static_cast<MPI_Offset>(_budget);
     MPI_File in;
     int rank;
     int size;

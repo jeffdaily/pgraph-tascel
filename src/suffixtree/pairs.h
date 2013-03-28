@@ -1,21 +1,34 @@
 #ifndef PAIRS_H_
 #define PAIRS_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-
-#include "type.h"
-#include "stree.h"
 #include "dynamic.h"
-#include "uFind.h"
+#include "loadseq.h"
+#include "stree.h"
 
-void printPairs();
-void genPairs(STNODE *stNodes, int *srtIndex, int nStNodes, SEQ *seqs, int nSeqs,
-                int maxSeqLen, UF *uSet, int *dup, PARAM *param);
+/**
+ * Prints pair statistics to stdout.
+ */
+void print_pairs();
 
-void procLeaf(SUFFIX **lset, SEQ *seqs, int nSeqs, CELL **tbl, int **ins, int **del, UF *uSet, PARAM *param);
 
-int isEdge(CELL *result, char *s1, int s1Len, char *s2, int s2Len, PARAM *param);
+/**
+ * Generate promising pairs for alignment.
+ *
+ * @param[in] stNodes -
+ * @param[in] srtIndex -
+ * @param[in] nStNodes -
+ * @param[in] seqs -
+ * @param[in] nSeqs -
+ * @param[in] maxSeqLen -
+ * @param[in] uSet -
+ * @param[in] dup -
+ * @param[in] param -
+ */
+void genPairs(stnode_t *stNodes, int *srtIndex, int nStNodes, sequence_t *seqs, int nSeqs,
+                int maxSeqLen, ufind_t *uSet, int *dup, param_t *param);
+
+void procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, int **del, ufind_t *uSet, param_t *param);
+
+int isEdge(cell_t *result, char *s1, int s1Len, char *s2, int s2Len, param_t *param);
 
 #endif /* end of pairs.h */
