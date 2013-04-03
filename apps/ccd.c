@@ -62,10 +62,11 @@ int main(int argc, char *argv[])
     init_map(SIGMA);
 
     printf("----------------------------------------------\n");
-    printf("%-15s: %.32s\n", "fasta seq", sequence_file);
-    printf("%-15s: %.32s\n", "config file", config_file);
+    printf("%-15s: %.78s\n", "fasta seq", sequence_file);
+    printf("%-15s: %.78s\n", "config file", config_file);
     printf("%-15s: %d\n", "slide size", param.window_size);
     printf("%-15s: %d\n", "exactMatch len", param.exact_match_len);
+    printf("%-15s: %zu\n", "nseqs", n_sequences);
     printf("----------------------------------------------\n");
 
     sequences = emalloc(n_sequences*sizeof(sequence_t));

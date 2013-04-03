@@ -34,7 +34,6 @@ ufind_t *init_union(int size);
 void free_union(ufind_t *uf);
 int find(ufind_t *ufSet, int inputIndex);
 void union_elems(ufind_t *ufSet, int elem1, int elem2);
-void merge_elems(ufind_t *ufSet, int elem1, int elem2);
 
 void disp(ufind_t *ufSet, int size);
 int disp_all_clusters(ufind_t *uf, int size, int *singletons, char *dir, sequence_t *seqs);

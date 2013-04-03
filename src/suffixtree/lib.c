@@ -41,4 +41,3 @@ size_t zpower(size_t base, size_t n)
 
     return p;
 }
-

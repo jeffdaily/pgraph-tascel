@@ -75,7 +75,8 @@ void compute_lset(suffix_t *suffixes, sequence_t *sequences, suffix_t **lset);
  * @param[in] param -
  * @param[in] ind -
  */
-void process_bucket(sequence_t *sequences, size_t n_sequences,
+unsigned long long
+process_bucket(sequence_t *sequences, size_t n_sequences,
                     suffix_t *suffixes, size_t n_suffixes, size_t max_seq_len,
                     ufind_t *union_set, param_t *param, int ind);
 

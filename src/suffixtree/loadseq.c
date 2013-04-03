@@ -17,6 +17,7 @@
 
 #include "elib.h"
 #include "loadseq.h"
+#include "readline.h"
 #include "wlib.h"
 
 #define MAX_LINE_LEN 16384
@@ -26,46 +27,29 @@ void load_all_sequences(
     size_t sequence_count, sequence_t *sequences,
     size_t *_n_chars, size_t *_max_seq_len)
 {
+    struct line_reader lr;
     FILE *fp = NULL;
+    size_t len = 0;
     char *line = NULL;
-    size_t line_max = 0;
-    size_t line_len = 0;
     size_t i = 0;
     size_t max_seq_len = 0;
     size_t n_chars = 0;
 
-    if (LINE_MAX >= MAX_LINE_LEN) {
-        /* Use maximum line size of MAX_LINE_LEN.  If LINE_MAX is bigger than
-         * our limit, sysconf() can't report a smaller limit. */
-        line_max = MAX_LINE_LEN;
-    }
-    else {
-        long limit = sysconf(_SC_LINE_MAX);
-        line_max = (limit < 0 || limit > MAX_LINE_LEN) ?
-                   MAX_LINE_LEN : (int)limit;
-    }
-    /* line_max + 1 leaves room for nul byte added by fgets */
-    line = emalloc(line_max + 1);
-
     fp = efopen(fileName, "r");
 
-    while (fgets(line, line_max + 1, fp)) {
-        line_len = strlen(line);
-        assert(line_len <= line_max);
-        /* add an '$' end to each seq */
-        line[line_len - 1] = '\0';
-
+    lr_init(&lr, fp);
+    while (line = next_line(&lr, &len)) {
+        line[len-1] = '\0'; /* remove newline */
         if (line[0] == FASTA_FLAG) {
             sequences[i].gid = estrdup(line);
         }
         else if (isalpha(line[0])) {
-            line[line_len - 1] = DOLLAR;
-            line[line_len] = '\0';
+            line[len - 1] = DOLLAR; /* use DOLLAR instead of newline */
             /* strlen does not include the '\0' */
-            sequences[i].strLen = line_len;
-            n_chars += line_len;
-            if (line_len > max_seq_len) {
-                max_seq_len = line_len;
+            sequences[i].strLen = len;
+            n_chars += len;
+            if (len > max_seq_len) {
+                max_seq_len = len;
             }
             sequences[i].str = estrdup(line);
             ++i;
@@ -74,8 +58,16 @@ void load_all_sequences(
             warn("empty line in fasta file? will continue!!");
         }
     }
+    if (!feof(fp)) {
+        perror("next_line");
+        exit(EXIT_FAILURE);
+    }
+    lr_free(&lr);
 
     fclose(fp);
+    if (i != sequence_count) {
+        printf("i=%zu != sequence_count=%zu\n", i, sequence_count);
+    }
     assert(i == sequence_count);
 
     /* return */

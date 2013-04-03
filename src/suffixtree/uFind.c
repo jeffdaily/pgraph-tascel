@@ -54,13 +54,8 @@ int find(ufind_t *ufSet, int elemIndex)
 }
 
 
-void union_elems(ufind_t *ufSet, int elem1, int elem2)
-{
-    merge_elems(ufSet, find(ufSet, elem1), find(ufSet, elem2));
-}
-
 /* can never been called outside of this file */
-void merge_elems(ufind_t *ufSet, int elem1, int elem2)
+static void merge_elems(ufind_t *ufSet, int elem1, int elem2)
 {
     if (elem1 != elem2) {
         if (ufSet[elem1].rank > ufSet[elem2].rank) {
@@ -74,6 +69,13 @@ void merge_elems(ufind_t *ufSet, int elem1, int elem2)
         }
     }
 }
+
+
+void union_elems(ufind_t *ufSet, int elem1, int elem2)
+{
+    merge_elems(ufSet, find(ufSet, elem1), find(ufSet, elem2));
+}
+
 
 int disp_all_clusters(ufind_t *uf, int size, int *singletons, char *dir, sequence_t *seqs)
 {
