@@ -45,26 +45,31 @@ next_line(struct line_reader *lr, size_t *len)
     *len = 0;           /* Start with empty line. */
     for (;;) {
         c = fgetc(lr->f);   /* Read next character. */
-        if (ferror(lr->f))
+        if (ferror(lr->f)) {
             return NULL;
+        }
 
         if (c == EOF) {
             /*
              * End of file is also end of last line,
              * unless this last line would be empty.
              */
-            if (*len == 0)
+            if (*len == 0) {
                 return NULL;
-            else
+            }
+            else {
                 return lr->buf;
-        } else {
+            }
+        }
+        else {
             /* Append c to the buffer. */
             if (*len == lr->siz) {
                 /* Need a bigger buffer! */
                 newsiz = lr->siz + 4096;
-                newbuf = realloc(lr->buf, newsiz+1);
-                if (newbuf == NULL)
+                newbuf = realloc(lr->buf, newsiz + 1);
+                if (newbuf == NULL) {
                     return NULL;
+                }
                 lr->buf = newbuf;
                 lr->siz = newsiz;
             }

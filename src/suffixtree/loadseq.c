@@ -39,7 +39,7 @@ void load_all_sequences(
 
     lr_init(&lr, fp);
     while (line = next_line(&lr, &len)) {
-        line[len-1] = '\0'; /* remove newline */
+        line[len - 1] = '\0'; /* remove newline */
         if (line[0] == FASTA_FLAG) {
             sequences[i].gid = estrdup(line);
         }
