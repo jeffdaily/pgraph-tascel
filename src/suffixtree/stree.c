@@ -134,26 +134,21 @@ void compute_lset(suffix_t *suffixes, sequence_t *seqs, suffix_t **lset)
 }
 
 
-unsigned long long
+void
 process_bucket(sequence_t *sequences, size_t n_sequences,
-                    suffix_t *suffixes, size_t n_suffixes, size_t max_seq_len,
-                    ufind_t *union_set, param_t *param, int ind)
+               suffix_t *suffixes, size_t n_suffixes,
+               size_t max_seq_len, param_t *param)
 {
-
     stnode_t *stNodes = NULL;
     int *srtIndex = NULL;   /* sorted array based on stnode.depth */
     int depth = param->window_size - 1;
     int stIndex = 0;
     int *dup = NULL;        /* duplicated entried reduction */
 
-    stNodes = ecalloc(2 * n_suffixes, sizeof * stNodes);
+    stNodes = ecalloc(2 * n_suffixes, sizeof(stnode_t));
 
     build_tree(sequences, n_sequences, suffixes, depth, param->window_size,
                stNodes, &stIndex);
-
-    /* output stnodes into file */
-    print_stnodes(stNodes, stIndex, n_suffixes, ind);
-    /* end of outputing tree */
 
     /* sort the stnodes in another array */
     srtIndex = emalloc(stIndex * sizeof(int));
@@ -161,17 +156,15 @@ process_bucket(sequence_t *sequences, size_t n_sequences,
 
     /* pairs generation and alignment */
     dup = emalloc(n_sequences * sizeof(int));
-    genPairs(stNodes, srtIndex, stIndex, sequences, n_sequences, max_seq_len, union_set, dup, param);
-    unsigned npairs = count_pairs(stNodes, srtIndex, stIndex, n_sequences, param->exact_match_len, dup);
+    genPairs(stNodes, srtIndex, stIndex, sequences, n_sequences, max_seq_len, dup, param);
 
     free(dup);
     free(srtIndex);
     free(stNodes);
-
-    return npairs;
 }
 
 
+#if 0
 /* output the tree */
 void print_stnodes(stnode_t *stNodes, int stIndex, int blSize, int ind)
 {
@@ -204,11 +197,12 @@ void print_stnodes(stnode_t *stNodes, int stIndex, int blSize, int ind)
     }
     fclose(fp);
 }
+#endif
 
 
 void build_forest(bucket_t *buckets, size_t n_buckets,
                   sequence_t *sequences, size_t n_sequences,
-                  size_t max_seq_len, ufind_t *union_set, param_t *param)
+                  size_t max_seq_len, param_t *param)
 {
     size_t i = 0;
     size_t count = 0;
@@ -217,21 +211,20 @@ void build_forest(bucket_t *buckets, size_t n_buckets,
 #ifdef DEBUG
     int sum = 0;
 #endif
-    unsigned long long npairs = 0;
 
     for (i = 0; i < n_buckets; ++i) {
-        if (buckets[i].suffixes) {
+        if (NULL != buckets[i].suffixes) {
             count++;
         }
     }
-    printf("count=%zu\n", count);
+    printf("%zu non-empty buckets\n", count);
 
     (void) time(&t1);
     for (i = 0; i < n_buckets; ++i) {
-        if (buckets[i].suffixes) {
-            npairs = process_bucket(sequences, n_sequences,
-                    buckets[i].suffixes, buckets[i].size,
-                    max_seq_len, union_set, param, i % 8192);
+        if (NULL != buckets[i].suffixes) {
+            process_bucket(sequences, n_sequences,
+                           buckets[i].suffixes, buckets[i].size,
+                           max_seq_len, param);
 #ifdef DEBUG
             sum += print_suffixes(buckets[i]);
 #endif
@@ -244,7 +237,6 @@ void build_forest(bucket_t *buckets, size_t n_buckets,
 #ifdef DEBUG
     printf("sum=%d\n", sum);
 #endif
-    printf("npairs=%llu\n", npairs);
 }
 
 /* ---------------------------------------------------*

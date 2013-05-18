@@ -37,6 +37,12 @@ void count_sort_buckets(bucket_t *buckets, size_t n_buckets)
         count[i] = 0;
     }
 
+    /* init new_buckets */
+    for (i = 0; i < n_buckets; ++i) {
+        new_buckets[i].suffixes = NULL;
+        new_buckets[i].size = 0;
+    }
+
     /* counting */
     for (i = 0; i < n_buckets; ++i) {
         if (buckets[i].size >= max_bucket_size) {
@@ -54,6 +60,8 @@ void count_sort_buckets(bucket_t *buckets, size_t n_buckets)
 
     /* put the buckets[] into new_buckets[] in the descending order */
     for (i = 0; i < n_buckets; ++i) {
+        assert(new_buckets[count[buckets[i].size] - 1].suffixes == NULL);
+        assert(new_buckets[count[buckets[i].size] - 1].size == 0);
         new_buckets[count[buckets[i].size] - 1] = buckets[i];
         --count[buckets[i].size];
     }

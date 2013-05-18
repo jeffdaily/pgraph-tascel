@@ -7,19 +7,12 @@
  * Copyright 2010 Washington State University. All rights reserved.
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  */
+#include "stree.h"
+#include "dynamic.h"
 #include "pairs.h"
-static int generatedPairs = 0;
-static int alignedPairs = 0;
-static int acceptedPairs = 0;
-
-void print_pairs()
-{
-    printf("generatedPairs=%d, alignedPairs=%d, acceptedPairs=%d\n",
-           generatedPairs, alignedPairs, acceptedPairs);
-}
 
 
-void genPairs(stnode_t *stNodes, int *srtIndex, int nStNodes, sequence_t *seqs, int nSeqs, int maxSeqLen, ufind_t *uSet, int *dup, param_t *param)
+void genPairs(stnode_t *stNodes, int *srtIndex, int nStNodes, sequence_t *seqs, int nSeqs, int maxSeqLen, int *dup, param_t *param)
 {
     int i;
     int j;
@@ -29,8 +22,7 @@ void genPairs(stnode_t *stNodes, int *srtIndex, int nStNodes, sequence_t *seqs, 
     cell_t **tbl = NULL;
     int **del = NULL;
     int **ins = NULL;
-    int n;
-    size_t m, s, t;
+    size_t m, n, s, t;
     suffix_t *p = NULL;
     suffix_t *q = NULL;
     int f1, f2;
@@ -61,7 +53,7 @@ void genPairs(stnode_t *stNodes, int *srtIndex, int nStNodes, sequence_t *seqs, 
 
         if (stnode->depth >= EM - 1) {
             if (stnode->rLeaf == sIndex) { /* leaf node */
-                procLeaf(stnode->lset, seqs, nSeqs, tbl, del, ins, uSet, param);
+                procLeaf(stnode->lset, seqs, nSeqs, tbl, del, ins, param);
             }
             else {                       /* internal node */
                 eIndex = stnode->rLeaf;
@@ -97,37 +89,30 @@ void genPairs(stnode_t *stNodes, int *srtIndex, int nStNodes, sequence_t *seqs, 
                                                     if (f1 == f2) {
                                                         continue;
                                                     }
-                                                    continue;
 
-                                                    generatedPairs++;
-
-                                                    if (find(uSet, f1) != find(uSet, f2)) {
-                                                        alignedPairs++;
-                                                        if (s1Len <= s2Len) {
-                                                            if (100 * s1Len < cutOff * s2Len) {
-                                                                continue;
-                                                            }
-                                                            affine_gap_align(seqs[f1].str, s1Len,
-                                                                             seqs[f2].str, s2Len,
-                                                                             &result, tbl, del, ins);
+                                                    if (s1Len <= s2Len) {
+                                                        if (100 * s1Len < cutOff * s2Len) {
+                                                            continue;
                                                         }
-                                                        else {
-                                                            if (100 * s2Len < cutOff * s1Len) {
-                                                                continue;
-                                                            }
-                                                            affine_gap_align(seqs[f2].str, s2Len,
-                                                                             seqs[f1].str, s1Len,
-                                                                             &result, tbl, del, ins);
-
-                                                        }
-
-                                                        /* check if it is an edge */
-                                                        if (isEdge(&result, seqs[f1].str, s1Len, seqs[f2].str, s2Len, param)) {
-                                                            acceptedPairs++;
-                                                            union_elems(uSet, f1, f2);
-                                                        }
-                                                        //printf("PAIR:[%d, %d]\n", f1, f2);
+                                                        affine_gap_align(seqs[f1].str, s1Len,
+                                                                         seqs[f2].str, s2Len,
+                                                                         &result, tbl, del, ins);
                                                     }
+                                                    else {
+                                                        if (100 * s2Len < cutOff * s1Len) {
+                                                            continue;
+                                                        }
+                                                        affine_gap_align(seqs[f2].str, s2Len,
+                                                                         seqs[f1].str, s1Len,
+                                                                         &result, tbl, del, ins);
+
+                                                    }
+
+                                                    /* check if it is an edge */
+                                                    if (isEdge(&result, seqs[f1].str, s1Len, seqs[f2].str, s2Len, param)) {
+                                                        printf("edge:%s#%s\n", seqs[f1].gid, seqs[f2].gid);
+                                                    }
+                                                    //printf("PAIR:[%d, %d]\n", f1, f2);
                                                 }
                                             }
                                         }
@@ -177,7 +162,7 @@ void genPairs(stnode_t *stNodes, int *srtIndex, int nStNodes, sequence_t *seqs, 
 }
 
 
-void procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, int **del, ufind_t *uSet, param_t *param)
+void procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, int **del, param_t *param)
 {
     size_t i;
     size_t j;
@@ -203,15 +188,51 @@ void procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **
                         if (f1 == f2) {
                             continue;
                         }
-                        continue;
-
-                        generatedPairs++;
 
                         s1Len = seqs[f1].strLen - 1;
                         s2Len = seqs[f2].strLen - 1;
 
-                        if (find(uSet, f1) != find(uSet, f2)) {
-                            alignedPairs++;
+                        if (s1Len <= s2Len) {
+                            if (100 * s1Len < cutOff * s2Len) {
+                                continue;
+                            }
+                            affine_gap_align(seqs[f1].str, s1Len,
+                                             seqs[f2].str, s2Len,
+                                             &result, tbl, del, ins);
+                        }
+                        else {
+                            if (100 * s2Len < cutOff * s1Len) {
+                                continue;
+                            }
+                            affine_gap_align(seqs[f2].str, s2Len,
+                                             seqs[f1].str, s1Len,
+                                             &result, tbl, del, ins);
+                        }
+
+                        /* check if it is an edge */
+                        if (isEdge(&result, seqs[f1].str, s1Len, seqs[f2].str, s2Len, param)) {
+                            printf("edge:%s#%s\n", seqs[f1].gid, seqs[f2].gid);
+                        }
+                        //printf("[%d, %d] - score: %d\n", f1, f2, result.score);
+                    }
+                }
+            }
+
+            /* intra cross */
+            for (j = i + 1; j < SIGMA; j++) {
+                if (lset[j]) {
+                    for (p = lset[i]; p != NULL; p = p->next) {
+                        for (q = lset[j]; q != NULL; q = q->next) {
+                            f1 = p->sid;
+                            f2 = q->sid;
+
+                            if (f1 == f2) {
+                                continue;
+                            }
+
+                            s1Len = seqs[f1].strLen - 1;
+                            s2Len = seqs[f2].strLen - 1;
+
                             if (s1Len <= s2Len) {
                                 if (100 * s1Len < cutOff * s2Len) {
                                     continue;
@@ -232,61 +253,8 @@ void procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **
 
                             /* check if it is an edge */
                             if (isEdge(&result, seqs[f1].str, s1Len, seqs[f2].str, s2Len, param)) {
-                                acceptedPairs++;
-                                union_elems(uSet, f1, f2);
+                                printf("edge:%s#%s\n", seqs[f1].gid, seqs[f2].gid);
                             }
-                            //printf("PAIR:[%d, %d]\n", f1, f2);
-                        }
-                        //printf("[%d, %d] - score: %d\n", f1, f2, result.score);
-                    }
-                }
-            }
-
-            /* intra cross */
-            for (j = i + 1; j < SIGMA; j++) {
-                if (lset[j]) {
-                    for (p = lset[i]; p != NULL; p = p->next) {
-                        for (q = lset[j]; q != NULL; q = q->next) {
-                            f1 = p->sid;
-                            f2 = q->sid;
-
-                            if (f1 == f2) {
-                                continue;
-                            }
-                            continue;
-                            generatedPairs++;
-
-                            s1Len = seqs[f1].strLen - 1;
-                            s2Len = seqs[f2].strLen - 1;
-
-                            if (find(uSet, f1) != find(uSet, f2)) {
-                                alignedPairs++;
-                                if (s1Len <= s2Len) {
-                                    if (100 * s1Len < cutOff * s2Len) {
-                                        continue;
-                                    }
-                                    affine_gap_align(seqs[f1].str, s1Len,
-                                                     seqs[f2].str, s2Len,
-                                                     &result, tbl, del, ins);
-                                }
-                                else {
-                                    if (100 * s2Len < cutOff * s1Len) {
-                                        continue;
-                                    }
-                                    affine_gap_align(seqs[f2].str, s2Len,
-                                                     seqs[f1].str, s1Len,
-                                                     &result, tbl, del, ins);
-
-                                }
-
-                                /* check if it is an edge */
-                                if (isEdge(&result, seqs[f1].str, s1Len, seqs[f2].str, s2Len, param)) {
-                                    acceptedPairs++;
-                                    union_elems(uSet, f1, f2);
-                                }
-                                //printf("PAIR:[%d, %d]\n", f1, f2);
-                            }
-                            //printf("[%d, %d] - score: %d\n", f1, f2, result.score);
                         }
                     }
                 }

@@ -13,7 +13,6 @@
 #include "bucket.h"
 #include "dynamic.h"
 #include "loadseq.h"
-#include "uFind.h"
 
 enum {ERROR = -1, DOL_END = -2};
 
@@ -75,10 +74,10 @@ void compute_lset(suffix_t *suffixes, sequence_t *sequences, suffix_t **lset);
  * @param[in] param -
  * @param[in] ind -
  */
-unsigned long long
+void
 process_bucket(sequence_t *sequences, size_t n_sequences,
-                    suffix_t *suffixes, size_t n_suffixes, size_t max_seq_len,
-                    ufind_t *union_set, param_t *param, int ind);
+               suffix_t *suffixes, size_t n_suffixes,
+               size_t max_seq_len, param_t *param);
 
 
 /**
@@ -93,8 +92,7 @@ process_bucket(sequence_t *sequences, size_t n_sequences,
  * @param nStNodes #stnodes in constructed forest
  */
 void build_forest(bucket_t *buckets, size_t n_buckets, sequence_t *sequences,
-                  size_t n_sequences, size_t max_seq_len, ufind_t *union_set,
-                  param_t *param);
+                  size_t n_sequences, size_t max_seq_len, param_t *param);
 
 
 int nextDiffPos(sequence_t *seqs, suffix_t *lset, int depth, int k);

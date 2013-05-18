@@ -40,7 +40,6 @@ int main(int argc, char *argv[])
     size_t n_buckets;               /* number of buckets */
     suffix_t *suffixes = NULL;      /* all suffixes */
     size_t n_suffixes = 0;          /* number of suffixes */
-    ufind_t *union_set = NULL;      /* TODO */
     int singletons = 2;             /* TODO */
     param_t param;                  /* config file parameters */
     time_t t1 = 0;                  /* start timer */
@@ -112,27 +111,21 @@ int main(int argc, char *argv[])
     }
     #endif
 
-    union_set = init_union(n_sequences);
-
     /* suffix tree construction & processing */
     (void) time(&t1);
     build_forest(
             buckets,   n_buckets,
             sequences, n_sequences,
-            maxSeqLen, union_set, &param);
+            maxSeqLen, &param);
     (void) time(&t2);
     printf("Tree constructed and processed in <%lld> secs\n",
             (long long)(t2-t1));
-    print_pairs();
     
-    disp_all_clusters(union_set, n_sequences, &singletons, ".", sequences); 
-
     /* free mem */
     free(suffixes);
     free(buckets);
     free_sequences(sequences, n_sequences);
     free(sequences);
-    free_union(union_set);
 
     return EXIT_SUCCESS; 
 }
