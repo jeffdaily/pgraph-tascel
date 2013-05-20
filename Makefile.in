@@ -108,7 +108,7 @@ am_libpgraph_la_OBJECTS = src/combinations.lo src/io.lo src/mpix.lo \
 	src/suffixtree/elib.lo src/suffixtree/lib.lo \
 	src/suffixtree/loadseq.lo src/suffixtree/pairs.lo \
 	src/suffixtree/search.lo src/suffixtree/stree.lo \
-	src/suffixtree/uFind.lo src/suffixtree/wlib.lo
+	src/suffixtree/wlib.lo
 libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -594,7 +594,6 @@ libpgraph_la_SOURCES = src/AlignStats.h src/blosum/blosum40.h \
 	src/suffixtree/pairs.h src/suffixtree/readline.h \
 	src/suffixtree/search.c src/suffixtree/search.h \
 	src/suffixtree/stree.c src/suffixtree/stree.h \
-	src/suffixtree/uFind.c src/suffixtree/uFind.h \
 	src/suffixtree/wlib.c src/suffixtree/wlib.h src/timer.h
 apps_align_SOURCES = apps/align.cc
 apps_ccd_SOURCES = apps/ccd.c
@@ -730,8 +729,6 @@ src/suffixtree/pairs.lo: src/suffixtree/$(am__dirstamp) \
 src/suffixtree/search.lo: src/suffixtree/$(am__dirstamp) \
 	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
 src/suffixtree/stree.lo: src/suffixtree/$(am__dirstamp) \
-	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
-src/suffixtree/uFind.lo: src/suffixtree/$(am__dirstamp) \
 	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
 src/suffixtree/wlib.lo: src/suffixtree/$(am__dirstamp) \
 	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
@@ -981,7 +978,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/pairs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/search.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/stree.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/uFind.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/wlib.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_combinations.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_dynamic.Po@am__quote@

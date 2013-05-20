@@ -21,7 +21,6 @@
 #include "pairs.h"
 #include "search.h"
 #include "stree.h"
-#include "uFind.h"
 
 
 static void parse_command_line(int argc, char **argv,
