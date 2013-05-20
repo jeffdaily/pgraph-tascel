@@ -49,7 +49,7 @@ void genPairs(stnode_t *stNodes, int *srtIndex, int nStNodes, sequence_t *seqs, 
  * @param ins -
  * @param del -
  */
-void procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, int **del, param_t *param);
+void procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, int **del, param_t *param, int *dup);
 
 int isEdge(cell_t *result, char *s1, int s1Len, char *s2, int s2Len, param_t *param);
 

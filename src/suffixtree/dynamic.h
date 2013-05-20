@@ -28,7 +28,7 @@ enum {
     OPEN = -10, GAP = -1
 };
 enum {NO = 0, YES = 1};
-enum {FALSE = 0, TRUE = 1};
+enum {FALSE = 0, TRUE = 1, MAYBE = 2};
 
 /**
  * cell_t for dynamic alignment result

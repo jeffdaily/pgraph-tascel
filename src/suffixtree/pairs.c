@@ -12,6 +12,82 @@
 #include "pairs.h"
 
 
+static inline int
+is_candidate(sequence_t *seqs, size_t nSeqs,
+             suffix_t *p, suffix_t *q,
+             cell_t **tbl, int **ins, int **del, param_t *param, int *dup)
+{
+    size_t s1Len = 0;
+    size_t s2Len = 0;
+    int f1 = 0;
+    int f2 = 0;
+    int cutOff = param->AOL * param->SIM;
+    cell_t result;
+    size_t index = 0;
+
+    f1 = p->sid;
+    f2 = q->sid;
+    assert(f1 < nSeqs);
+    assert(f2 < nSeqs);
+
+    if (f1 > f2) {
+        int swap = f1;
+        f1 = f2;
+        f2 = swap;
+    }
+    index = (nSeqs*f1) + f2 - (f1*(f1+1)/2);
+
+    if (f1 == f2) {
+        dup[index] = FALSE;
+        return FALSE;
+    }
+
+    s1Len = seqs[f1].strLen - 1;
+    s2Len = seqs[f2].strLen - 1;
+
+    if (dup[index] == MAYBE) {
+        if (s1Len <= s2Len) {
+            if (100 * s1Len < cutOff * s2Len) {
+                dup[index] = FALSE;
+            }
+            else {
+#if 0
+                affine_gap_align(seqs[f1].str, s1Len,
+                        seqs[f2].str, s2Len,
+                        &result, tbl, del, ins);
+#else
+                dup[index] = TRUE;
+#endif
+            }
+        }
+        else {
+            if (100 * s2Len < cutOff * s1Len) {
+                dup[index] = FALSE;
+            }
+            else {
+#if 0
+                affine_gap_align(seqs[f2].str, s2Len,
+                        seqs[f1].str, s1Len,
+                        &result, tbl, del, ins);
+#else
+                dup[index] = TRUE;
+#endif
+            }
+        }
+        /* check if it is an edge */
+        if (dup[index] == MAYBE) {
+            dup[index] = isEdge(
+                    &result, seqs[f1].str, s1Len, seqs[f2].str, s2Len, param);
+        }
+        
+        return dup[index];
+    }
+    else {
+        return FALSE;
+    }
+}
+
+
 void genPairs(stnode_t *stNodes, int *srtIndex, int nStNodes, sequence_t *seqs, int nSeqs, int maxSeqLen, int *dup, param_t *param)
 {
     int i;
@@ -53,66 +129,33 @@ void genPairs(stnode_t *stNodes, int *srtIndex, int nStNodes, sequence_t *seqs, 
 
         if (stnode->depth >= EM - 1) {
             if (stnode->rLeaf == sIndex) { /* leaf node */
-                procLeaf(stnode->lset, seqs, nSeqs, tbl, del, ins, param);
+                procLeaf(stnode->lset, seqs, nSeqs, tbl, del, ins, param, dup);
             }
             else {                       /* internal node */
                 eIndex = stnode->rLeaf;
-
-                /* init dup[] for the internal node */
-                for (r = 0; r < nSeqs; r++) {
-                    dup[r] = -1;
-                }
 
                 /* pairs generation loop for internal node */
                 for (m = sIndex + 1; m < eIndex; m++) {
                     for (n = m + 1; n <= eIndex; n++) {
                         for (s = 0; s < SIGMA; s++) {
-                            if (stNodes[m].lset[s]) {
-                                for (t = 0; t < SIGMA; t++) {
-                                    if (stNodes[n].lset[t]) {
-                                        if (s != t) {
-                                            for (p = stNodes[m].lset[s]; p != NULL; p = p->next) {
-                                                /* eliminate pairs */
-                                                if (dup[p->sid] == -1) {
-                                                    dup[p->sid] = p->sid;
+                            for (t = 0; t < SIGMA; t++) {
+                                if (s != t) {
+                                    for (p = stNodes[m].lset[s]; p != NULL; p = p->next) {
+                                        for (q = stNodes[n].lset[t]; q != NULL; q = q->next) {
+                                            if (TRUE == is_candidate(
+                                                        seqs, nSeqs, p, q,
+                                                        tbl, ins, del,
+                                                        param, dup)) {
+                                                //printf("edge:%s#%s\n",
+                                                    //seqs[p->sid].gid,
+                                                    //seqs[q->sid].gid);
+                                                if (p->sid > q->sid) {
+                                                    printf("edge\t%d\t%d\n",
+                                                            q->sid, p->sid);
                                                 }
                                                 else {
-                                                    continue;
-                                                }
-
-                                                for (q = stNodes[n].lset[t]; q != NULL; q = q->next) {
-                                                    f1 = p->sid;
-                                                    f2 = q->sid;
-                                                    s1Len = seqs[f1].strLen - 1;
-                                                    s2Len = seqs[f2].strLen - 1;
-
-                                                    if (f1 == f2) {
-                                                        continue;
-                                                    }
-
-                                                    if (s1Len <= s2Len) {
-                                                        if (100 * s1Len < cutOff * s2Len) {
-                                                            continue;
-                                                        }
-                                                        affine_gap_align(seqs[f1].str, s1Len,
-                                                                         seqs[f2].str, s2Len,
-                                                                         &result, tbl, del, ins);
-                                                    }
-                                                    else {
-                                                        if (100 * s2Len < cutOff * s1Len) {
-                                                            continue;
-                                                        }
-                                                        affine_gap_align(seqs[f2].str, s2Len,
-                                                                         seqs[f1].str, s1Len,
-                                                                         &result, tbl, del, ins);
-
-                                                    }
-
-                                                    /* check if it is an edge */
-                                                    if (isEdge(&result, seqs[f1].str, s1Len, seqs[f2].str, s2Len, param)) {
-                                                        printf("edge:%s#%s\n", seqs[f1].gid, seqs[f2].gid);
-                                                    }
-                                                    //printf("PAIR:[%d, %d]\n", f1, f2);
+                                                    printf("edge\t%d\t%d\n",
+                                                            p->sid, q->sid);
                                                 }
                                             }
                                         }
@@ -162,54 +205,7 @@ void genPairs(stnode_t *stNodes, int *srtIndex, int nStNodes, sequence_t *seqs, 
 }
 
 
-static inline int
-is_candidate(sequence_t *seqs, size_t nSeqs,
-             suffix_t *p, suffix_t *q,
-             cell_t **tbl, int **ins, int **del, param_t *param)
-{
-    size_t s1Len = 0;
-    size_t s2Len = 0;
-    int f1 = 0;
-    int f2 = 0;
-    int cutOff = param->AOL * param->SIM;
-    cell_t result;
-
-    f1 = p->sid;
-    f2 = q->sid;
-    assert(f1 < nSeqs);
-    assert(f2 < nSeqs);
-
-    if (f1 == f2) {
-        return FALSE;
-    }
-
-    s1Len = seqs[f1].strLen - 1;
-    s2Len = seqs[f2].strLen - 1;
-
-    if (s1Len <= s2Len) {
-        if (100 * s1Len < cutOff * s2Len) {
-            return FALSE;
-        }
-        affine_gap_align(seqs[f1].str, s1Len,
-                seqs[f2].str, s2Len,
-                &result, tbl, del, ins);
-    }
-    else {
-        if (100 * s2Len < cutOff * s1Len) {
-            return FALSE;
-        }
-        affine_gap_align(seqs[f2].str, s2Len,
-                seqs[f1].str, s1Len,
-                &result, tbl, del, ins);
-    }
-
-    /* check if it is an edge */
-    //printf("edge:%s#%s\n", seqs[f1].gid, seqs[f2].gid);
-    return isEdge(&result, seqs[f1].str, s1Len, seqs[f2].str, s2Len, param);
-}
-
-
-void procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, int **del, param_t *param)
+void procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, int **del, param_t *param, int *dup)
 {
     size_t i;
     size_t j;
@@ -227,8 +223,14 @@ void procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **
             if (i == BEGIN - 'A') { /* inter cross */
                 for (p = lset[i]; p != NULL; p = p->next) {
                     for (q = p->next; q != NULL; q = q->next) {
-                        if (is_candidate(seqs, nSeqs, p, q, tbl, ins, del, param)) {
-                            printf("edge:%s#%s\n", seqs[p->sid].gid, seqs[q->sid].gid);
+                        if (TRUE == is_candidate(seqs, nSeqs, p, q, tbl, ins, del, param, dup)) {
+                            //printf("edge:%s#%s\n", seqs[p->sid].gid, seqs[q->sid].gid);
+                            if (p->sid > q->sid) {
+                                printf("edge\t%d\t%d\n", q->sid, p->sid);
+                            }
+                            else {
+                                printf("edge\t%d\t%d\n", p->sid, q->sid);
+                            }
                         }
                     }
                 }
@@ -239,8 +241,14 @@ void procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **
                 if (lset[j]) {
                     for (p = lset[i]; p != NULL; p = p->next) {
                         for (q = lset[j]; q != NULL; q = q->next) {
-                            if (is_candidate(seqs, nSeqs, p, q, tbl, ins, del, param)) {
-                                printf("edge:%s#%s\n", seqs[p->sid].gid, seqs[q->sid].gid);
+                            if (TRUE == is_candidate(seqs, nSeqs, p, q, tbl, ins, del, param, dup)) {
+                                //printf("edge:%s#%s\n", seqs[p->sid].gid, seqs[q->sid].gid);
+                                if (p->sid > q->sid) {
+                                    printf("edge\t%d\t%d\n", q->sid, p->sid);
+                                }
+                                else {
+                                    printf("edge\t%d\t%d\n", p->sid, q->sid);
+                                }
                             }
                         }
                     }

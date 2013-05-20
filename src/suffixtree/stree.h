@@ -77,7 +77,7 @@ void compute_lset(suffix_t *suffixes, sequence_t *sequences, suffix_t **lset);
 void
 process_bucket(sequence_t *sequences, size_t n_sequences,
                suffix_t *suffixes, size_t n_suffixes,
-               size_t max_seq_len, param_t *param);
+               size_t max_seq_len, param_t *param, int *dup);
 
 
 /**
