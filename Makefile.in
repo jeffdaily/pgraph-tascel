@@ -105,10 +105,9 @@ am_libpgraph_la_OBJECTS = src/combinations.lo src/io.lo src/mpix.lo \
 	src/Sequence.lo src/SequenceDatabase.lo \
 	src/suffixtree/bucket.lo src/suffixtree/cfg.lo \
 	src/suffixtree/count_pairs.lo src/suffixtree/dynamic.lo \
-	src/suffixtree/elib.lo src/suffixtree/lib.lo \
-	src/suffixtree/loadseq.lo src/suffixtree/pairs.lo \
-	src/suffixtree/search.lo src/suffixtree/stree.lo \
-	src/suffixtree/wlib.lo
+	src/suffixtree/elib.lo src/suffixtree/loadseq.lo \
+	src/suffixtree/pairs.lo src/suffixtree/search.lo \
+	src/suffixtree/stree.lo src/suffixtree/wlib.lo
 libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -588,8 +587,7 @@ libpgraph_la_SOURCES = src/AlignStats.h src/blosum/blosum40.h \
 	src/suffixtree/cfg.h src/suffixtree/count_pairs.c \
 	src/suffixtree/count_pairs.h src/suffixtree/dynamic.c \
 	src/suffixtree/dynamic.h src/suffixtree/elib.c \
-	src/suffixtree/elib.h src/suffixtree/lib.c \
-	src/suffixtree/lib.h src/suffixtree/loadseq.c \
+	src/suffixtree/elib.h src/suffixtree/loadseq.c \
 	src/suffixtree/loadseq.h src/suffixtree/pairs.c \
 	src/suffixtree/pairs.h src/suffixtree/readline.h \
 	src/suffixtree/search.c src/suffixtree/search.h \
@@ -719,8 +717,6 @@ src/suffixtree/count_pairs.lo: src/suffixtree/$(am__dirstamp) \
 src/suffixtree/dynamic.lo: src/suffixtree/$(am__dirstamp) \
 	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
 src/suffixtree/elib.lo: src/suffixtree/$(am__dirstamp) \
-	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
-src/suffixtree/lib.lo: src/suffixtree/$(am__dirstamp) \
 	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
 src/suffixtree/loadseq.lo: src/suffixtree/$(am__dirstamp) \
 	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
@@ -973,7 +969,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/count_pairs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/dynamic.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/elib.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/lib.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/loadseq.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/pairs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/search.Plo@am__quote@

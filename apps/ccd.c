@@ -7,6 +7,10 @@
  * Copyright 2010 Washington State University. All rights reserved.
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  */
+#include <assert.h>
+#include <limits.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,15 +20,19 @@
 #include "bucket.h"
 #include "cfg.h"
 #include "elib.h"
-#include "lib.h"
 #include "loadseq.h"
 #include "pairs.h"
 #include "search.h"
 #include "stree.h"
 
+#ifndef SIZE_MAX
+#define SIZE_MAX ((size_t)-1)
+#endif
+
 
 static void parse_command_line(int argc, char **argv,
         char *sequence_file, char *config_file, size_t *n_sequences);
+static inline size_t zpower(size_t base, size_t n);
 
 
 int main(int argc, char *argv[])
@@ -162,3 +170,17 @@ static void parse_command_line(int argc, char **argv,
         exit(0);
     }
 }
+
+
+static inline size_t zpower(size_t base, size_t n)
+{
+    size_t p = 1;
+
+    for (/**/; n > 0; --n) {
+        assert(p < SIZE_MAX / base);
+        p *= base;
+    }
+
+    return p;
+}
+
