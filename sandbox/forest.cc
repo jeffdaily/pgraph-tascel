@@ -27,7 +27,7 @@
 #include <utility>
 #include <vector>
 
-#include "mpix.h"
+#include "mpix.hpp"
 #include "timer.h"
 
 #define ARG_LEN_MAX 1024

@@ -26,7 +26,7 @@
 
 #include "combinations.h"
 #include "dynamic.h"
-#include "mpix.h"
+#include "mpix.hpp"
 
 using namespace std;
 using namespace tascel;

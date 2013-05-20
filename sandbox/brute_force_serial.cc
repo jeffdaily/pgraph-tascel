@@ -22,7 +22,7 @@
 #include <strstream>
 #include <vector>
 
-#include "AlignStats.h"
+#include "AlignStats.hpp"
 #include "combinations.h"
 #include "dynamic.h"
 

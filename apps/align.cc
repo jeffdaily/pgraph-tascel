@@ -25,11 +25,11 @@
 #include <strstream>
 #include <vector>
 
-#include "AlignStats.h"
+#include "AlignStats.hpp"
 #include "combinations.h"
 #include "dynamic.h"
-#include "mpix.h"
-#include "tascelx.h"
+#include "mpix.hpp"
+#include "tascelx.hpp"
 
 using namespace std;
 using namespace tascel;

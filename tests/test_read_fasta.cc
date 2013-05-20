@@ -11,8 +11,8 @@
 
 #include <mpi.h>
 
-#include "SequenceDatabase.h"
-#include "mpix.h"
+#include "SequenceDatabase.hpp"
+#include "mpix.hpp"
 
 using std::cerr;
 using std::cout;

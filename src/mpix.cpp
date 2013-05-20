@@ -18,7 +18,7 @@
 
 #include <mpi.h>
 
-#include "mpix.h"
+#include "mpix.hpp"
 
 using std::cout;
 using std::endl;

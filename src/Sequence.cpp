@@ -12,7 +12,7 @@
 
 #include "dynamic.h"
 
-#include "Sequence.h"
+#include "Sequence.hpp"
 
 using std::string;
 using std::strlen;

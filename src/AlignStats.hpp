@@ -1,5 +1,5 @@
 /**
- * @file AlignStats.h
+ * @file AlignStats.hpp
  *
  * @author jeff.daily@pnnl.gov
  *

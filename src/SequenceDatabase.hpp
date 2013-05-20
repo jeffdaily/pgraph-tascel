@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-#include "Sequence.h"
+#include "Sequence.hpp"
 
 using std::exception;
 using std::map;

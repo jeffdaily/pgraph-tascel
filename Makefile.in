@@ -576,23 +576,24 @@ LDADD = libpgraph.la $(TASCEL_LIBS) $(ARMCI_LIBS) $(PT_MPI_LIBS) \
 noinst_LTLIBRARIES = libpgraph.la
 #libpgraph_la_SOURCES += src/dynamic.c
 #libpgraph_la_SOURCES += src/dynamic.h
-libpgraph_la_SOURCES = src/AlignStats.h src/blosum/blosum40.h \
+libpgraph_la_SOURCES = src/AlignStats.hpp src/blosum/blosum40.h \
 	src/blosum/blosum45.h src/blosum/blosum62.h \
 	src/blosum/blosum75.h src/blosum/blosum80.h \
 	src/blosum/blosum90.h src/combinations.c src/combinations.h \
-	src/io.cc src/io.h src/mpix.cc src/mpix.h src/pthread_fixes.h \
-	src/Sequence.cc src/Sequence.h src/SequenceDatabase.cc \
-	src/SequenceDatabase.h src/suffixtree/bucket.c \
-	src/suffixtree/bucket.h src/suffixtree/cfg.c \
-	src/suffixtree/cfg.h src/suffixtree/count_pairs.c \
-	src/suffixtree/count_pairs.h src/suffixtree/dynamic.c \
-	src/suffixtree/dynamic.h src/suffixtree/elib.c \
-	src/suffixtree/elib.h src/suffixtree/loadseq.c \
-	src/suffixtree/loadseq.h src/suffixtree/pairs.c \
-	src/suffixtree/pairs.h src/suffixtree/readline.h \
-	src/suffixtree/search.c src/suffixtree/search.h \
-	src/suffixtree/stree.c src/suffixtree/stree.h \
-	src/suffixtree/wlib.c src/suffixtree/wlib.h src/timer.h
+	src/io.cpp src/io.hpp src/mpix.cpp src/mpix.hpp \
+	src/pthread_fixes.h src/Sequence.cpp src/Sequence.hpp \
+	src/SequenceDatabase.cpp src/SequenceDatabase.hpp \
+	src/suffixtree/bucket.c src/suffixtree/bucket.h \
+	src/suffixtree/cfg.c src/suffixtree/cfg.h \
+	src/suffixtree/count_pairs.c src/suffixtree/count_pairs.h \
+	src/suffixtree/dynamic.c src/suffixtree/dynamic.h \
+	src/suffixtree/elib.c src/suffixtree/elib.h \
+	src/suffixtree/loadseq.c src/suffixtree/loadseq.h \
+	src/suffixtree/pairs.c src/suffixtree/pairs.h \
+	src/suffixtree/readline.h src/suffixtree/search.c \
+	src/suffixtree/search.h src/suffixtree/stree.c \
+	src/suffixtree/stree.h src/suffixtree/wlib.c \
+	src/suffixtree/wlib.h src/timer.h
 apps_align_SOURCES = apps/align.cc
 apps_ccd_SOURCES = apps/ccd.c
 sandbox_blast_SOURCES = sandbox/blast.cc
@@ -629,7 +630,7 @@ all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .cc .lo .o .obj
+.SUFFIXES: .c .cc .cpp .lo .o .obj
 am--refresh: Makefile
 	@:
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
@@ -1125,6 +1126,30 @@ sandbox/sandbox_brute_force_sorted_seq-brute_force.obj: sandbox/brute_force.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='sandbox/brute_force.cc' object='sandbox/sandbox_brute_force_sorted_seq-brute_force.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_sorted_seq_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sandbox/sandbox_brute_force_sorted_seq-brute_force.obj `if test -f 'sandbox/brute_force.cc'; then $(CYGPATH_W) 'sandbox/brute_force.cc'; else $(CYGPATH_W) '$(srcdir)/sandbox/brute_force.cc'; fi`
+
+.cpp.o:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ $<
+
+.cpp.obj:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+.cpp.lo:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
+@am__fastdepCXX_TRUE@	$(LTCXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LTCXXCOMPILE) -c -o $@ $<
 
 mostlyclean-libtool:
 	-rm -f *.lo

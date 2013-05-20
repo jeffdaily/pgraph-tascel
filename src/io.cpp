@@ -14,8 +14,8 @@
 #include <mpi.h>
 
 /* my headers */
-#include "io.h"
-#include "mpix.h"
+#include "io.hpp"
+#include "mpix.hpp"
 
 using std::string;
 using std::vector;

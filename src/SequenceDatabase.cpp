@@ -15,9 +15,9 @@
 
 #include <armci.h>
 
-#include "Sequence.h"
-#include "SequenceDatabase.h"
-#include "mpix.h"
+#include "Sequence.hpp"
+#include "SequenceDatabase.hpp"
+#include "mpix.hpp"
 
 using std::ifstream;
 using std::make_pair;
