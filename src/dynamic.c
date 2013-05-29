@@ -8,6 +8,9 @@
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  */
 #include <assert.h>
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "blosum/blosum40.h"
 #include "blosum/blosum45.h"
@@ -15,11 +18,14 @@
 #include "blosum/blosum75.h"
 #include "blosum/blosum80.h"
 #include "blosum/blosum90.h"
+#include "constants.h"
 #include "dynamic.h"
 
+#define OPEN -10
+#define GAP -1
 #define CROW(i) ((i)%2)
 #define PROW(i) ((i-1)%2)
-#define BLOSUM(map, ch1, ch2) blosum[map[ch1-'A']][map[ch2-'A']]
+#define BLOSUM(map, ch1, ch2) blosum[(map)[(ch1)-'A']][(map)[(ch2)-'A']]
 #define NEG_ADD(x, y) (((y)<0)&&((x)<(INT_MIN-y)) ? INT_MIN : (x)+(y))
 #define MIN(x, y) (((x)<(y))? (x) : (y))
 #define MAX(x, y) (((x)>(y))? (x) : (y))
@@ -32,13 +38,35 @@ static char AA[] = {'A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I',
                    };
 
 /** mapping from protein character to blosum index */
-static int map[SIGMA];
+static int *map = NULL;
 
 /** points to selected blosum table (default blosum62) */
 static int (*blosum)[24] = blosum62;
 
 
-void init_blosum(int number)
+/**
+ * Initialize the protein index mapping used internally by the scoring matrix.
+ *
+ * @param[in] nAA the number of characters in the alphabet
+ */
+static void init_map(size_t nAA)
+{
+    if (NULL == map) {
+        size_t i = 0;
+
+        map = malloc(SIGMA * sizeof(int));
+        for (i = 0; i < SIGMA; ++i) {
+            map[i] = -1;
+        }
+
+        for (i = 0; i < nAA; ++i) {
+            map[AA[i] - 'A'] = (int)i;
+        }
+    }
+}
+
+
+void pg_select_blosum(int number)
 {
     switch (number) {
         case 40:
@@ -66,31 +94,22 @@ void init_blosum(int number)
 }
 
 
-void init_map(int nAA)
+int pg_self_score(const sequence_t *s)
 {
-    int i;
-    for (i = 0; i < nAA; i++) {
-        map[AA[i] - 'A'] = i;
-    }
-}
-
-
-int self_score(const char *s, size_t ns)
-{
-    size_t i;
-    int j;
+    size_t i = 0;
     int score = 0;
 
-    for (i = 0; i < ns; i++) {
-        j = map[s[i] - 'A'];
-        score += blosum[j][j];
+    init_map(SIGMA);
+
+    for (i = 0; i < s->size; i++) {
+        score += BLOSUM(map, s->str[i], s->str[i]);
     }
 
     return score;
 }
 
 
-cell_t **alloc_tbl(int nrow, int ncol)
+cell_t **pg_alloc_tbl(int nrow, int ncol)
 {
     int i;
     cell_t **tbl = NULL;
@@ -107,7 +126,7 @@ cell_t **alloc_tbl(int nrow, int ncol)
 }
 
 
-int **alloc_int(int nrow, int ncol)
+int **pg_alloc_int(int nrow, int ncol)
 {
     int **tbl = NULL;
     int i;
@@ -122,7 +141,7 @@ int **alloc_int(int nrow, int ncol)
 }
 
 
-void free_tbl(cell_t **tbl, int nrow)
+void pg_free_tbl(cell_t **tbl, int nrow)
 {
     int i;
     for (i = 0; i < nrow; i++) {
@@ -132,7 +151,7 @@ void free_tbl(cell_t **tbl, int nrow)
 }
 
 
-void free_int(int **tbl, int nrow)
+void pg_free_int(int **tbl, int nrow)
 {
     int i;
     for (i = 0; i < nrow; i++) {
@@ -142,140 +161,25 @@ void free_int(int **tbl, int nrow)
 }
 
 
-void affine_gap_align_old(
-    const char *s1, size_t s1Len,
-    const char *s2, size_t s2Len,
-    cell_t *result,
-    cell_t **tbl, int **del, int **ins)
+void pg_affine_gap_align(const sequence_t *_s1, const sequence_t *_s2,
+                         cell_t *result, cell_t **tbl, int **del, int **ins)
 {
-    int i, j;
-    int maxScore;
-    cell_t *maxRecord;
-
-    cell_t *tblCR;
-    cell_t *tblPR;
-    int   *delCR;
-    int   *delPR;
-
-    tblCR = tbl[0];
-    delCR = del[0];
-
-    /* init first row of 3 tables */
-    tblCR[0].score = 0;
-    tblCR[0].ndig = 0;
-    tblCR[0].alen = 0;
-    delCR[0] = 0;
-
-    for (j = 1; j <= s2Len; j++) {
-        tblCR[j].score = OPEN + j * GAP;
-        tblCR[j].ndig = 0;
-        tblCR[j].alen = 0;
-
-        delCR[j] = MIN_VAL;
-    }
-
-    maxScore  = tblCR[s2Len].score;
-    maxRecord = tblCR + s2Len;
-
-    for (i = 1; i <= s1Len; i++) {
-        char ch1 = s1[i - 1];
-        int *BlosumRow = blosum[map[ch1 - 'A']];
-
-        int cr = CROW(i);
-        int pr = PROW(i);
-        tblCR  = tbl[cr];
-        tblPR  = tbl[pr];
-        delCR  = del[cr];
-        delPR  = del[pr];
-
-        /* j = 0 */
-        int ins    = MIN_VAL;
-
-        int Nscore = tblPR[0].score;
-        int Nndig  = tblPR[0].ndig;
-        int Nalen  = tblPR[0].alen;
-
-        int Wscore = OPEN + i * GAP;
-        int Wndig  = 0;
-        int Walen  = 0;
-
-        delCR[0]       = OPEN + i * GAP;
-        tblCR[0].score = Wscore;
-        tblCR[0].ndig  = Wndig;
-        tblCR[0].alen  = Walen;
-
-        for (j = 1; j <= s2Len; j++) {
-            char ch2    = s2[j - 1];
-            int NWscore = Nscore;
-            int NWndig  = Nndig;
-            int NWalen  = Nalen;
-
-            Nscore = tblPR[j].score;
-            Nndig  = tblPR[j].ndig;
-            Nalen  = tblPR[j].alen;
-
-            int up   = MAX(Nscore + OPEN, delPR[j]) + GAP;
-            int left = MAX(Wscore + OPEN, ins) + GAP;
-            int dig  = NWscore + BlosumRow[map[ch2 - 'A']];
-
-            delCR[j] = up;
-            ins      = left;
-
-            if ((dig >= up) && (dig >= left)) {
-                Wscore = dig;
-                Wndig  = NWndig + (ch1 == ch2);
-                Walen  = NWalen + 1;
-            }
-            else if (up >= left) {
-                Wscore = up;
-                Wndig  = Nndig;
-                Walen  = Nalen + 1;
-            }
-            else {
-                Wscore = left;
-                Wndig  = Wndig;
-                Walen  = Walen + 1;
-            }
-
-            tblCR[j].score = Wscore;
-            tblCR[j].ndig  = Wndig;
-            tblCR[j].alen  = Walen;
-        }
-
-        if (Wscore > maxScore) {
-            maxScore = Wscore;
-            maxRecord = tblCR + s2Len;
-        }
-
-    } /* end of i loop */
-
-    tblCR = tbl[ CROW(s1Len)];
-    for (j = 0; j <= s2Len; j++)
-        if (tblCR[j].score > maxScore) {
-            maxScore = tblCR[j].score;
-            maxRecord = tblCR + j;
-        }
-
-    * result = * maxRecord;
-}
-
-
-void affine_gap_align(
-    const char *s1, size_t s1Len,
-    const char *s2, size_t s2Len,
-    cell_t *result,
-    cell_t **tbl, int **del, int **ins)
-{
-    int i, j;
+    size_t i, j;
     int cr, pr;
     int dig, up, left, maxScore;
     char ch1, ch2;  /* character s[i] and s[j] */
+    const char *s1 = _s1->str;
+    size_t s1Len = _s1->size;
+    const char *s2 = _s2->str;
+    size_t s2Len = _s2->size;
 
     /* struct can be ONLY initialized as it is declared ??*/
     cell_t lastCol = {INT_MIN, 0, 0};
     cell_t lastRow = {INT_MIN, 0, 0};
 
     assert(s1Len > 0 && s2Len > 0);
+
+    init_map(SIGMA);
 
     cr = 1;
     pr = 0;
@@ -320,9 +224,7 @@ void affine_gap_align(
         for (j = 1; j <= s2Len; j++) {
             ch2 = s2[j - 1];
 
-            /* overflow could happen, INT_MIN-1 = 2147483647
-             * #define NEG_ADD(x, y) \
-             *     (((y)<0)&&((x)<(INT_MIN-y)) ? INT_MIN : (x)+(y)) */
+            /* overflow could happen, INT_MIN-1 = 2147483647 */
             up = MAX(pI[j].score + OPEN + GAP, NEG_ADD(del[pr][j], GAP));
             del[cr][j] = up;
             left = MAX(tI[j - 1].score + OPEN + GAP, NEG_ADD(ins[cr][j - 1], GAP));
@@ -369,7 +271,7 @@ void affine_gap_align(
 }
 
 
-void print_row(cell_t **tbl, int i, int ncol)
+void pg_print_row(cell_t **tbl, int i, int ncol)
 {
     int j;
     printf("[");
@@ -380,26 +282,27 @@ void print_row(cell_t **tbl, int i, int ncol)
 }
 
 
-int is_edge(
-    const cell_t result,
-    const char *s1, size_t s1Len, const char *s2, size_t s2Len,
-    const is_edge_param_t param, int *_sscore, int *_maxLen)
+int pg_is_edge(const cell_t result,
+               const sequence_t *s1, const sequence_t *s2,
+               const param_t param, int *_sscore, size_t *_maxLen)
 {
-    int sscore;
-    int maxLen;
-    int nmatch;
+    int sscore = 0;
+    int maxLen = 0;
+    int nmatch = 0;
 
     /* DO NOT need to compute the sscore value every time, if the later check
      * failed at the first step, the sscore computation is wasted */
-    assert(s1Len);
-    assert(s2Len);
-    if (s1Len > s2Len) {
-        maxLen = s1Len;
-        sscore = self_score(s1, s1Len);
+
+    assert(s1->size);
+    assert(s2->size);
+
+    if (s1->size > s2->size) {
+        maxLen = s1->size;
+        sscore = pg_self_score(s1);
     }
     else {
-        maxLen = s2Len;
-        sscore = self_score(s2, s2Len);
+        maxLen = s2->size;
+        sscore = pg_self_score(s2);
     }
 
     nmatch = result.ndig;

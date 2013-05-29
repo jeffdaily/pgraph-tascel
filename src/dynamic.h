@@ -16,19 +16,10 @@
 extern "C" {
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <limits.h>
+#include <stddef.h>
 
-#define SIGMA 26 /**< size of alphabet */
-#define NROW 2 /**< number of rows in dynamic programming table, always 2 */
-
-enum {
-    OPEN = -10, GAP = -1
-};
-enum {NO = 0, YES = 1};
-enum {FALSE = 0, TRUE = 1};
+#include "param.h"
+#include "sequence.h"
 
 /**
  * cell_t for dynamic alignment result
@@ -39,23 +30,6 @@ typedef struct {
     int alen;   /**< alignment length */
 } cell_t;
 
-/**
- * parameters for is_edge test, packed in struct
- */
-typedef struct {
-    int AOL;    /**< AlignOverLongerSeq */
-    int SIM;    /**< MatchSimilarity */
-    int OS;     /**< OptimalScoreOverSelfScore */
-} is_edge_param_t;
-
-
-/**
- * Initialize the protein index mapping used internally by the scoring matrix.
- *
- * @param[in] nAA the number of characters in the alphabet
- */
-void init_map(int nAA);
-
 
 /**
  * Calculates the score if the given sequence were aligned with itself.
@@ -64,7 +38,7 @@ void init_map(int nAA);
  * @param[in] ns the length of s
  * @return the self score
  */
-int self_score(const char *s, size_t ns);
+int pg_self_score(const sequence_t *seq);
 
 
 /**
@@ -74,7 +48,7 @@ int self_score(const char *s, size_t ns);
  * @param[in] ncol length of longest sequence to align
  * @return the table
  */
-cell_t **alloc_tbl(int nrow, int ncol);
+cell_t **pg_alloc_tbl(int nrow, int ncol);
 
 
 /**
@@ -84,7 +58,7 @@ cell_t **alloc_tbl(int nrow, int ncol);
  * @param ncol number of columns e.g. length of longest sequence to align
  * @return the table
  */
-int **alloc_int(int nrow, int ncol);
+int **pg_alloc_int(int nrow, int ncol);
 
 
 /**
@@ -93,7 +67,7 @@ int **alloc_int(int nrow, int ncol);
  * @param[in] tbl the cell_t table
  * @param[in] the number of rows (always 2)
  */
-void free_tbl(cell_t **tbl, int nrow);
+void pg_free_tbl(cell_t **tbl, int nrow);
 
 
 /**
@@ -102,32 +76,15 @@ void free_tbl(cell_t **tbl, int nrow);
  * @param[in] tbl the int table
  * @param[in] the number of rows (always 2)
  */
-void free_int(int **tbl, int nrow);
+void pg_free_int(int **tbl, int nrow);
 
 
 /**
- * Implementation of affine gap pairwise sequence alignment.
- *
- * It is a space efficient version: only two rows are required; also mem for
- * all dynamic tables are allocated ONLY ONCE outside of this function call
- * using alloc_tbl() and alloc_int() and passed as tbl, del, and ins arguments.
- *
- * @deprecated This function should no longer be used because it tended to give
- * incorrect results. Please use affine_gap_align() instead.
- *
- * @param[in] s1 sequence s1
- * @param[in] s1Len sequence length of <s1>, strlen(s1)
- * @param[in] s2 sequence s2
- * @param[in] s2Len sequence length of <s2>, strlen(s2)
- * @param[out] result alignment result <score, ndig, alen>
- * @param[in] tbl pre-allocated score table
- * @param[in] del pre-allocated deletion table
- * @param[in] ins pre-allocated insertion table
+ * Select which BLOSUM matrix to use during pg_affine_gap_align().
+ * 
+ * @param[in] number the blosum number to use
  */
-void affine_gap_align_old(
-    const char *s1, size_t s1Len,
-    const char *s2, size_t s2Len,
-    cell_t *result, cell_t **tbl, int **del, int **ins);
+void pg_select_blosum(int number);
 
 
 /**
@@ -138,18 +95,14 @@ void affine_gap_align_old(
  * using alloc_tbl() and alloc_int() and passed as tbl, del, and ins arguments.
  *
  * @param[in] s1 sequence s1
- * @param[in] s1Len sequence length of <s1>, strlen(s1)
  * @param[in] s2 sequence s2
- * @param[in] s2Len sequence length of <s2>, strlen(s2)
  * @param[out] result alignment result <score, ndig, alen>
  * @param[in] tbl pre-allocated score table
  * @param[in] del pre-allocated deletion table
  * @param[in] ins pre-allocated insertion table
  */
-void affine_gap_align(
-    const char *s1, size_t s1Len,
-    const char *s2, size_t s2Len,
-    cell_t *result, cell_t **tbl, int **del, int **ins);
+void pg_affine_gap_align(const sequence_t *s1, const sequence_t *s2,
+                         cell_t *result, cell_t **tbl, int **del, int **ins);
 
 
 /**
@@ -159,7 +112,7 @@ void affine_gap_align(
  * @param[in] i the row to print
  * @param[in] the number of columns in the table
  */
-void print_row(cell_t **tbl, int i, int ncol);
+void pg_print_row(cell_t **tbl, int i, int ncol);
 
 
 /**
@@ -168,18 +121,14 @@ void print_row(cell_t **tbl, int i, int ncol);
  *
  * @param[in] result the dynamic programming alignment result
  * @param[in] s1 sequence s1
- * @param[in] s1Len sequence length of <s1>, strlen(s1)
  * @param[in] s2 sequence s2
- * @param[in] s2Len sequence length of <s2>, strlen(s2)
  * @param[in] param the heuristic parameters for edge determination
  * @param[out] sscore self score
  * @param[out] maxLen longer of s1Len and s2Len
  * @return TRUE if this is an edge, FALSE otherwise
  */
-int is_edge(const cell_t result,
-            const char *s1, size_t s1Len,
-            const char *s2, size_t s2Len,
-            const is_edge_param_t param, int *sscore, int *maxLen);
+int pg_is_edge(const cell_t result, const sequence_t *s1, const sequence_t *s2,
+               const param_t param, int *sscore, size_t *maxLen);
 
 #ifdef __cplusplus
 }

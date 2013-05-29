@@ -18,17 +18,9 @@
 #include <unistd.h>
 
 #include "bucket.h"
-#include "cfg.h"
-#include "elib.h"
-#include "loadseq.h"
-#include "pairs.h"
-#include "search.h"
+#include "constants.h"
+#include "sequence.h"
 #include "stree.h"
-
-#ifndef SIZE_MAX
-#define SIZE_MAX ((size_t)-1)
-#endif
-
 
 static void parse_command_line(int argc, char **argv,
         char *sequence_file, char *config_file, size_t *n_sequences);
@@ -40,17 +32,19 @@ int main(int argc, char *argv[])
     char sequence_file[FILENAME_MAX];/* path to sequence (fasta) file */
     char config_file[FILENAME_MAX]; /* path to config file */
     size_t n_sequences = 0;         /* number of sequences (cmd line param) */
-    sequence_t *sequences = NULL;   /* all sequences parsed from fasta file */
+    sequences_t *sequences = NULL;  /* all sequences parsed from fasta file */
     size_t maxSeqLen = 0;           /* longest sequence length parsed */
-    size_t n_acids = 0;             /* number of amino acids parsed */
     bucket_t *buckets = NULL;       /* all buckets */
     size_t n_buckets;               /* number of buckets */
     suffix_t *suffixes = NULL;      /* all suffixes */
     size_t n_suffixes = 0;          /* number of suffixes */
-    int singletons = 2;             /* TODO */
     param_t param;                  /* config file parameters */
     time_t t1 = 0;                  /* start timer */
     time_t t2 = 0;                  /* stop timer */
+    suffix_buckets_t *suffix_buckets = NULL;
+    size_t i = 0;                   /* for loop index */
+    size_t n_triangular = 0;        /* number of possible pairs */
+    int *dup = NULL;                /* track duplicate pairs */
 
     setbuf(stdout, (char *)0);
 
@@ -58,15 +52,8 @@ int main(int argc, char *argv[])
     parse_command_line(argc, argv, sequence_file, config_file, &n_sequences);
 
     /* read in configurations */
-    param.window_size = get_config_val(config_file, "SlideWindowSize");
-    param.exact_match_len = get_config_val(config_file, "ExactMatchLen");
-    param.AOL = get_config_val(config_file, "AlignOverLongerSeq");
-    param.SIM = get_config_val(config_file, "MatchSimilarity");
-    param.OS = get_config_val(config_file, "OptimalScoreOverSelfScore");
+    pg_get_params(config_file, &param);
     
-    /* initialize dynamic programming blosum table */
-    init_map(SIGMA);
-
     printf("----------------------------------------------\n");
     printf("%-15s: %.78s\n", "fasta seq", sequence_file);
     printf("%-15s: %.78s\n", "config file", config_file);
@@ -75,38 +62,24 @@ int main(int argc, char *argv[])
     printf("%-15s: %zu\n", "nseqs", n_sequences);
     printf("----------------------------------------------\n");
 
-    sequences = emalloc(n_sequences*sizeof(sequence_t));
-
-    /* load sequences */
     (void) time(&t1);
-    load_all_sequences(sequence_file, n_sequences, sequences,
-            &n_acids, &maxSeqLen);
+    sequences = pg_load_fasta(sequence_file, DOLLAR);
     (void) time(&t2);
     printf("<%zu> amino acids are loaded in <%lld> secs\n",
-            n_acids, (long long)(t2-t1));
+            sequences->size, (long long)(t2-t1));
 
-    /* allocate memory for *buckets, *suffixes */
-    n_buckets = zpower(SIGMA, param.window_size);
-    buckets = emalloc(n_buckets*sizeof(bucket_t));
-    /* n_acids includes '$' */
-    n_suffixes = n_acids - n_sequences*param.window_size;
-    suffixes = emalloc(n_suffixes*sizeof(suffix_t));
-
-    /* build the buckets */
     (void) time(&t1);
-    build_buckets(
-            sequences, n_sequences,
-            buckets,   n_buckets,
-            suffixes,  n_suffixes,
-            param.window_size); 
+    suffix_buckets = pg_create_suffix_buckets(sequences, param);
     (void) time(&t2);
     printf("Bucketing finished in <%lld> secs\n", (long long)(t2-t1));
     
+#if 0
     (void) time(&t1);
     count_sort_buckets(buckets, n_buckets);
     //qsort(buckets, n_buckets, sizeof *buckets, bktCmp);
     (void) time(&t2);
     printf("Bucketing sorted in <%lld> secs\n", (long long)(t2-t1));
+#endif
 
     #ifdef DEBUG
     {
@@ -118,21 +91,31 @@ int main(int argc, char *argv[])
     }
     #endif
 
+    n_triangular = sequences->size * (sequences->size + 1U) / 2U;
+    dup = malloc(n_triangular * sizeof(int));
+    for (i = 0; i < n_triangular; ++i) {
+        dup[i] = 2;
+    }
+    
     /* suffix tree construction & processing */
     (void) time(&t1);
-    build_forest(
-            buckets,   n_buckets,
-            sequences, n_sequences,
-            maxSeqLen, &param);
+    size_t count = 0;
+    for (i = 0; i < suffix_buckets->buckets_size; ++i) {
+        if (NULL != suffix_buckets->buckets[i].suffixes) {
+            stree_t *tree = pg_build_tree(
+                    sequences, &(suffix_buckets->buckets[i]), param);
+            pg_generate_pairs(tree, sequences, dup, param);
+            pg_free_tree(tree);
+            ++count;
+        }
+    }
     (void) time(&t2);
-    printf("Tree constructed and processed in <%lld> secs\n",
-            (long long)(t2-t1));
+    free(dup);
+    printf("%zu non-empty trees constructed and processed in <%lld> secs\n",
+            count, (long long)(t2-t1));
     
-    /* free mem */
-    free(suffixes);
-    free(buckets);
-    free_sequences(sequences, n_sequences);
-    free(sequences);
+    pg_free_sequences(sequences);
+    pg_free_suffix_buckets(suffix_buckets);
 
     return EXIT_SUCCESS; 
 }

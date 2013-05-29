@@ -101,13 +101,10 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libpgraph_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
-am_libpgraph_la_OBJECTS = src/combinations.lo src/io.lo src/mpix.lo \
-	src/Sequence.lo src/SequenceDatabase.lo \
-	src/suffixtree/bucket.lo src/suffixtree/cfg.lo \
-	src/suffixtree/count_pairs.lo src/suffixtree/dynamic.lo \
-	src/suffixtree/elib.lo src/suffixtree/loadseq.lo \
-	src/suffixtree/pairs.lo src/suffixtree/search.lo \
-	src/suffixtree/stree.lo src/suffixtree/wlib.lo
+am_libpgraph_la_OBJECTS = src/bucket.lo src/combinations.lo \
+	src/dynamic.lo src/io.lo src/mpix.lo src/param.lo \
+	src/sequence.lo src/Sequence.lo src/SequenceDatabase.lo \
+	src/stree.lo
 libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -564,8 +561,7 @@ AM_CFLAGS =
 AM_CXXFLAGS = -Wno-deprecated
 #AM_CPPFLAGS += $(GA_CPPFLAGS)
 AM_CPPFLAGS = $(TASCEL_CPPFLAGS) $(ARMCI_CPPFLAGS) $(PT_MPI_CPPFLAGS) \
-	$(GMP_CPPFLAGS) -I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/suffixtree
+	$(GMP_CPPFLAGS) -I$(top_srcdir)/src
 #AM_LDFLAGS += $(GA_LDFLAGS)
 AM_LDFLAGS = $(TASCEL_LDFLAGS) $(ARMCI_LDFLAGS) $(PT_MPI_LDFLAGS) \
 	$(GMP_LDFLAGS)
@@ -574,26 +570,16 @@ LDADD = libpgraph.la $(TASCEL_LIBS) $(ARMCI_LIBS) $(PT_MPI_LIBS) \
 	$(GMP_LIBS)
 #LDADD += $(GA_FLIBS)
 noinst_LTLIBRARIES = libpgraph.la
-#libpgraph_la_SOURCES += src/dynamic.c
-#libpgraph_la_SOURCES += src/dynamic.h
 libpgraph_la_SOURCES = src/AlignStats.hpp src/blosum/blosum40.h \
 	src/blosum/blosum45.h src/blosum/blosum62.h \
 	src/blosum/blosum75.h src/blosum/blosum80.h \
-	src/blosum/blosum90.h src/combinations.c src/combinations.h \
-	src/io.cpp src/io.hpp src/mpix.cpp src/mpix.hpp \
-	src/pthread_fixes.h src/Sequence.cpp src/Sequence.hpp \
-	src/SequenceDatabase.cpp src/SequenceDatabase.hpp \
-	src/suffixtree/bucket.c src/suffixtree/bucket.h \
-	src/suffixtree/cfg.c src/suffixtree/cfg.h \
-	src/suffixtree/count_pairs.c src/suffixtree/count_pairs.h \
-	src/suffixtree/dynamic.c src/suffixtree/dynamic.h \
-	src/suffixtree/elib.c src/suffixtree/elib.h \
-	src/suffixtree/loadseq.c src/suffixtree/loadseq.h \
-	src/suffixtree/pairs.c src/suffixtree/pairs.h \
-	src/suffixtree/readline.h src/suffixtree/search.c \
-	src/suffixtree/search.h src/suffixtree/stree.c \
-	src/suffixtree/stree.h src/suffixtree/wlib.c \
-	src/suffixtree/wlib.h src/timer.h
+	src/blosum/blosum90.h src/bucket.c src/bucket.h \
+	src/combinations.c src/combinations.h src/constants.h \
+	src/dynamic.c src/dynamic.h src/io.cpp src/io.hpp src/mpix.cpp \
+	src/mpix.hpp src/param.c src/param.h src/pthread_fixes.h \
+	src/sequence.c src/sequence.h src/Sequence.cpp \
+	src/Sequence.hpp src/SequenceDatabase.cpp \
+	src/SequenceDatabase.hpp src/stree.c src/stree.h src/timer.h
 apps_align_SOURCES = apps/align.cc
 apps_ccd_SOURCES = apps/ccd.c
 sandbox_blast_SOURCES = sandbox/blast.cc
@@ -697,38 +683,17 @@ src/$(am__dirstamp):
 src/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) src/$(DEPDIR)
 	@: > src/$(DEPDIR)/$(am__dirstamp)
+src/bucket.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/combinations.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/dynamic.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/io.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/mpix.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/param.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/sequence.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/Sequence.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/SequenceDatabase.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
-src/suffixtree/$(am__dirstamp):
-	@$(MKDIR_P) src/suffixtree
-	@: > src/suffixtree/$(am__dirstamp)
-src/suffixtree/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) src/suffixtree/$(DEPDIR)
-	@: > src/suffixtree/$(DEPDIR)/$(am__dirstamp)
-src/suffixtree/bucket.lo: src/suffixtree/$(am__dirstamp) \
-	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
-src/suffixtree/cfg.lo: src/suffixtree/$(am__dirstamp) \
-	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
-src/suffixtree/count_pairs.lo: src/suffixtree/$(am__dirstamp) \
-	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
-src/suffixtree/dynamic.lo: src/suffixtree/$(am__dirstamp) \
-	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
-src/suffixtree/elib.lo: src/suffixtree/$(am__dirstamp) \
-	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
-src/suffixtree/loadseq.lo: src/suffixtree/$(am__dirstamp) \
-	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
-src/suffixtree/pairs.lo: src/suffixtree/$(am__dirstamp) \
-	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
-src/suffixtree/search.lo: src/suffixtree/$(am__dirstamp) \
-	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
-src/suffixtree/stree.lo: src/suffixtree/$(am__dirstamp) \
-	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
-src/suffixtree/wlib.lo: src/suffixtree/$(am__dirstamp) \
-	src/suffixtree/$(DEPDIR)/$(am__dirstamp)
+src/stree.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 libpgraph.la: $(libpgraph_la_OBJECTS) $(libpgraph_la_DEPENDENCIES) $(EXTRA_libpgraph_la_DEPENDENCIES) 
 	$(AM_V_CXXLD)$(CXXLINK)  $(libpgraph_la_OBJECTS) $(libpgraph_la_LIBADD) $(LIBS)
 install-binPROGRAMS: $(bin_PROGRAMS)
@@ -934,8 +899,6 @@ mostlyclean-compile:
 	-rm -f sandbox/*.$(OBJEXT)
 	-rm -f src/*.$(OBJEXT)
 	-rm -f src/*.lo
-	-rm -f src/suffixtree/*.$(OBJEXT)
-	-rm -f src/suffixtree/*.lo
 	-rm -f tests/*.$(OBJEXT)
 
 distclean-compile:
@@ -962,19 +925,14 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/unique_pairs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Sequence.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabase.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/bucket.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/combinations.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/dynamic.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/io.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/mpix.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/bucket.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/cfg.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/count_pairs.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/dynamic.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/elib.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/loadseq.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/pairs.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/search.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/stree.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/suffixtree/$(DEPDIR)/wlib.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/param.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/sequence.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/stree.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_combinations.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_dynamic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_read.Po@am__quote@
@@ -1159,7 +1117,6 @@ clean-libtool:
 	-rm -rf apps/.libs apps/_libs
 	-rm -rf sandbox/.libs sandbox/_libs
 	-rm -rf src/.libs src/_libs
-	-rm -rf src/suffixtree/.libs src/suffixtree/_libs
 	-rm -rf tests/.libs tests/_libs
 
 distclean-libtool:
@@ -1419,8 +1376,6 @@ distclean-generic:
 	-rm -f sandbox/$(am__dirstamp)
 	-rm -f src/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/$(am__dirstamp)
-	-rm -f src/suffixtree/$(DEPDIR)/$(am__dirstamp)
-	-rm -f src/suffixtree/$(am__dirstamp)
 	-rm -f tests/$(DEPDIR)/$(am__dirstamp)
 	-rm -f tests/$(am__dirstamp)
 
@@ -1434,7 +1389,7 @@ clean-am: clean-binPROGRAMS clean-generic clean-libtool \
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf apps/$(DEPDIR) sandbox/$(DEPDIR) src/$(DEPDIR) src/suffixtree/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf apps/$(DEPDIR) sandbox/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -1482,7 +1437,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf apps/$(DEPDIR) sandbox/$(DEPDIR) src/$(DEPDIR) src/suffixtree/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf apps/$(DEPDIR) sandbox/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

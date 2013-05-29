@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "AlignStats.hpp"
+#include "constants.h"
 #include "combinations.h"
 #include "dynamic.h"
 #include "mpix.hpp"
@@ -77,7 +78,7 @@ int ***del = 0;
 int ***ins = 0;
 UniformTaskCollSplitHybrid** utcs = 0;
 AlignStats *stats = 0;
-vector<string> sequences;
+sequences_t *sequences;
 vector<EdgeResult> *edge_results = 0;
 
 #if defined(THREADED)
@@ -119,26 +120,26 @@ static void alignment_task(
     task_description *desc = (task_description*)_bigd;
     unsigned long seq_id[2];
     cell_t result;
-    is_edge_param_t param;
+    param_t param;
     int is_edge_answer = 0;
     double t = 0;
     int sscore;
-    int maxLen;
+    size_t maxLen;
 
     seq_id[0] = desc->id1;
     seq_id[1] = desc->id2;
     {
         t = MPI_Wtime();
-        affine_gap_align(
-                sequences[seq_id[0]].c_str(), sequences[seq_id[0]].size(),
-                sequences[seq_id[1]].c_str(), sequences[seq_id[1]].size(),
+        pg_affine_gap_align(
+                &(sequences->seq[seq_id[0]]),
+                &(sequences->seq[seq_id[1]]),
                 &result, tbl[thd], del[thd], ins[thd]);
         param.AOL = 8;
         param.SIM = 4;
         param.OS = 3;
-        is_edge_answer = is_edge(result,
-                sequences[seq_id[0]].c_str(), sequences[seq_id[0]].size(),
-                sequences[seq_id[1]].c_str(), sequences[seq_id[1]].size(),
+        is_edge_answer = pg_is_edge(result,
+                &(sequences->seq[seq_id[0]]),
+                &(sequences->seq[seq_id[1]]),
                 param, &sscore, &maxLen);
         ++stats[thd].align_counts;
 
@@ -226,8 +227,6 @@ int main(int argc, char **argv)
     char *file_buffer = NULL;
     MPI_File fh;
     MPI_Status status;
-    long seg_count = 0;
-    size_t max_seq_len = 0;
     unsigned long nCk;
 
     /* initialize MPI */
@@ -261,9 +260,6 @@ int main(int argc, char **argv)
     }
 #endif
 
-    /* initialize dynamic code */
-    init_map(SIGMA);
-
     /* MPI standard does not guarantee all procs receive argc and argv */
     if (0 == rank) {
         MPI_CHECK(MPI_Bcast(&argc, 1, MPI_INT, 0, comm));
@@ -289,9 +285,8 @@ int main(int argc, char **argv)
     /* print the command line arguments */
     for (int i=0; i<nprocs; ++i) {
         if (i == rank) {
-            int j;
-            for (j=0; j<all_argv.size(); ++j) {
-                printf("[%d] argv[%d]=%s\n", rank, j, all_argv[j].c_str());
+            for (size_t j=0; j<all_argv.size(); ++j) {
+                printf("[%d] argv[%zd]=%s\n", rank, j, all_argv[j].c_str());
             }
         }
         MPI_Barrier(comm);
@@ -342,10 +337,7 @@ int main(int argc, char **argv)
         printf("file_size=%ld\n", file_size);
     }
     /* allocate a buffer for the file, of the entire size */
-    /* TODO: this is not memory efficient since we allocate a buffer to read
-     * the entire input file and then parse the buffer into a vector of
-     * strings, essentially doubling the memory requirement */
-    file_buffer = new char[file_size];
+    file_buffer = new char[file_size+1];
 
     /* all procs read the entire file */
     MPI_CHECK(MPI_File_open(comm, const_cast<char*>(all_argv[1].c_str()),
@@ -353,87 +345,56 @@ int main(int argc, char **argv)
                 MPI_INFO_NULL, &fh));
     MPI_CHECK(MPI_File_read_all(fh, file_buffer, file_size, MPI_CHAR, &status));
     MPI_CHECK(MPI_File_close(&fh));
+    file_buffer[file_size] = '\0';
 
-    /* each process counts how many '>' characters are in the file_buffer */
-    for (int i=0; i<file_size; ++i) {
-        if (file_buffer[i] == '>') {
-            ++seg_count;
-        }
-    }
+    sequences = pg_parse_fasta(file_buffer, file_size, '\0');
 #if DEBUG
-    /* print the seg_count on each process */
+    /* print the sequence count on each process */
     for (int i=0; i<nprocs; ++i) {
         if (i == rank) {
-            printf("[%d] seg_count=%ld\n", rank, seg_count);
-        }
-        MPI_Barrier(comm);
-    }
-#endif
-
-    /* TODO declare these at the top */
-    /* each process indexes the file_buffer */
-    istrstream input_stream(const_cast<const char*>(file_buffer), file_size);
-    string line;
-    string sequence;
-    sequences.reserve(seg_count);
-    while (getline(input_stream, line)) {
-        if (line[0] == '>') {
-            if (!sequence.empty()) {
-                sequences.push_back(sequence);
-                max_seq_len = max(max_seq_len, sequence.size());
-            }
-            sequence.clear();
-            continue;
-        }
-        sequence += line;
-    }
-    /* add the last sequence in the file since we wouldn't encounter another
-     * '>' character but rather an EOF */
-    if (!sequence.empty()) {
-        sequences.push_back(sequence);
-        max_seq_len = max(max_seq_len, sequence.size());
-    }
-    sequence.clear();
-    delete [] file_buffer;
-#if DEBUG
-    /* print the seg_count on each process */
-    for (int i=0; i<nprocs; ++i) {
-        if (i == rank) {
-            printf("[%d] sequences.size()=%ld sequences.capacity()=%ld\n",
-                    rank, long(sequences.size()), long(sequences.capacity()));
+            printf("[%d] sequences->size=%ld\n", rank, long(sequences->size));
         }
         MPI_Barrier(comm);
     }
     /* print the max_seq_len on each process */
     for (int i=0; i<nprocs; ++i) {
         if (i == rank) {
-            printf("[%d] max_seq_len=%ld\n", rank, long(max_seq_len));
+            printf("[%d] max_seq_len=%ld\n",
+                    rank, long(sequences->max_seq_size));
         }
         MPI_Barrier(comm);
+    }
+#endif
+#if DEBUG_VERBOSE || 1
+    for (size_t i=0; i<sequences->size; ++i) {
+        cout << i << endl;
+        cout << sequences->seq[i].gid << endl;
+        cout << sequences->seq[i].str << endl;
+        cout << sequences->seq[i].size << endl;
     }
 #endif
 #if DEBUG
     /* print the first sequence on each process */
     for (int i=0; i<nprocs; ++i) {
         if (i == rank) {
-            printf("[%d] sequences[0]=%s\n", rank, sequences[0].c_str());
+            printf("[%d] sequences[0]=%s\n", rank, sequences->seq[0].str);
         }
         MPI_Barrier(comm);
     }
     /* print the last sequence on each process */
     for (int i=0; i<nprocs; ++i) {
         if (i == rank) {
-            printf("[%d] sequences.back()=%s\n",
-                    rank, sequences.back().c_str());
+            printf("[%d] sequences->seq[size-1]=%s\n",
+                    rank, sequences->seq[sequences->size-1].str);
         }
         MPI_Barrier(comm);
     }
 #endif
     /* how many combinations of sequences are there? */
-    nCk = binomial_coefficient(sequences.size(), 2);
+    nCk = binomial_coefficient(sequences->size, 2);
     if (0 == trank(0)) {
         printf("brute force %lu C 2 has %lu combinations\n",
-                sequences.size(), nCk);
+                sequences->size, nCk);
     }
 
     double selectivity = 1.0;
@@ -460,9 +421,9 @@ int main(int argc, char **argv)
     /* some more dynamic initialization */
     assert(NROW == 2);
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
-        tbl[worker] = alloc_tbl(NROW, max_seq_len);
-        del[worker] = alloc_int(NROW, max_seq_len);
-        ins[worker] = alloc_int(NROW, max_seq_len);
+        tbl[worker] = pg_alloc_tbl(NROW, sequences->max_seq_size);
+        del[worker] = pg_alloc_int(NROW, sequences->max_seq_size);
+        ins[worker] = pg_alloc_int(NROW, sequences->max_seq_size);
     }
 
     /* the tascel part */
@@ -492,7 +453,7 @@ int main(int argc, char **argv)
     if (0 == rank) {
         double tally = 0;
         cout << " pid populate_time" << endl;
-        for(unsigned i=0; i<nprocs*NUM_WORKERS; i++) {
+        for(int i=0; i<nprocs*NUM_WORKERS; i++) {
             tally += g_populate_times[i];
             cout << std::setw(4) << std::right << i
                 << setw(14) << fixed << g_populate_times[i] << endl;
@@ -509,7 +470,7 @@ int main(int argc, char **argv)
     if (0 == rank) {
         unsigned long tally = 0;
         cout << " pid        ntasks" << endl;
-        for(unsigned i=0; i<nprocs*NUM_WORKERS; i++) {
+        for(int i=0; i<nprocs*NUM_WORKERS; i++) {
             tally += task_counts[i];
             cout << std::setw(4) << std::right << i
                 << setw(14) << task_counts[i] << endl;
@@ -532,7 +493,7 @@ int main(int argc, char **argv)
     pthread_barrier_init(&serverStart, 0, NUM_SERVERS + 1);
     pthread_barrier_init(&serverEnd, 0, NUM_SERVERS + 1);
     asm("mfence");
-    for (unsigned i = 1; i < NUM_WORKERS; ++i) {
+    for (int i = 1; i < NUM_WORKERS; ++i) {
         worker_thread_args *args = new worker_thread_args(
                 threadRanks[i], utcs[i], &workersStart, &workersEnd);;
         pthread_create(&threadHandles[i], NULL, worker_thread, args);
@@ -619,15 +580,18 @@ int main(int argc, char **argv)
     ofstream edge_out(get_edges_filename(rank).c_str());
     /* clean up */
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
-        free_tbl(tbl[worker], NROW);
-        free_int(del[worker], NROW);
-        free_int(ins[worker], NROW);
+        pg_free_tbl(tbl[worker], NROW);
+        pg_free_int(del[worker], NROW);
+        pg_free_int(ins[worker], NROW);
         delete utcs[worker];
         for (size_t i=0,limit=edge_results[worker].size(); i<limit; ++i) {
             edge_out << edge_results[worker][i] << endl;
         }
     }
     edge_out.close();
+
+    delete [] edge_results;
+    pg_free_sequences(sequences);
 
     TascelConfig::finalize();
     MPI_Comm_free(&comm);

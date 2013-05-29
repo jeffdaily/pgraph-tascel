@@ -60,6 +60,7 @@ void read_fasta(const char *filename, size_t _budget, vector<string> &sequences)
             MPI_Abort(MPI_COMM_WORLD, localsize - budget);
         }
         start = rank * localsize;
+        end = (rank+1) * localsize;
         /* we fudge the margins based on the memory budget specified */
         start = start - ((budget - localsize) / 2);
         end   = end   + ((budget - localsize) / 2);
