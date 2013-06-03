@@ -31,14 +31,32 @@ typedef struct {
 } cell_t;
 
 
+/** callback function type for generic dynamic programming (mis)match score */
+typedef int (*match_t)(char one, char two);
+
+
+/**
+ * (Mis)match score based on blosum.
+ *
+ * Assumes inputs are valid characters from the protein alphabet.
+ *
+ * @see pg_select_blosum
+ *
+ * @param[in] one a character from the first sequence
+ * @param[in] two a character from the first sequence
+ * @return the score based on the blosum substitution
+ */
+int pg_match_blosum(char one, char two);
+
+
 /**
  * Calculates the score if the given sequence were aligned with itself.
  *
- * @param[in] s the sequence as a C string
- * @param[in] ns the length of s
+ * @param[in] s the sequence
+ * @param[in] callback the match function callback
  * @return the self score
  */
-int pg_self_score(const sequence_t *seq);
+int pg_self_score(const sequence_t *seq, match_t callback);
 
 
 /**
@@ -100,9 +118,35 @@ void pg_select_blosum(int number);
  * @param[in] tbl pre-allocated score table
  * @param[in] del pre-allocated deletion table
  * @param[in] ins pre-allocated insertion table
+ * @param[in] open gap penalty
+ * @param[in] gap extension penalty
  */
 void pg_affine_gap_align(const sequence_t *s1, const sequence_t *s2,
-                         cell_t *result, cell_t **tbl, int **del, int **ins);
+                         cell_t *result, cell_t **tbl, int **del, int **ins,
+                         int open, int gap, match_t callback);
+
+
+/**
+ * Implementation of affine gap pairwise protein sequence alignment using
+ * blosum.
+ *
+ * It is a space efficient version: only two rows are required; also mem for
+ * all dynamic tables are allocated ONLY ONCE outside of this function call
+ * using alloc_tbl() and alloc_int() and passed as tbl, del, and ins arguments.
+ *
+ * @param[in] s1 sequence s1
+ * @param[in] s2 sequence s2
+ * @param[out] result alignment result <score, ndig, alen>
+ * @param[in] tbl pre-allocated score table
+ * @param[in] del pre-allocated deletion table
+ * @param[in] ins pre-allocated insertion table
+ * @param[in] open gap penalty
+ * @param[in] gap extension penalty
+ */
+void pg_affine_gap_align_blosum(
+        const sequence_t *s1, const sequence_t *s2,
+        cell_t *result, cell_t **tbl, int **del, int **ins,
+        int open, int gap);
 
 
 /**

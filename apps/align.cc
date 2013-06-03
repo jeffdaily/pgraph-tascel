@@ -126,17 +126,21 @@ static void alignment_task(
     int sscore;
     size_t maxLen;
 
+    param.open = -10;
+    param.gap = -1;
+    param.AOL = 8;
+    param.SIM = 4;
+    param.OS = 3;
+
     seq_id[0] = desc->id1;
     seq_id[1] = desc->id2;
     {
         t = MPI_Wtime();
-        pg_affine_gap_align(
+        pg_affine_gap_align_blosum(
                 &(sequences->seq[seq_id[0]]),
                 &(sequences->seq[seq_id[1]]),
-                &result, tbl[thd], del[thd], ins[thd]);
-        param.AOL = 8;
-        param.SIM = 4;
-        param.OS = 3;
+                &result, tbl[thd], del[thd], ins[thd],
+                param.open, param.gap);
         is_edge_answer = pg_is_edge(result,
                 &(sequences->seq[seq_id[0]]),
                 &(sequences->seq[seq_id[1]]),
@@ -365,7 +369,7 @@ int main(int argc, char **argv)
         MPI_Barrier(comm);
     }
 #endif
-#if DEBUG_VERBOSE || 1
+#if DEBUG_VERBOSE
     for (size_t i=0; i<sequences->size; ++i) {
         cout << i << endl;
         cout << sequences->seq[i].gid << endl;

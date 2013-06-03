@@ -7,8 +7,10 @@
  */
 #include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
+#include "constants.h"
 #include "dynamic.h"
 
 static const char seq0[] = 
@@ -53,25 +55,23 @@ int test(const char *seq1, const char *seq2)
     size_t seq2_len = strlen(seq2);
     int max_seq_len = seq1_len > seq2_len ? seq1_len : seq2_len;
     cell_t result;
-    is_edge_param_t param;
+    param_t param;
     int is_edge_answer = 0;
     int sscore;
-    int maxLen;
-
-    /* NOTE: init blosum matrix for alignment */
-    init_map(SIGMA);
+    size_t maxLen;
+    sequence_t s1 = {"",seq1,seq1_len};
+    sequence_t s2 = {"",seq2,seq2_len};
 
     assert(NROW == 2);
-    tbl = alloc_tbl(NROW, max_seq_len);
-    del = alloc_int(NROW, max_seq_len);
-    ins = alloc_int(NROW, max_seq_len);
+    tbl = pg_alloc_tbl(NROW, max_seq_len);
+    del = pg_alloc_int(NROW, max_seq_len);
+    ins = pg_alloc_int(NROW, max_seq_len);
 
-    affine_gap_align(seq1, seq1_len, seq2, seq2_len, &result, tbl, del, ins);
+    pg_affine_gap_align_blosum(&s1, &s2, &result, tbl, del, ins, -10, -1);
     param.AOL = 8;
     param.SIM = 4;
     param.OS = 3;
-    is_edge_answer = is_edge(
-            result, seq1, seq1_len, seq2, seq2_len, param, &sscore, &maxLen);
+    is_edge_answer = pg_is_edge(result, &s1, &s2, param, &sscore, &maxLen);
     printf("---------------------------------------------------\n");
     printf("result->score=%d\n", result.score);
     printf("result->ndig=%d\n", result.ndig);
@@ -81,9 +81,9 @@ int test(const char *seq1, const char *seq2)
     printf("nmatch/alen=%f\n", 1.0*result.ndig/result.alen);
     printf("score/sscore=%f\n", 1.0*result.score/sscore);
 
-    free_tbl(tbl, NROW);
-    free_int(del, NROW);
-    free_int(ins, NROW);
+    pg_free_tbl(tbl, NROW);
+    pg_free_int(del, NROW);
+    pg_free_int(ins, NROW);
 
     return 0;
 }
