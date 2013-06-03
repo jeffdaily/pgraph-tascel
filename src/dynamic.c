@@ -179,26 +179,20 @@ void pg_affine_gap_align(
         cell_t *result, cell_t **tbl, int **del, int **ins,
         int open, int gap, match_t callback)
 {
-    size_t i, j;
-    int cr, pr;
-    int dig, up, left, maxScore;
-    char ch1, ch2;  /* character s[i] and s[j] */
-    const char *s1 = _s1->str;
-    size_t s1Len = _s1->size;
-    const char *s2 = _s2->str;
-    size_t s2Len = _s2->size;
-
-    /* struct can be ONLY initialized as it is declared ??*/
-    cell_t lastCol = {INT_MIN, 0, 0};
-    cell_t lastRow = {INT_MIN, 0, 0};
+    size_t i;                           /* first sequence char index */
+    size_t j;                           /* second sequence char index */
+    const char *s1 = _s1->str;          /* char string of first sequence */
+    size_t s1Len = _s1->size;           /* length of second sequence */
+    const char *s2 = _s2->str;          /* char string of second sequence */
+    size_t s2Len = _s2->size;           /* length of second sequence */
+    cell_t lastCol = {INT_MIN, 0, 0};   /* max cell in last col */
+    cell_t lastRow = {INT_MIN, 0, 0};   /* max cell in last row */
+    cell_t *tI = NULL;                  /* current DP table row */
+    cell_t *pI = NULL;                  /* previous DP table row */
 
     assert(s1Len > 0 && s2Len > 0);
 
-    cr = 1;
-    pr = 0;
-
-    cell_t *tI = NULL;
-    cell_t *pI = NULL;
+    init_blosum_map();
 
     /* init first row of 3 tables */
     tbl[0][0].score = 0;
@@ -206,23 +200,27 @@ void pg_affine_gap_align(
     tbl[0][0].alen = 0;
     del[0][0] = 0;
     ins[0][0] = 0;
-
     tI = tbl[0];
     for (j = 1; j <= s2Len; j++) {
         tI[j].score = open + j * gap;
         tI[j].ndig = 0;
         tI[j].alen = 0;
-
         del[0][j] = INT_MIN;
         ins[0][j] = open + j * gap;
     }
 
+    for (i = 1; i <= s1Len; ++i) {
+        int dig = 0;        /* diagonal value in DP table */
+        int up = 0;         /* upper value in DP table */
+        int left = 0;       /* left value in DP table */
+        int maxScore = 0;   /* max of dig, up, and left in DP table */
+        size_t cr = 0;      /* current row index in DP table */
+        size_t pr = 0;      /* previous row index in DP table */
+        char ch1 = 0;       /* current character in first sequence */
 
-    for (i = 1; i <= s1Len; i++) {
-        ch1 = s1[i - 1];
         cr = CROW(i);
         pr = PROW(i);
-
+        ch1 = s1[i - 1];
         tI = tbl[cr];
         pI = tbl[pr];
 
@@ -230,12 +228,14 @@ void pg_affine_gap_align(
         tI[0].score = open + i * gap;
         tI[0].ndig = 0;
         tI[0].alen = 0;
-
         del[cr][0] = open + i * gap;
         ins[cr][0] = INT_MIN;
 
         for (j = 1; j <= s2Len; j++) {
-            int tmp1, tmp2;
+            int tmp1 = 0;   /* temporary during DP calculation */
+            int tmp2 = 0;   /* temporary during DP calculation */
+            char ch2 = 0;   /* current character in second sequence */
+
             ch2 = s2[j - 1];
 
             /* overflow could happen, INT_MIN-1 = 2147483647 */
@@ -247,17 +247,10 @@ void pg_affine_gap_align(
             tmp2 = NEG_ADD(ins[cr][j - 1], gap);
             left = MAX(tmp1, tmp2);
             ins[cr][j] = left;
-            maxScore = (up >= left) ? up : left;
-
+            maxScore = MAX(up, left);
             dig = pI[j - 1].score + callback(ch1, ch2);
-            if (dig >= maxScore) {
-                maxScore = dig;
-            }
+            maxScore = MAX(maxScore, dig);
             tI[j].score = maxScore;
-
-#ifdef DEBUG
-            printf("up=%d, left=%d, dig=%d, <%c,%c>\n", up, left, dig, ch1, ch2);
-#endif
 
             if (maxScore == dig) {
                 tI[j].ndig = pI[j - 1].ndig + ((ch1 == ch2) ? 1 : 0);
@@ -272,16 +265,18 @@ void pg_affine_gap_align(
                 tI[j].alen = tI[j - 1].alen + 1;
             }
 
-            /* track of the maximum last row */
-            if (i == s1Len) {
-                lastRow = (tI[j].score > lastRow.score) ? tI[j] : lastRow;
+            /* track the maximum of last row */
+            if (i == s1Len && tI[j].score > lastRow.score) {
+                lastRow = tI[j];
             }
-        }
+        } /* end of j loop */
 
         assert(j == (s2Len + 1));
 
         /* update the maximum of last column */
-        lastCol = (tI[s2Len].score > lastCol.score) ? tI[s2Len] : lastCol;
+        if (tI[s2Len].score > lastCol.score) {
+            lastCol = tI[s2Len];
+        }
     } /* end of i loop */
 
     *result = (lastCol.score > lastRow.score) ? lastCol : lastRow;
@@ -409,6 +404,50 @@ void pg_print_row(cell_t **tbl, int i, int ncol)
 
 
 int pg_is_edge(const cell_t result,
+               const sequence_t *s1, const sequence_t *s2,
+               const param_t param, int *_sscore, size_t *_maxLen,
+               match_t callback)
+{
+    int sscore = 0;
+    int maxLen = 0;
+    int nmatch = 0;
+
+    /* DO NOT need to compute the sscore value every time, if the later check
+     * failed at the first step, the sscore computation is wasted */
+
+    assert(s1->size);
+    assert(s2->size);
+
+    if (s1->size > s2->size) {
+        maxLen = s1->size;
+        sscore = pg_self_score(s1, callback);
+    }
+    else {
+        maxLen = s2->size;
+        sscore = pg_self_score(s2, callback);
+    }
+
+    nmatch = result.ndig;
+    *_sscore = sscore;
+    *_maxLen = maxLen;
+
+    /* order the condition in strict->loose way, performance perspective
+     * comparison using integers, no overflow could happen */
+    if (result.score <= 0) {
+        return FALSE;
+    }
+    else if ((result.alen * 100 >= param.AOL * maxLen)
+             && (nmatch * 100 >= param.SIM * result.alen)
+             && (result.score * 100 >= param.OS * sscore)) {
+        return TRUE;
+    }
+    else {
+        return FALSE;
+    }
+}
+
+
+int pg_is_edge_blosum(const cell_t result,
                const sequence_t *s1, const sequence_t *s2,
                const param_t param, int *_sscore, size_t *_maxLen)
 {

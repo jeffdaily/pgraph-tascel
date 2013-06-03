@@ -60,6 +60,16 @@ int pg_self_score(const sequence_t *seq, match_t callback);
 
 
 /**
+ * Calculates the score if the given sequence were aligned with itself.
+ *
+ * @param[in] s the sequence
+ * @param[in] callback the match function callback
+ * @return the self score
+ */
+int pg_self_score_blosum(const sequence_t *seq);
+
+
+/**
  * Allocates a 2-dimensional cell_t array for sequence alignment.
  *
  * @param[in] nrow number of rows (always 2)
@@ -172,7 +182,25 @@ void pg_print_row(cell_t **tbl, int i, int ncol);
  * @return TRUE if this is an edge, FALSE otherwise
  */
 int pg_is_edge(const cell_t result, const sequence_t *s1, const sequence_t *s2,
-               const param_t param, int *sscore, size_t *maxLen);
+               const param_t param, int *sscore, size_t *maxLen,
+               match_t callback);
+
+
+/**
+ * Asks whether the given cell_t alignment result is an edge, based on the
+ * given param parameters.
+ *
+ * @param[in] result the dynamic programming alignment result
+ * @param[in] s1 sequence s1
+ * @param[in] s2 sequence s2
+ * @param[in] param the heuristic parameters for edge determination
+ * @param[out] sscore self score
+ * @param[out] maxLen longer of s1Len and s2Len
+ * @return TRUE if this is an edge, FALSE otherwise
+ */
+int pg_is_edge_blosum(const cell_t result,
+                      const sequence_t *s1, const sequence_t *s2,
+                      const param_t param, int *sscore, size_t *maxLen);
 
 #ifdef __cplusplus
 }

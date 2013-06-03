@@ -136,15 +136,27 @@ static void alignment_task(
     seq_id[1] = desc->id2;
     {
         t = MPI_Wtime();
+#if 1
         pg_affine_gap_align_blosum(
                 &(sequences->seq[seq_id[0]]),
                 &(sequences->seq[seq_id[1]]),
                 &result, tbl[thd], del[thd], ins[thd],
                 param.open, param.gap);
-        is_edge_answer = pg_is_edge(result,
+        is_edge_answer = pg_is_edge_blosum(result,
                 &(sequences->seq[seq_id[0]]),
                 &(sequences->seq[seq_id[1]]),
                 param, &sscore, &maxLen);
+#else
+        pg_affine_gap_align(
+                &(sequences->seq[seq_id[0]]),
+                &(sequences->seq[seq_id[1]]),
+                &result, tbl[thd], del[thd], ins[thd],
+                param.open, param.gap, pg_match_blosum);
+        is_edge_answer = pg_is_edge(result,
+                &(sequences->seq[seq_id[0]]),
+                &(sequences->seq[seq_id[1]]),
+                param, &sscore, &maxLen, pg_match_blosum);
+#endif
         ++stats[thd].align_counts;
 
         if (is_edge_answer || ALL_RESULTS)
