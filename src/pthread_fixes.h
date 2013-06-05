@@ -53,8 +53,8 @@ typedef struct {
     unsigned         count;
 } pthread_barrier_t;
 
-int pthread_barrier_init(pthread_barrier_t *barrier,
-                         const void * /* barrier_attr */,
+static int pthread_barrier_init(pthread_barrier_t *barrier,
+                         const void * barrier_attr,
                          unsigned count)
 {
     barrier->count = count;
@@ -63,7 +63,7 @@ int pthread_barrier_init(pthread_barrier_t *barrier,
     return 0;
 }
 
-int pthread_barrier_wait(pthread_barrier_t *barrier)
+static int pthread_barrier_wait(pthread_barrier_t *barrier)
 {
     // Lock the mutex
     pthread_mutex_lock(&barrier->mutex);
@@ -86,7 +86,7 @@ int pthread_barrier_wait(pthread_barrier_t *barrier)
     return 0;
 }
 
-int pthread_barrier_destroy(pthread_barrier_t *barrier)
+static int pthread_barrier_destroy(pthread_barrier_t *barrier)
 {
     barrier->count = 0;
     pthread_cond_destroy(&barrier->cond);
@@ -96,7 +96,7 @@ int pthread_barrier_destroy(pthread_barrier_t *barrier)
 
 #endif  // defined(PTHREAD_BARRIER_SERIAL_THREAD)
 
-int pthread_yield(void)
+static int pthread_yield(void)
 {
     sched_yield();
     return 0;

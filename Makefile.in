@@ -64,10 +64,10 @@ noinst_PROGRAMS = sandbox/blast$(EXEEXT) sandbox/brute_force$(EXEEXT) \
 	sandbox/brute_force_sorted$(EXEEXT) \
 	sandbox/brute_force_sorted_seq$(EXEEXT) \
 	sandbox/forest$(EXEEXT) sandbox/sort_pairs$(EXEEXT) \
-	sandbox/unique_pairs$(EXEEXT) tests/test_combinations$(EXEEXT) \
-	tests/test_dynamic$(EXEEXT) tests/test_read$(EXEEXT) \
-	tests/test_read_fasta$(EXEEXT) tests/test_read_serial$(EXEEXT) \
-	$(am__EXEEXT_2)
+	sandbox/unique_pairs$(EXEEXT) tests/test_align$(EXEEXT) \
+	tests/test_combinations$(EXEEXT) tests/test_dynamic$(EXEEXT) \
+	tests/test_read$(EXEEXT) tests/test_read_fasta$(EXEEXT) \
+	tests/test_read_serial$(EXEEXT) $(am__EXEEXT_2)
 @HAVE_ARMCI_TRUE@am__append_1 = sandbox/brute_force_armci
 @HAVE_UTC_ITER_TRUE@am__append_2 = sandbox/brute_force_iter
 subdir = .
@@ -101,10 +101,10 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libpgraph_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
-am_libpgraph_la_OBJECTS = src/bucket.lo src/combinations.lo \
-	src/dynamic.lo src/io.lo src/mpix.lo src/param.lo \
-	src/sequence.lo src/Sequence.lo src/SequenceDatabase.lo \
-	src/stree.lo
+am_libpgraph_la_OBJECTS = src/align.lo src/bucket.lo \
+	src/combinations.lo src/dynamic.lo src/io.lo src/mpix.lo \
+	src/param.lo src/sequence.lo src/Sequence.lo \
+	src/SequenceDatabase.lo src/stree.lo
 libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -251,6 +251,12 @@ sandbox_unique_pairs_LDADD = $(LDADD)
 sandbox_unique_pairs_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
+am_tests_test_align_OBJECTS = tests/test_align.$(OBJEXT)
+tests_test_align_OBJECTS = $(am_tests_test_align_OBJECTS)
+tests_test_align_LDADD = $(LDADD)
+tests_test_align_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_tests_test_combinations_OBJECTS =  \
 	tests/test_combinations.$(OBJEXT)
 tests_test_combinations_OBJECTS =  \
@@ -351,7 +357,7 @@ SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
 	$(sandbox_brute_force_sorted_SOURCES) \
 	$(sandbox_brute_force_sorted_seq_SOURCES) \
 	$(sandbox_forest_SOURCES) $(sandbox_sort_pairs_SOURCES) \
-	$(sandbox_unique_pairs_SOURCES) \
+	$(sandbox_unique_pairs_SOURCES) $(tests_test_align_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_read_SOURCES) \
 	$(tests_test_read_fasta_SOURCES) \
@@ -372,7 +378,7 @@ DIST_SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
 	$(sandbox_brute_force_sorted_SOURCES) \
 	$(sandbox_brute_force_sorted_seq_SOURCES) \
 	$(sandbox_forest_SOURCES) $(sandbox_sort_pairs_SOURCES) \
-	$(sandbox_unique_pairs_SOURCES) \
+	$(sandbox_unique_pairs_SOURCES) $(tests_test_align_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_read_SOURCES) \
 	$(tests_test_read_fasta_SOURCES) \
@@ -570,15 +576,15 @@ LDADD = libpgraph.la $(TASCEL_LIBS) $(ARMCI_LIBS) $(PT_MPI_LIBS) \
 	$(GMP_LIBS)
 #LDADD += $(GA_FLIBS)
 noinst_LTLIBRARIES = libpgraph.la
-libpgraph_la_SOURCES = src/AlignStats.hpp src/blosum/blosum40.h \
-	src/blosum/blosum45.h src/blosum/blosum62.h \
-	src/blosum/blosum75.h src/blosum/blosum80.h \
-	src/blosum/blosum90.h src/bucket.c src/bucket.h \
-	src/combinations.c src/combinations.h src/constants.h \
-	src/dynamic.c src/dynamic.h src/io.cpp src/io.hpp src/mpix.cpp \
-	src/mpix.hpp src/param.c src/param.h src/pthread_fixes.h \
-	src/sequence.c src/sequence.h src/Sequence.cpp \
-	src/Sequence.hpp src/SequenceDatabase.cpp \
+libpgraph_la_SOURCES = src/align.c src/align.h src/AlignStats.hpp \
+	src/blosum/blosum40.h src/blosum/blosum45.h \
+	src/blosum/blosum62.h src/blosum/blosum75.h \
+	src/blosum/blosum80.h src/blosum/blosum90.h src/bucket.c \
+	src/bucket.h src/combinations.c src/combinations.h \
+	src/constants.h src/dynamic.c src/dynamic.h src/io.cpp \
+	src/io.hpp src/mpix.cpp src/mpix.hpp src/param.c src/param.h \
+	src/pthread_fixes.h src/sequence.c src/sequence.h \
+	src/Sequence.cpp src/Sequence.hpp src/SequenceDatabase.cpp \
 	src/SequenceDatabase.hpp src/stree.c src/stree.h src/timer.h
 apps_align_SOURCES = apps/align.cc
 apps_ccd_SOURCES = apps/ccd.c
@@ -600,6 +606,7 @@ sandbox_forest_SOURCES = sandbox/forest.cc
 sandbox_sort_pairs_SOURCES = sandbox/sort_pairs.cc
 sandbox_unique_pairs_SOURCES = sandbox/unique_pairs.cc
 #sandbox_io_into_shared_memory_SOURCES      = sandbox/io_into_shared_memory.c
+tests_test_align_SOURCES = tests/test_align.c
 tests_test_combinations_SOURCES = tests/test_combinations.cc
 tests_test_dynamic_SOURCES = tests/test_dynamic.c
 tests_test_read_SOURCES = tests/test_read.cc
@@ -683,6 +690,7 @@ src/$(am__dirstamp):
 src/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) src/$(DEPDIR)
 	@: > src/$(DEPDIR)/$(am__dirstamp)
+src/align.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/bucket.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/combinations.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/dynamic.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
@@ -867,6 +875,11 @@ tests/$(am__dirstamp):
 tests/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) tests/$(DEPDIR)
 	@: > tests/$(DEPDIR)/$(am__dirstamp)
+tests/test_align.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+tests/test_align$(EXEEXT): $(tests_test_align_OBJECTS) $(tests_test_align_DEPENDENCIES) $(EXTRA_tests_test_align_DEPENDENCIES) tests/$(am__dirstamp)
+	@rm -f tests/test_align$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(tests_test_align_OBJECTS) $(tests_test_align_LDADD) $(LIBS)
 tests/test_combinations.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 tests/test_combinations$(EXEEXT): $(tests_test_combinations_OBJECTS) $(tests_test_combinations_DEPENDENCIES) $(EXTRA_tests_test_combinations_DEPENDENCIES) tests/$(am__dirstamp)
@@ -925,6 +938,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/unique_pairs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Sequence.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabase.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/align.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/bucket.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/combinations.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/dynamic.Plo@am__quote@
@@ -933,6 +947,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/param.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/sequence.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/stree.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_combinations.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_dynamic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_read.Po@am__quote@
