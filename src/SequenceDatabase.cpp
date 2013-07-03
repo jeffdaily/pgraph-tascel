@@ -3,6 +3,8 @@
  *
  * @author jeff.daily@pnnl.gov
  *
+ * @todo TODO handle fasta files with multiline sequences
+ *
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  */
 #include <mpi.h>
@@ -127,10 +129,14 @@ void SequenceDatabase::read_and_parse_fasta()
         size_t j = 0;
 
         local_cache_size = file_size / size;
+#if 0
         if (local_cache_size > budget) {
             SEQUENCE_DATABASE_EXCEPTION(
                 "sequence memory budget not sufficient");
         }
+#else
+        assert(local_cache_size <= budget);
+#endif
         start = rank * local_cache_size;
         /* find the first offset >= to our start */
         i = 0;

@@ -13,7 +13,7 @@
 
 #include "bucket.h"
 #include "constants.h"
-#include "sequence.h"
+#include "csequence.h"
 
 
 /** power function for size_t */

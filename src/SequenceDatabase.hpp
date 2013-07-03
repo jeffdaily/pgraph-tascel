@@ -30,7 +30,8 @@ class SequenceDatabaseException : public exception
 {
     public:
         SequenceDatabaseException(const char *file, int line,
-                                  const char *function, const char *message) throw();
+                                  const char *function,
+                                  const char *message) throw();
         virtual ~SequenceDatabaseException() throw();
         virtual const char *what() const throw();
     private:

@@ -19,7 +19,7 @@
 
 #include "bucket.h"
 #include "constants.h"
-#include "sequence.h"
+#include "csequence.h"
 #include "stree.h"
 
 static void parse_command_line(int argc, char **argv,

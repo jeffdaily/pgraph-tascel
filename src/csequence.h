@@ -1,5 +1,5 @@
 /**
- * @file dynamic.h
+ * @file sequence.h
  *
  * @author andy.cj.wu@gmail.com
  * @author jeff.daily@pnnl.gov
@@ -9,8 +9,8 @@
  *
  * @todo TODO remove SIGMA and NROW; dynamically assign alphabet
  */
-#ifndef SEQUENCE_H_
-#define SEQUENCE_H_
+#ifndef _C_SEQUENCE_H_
+#define _C_SEQUENCE_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -83,4 +83,4 @@ void pg_print_sequence(sequence_t *sequences, size_t index);
 }
 #endif
 
-#endif /* SEQUENCE_H_ */
+#endif /* _C_SEQUENCE_H_ */

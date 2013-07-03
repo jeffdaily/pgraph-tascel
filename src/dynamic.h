@@ -19,7 +19,7 @@ extern "C" {
 #include <stddef.h>
 
 #include "param.h"
-#include "sequence.h"
+#include "csequence.h"
 
 /**
  * cell_t for dynamic alignment result

@@ -102,8 +102,8 @@ LTLIBRARIES = $(noinst_LTLIBRARIES)
 libpgraph_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
 am_libpgraph_la_OBJECTS = src/align.lo src/bucket.lo \
-	src/combinations.lo src/dynamic.lo src/io.lo src/mpix.lo \
-	src/param.lo src/sequence.lo src/Sequence.lo \
+	src/combinations.lo src/csequence.lo src/dynamic.lo src/io.lo \
+	src/mpix.lo src/param.lo src/Sequence.lo \
 	src/SequenceDatabase.lo src/stree.lo
 libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -581,10 +581,10 @@ libpgraph_la_SOURCES = src/align.c src/align.h src/AlignStats.hpp \
 	src/blosum/blosum62.h src/blosum/blosum75.h \
 	src/blosum/blosum80.h src/blosum/blosum90.h src/bucket.c \
 	src/bucket.h src/combinations.c src/combinations.h \
-	src/constants.h src/dynamic.c src/dynamic.h src/io.cpp \
-	src/io.hpp src/mpix.cpp src/mpix.hpp src/param.c src/param.h \
-	src/pthread_fixes.h src/sequence.c src/sequence.h \
-	src/Sequence.cpp src/Sequence.hpp src/SequenceDatabase.cpp \
+	src/constants.h src/csequence.c src/csequence.h src/dynamic.c \
+	src/dynamic.h src/io.cpp src/io.hpp src/mpix.cpp src/mpix.hpp \
+	src/param.c src/param.h src/pthread_fixes.h src/Sequence.cpp \
+	src/Sequence.hpp src/SequenceDatabase.cpp \
 	src/SequenceDatabase.hpp src/stree.c src/stree.h src/timer.h
 apps_align_SOURCES = apps/align.cc
 apps_ccd_SOURCES = apps/ccd.c
@@ -693,11 +693,11 @@ src/$(DEPDIR)/$(am__dirstamp):
 src/align.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/bucket.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/combinations.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/csequence.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/dynamic.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/io.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/mpix.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/param.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
-src/sequence.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/Sequence.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/SequenceDatabase.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
@@ -941,11 +941,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/align.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/bucket.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/combinations.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/csequence.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/dynamic.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/io.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/mpix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/param.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/sequence.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/stree.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_combinations.Po@am__quote@

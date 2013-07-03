@@ -13,7 +13,7 @@
 #include <stddef.h>
 
 #include "param.h"
-#include "sequence.h"
+#include "csequence.h"
 
 /**
  * A suffix of a sequence_t, as a linked list item.

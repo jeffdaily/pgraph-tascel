@@ -61,17 +61,24 @@ Sequence::~Sequence()
 
 void Sequence::align(const Sequence &that, int &score, int &ndig, int &alen)
 {
-    cell_t result;
-    cell_t **tbl = alloc_tbl(2, this->size > that.size ? this->size : that.size);
-    int **del = alloc_int(2, this->size > that.size ? this->size : that.size);
-    int **ins = alloc_int(2, this->size > that.size ? this->size : that.size);
+    cell_t result = {0,0,0};
+    size_t bigger = 0;
+    cell_t **tbl = NULL;
+    int **del = NULL;
+    int **ins = NULL;
+    sequence_t s1 = { "", this->data, this->size };
+    sequence_t s2 = { "", that.data, that.size };
 
-    affine_gap_align(this->data, this->size, that.data, that.size, &result,
-                     tbl, del, ins);
+    bigger = this->size > that.size ? this->size : that.size;
+    tbl = pg_alloc_tbl(2, bigger);
+    del = pg_alloc_int(2, bigger);
+    ins = pg_alloc_int(2, bigger);
 
-    free_tbl(tbl, 2);
-    free_int(del, 2);
-    free_int(ins, 2);
+    pg_affine_gap_align_blosum(&s1, &s2, &result, tbl, del, ins, 10, 1);
+
+    pg_free_tbl(tbl, 2);
+    pg_free_int(del, 2);
+    pg_free_int(ins, 2);
 
     /* return */
     score = result.score;

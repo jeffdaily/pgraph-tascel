@@ -13,6 +13,7 @@
 
 #include "SequenceDatabase.hpp"
 #include "mpix.hpp"
+#include "csequence.h"
 
 using std::cerr;
 using std::cout;
@@ -36,7 +37,6 @@ int main(int argc, char **argv)
     int provided = 0;
     int rank = 0;
     int nprocs = 0;
-    vector<string> sequences;
     long budget = 0;
     char budget_multiplier = 0;
 
@@ -91,19 +91,27 @@ int main(int argc, char **argv)
     cout << "memory budget=" << budget << " bytes" << endl;
 
     SequenceDatabase sd(argv[1], budget);
+    sequences_t *sequences = pg_load_fasta(argv[1], '\0');
+
     mpix_print_sync(comm, "local_count", sd.get_local_count());
     mpix_print_sync(comm, "global_count", sd.get_global_count());
-    Sequence &s1 = sd.get_sequence(0);
-    mpix_print_sync(comm, "seq 0", string(s1));
-    Sequence &s2 = sd.get_sequence(1);
-    mpix_print_sync(comm, "seq 0", string(s2));
-    int score,ndig,alen;
-    s1.align(s2, score, ndig, alen);
-    mpix_print_sync(comm, "score", score);
-    mpix_print_sync(comm, "ndig", ndig);
-    mpix_print_sync(comm, "alen", alen);
+
+    for (size_t i=0; i<sd.get_global_count(); ++i) {
+        Sequence &seq1 = sd.get_sequence(i);
+        sequence_t *seq2 = &sequences->seq[i];
+        string str1(seq1);
+        string str2(seq2->str);
+        if (str1 != str2) {
+            cout << "[" << rank << "] i=" << i << " mismatch" << endl;
+            cout << str1 << endl;
+            cout << str2 << endl;
+
+        }
+        assert(str1==str2);
+    }
 
     /* clean up */
+    pg_free_sequences(sequences);
     MPI_Comm_free(&comm);
     MPI_Finalize();
 

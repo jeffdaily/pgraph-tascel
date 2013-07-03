@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "sequence.h"
+#include "csequence.h"
 
 
 sequences_t* pg_load_fasta(const char *file_name, char delimiter)
