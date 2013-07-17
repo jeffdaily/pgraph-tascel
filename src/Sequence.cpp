@@ -14,38 +14,58 @@
 
 #include "Sequence.hpp"
 
+using std::endl;
 using std::string;
 using std::strlen;
 
 
 Sequence::Sequence()
     :   is_owner(false)
+    ,   id(NULL)
+    ,   id_size(0)
     ,   data(NULL)
-    ,   size(0)
+    ,   data_size(0)
 {
 }
 
 
-Sequence::Sequence(const Sequence &seq)
+Sequence::Sequence(const Sequence &that)
     :   is_owner(false)
-    ,   data(seq.data)
-    ,   size(seq.size)
+    ,   id(that.id)
+    ,   id_size(that.id_size)
+    ,   data(that.data)
+    ,   data_size(that.data_size)
 {
 }
 
 
-Sequence::Sequence(const char *seq)
+Sequence::Sequence(const char *data)
     :   is_owner(false)
-    ,   data(seq)
-    ,   size(strlen(seq))
+    ,   id(NULL)
+    ,   id_size(0)
+    ,   data(data)
+    ,   data_size(strlen(data))
 {
 }
 
 
-Sequence::Sequence(const char *seq, size_t len)
+Sequence::Sequence(const char *data, size_t data_size)
     :   is_owner(false)
-    ,   data(seq)
-    ,   size(len)
+    ,   id(NULL)
+    ,   id_size(0)
+    ,   data(data)
+    ,   data_size(data_size)
+{
+}
+
+
+Sequence::Sequence(const char *id, size_t id_size,
+                   const char *data, size_t data_size)
+    :   is_owner(false)
+    ,   id(id)
+    ,   id_size(id_size)
+    ,   data(data)
+    ,   data_size(data_size)
 {
 }
 
@@ -66,10 +86,10 @@ void Sequence::align(const Sequence &that, int &score, int &ndig, int &alen)
     cell_t **tbl = NULL;
     int **del = NULL;
     int **ins = NULL;
-    sequence_t s1 = { "", this->data, this->size };
-    sequence_t s2 = { "", that.data, that.size };
+    sequence_t s1 = { "", this->data, this->data_size };
+    sequence_t s2 = { "", that.data, that.data_size };
 
-    bigger = this->size > that.size ? this->size : that.size;
+    bigger = this->data_size > that.data_size ? this->data_size : that.data_size;
     tbl = pg_alloc_tbl(2, bigger);
     del = pg_alloc_int(2, bigger);
     ins = pg_alloc_int(2, bigger);
@@ -89,14 +109,22 @@ void Sequence::align(const Sequence &that, int &score, int &ndig, int &alen)
 
 Sequence::operator string() const
 {
-    return string(data, size);
+    assert(NULL != data);
+    assert(data_size > 0);
+
+    return string(data, data_size);
 }
 
 
 ostream &operator << (ostream &os, const Sequence &s)
 {
-    for (size_t i = 0; i < s.size; ++i) {
+    for (size_t i = 0; i < s.id_size; ++i) {
+        os << s.id[i];
+    }
+    os << endl;
+    for (size_t i = 0; i < s.data_size; ++i) {
         os << s.data[i];
     }
+    os << endl;
     return os;
 }

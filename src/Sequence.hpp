@@ -31,17 +31,30 @@ class Sequence
         /** shallow copy; new instance does not own the data */
         Sequence(const Sequence &seq);
 
-        /** from a std::string */
-        Sequence(const string &seq);
-
         /** from character sequence; new instance does not own the data */
         Sequence(const char *seq);
 
         /** from character sequence; new instance does not own the data */
         Sequence(const char *seq, size_t len);
 
+        /** from character sequence; new instance does not own the data */
+        Sequence(const char *id, size_t id_size,
+                 const char *data, size_t data_size);
+
         /** delete data, if owner */
         virtual ~Sequence();
+
+        /** retrieve ID for sequence */
+        const char* get_id() const { return id; }
+
+        /** retrieve ID size for sequence */
+        size_t get_id_size() const { return id_size; }
+
+        /** retrieve sequence data */
+        const char* get_data() const { return data; }
+
+        /** retrieve sequence data size */
+        size_t get_data_size() const { return data_size; }
 
         /** affine gap align, returning score, #matches, and align length */
         void align(const Sequence &that, int &score, int &ndig, int &alen);
@@ -53,8 +66,10 @@ class Sequence
 
     private:
         bool is_owner;      /**< whether this instance should delete the data */
+        const char *id;     /**< sequence identifier */
+        size_t id_size;     /**< length of sequence identifier */
         const char *data;   /**< character sequence */
-        size_t size;        /**< length of character sequence */
+        size_t data_size;   /**< length of character sequence */
 };
 
 

@@ -52,7 +52,6 @@ int main(int argc, char **argv)
     MPI_CHECK(MPI_Comm_size(comm, &nprocs));
 
     /* sanity check that we got the correct number of arguments */
-    cout << "argc=" << argc << endl;
     if (argc <= 2 || argc >= 4) {
         if (0 == rank) {
             if (argc <= 1) {
@@ -88,13 +87,10 @@ int main(int argc, char **argv)
     else if (budget_multiplier == 'g' || budget_multiplier == 'G') {
         budget *= 1073741824; /* gigabyte */
     }
-    cout << "memory budget=" << budget << " bytes" << endl;
 
-    SequenceDatabase sd(argv[1], budget);
-    sequences_t *sequences = pg_load_fasta(argv[1], '\0');
-
-    mpix_print_sync(comm, "local_count", sd.get_local_count());
-    mpix_print_sync(comm, "global_count", sd.get_global_count());
+    SequenceDatabase sd(argv[1], budget, MPI_COMM_WORLD);
+    sequences_t *sequences = pg_load_fasta(argv[1], '$');
+    mpix_print_zero(comm, "sd.get_global_count()", sd.get_global_count());
 
     for (size_t i=0; i<sd.get_global_count(); ++i) {
         Sequence &seq1 = sd.get_sequence(i);

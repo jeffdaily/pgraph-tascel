@@ -39,6 +39,16 @@ using std::vector;
     }                                                     \
 } while (0)
 
+#define CHECK_MPI_IERR(what,rank,comm) do {               \
+    int __err;                                            \
+    __err = what;                                         \
+    if (MPI_SUCCESS != __err) {                           \
+        printf("[%d] FAILED FILE=%s LINE=%d:" #what "\n", \
+                (rank), __FILE__, __LINE__);              \
+        MPI_Abort((comm), -1);                            \
+    }                                                     \
+} while (0)
+
 /* for a collective function and we don't have a 'rank' */
 #define MPI_CHECK_C(what) do {                            \
     int __err;                                            \
@@ -220,6 +230,26 @@ void mpix_print_sync(MPI_Comm comm, const string &name, const T &what)
         }
     }
     delete [] all_what;
+    MPI_Barrier(comm);
+}
+
+
+/* overloads of mpix_print_zero */
+void mpix_print_zero(MPI_Comm comm, const string &name, const vector<string> &what);
+void mpix_print_zero(MPI_Comm comm, const string &name, const string &what);
+void mpix_print_zero(MPI_Comm comm, const string &what);
+/* template to capture remaining generic cases */
+template <class T>
+void mpix_print_zero(MPI_Comm comm, const string &name, const T &what)
+{
+    int rank;
+    T what_copy = what;
+
+    MPI_CHECK(MPI_Comm_rank(comm, &rank));
+
+    if (0 == rank) {
+        cout << name << "=" << what_copy << endl;
+    }
     MPI_Barrier(comm);
 }
 

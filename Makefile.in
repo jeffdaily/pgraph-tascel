@@ -52,24 +52,10 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = apps/align$(EXEEXT) apps/ccd$(EXEEXT)
-noinst_PROGRAMS = sandbox/blast$(EXEEXT) sandbox/brute_force$(EXEEXT) \
-	$(am__EXEEXT_1) sandbox/brute_force_binning$(EXEEXT) \
-	sandbox/brute_force_costs$(EXEEXT) \
-	sandbox/brute_force_multiple$(EXEEXT) \
-	sandbox/brute_force_pairs$(EXEEXT) \
-	sandbox/brute_force_rr$(EXEEXT) \
-	sandbox/brute_force_rr_sorted$(EXEEXT) \
-	sandbox/brute_force_rr_sorted_seq$(EXEEXT) \
-	sandbox/brute_force_serial$(EXEEXT) \
-	sandbox/brute_force_sorted$(EXEEXT) \
-	sandbox/brute_force_sorted_seq$(EXEEXT) \
-	sandbox/forest$(EXEEXT) sandbox/sort_pairs$(EXEEXT) \
-	sandbox/unique_pairs$(EXEEXT) tests/test_align$(EXEEXT) \
+noinst_PROGRAMS = tests/test_align$(EXEEXT) \
 	tests/test_combinations$(EXEEXT) tests/test_dynamic$(EXEEXT) \
 	tests/test_read$(EXEEXT) tests/test_read_fasta$(EXEEXT) \
-	tests/test_read_serial$(EXEEXT) $(am__EXEEXT_2)
-@HAVE_ARMCI_TRUE@am__append_1 = sandbox/brute_force_armci
-@HAVE_UTC_ITER_TRUE@am__append_2 = sandbox/brute_force_iter
+	tests/test_read_serial$(EXEEXT)
 subdir = .
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) \
@@ -111,8 +97,6 @@ am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
 am__installdirs = "$(DESTDIR)$(bindir)"
-@HAVE_ARMCI_TRUE@am__EXEEXT_1 = sandbox/brute_force_armci$(EXEEXT)
-@HAVE_UTC_ITER_TRUE@am__EXEEXT_2 = sandbox/brute_force_iter$(EXEEXT)
 PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
 am_apps_align_OBJECTS = apps/align.$(OBJEXT)
 apps_align_OBJECTS = $(am_apps_align_OBJECTS)
@@ -125,130 +109,6 @@ am_apps_ccd_OBJECTS = apps/ccd.$(OBJEXT)
 apps_ccd_OBJECTS = $(am_apps_ccd_OBJECTS)
 apps_ccd_LDADD = $(LDADD)
 apps_ccd_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am_sandbox_blast_OBJECTS = sandbox/blast.$(OBJEXT)
-sandbox_blast_OBJECTS = $(am_sandbox_blast_OBJECTS)
-sandbox_blast_LDADD = $(LDADD)
-sandbox_blast_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am_sandbox_brute_force_OBJECTS = sandbox/brute_force.$(OBJEXT)
-sandbox_brute_force_OBJECTS = $(am_sandbox_brute_force_OBJECTS)
-sandbox_brute_force_LDADD = $(LDADD)
-sandbox_brute_force_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am_sandbox_brute_force_armci_OBJECTS =  \
-	sandbox/brute_force_armci.$(OBJEXT)
-sandbox_brute_force_armci_OBJECTS =  \
-	$(am_sandbox_brute_force_armci_OBJECTS)
-sandbox_brute_force_armci_LDADD = $(LDADD)
-sandbox_brute_force_armci_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_sandbox_brute_force_binning_OBJECTS =  \
-	sandbox/brute_force_binning.$(OBJEXT)
-sandbox_brute_force_binning_OBJECTS =  \
-	$(am_sandbox_brute_force_binning_OBJECTS)
-sandbox_brute_force_binning_LDADD = $(LDADD)
-sandbox_brute_force_binning_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_sandbox_brute_force_costs_OBJECTS =  \
-	sandbox/sandbox_brute_force_costs-brute_force.$(OBJEXT)
-sandbox_brute_force_costs_OBJECTS =  \
-	$(am_sandbox_brute_force_costs_OBJECTS)
-sandbox_brute_force_costs_LDADD = $(LDADD)
-sandbox_brute_force_costs_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_sandbox_brute_force_iter_OBJECTS =  \
-	sandbox/brute_force_iter.$(OBJEXT)
-sandbox_brute_force_iter_OBJECTS =  \
-	$(am_sandbox_brute_force_iter_OBJECTS)
-sandbox_brute_force_iter_LDADD = $(LDADD)
-sandbox_brute_force_iter_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_sandbox_brute_force_multiple_OBJECTS =  \
-	sandbox/sandbox_brute_force_multiple-brute_force.$(OBJEXT)
-sandbox_brute_force_multiple_OBJECTS =  \
-	$(am_sandbox_brute_force_multiple_OBJECTS)
-sandbox_brute_force_multiple_LDADD = $(LDADD)
-sandbox_brute_force_multiple_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_sandbox_brute_force_pairs_OBJECTS =  \
-	sandbox/brute_force_pairs.$(OBJEXT)
-sandbox_brute_force_pairs_OBJECTS =  \
-	$(am_sandbox_brute_force_pairs_OBJECTS)
-sandbox_brute_force_pairs_LDADD = $(LDADD)
-sandbox_brute_force_pairs_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_sandbox_brute_force_rr_OBJECTS =  \
-	sandbox/sandbox_brute_force_rr-brute_force.$(OBJEXT)
-sandbox_brute_force_rr_OBJECTS = $(am_sandbox_brute_force_rr_OBJECTS)
-sandbox_brute_force_rr_LDADD = $(LDADD)
-sandbox_brute_force_rr_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_sandbox_brute_force_rr_sorted_OBJECTS =  \
-	sandbox/sandbox_brute_force_rr_sorted-brute_force.$(OBJEXT)
-sandbox_brute_force_rr_sorted_OBJECTS =  \
-	$(am_sandbox_brute_force_rr_sorted_OBJECTS)
-sandbox_brute_force_rr_sorted_LDADD = $(LDADD)
-sandbox_brute_force_rr_sorted_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_sandbox_brute_force_rr_sorted_seq_OBJECTS = sandbox/sandbox_brute_force_rr_sorted_seq-brute_force.$(OBJEXT)
-sandbox_brute_force_rr_sorted_seq_OBJECTS =  \
-	$(am_sandbox_brute_force_rr_sorted_seq_OBJECTS)
-sandbox_brute_force_rr_sorted_seq_LDADD = $(LDADD)
-sandbox_brute_force_rr_sorted_seq_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_sandbox_brute_force_serial_OBJECTS =  \
-	sandbox/brute_force_serial.$(OBJEXT)
-sandbox_brute_force_serial_OBJECTS =  \
-	$(am_sandbox_brute_force_serial_OBJECTS)
-sandbox_brute_force_serial_LDADD = $(LDADD)
-sandbox_brute_force_serial_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_sandbox_brute_force_sorted_OBJECTS =  \
-	sandbox/sandbox_brute_force_sorted-brute_force.$(OBJEXT)
-sandbox_brute_force_sorted_OBJECTS =  \
-	$(am_sandbox_brute_force_sorted_OBJECTS)
-sandbox_brute_force_sorted_LDADD = $(LDADD)
-sandbox_brute_force_sorted_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_sandbox_brute_force_sorted_seq_OBJECTS =  \
-	sandbox/sandbox_brute_force_sorted_seq-brute_force.$(OBJEXT)
-sandbox_brute_force_sorted_seq_OBJECTS =  \
-	$(am_sandbox_brute_force_sorted_seq_OBJECTS)
-sandbox_brute_force_sorted_seq_LDADD = $(LDADD)
-sandbox_brute_force_sorted_seq_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_sandbox_forest_OBJECTS = sandbox/forest.$(OBJEXT)
-sandbox_forest_OBJECTS = $(am_sandbox_forest_OBJECTS)
-sandbox_forest_LDADD = $(LDADD)
-sandbox_forest_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am_sandbox_sort_pairs_OBJECTS = sandbox/sort_pairs.$(OBJEXT)
-sandbox_sort_pairs_OBJECTS = $(am_sandbox_sort_pairs_OBJECTS)
-sandbox_sort_pairs_LDADD = $(LDADD)
-sandbox_sort_pairs_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am_sandbox_unique_pairs_OBJECTS = sandbox/unique_pairs.$(OBJEXT)
-sandbox_unique_pairs_OBJECTS = $(am_sandbox_unique_pairs_OBJECTS)
-sandbox_unique_pairs_LDADD = $(LDADD)
-sandbox_unique_pairs_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 am_tests_test_align_OBJECTS = tests/test_align.$(OBJEXT)
@@ -342,43 +202,13 @@ am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
-	$(apps_ccd_SOURCES) $(sandbox_blast_SOURCES) \
-	$(sandbox_brute_force_SOURCES) \
-	$(sandbox_brute_force_armci_SOURCES) \
-	$(sandbox_brute_force_binning_SOURCES) \
-	$(sandbox_brute_force_costs_SOURCES) \
-	$(sandbox_brute_force_iter_SOURCES) \
-	$(sandbox_brute_force_multiple_SOURCES) \
-	$(sandbox_brute_force_pairs_SOURCES) \
-	$(sandbox_brute_force_rr_SOURCES) \
-	$(sandbox_brute_force_rr_sorted_SOURCES) \
-	$(sandbox_brute_force_rr_sorted_seq_SOURCES) \
-	$(sandbox_brute_force_serial_SOURCES) \
-	$(sandbox_brute_force_sorted_SOURCES) \
-	$(sandbox_brute_force_sorted_seq_SOURCES) \
-	$(sandbox_forest_SOURCES) $(sandbox_sort_pairs_SOURCES) \
-	$(sandbox_unique_pairs_SOURCES) $(tests_test_align_SOURCES) \
+	$(apps_ccd_SOURCES) $(tests_test_align_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_read_SOURCES) \
 	$(tests_test_read_fasta_SOURCES) \
 	$(tests_test_read_serial_SOURCES)
 DIST_SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
-	$(apps_ccd_SOURCES) $(sandbox_blast_SOURCES) \
-	$(sandbox_brute_force_SOURCES) \
-	$(sandbox_brute_force_armci_SOURCES) \
-	$(sandbox_brute_force_binning_SOURCES) \
-	$(sandbox_brute_force_costs_SOURCES) \
-	$(sandbox_brute_force_iter_SOURCES) \
-	$(sandbox_brute_force_multiple_SOURCES) \
-	$(sandbox_brute_force_pairs_SOURCES) \
-	$(sandbox_brute_force_rr_SOURCES) \
-	$(sandbox_brute_force_rr_sorted_SOURCES) \
-	$(sandbox_brute_force_rr_sorted_seq_SOURCES) \
-	$(sandbox_brute_force_serial_SOURCES) \
-	$(sandbox_brute_force_sorted_SOURCES) \
-	$(sandbox_brute_force_sorted_seq_SOURCES) \
-	$(sandbox_forest_SOURCES) $(sandbox_sort_pairs_SOURCES) \
-	$(sandbox_unique_pairs_SOURCES) $(tests_test_align_SOURCES) \
+	$(apps_ccd_SOURCES) $(tests_test_align_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_read_SOURCES) \
 	$(tests_test_read_fasta_SOURCES) \
@@ -586,39 +416,35 @@ libpgraph_la_SOURCES = src/align.c src/align.h src/AlignStats.hpp \
 	src/param.c src/param.h src/pthread_fixes.h src/Sequence.cpp \
 	src/Sequence.hpp src/SequenceDatabase.cpp \
 	src/SequenceDatabase.hpp src/stree.c src/stree.h src/timer.h
+#if HAVE_UTC_ITER
+#noinst_PROGRAMS += sandbox/brute_force_iter
+#endif
 apps_align_SOURCES = apps/align.cc
 apps_ccd_SOURCES = apps/ccd.c
-sandbox_blast_SOURCES = sandbox/blast.cc
-sandbox_brute_force_SOURCES = sandbox/brute_force.cc
-sandbox_brute_force_armci_SOURCES = sandbox/brute_force_armci.cc
-sandbox_brute_force_binning_SOURCES = sandbox/brute_force_binning.cc
-sandbox_brute_force_costs_SOURCES = sandbox/brute_force.cc
-sandbox_brute_force_iter_SOURCES = sandbox/brute_force_iter.cc
-sandbox_brute_force_multiple_SOURCES = sandbox/brute_force.cc
-sandbox_brute_force_pairs_SOURCES = sandbox/brute_force_pairs.cc
-sandbox_brute_force_rr_SOURCES = sandbox/brute_force.cc
-sandbox_brute_force_rr_sorted_SOURCES = sandbox/brute_force.cc
-sandbox_brute_force_rr_sorted_seq_SOURCES = sandbox/brute_force.cc
-sandbox_brute_force_serial_SOURCES = sandbox/brute_force_serial.cc
-sandbox_brute_force_sorted_SOURCES = sandbox/brute_force.cc
-sandbox_brute_force_sorted_seq_SOURCES = sandbox/brute_force.cc
-sandbox_forest_SOURCES = sandbox/forest.cc
-sandbox_sort_pairs_SOURCES = sandbox/sort_pairs.cc
-sandbox_unique_pairs_SOURCES = sandbox/unique_pairs.cc
-#sandbox_io_into_shared_memory_SOURCES      = sandbox/io_into_shared_memory.c
+
+#sandbox_blast_SOURCES                      = sandbox/blast.cc
+#sandbox_brute_force_SOURCES                = sandbox/brute_force.cc
+#sandbox_brute_force_armci_SOURCES          = sandbox/brute_force_armci.cc
+#sandbox_brute_force_binning_SOURCES        = sandbox/brute_force_binning.cc
+#sandbox_brute_force_costs_SOURCES          = sandbox/brute_force.cc
+#sandbox_brute_force_iter_SOURCES           = sandbox/brute_force_iter.cc
+#sandbox_brute_force_multiple_SOURCES       = sandbox/brute_force.cc
+#sandbox_brute_force_pairs_SOURCES          = sandbox/brute_force_pairs.cc
+#sandbox_brute_force_rr_SOURCES             = sandbox/brute_force.cc
+#sandbox_brute_force_rr_sorted_SOURCES      = sandbox/brute_force.cc
+#sandbox_brute_force_rr_sorted_seq_SOURCES  = sandbox/brute_force.cc
+#sandbox_brute_force_serial_SOURCES         = sandbox/brute_force_serial.cc
+#sandbox_brute_force_sorted_SOURCES         = sandbox/brute_force.cc
+#sandbox_brute_force_sorted_seq_SOURCES     = sandbox/brute_force.cc
+#sandbox_forest_SOURCES                     = sandbox/forest.cc
+#sandbox_sort_pairs_SOURCES                 = sandbox/sort_pairs.cc
+#sandbox_unique_pairs_SOURCES               = sandbox/unique_pairs.cc
 tests_test_align_SOURCES = tests/test_align.c
 tests_test_combinations_SOURCES = tests/test_combinations.cc
 tests_test_dynamic_SOURCES = tests/test_dynamic.c
 tests_test_read_SOURCES = tests/test_read.cc
 tests_test_read_fasta_SOURCES = tests/test_read_fasta.cc
 tests_test_read_serial_SOURCES = tests/test_read_serial.cc
-sandbox_brute_force_costs_CPPFLAGS = $(AM_CPPFLAGS) -DDUMP_COSTS=1
-sandbox_brute_force_multiple_CPPFLAGS = $(AM_CPPFLAGS) -DMULTIPLE_PAIRS_PER_TASK=1
-sandbox_brute_force_rr_CPPFLAGS = $(AM_CPPFLAGS) -DROUND_ROBIN_SEQUENCE_PAIRS=1
-sandbox_brute_force_rr_sorted_CPPFLAGS = $(AM_CPPFLAGS) -DROUND_ROBIN_SEQUENCE_PAIRS=1 -DSORT_TASKS_LOCALLY=1
-sandbox_brute_force_rr_sorted_seq_CPPFLAGS = $(AM_CPPFLAGS) -DROUND_ROBIN_SEQUENCE_PAIRS=1 -DSORT_SEQUENCES=1
-sandbox_brute_force_sorted_CPPFLAGS = $(AM_CPPFLAGS) -DSORT_TASKS_LOCALLY=1
-sandbox_brute_force_sorted_seq_CPPFLAGS = $(AM_CPPFLAGS) -DSORT_SEQUENCES=1
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -778,97 +604,6 @@ apps/ccd.$(OBJEXT): apps/$(am__dirstamp) \
 apps/ccd$(EXEEXT): $(apps_ccd_OBJECTS) $(apps_ccd_DEPENDENCIES) $(EXTRA_apps_ccd_DEPENDENCIES) apps/$(am__dirstamp)
 	@rm -f apps/ccd$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(apps_ccd_OBJECTS) $(apps_ccd_LDADD) $(LIBS)
-sandbox/$(am__dirstamp):
-	@$(MKDIR_P) sandbox
-	@: > sandbox/$(am__dirstamp)
-sandbox/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) sandbox/$(DEPDIR)
-	@: > sandbox/$(DEPDIR)/$(am__dirstamp)
-sandbox/blast.$(OBJEXT): sandbox/$(am__dirstamp) \
-	sandbox/$(DEPDIR)/$(am__dirstamp)
-sandbox/blast$(EXEEXT): $(sandbox_blast_OBJECTS) $(sandbox_blast_DEPENDENCIES) $(EXTRA_sandbox_blast_DEPENDENCIES) sandbox/$(am__dirstamp)
-	@rm -f sandbox/blast$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_blast_OBJECTS) $(sandbox_blast_LDADD) $(LIBS)
-sandbox/brute_force.$(OBJEXT): sandbox/$(am__dirstamp) \
-	sandbox/$(DEPDIR)/$(am__dirstamp)
-sandbox/brute_force$(EXEEXT): $(sandbox_brute_force_OBJECTS) $(sandbox_brute_force_DEPENDENCIES) $(EXTRA_sandbox_brute_force_DEPENDENCIES) sandbox/$(am__dirstamp)
-	@rm -f sandbox/brute_force$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_OBJECTS) $(sandbox_brute_force_LDADD) $(LIBS)
-sandbox/brute_force_armci.$(OBJEXT): sandbox/$(am__dirstamp) \
-	sandbox/$(DEPDIR)/$(am__dirstamp)
-sandbox/brute_force_armci$(EXEEXT): $(sandbox_brute_force_armci_OBJECTS) $(sandbox_brute_force_armci_DEPENDENCIES) $(EXTRA_sandbox_brute_force_armci_DEPENDENCIES) sandbox/$(am__dirstamp)
-	@rm -f sandbox/brute_force_armci$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_armci_OBJECTS) $(sandbox_brute_force_armci_LDADD) $(LIBS)
-sandbox/brute_force_binning.$(OBJEXT): sandbox/$(am__dirstamp) \
-	sandbox/$(DEPDIR)/$(am__dirstamp)
-sandbox/brute_force_binning$(EXEEXT): $(sandbox_brute_force_binning_OBJECTS) $(sandbox_brute_force_binning_DEPENDENCIES) $(EXTRA_sandbox_brute_force_binning_DEPENDENCIES) sandbox/$(am__dirstamp)
-	@rm -f sandbox/brute_force_binning$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_binning_OBJECTS) $(sandbox_brute_force_binning_LDADD) $(LIBS)
-sandbox/sandbox_brute_force_costs-brute_force.$(OBJEXT):  \
-	sandbox/$(am__dirstamp) sandbox/$(DEPDIR)/$(am__dirstamp)
-sandbox/brute_force_costs$(EXEEXT): $(sandbox_brute_force_costs_OBJECTS) $(sandbox_brute_force_costs_DEPENDENCIES) $(EXTRA_sandbox_brute_force_costs_DEPENDENCIES) sandbox/$(am__dirstamp)
-	@rm -f sandbox/brute_force_costs$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_costs_OBJECTS) $(sandbox_brute_force_costs_LDADD) $(LIBS)
-sandbox/brute_force_iter.$(OBJEXT): sandbox/$(am__dirstamp) \
-	sandbox/$(DEPDIR)/$(am__dirstamp)
-sandbox/brute_force_iter$(EXEEXT): $(sandbox_brute_force_iter_OBJECTS) $(sandbox_brute_force_iter_DEPENDENCIES) $(EXTRA_sandbox_brute_force_iter_DEPENDENCIES) sandbox/$(am__dirstamp)
-	@rm -f sandbox/brute_force_iter$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_iter_OBJECTS) $(sandbox_brute_force_iter_LDADD) $(LIBS)
-sandbox/sandbox_brute_force_multiple-brute_force.$(OBJEXT):  \
-	sandbox/$(am__dirstamp) sandbox/$(DEPDIR)/$(am__dirstamp)
-sandbox/brute_force_multiple$(EXEEXT): $(sandbox_brute_force_multiple_OBJECTS) $(sandbox_brute_force_multiple_DEPENDENCIES) $(EXTRA_sandbox_brute_force_multiple_DEPENDENCIES) sandbox/$(am__dirstamp)
-	@rm -f sandbox/brute_force_multiple$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_multiple_OBJECTS) $(sandbox_brute_force_multiple_LDADD) $(LIBS)
-sandbox/brute_force_pairs.$(OBJEXT): sandbox/$(am__dirstamp) \
-	sandbox/$(DEPDIR)/$(am__dirstamp)
-sandbox/brute_force_pairs$(EXEEXT): $(sandbox_brute_force_pairs_OBJECTS) $(sandbox_brute_force_pairs_DEPENDENCIES) $(EXTRA_sandbox_brute_force_pairs_DEPENDENCIES) sandbox/$(am__dirstamp)
-	@rm -f sandbox/brute_force_pairs$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_pairs_OBJECTS) $(sandbox_brute_force_pairs_LDADD) $(LIBS)
-sandbox/sandbox_brute_force_rr-brute_force.$(OBJEXT):  \
-	sandbox/$(am__dirstamp) sandbox/$(DEPDIR)/$(am__dirstamp)
-sandbox/brute_force_rr$(EXEEXT): $(sandbox_brute_force_rr_OBJECTS) $(sandbox_brute_force_rr_DEPENDENCIES) $(EXTRA_sandbox_brute_force_rr_DEPENDENCIES) sandbox/$(am__dirstamp)
-	@rm -f sandbox/brute_force_rr$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_rr_OBJECTS) $(sandbox_brute_force_rr_LDADD) $(LIBS)
-sandbox/sandbox_brute_force_rr_sorted-brute_force.$(OBJEXT):  \
-	sandbox/$(am__dirstamp) sandbox/$(DEPDIR)/$(am__dirstamp)
-sandbox/brute_force_rr_sorted$(EXEEXT): $(sandbox_brute_force_rr_sorted_OBJECTS) $(sandbox_brute_force_rr_sorted_DEPENDENCIES) $(EXTRA_sandbox_brute_force_rr_sorted_DEPENDENCIES) sandbox/$(am__dirstamp)
-	@rm -f sandbox/brute_force_rr_sorted$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_rr_sorted_OBJECTS) $(sandbox_brute_force_rr_sorted_LDADD) $(LIBS)
-sandbox/sandbox_brute_force_rr_sorted_seq-brute_force.$(OBJEXT):  \
-	sandbox/$(am__dirstamp) sandbox/$(DEPDIR)/$(am__dirstamp)
-sandbox/brute_force_rr_sorted_seq$(EXEEXT): $(sandbox_brute_force_rr_sorted_seq_OBJECTS) $(sandbox_brute_force_rr_sorted_seq_DEPENDENCIES) $(EXTRA_sandbox_brute_force_rr_sorted_seq_DEPENDENCIES) sandbox/$(am__dirstamp)
-	@rm -f sandbox/brute_force_rr_sorted_seq$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_rr_sorted_seq_OBJECTS) $(sandbox_brute_force_rr_sorted_seq_LDADD) $(LIBS)
-sandbox/brute_force_serial.$(OBJEXT): sandbox/$(am__dirstamp) \
-	sandbox/$(DEPDIR)/$(am__dirstamp)
-sandbox/brute_force_serial$(EXEEXT): $(sandbox_brute_force_serial_OBJECTS) $(sandbox_brute_force_serial_DEPENDENCIES) $(EXTRA_sandbox_brute_force_serial_DEPENDENCIES) sandbox/$(am__dirstamp)
-	@rm -f sandbox/brute_force_serial$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_serial_OBJECTS) $(sandbox_brute_force_serial_LDADD) $(LIBS)
-sandbox/sandbox_brute_force_sorted-brute_force.$(OBJEXT):  \
-	sandbox/$(am__dirstamp) sandbox/$(DEPDIR)/$(am__dirstamp)
-sandbox/brute_force_sorted$(EXEEXT): $(sandbox_brute_force_sorted_OBJECTS) $(sandbox_brute_force_sorted_DEPENDENCIES) $(EXTRA_sandbox_brute_force_sorted_DEPENDENCIES) sandbox/$(am__dirstamp)
-	@rm -f sandbox/brute_force_sorted$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_sorted_OBJECTS) $(sandbox_brute_force_sorted_LDADD) $(LIBS)
-sandbox/sandbox_brute_force_sorted_seq-brute_force.$(OBJEXT):  \
-	sandbox/$(am__dirstamp) sandbox/$(DEPDIR)/$(am__dirstamp)
-sandbox/brute_force_sorted_seq$(EXEEXT): $(sandbox_brute_force_sorted_seq_OBJECTS) $(sandbox_brute_force_sorted_seq_DEPENDENCIES) $(EXTRA_sandbox_brute_force_sorted_seq_DEPENDENCIES) sandbox/$(am__dirstamp)
-	@rm -f sandbox/brute_force_sorted_seq$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_brute_force_sorted_seq_OBJECTS) $(sandbox_brute_force_sorted_seq_LDADD) $(LIBS)
-sandbox/forest.$(OBJEXT): sandbox/$(am__dirstamp) \
-	sandbox/$(DEPDIR)/$(am__dirstamp)
-sandbox/forest$(EXEEXT): $(sandbox_forest_OBJECTS) $(sandbox_forest_DEPENDENCIES) $(EXTRA_sandbox_forest_DEPENDENCIES) sandbox/$(am__dirstamp)
-	@rm -f sandbox/forest$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_forest_OBJECTS) $(sandbox_forest_LDADD) $(LIBS)
-sandbox/sort_pairs.$(OBJEXT): sandbox/$(am__dirstamp) \
-	sandbox/$(DEPDIR)/$(am__dirstamp)
-sandbox/sort_pairs$(EXEEXT): $(sandbox_sort_pairs_OBJECTS) $(sandbox_sort_pairs_DEPENDENCIES) $(EXTRA_sandbox_sort_pairs_DEPENDENCIES) sandbox/$(am__dirstamp)
-	@rm -f sandbox/sort_pairs$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_sort_pairs_OBJECTS) $(sandbox_sort_pairs_LDADD) $(LIBS)
-sandbox/unique_pairs.$(OBJEXT): sandbox/$(am__dirstamp) \
-	sandbox/$(DEPDIR)/$(am__dirstamp)
-sandbox/unique_pairs$(EXEEXT): $(sandbox_unique_pairs_OBJECTS) $(sandbox_unique_pairs_DEPENDENCIES) $(EXTRA_sandbox_unique_pairs_DEPENDENCIES) sandbox/$(am__dirstamp)
-	@rm -f sandbox/unique_pairs$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(sandbox_unique_pairs_OBJECTS) $(sandbox_unique_pairs_LDADD) $(LIBS)
 tests/$(am__dirstamp):
 	@$(MKDIR_P) tests
 	@: > tests/$(am__dirstamp)
@@ -909,7 +644,6 @@ tests/test_read_serial$(EXEEXT): $(tests_test_read_serial_OBJECTS) $(tests_test_
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 	-rm -f apps/*.$(OBJEXT)
-	-rm -f sandbox/*.$(OBJEXT)
 	-rm -f src/*.$(OBJEXT)
 	-rm -f src/*.lo
 	-rm -f tests/*.$(OBJEXT)
@@ -919,23 +653,6 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/ccd.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/blast.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force_armci.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force_binning.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force_iter.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force_pairs.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/brute_force_serial.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/forest.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sandbox_brute_force_costs-brute_force.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sandbox_brute_force_multiple-brute_force.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sandbox_brute_force_rr-brute_force.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sandbox_brute_force_rr_sorted-brute_force.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sandbox_brute_force_rr_sorted_seq-brute_force.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sandbox_brute_force_sorted-brute_force.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sandbox_brute_force_sorted_seq-brute_force.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/sort_pairs.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@sandbox/$(DEPDIR)/unique_pairs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Sequence.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabase.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/align.Plo@am__quote@
@@ -1002,104 +719,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LTCXXCOMPILE) -c -o $@ $<
 
-sandbox/sandbox_brute_force_costs-brute_force.o: sandbox/brute_force.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_costs_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sandbox/sandbox_brute_force_costs-brute_force.o -MD -MP -MF sandbox/$(DEPDIR)/sandbox_brute_force_costs-brute_force.Tpo -c -o sandbox/sandbox_brute_force_costs-brute_force.o `test -f 'sandbox/brute_force.cc' || echo '$(srcdir)/'`sandbox/brute_force.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) sandbox/$(DEPDIR)/sandbox_brute_force_costs-brute_force.Tpo sandbox/$(DEPDIR)/sandbox_brute_force_costs-brute_force.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='sandbox/brute_force.cc' object='sandbox/sandbox_brute_force_costs-brute_force.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_costs_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sandbox/sandbox_brute_force_costs-brute_force.o `test -f 'sandbox/brute_force.cc' || echo '$(srcdir)/'`sandbox/brute_force.cc
-
-sandbox/sandbox_brute_force_costs-brute_force.obj: sandbox/brute_force.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_costs_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sandbox/sandbox_brute_force_costs-brute_force.obj -MD -MP -MF sandbox/$(DEPDIR)/sandbox_brute_force_costs-brute_force.Tpo -c -o sandbox/sandbox_brute_force_costs-brute_force.obj `if test -f 'sandbox/brute_force.cc'; then $(CYGPATH_W) 'sandbox/brute_force.cc'; else $(CYGPATH_W) '$(srcdir)/sandbox/brute_force.cc'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) sandbox/$(DEPDIR)/sandbox_brute_force_costs-brute_force.Tpo sandbox/$(DEPDIR)/sandbox_brute_force_costs-brute_force.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='sandbox/brute_force.cc' object='sandbox/sandbox_brute_force_costs-brute_force.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_costs_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sandbox/sandbox_brute_force_costs-brute_force.obj `if test -f 'sandbox/brute_force.cc'; then $(CYGPATH_W) 'sandbox/brute_force.cc'; else $(CYGPATH_W) '$(srcdir)/sandbox/brute_force.cc'; fi`
-
-sandbox/sandbox_brute_force_multiple-brute_force.o: sandbox/brute_force.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_multiple_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sandbox/sandbox_brute_force_multiple-brute_force.o -MD -MP -MF sandbox/$(DEPDIR)/sandbox_brute_force_multiple-brute_force.Tpo -c -o sandbox/sandbox_brute_force_multiple-brute_force.o `test -f 'sandbox/brute_force.cc' || echo '$(srcdir)/'`sandbox/brute_force.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) sandbox/$(DEPDIR)/sandbox_brute_force_multiple-brute_force.Tpo sandbox/$(DEPDIR)/sandbox_brute_force_multiple-brute_force.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='sandbox/brute_force.cc' object='sandbox/sandbox_brute_force_multiple-brute_force.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_multiple_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sandbox/sandbox_brute_force_multiple-brute_force.o `test -f 'sandbox/brute_force.cc' || echo '$(srcdir)/'`sandbox/brute_force.cc
-
-sandbox/sandbox_brute_force_multiple-brute_force.obj: sandbox/brute_force.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_multiple_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sandbox/sandbox_brute_force_multiple-brute_force.obj -MD -MP -MF sandbox/$(DEPDIR)/sandbox_brute_force_multiple-brute_force.Tpo -c -o sandbox/sandbox_brute_force_multiple-brute_force.obj `if test -f 'sandbox/brute_force.cc'; then $(CYGPATH_W) 'sandbox/brute_force.cc'; else $(CYGPATH_W) '$(srcdir)/sandbox/brute_force.cc'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) sandbox/$(DEPDIR)/sandbox_brute_force_multiple-brute_force.Tpo sandbox/$(DEPDIR)/sandbox_brute_force_multiple-brute_force.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='sandbox/brute_force.cc' object='sandbox/sandbox_brute_force_multiple-brute_force.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_multiple_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sandbox/sandbox_brute_force_multiple-brute_force.obj `if test -f 'sandbox/brute_force.cc'; then $(CYGPATH_W) 'sandbox/brute_force.cc'; else $(CYGPATH_W) '$(srcdir)/sandbox/brute_force.cc'; fi`
-
-sandbox/sandbox_brute_force_rr-brute_force.o: sandbox/brute_force.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_rr_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sandbox/sandbox_brute_force_rr-brute_force.o -MD -MP -MF sandbox/$(DEPDIR)/sandbox_brute_force_rr-brute_force.Tpo -c -o sandbox/sandbox_brute_force_rr-brute_force.o `test -f 'sandbox/brute_force.cc' || echo '$(srcdir)/'`sandbox/brute_force.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) sandbox/$(DEPDIR)/sandbox_brute_force_rr-brute_force.Tpo sandbox/$(DEPDIR)/sandbox_brute_force_rr-brute_force.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='sandbox/brute_force.cc' object='sandbox/sandbox_brute_force_rr-brute_force.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_rr_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sandbox/sandbox_brute_force_rr-brute_force.o `test -f 'sandbox/brute_force.cc' || echo '$(srcdir)/'`sandbox/brute_force.cc
-
-sandbox/sandbox_brute_force_rr-brute_force.obj: sandbox/brute_force.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_rr_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sandbox/sandbox_brute_force_rr-brute_force.obj -MD -MP -MF sandbox/$(DEPDIR)/sandbox_brute_force_rr-brute_force.Tpo -c -o sandbox/sandbox_brute_force_rr-brute_force.obj `if test -f 'sandbox/brute_force.cc'; then $(CYGPATH_W) 'sandbox/brute_force.cc'; else $(CYGPATH_W) '$(srcdir)/sandbox/brute_force.cc'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) sandbox/$(DEPDIR)/sandbox_brute_force_rr-brute_force.Tpo sandbox/$(DEPDIR)/sandbox_brute_force_rr-brute_force.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='sandbox/brute_force.cc' object='sandbox/sandbox_brute_force_rr-brute_force.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_rr_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sandbox/sandbox_brute_force_rr-brute_force.obj `if test -f 'sandbox/brute_force.cc'; then $(CYGPATH_W) 'sandbox/brute_force.cc'; else $(CYGPATH_W) '$(srcdir)/sandbox/brute_force.cc'; fi`
-
-sandbox/sandbox_brute_force_rr_sorted-brute_force.o: sandbox/brute_force.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_rr_sorted_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sandbox/sandbox_brute_force_rr_sorted-brute_force.o -MD -MP -MF sandbox/$(DEPDIR)/sandbox_brute_force_rr_sorted-brute_force.Tpo -c -o sandbox/sandbox_brute_force_rr_sorted-brute_force.o `test -f 'sandbox/brute_force.cc' || echo '$(srcdir)/'`sandbox/brute_force.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) sandbox/$(DEPDIR)/sandbox_brute_force_rr_sorted-brute_force.Tpo sandbox/$(DEPDIR)/sandbox_brute_force_rr_sorted-brute_force.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='sandbox/brute_force.cc' object='sandbox/sandbox_brute_force_rr_sorted-brute_force.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_rr_sorted_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sandbox/sandbox_brute_force_rr_sorted-brute_force.o `test -f 'sandbox/brute_force.cc' || echo '$(srcdir)/'`sandbox/brute_force.cc
-
-sandbox/sandbox_brute_force_rr_sorted-brute_force.obj: sandbox/brute_force.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_rr_sorted_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sandbox/sandbox_brute_force_rr_sorted-brute_force.obj -MD -MP -MF sandbox/$(DEPDIR)/sandbox_brute_force_rr_sorted-brute_force.Tpo -c -o sandbox/sandbox_brute_force_rr_sorted-brute_force.obj `if test -f 'sandbox/brute_force.cc'; then $(CYGPATH_W) 'sandbox/brute_force.cc'; else $(CYGPATH_W) '$(srcdir)/sandbox/brute_force.cc'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) sandbox/$(DEPDIR)/sandbox_brute_force_rr_sorted-brute_force.Tpo sandbox/$(DEPDIR)/sandbox_brute_force_rr_sorted-brute_force.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='sandbox/brute_force.cc' object='sandbox/sandbox_brute_force_rr_sorted-brute_force.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_rr_sorted_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sandbox/sandbox_brute_force_rr_sorted-brute_force.obj `if test -f 'sandbox/brute_force.cc'; then $(CYGPATH_W) 'sandbox/brute_force.cc'; else $(CYGPATH_W) '$(srcdir)/sandbox/brute_force.cc'; fi`
-
-sandbox/sandbox_brute_force_rr_sorted_seq-brute_force.o: sandbox/brute_force.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_rr_sorted_seq_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sandbox/sandbox_brute_force_rr_sorted_seq-brute_force.o -MD -MP -MF sandbox/$(DEPDIR)/sandbox_brute_force_rr_sorted_seq-brute_force.Tpo -c -o sandbox/sandbox_brute_force_rr_sorted_seq-brute_force.o `test -f 'sandbox/brute_force.cc' || echo '$(srcdir)/'`sandbox/brute_force.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) sandbox/$(DEPDIR)/sandbox_brute_force_rr_sorted_seq-brute_force.Tpo sandbox/$(DEPDIR)/sandbox_brute_force_rr_sorted_seq-brute_force.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='sandbox/brute_force.cc' object='sandbox/sandbox_brute_force_rr_sorted_seq-brute_force.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_rr_sorted_seq_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sandbox/sandbox_brute_force_rr_sorted_seq-brute_force.o `test -f 'sandbox/brute_force.cc' || echo '$(srcdir)/'`sandbox/brute_force.cc
-
-sandbox/sandbox_brute_force_rr_sorted_seq-brute_force.obj: sandbox/brute_force.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_rr_sorted_seq_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sandbox/sandbox_brute_force_rr_sorted_seq-brute_force.obj -MD -MP -MF sandbox/$(DEPDIR)/sandbox_brute_force_rr_sorted_seq-brute_force.Tpo -c -o sandbox/sandbox_brute_force_rr_sorted_seq-brute_force.obj `if test -f 'sandbox/brute_force.cc'; then $(CYGPATH_W) 'sandbox/brute_force.cc'; else $(CYGPATH_W) '$(srcdir)/sandbox/brute_force.cc'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) sandbox/$(DEPDIR)/sandbox_brute_force_rr_sorted_seq-brute_force.Tpo sandbox/$(DEPDIR)/sandbox_brute_force_rr_sorted_seq-brute_force.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='sandbox/brute_force.cc' object='sandbox/sandbox_brute_force_rr_sorted_seq-brute_force.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_rr_sorted_seq_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sandbox/sandbox_brute_force_rr_sorted_seq-brute_force.obj `if test -f 'sandbox/brute_force.cc'; then $(CYGPATH_W) 'sandbox/brute_force.cc'; else $(CYGPATH_W) '$(srcdir)/sandbox/brute_force.cc'; fi`
-
-sandbox/sandbox_brute_force_sorted-brute_force.o: sandbox/brute_force.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_sorted_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sandbox/sandbox_brute_force_sorted-brute_force.o -MD -MP -MF sandbox/$(DEPDIR)/sandbox_brute_force_sorted-brute_force.Tpo -c -o sandbox/sandbox_brute_force_sorted-brute_force.o `test -f 'sandbox/brute_force.cc' || echo '$(srcdir)/'`sandbox/brute_force.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) sandbox/$(DEPDIR)/sandbox_brute_force_sorted-brute_force.Tpo sandbox/$(DEPDIR)/sandbox_brute_force_sorted-brute_force.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='sandbox/brute_force.cc' object='sandbox/sandbox_brute_force_sorted-brute_force.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_sorted_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sandbox/sandbox_brute_force_sorted-brute_force.o `test -f 'sandbox/brute_force.cc' || echo '$(srcdir)/'`sandbox/brute_force.cc
-
-sandbox/sandbox_brute_force_sorted-brute_force.obj: sandbox/brute_force.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_sorted_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sandbox/sandbox_brute_force_sorted-brute_force.obj -MD -MP -MF sandbox/$(DEPDIR)/sandbox_brute_force_sorted-brute_force.Tpo -c -o sandbox/sandbox_brute_force_sorted-brute_force.obj `if test -f 'sandbox/brute_force.cc'; then $(CYGPATH_W) 'sandbox/brute_force.cc'; else $(CYGPATH_W) '$(srcdir)/sandbox/brute_force.cc'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) sandbox/$(DEPDIR)/sandbox_brute_force_sorted-brute_force.Tpo sandbox/$(DEPDIR)/sandbox_brute_force_sorted-brute_force.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='sandbox/brute_force.cc' object='sandbox/sandbox_brute_force_sorted-brute_force.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_sorted_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sandbox/sandbox_brute_force_sorted-brute_force.obj `if test -f 'sandbox/brute_force.cc'; then $(CYGPATH_W) 'sandbox/brute_force.cc'; else $(CYGPATH_W) '$(srcdir)/sandbox/brute_force.cc'; fi`
-
-sandbox/sandbox_brute_force_sorted_seq-brute_force.o: sandbox/brute_force.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_sorted_seq_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sandbox/sandbox_brute_force_sorted_seq-brute_force.o -MD -MP -MF sandbox/$(DEPDIR)/sandbox_brute_force_sorted_seq-brute_force.Tpo -c -o sandbox/sandbox_brute_force_sorted_seq-brute_force.o `test -f 'sandbox/brute_force.cc' || echo '$(srcdir)/'`sandbox/brute_force.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) sandbox/$(DEPDIR)/sandbox_brute_force_sorted_seq-brute_force.Tpo sandbox/$(DEPDIR)/sandbox_brute_force_sorted_seq-brute_force.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='sandbox/brute_force.cc' object='sandbox/sandbox_brute_force_sorted_seq-brute_force.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_sorted_seq_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sandbox/sandbox_brute_force_sorted_seq-brute_force.o `test -f 'sandbox/brute_force.cc' || echo '$(srcdir)/'`sandbox/brute_force.cc
-
-sandbox/sandbox_brute_force_sorted_seq-brute_force.obj: sandbox/brute_force.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_sorted_seq_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sandbox/sandbox_brute_force_sorted_seq-brute_force.obj -MD -MP -MF sandbox/$(DEPDIR)/sandbox_brute_force_sorted_seq-brute_force.Tpo -c -o sandbox/sandbox_brute_force_sorted_seq-brute_force.obj `if test -f 'sandbox/brute_force.cc'; then $(CYGPATH_W) 'sandbox/brute_force.cc'; else $(CYGPATH_W) '$(srcdir)/sandbox/brute_force.cc'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) sandbox/$(DEPDIR)/sandbox_brute_force_sorted_seq-brute_force.Tpo sandbox/$(DEPDIR)/sandbox_brute_force_sorted_seq-brute_force.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='sandbox/brute_force.cc' object='sandbox/sandbox_brute_force_sorted_seq-brute_force.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(sandbox_brute_force_sorted_seq_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sandbox/sandbox_brute_force_sorted_seq-brute_force.obj `if test -f 'sandbox/brute_force.cc'; then $(CYGPATH_W) 'sandbox/brute_force.cc'; else $(CYGPATH_W) '$(srcdir)/sandbox/brute_force.cc'; fi`
-
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
@@ -1130,7 +749,6 @@ mostlyclean-libtool:
 clean-libtool:
 	-rm -rf .libs _libs
 	-rm -rf apps/.libs apps/_libs
-	-rm -rf sandbox/.libs sandbox/_libs
 	-rm -rf src/.libs src/_libs
 	-rm -rf tests/.libs tests/_libs
 
@@ -1387,8 +1005,6 @@ distclean-generic:
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
 	-rm -f apps/$(DEPDIR)/$(am__dirstamp)
 	-rm -f apps/$(am__dirstamp)
-	-rm -f sandbox/$(DEPDIR)/$(am__dirstamp)
-	-rm -f sandbox/$(am__dirstamp)
 	-rm -f src/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/$(am__dirstamp)
 	-rm -f tests/$(DEPDIR)/$(am__dirstamp)
@@ -1404,7 +1020,7 @@ clean-am: clean-binPROGRAMS clean-generic clean-libtool \
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf apps/$(DEPDIR) sandbox/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf apps/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -1452,7 +1068,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf apps/$(DEPDIR) sandbox/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf apps/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
@@ -1491,6 +1107,14 @@ uninstall-am: uninstall-binPROGRAMS
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags tags-am uninstall uninstall-am uninstall-binPROGRAMS
 
+#
+#sandbox_brute_force_costs_CPPFLAGS         = $(AM_CPPFLAGS) -DDUMP_COSTS=1
+#sandbox_brute_force_multiple_CPPFLAGS      = $(AM_CPPFLAGS) -DMULTIPLE_PAIRS_PER_TASK=1
+#sandbox_brute_force_rr_CPPFLAGS            = $(AM_CPPFLAGS) -DROUND_ROBIN_SEQUENCE_PAIRS=1
+#sandbox_brute_force_rr_sorted_CPPFLAGS     = $(AM_CPPFLAGS) -DROUND_ROBIN_SEQUENCE_PAIRS=1 -DSORT_TASKS_LOCALLY=1
+#sandbox_brute_force_rr_sorted_seq_CPPFLAGS = $(AM_CPPFLAGS) -DROUND_ROBIN_SEQUENCE_PAIRS=1 -DSORT_SEQUENCES=1
+#sandbox_brute_force_sorted_CPPFLAGS        = $(AM_CPPFLAGS) -DSORT_TASKS_LOCALLY=1
+#sandbox_brute_force_sorted_seq_CPPFLAGS    = $(AM_CPPFLAGS) -DSORT_SEQUENCES=1
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

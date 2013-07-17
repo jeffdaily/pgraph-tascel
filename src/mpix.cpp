@@ -90,7 +90,7 @@ void mpix_print_sync(MPI_Comm comm, const string &name, const string &what)
 
     for (int i = 0; i < size; ++i) {
         if (i == rank) {
-            cout << "[" << rank << "] " << name << "[" << i << "]=" << what << endl;
+            cout << "[" << rank << "] " << name << "=" << what << endl;
         }
         MPI_Barrier(comm);
     }
@@ -111,6 +111,49 @@ void mpix_print_sync(MPI_Comm comm, const string &what)
         }
         MPI_Barrier(comm);
     }
+}
+
+
+void mpix_print_zero(
+    MPI_Comm comm, const string &name, const vector<string> &what)
+{
+    int rank;
+
+    MPI_CHECK(MPI_Comm_rank(comm, &rank));
+
+    if (0 == rank) {
+        size_t j;
+        for (j = 0; j < what.size(); ++j) {
+            cout << name << "[" << j << "]=" << what.at(j) << endl;
+        }
+    }
+    MPI_Barrier(comm);
+}
+
+
+void mpix_print_zero(MPI_Comm comm, const string &name, const string &what)
+{
+    int rank;
+
+    MPI_CHECK(MPI_Comm_rank(comm, &rank));
+
+    if (0 == rank) {
+        cout << "[" << rank << "] " << name << "=" << what << endl;
+    }
+    MPI_Barrier(comm);
+}
+
+
+void mpix_print_zero(MPI_Comm comm, const string &what)
+{
+    int rank;
+
+    MPI_CHECK(MPI_Comm_rank(comm, &rank));
+
+    if (0 == rank) {
+        cout << "[" << rank << "] " << what << endl;
+    }
+    MPI_Barrier(comm);
 }
 
 
