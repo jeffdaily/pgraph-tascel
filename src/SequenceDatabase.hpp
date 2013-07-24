@@ -88,6 +88,9 @@ class SequenceDatabase
          */
         Sequence &get_sequence(size_t i);
 
+        /**
+         * Computes the alignment between the two sequence IDs.
+         */
     private:
         void read_and_parse_fasta();
         void read_and_parse_fasta_lomem(MPI_File in, MPI_Offset file_size);

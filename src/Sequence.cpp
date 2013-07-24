@@ -21,51 +21,60 @@ using std::strlen;
 
 Sequence::Sequence()
     :   is_owner(false)
-    ,   id(NULL)
-    ,   id_size(0)
     ,   data(NULL)
-    ,   data_size(0)
+    ,   id_offset(0)
+    ,   id_length(0)
+    ,   sequence_offset(0)
+    ,   sequence_length(0)
 {
 }
 
 
 Sequence::Sequence(const Sequence &that)
     :   is_owner(false)
-    ,   id(that.id)
-    ,   id_size(that.id_size)
     ,   data(that.data)
-    ,   data_size(that.data_size)
+    ,   id_offset(that.id_offset)
+    ,   id_length(that.id_length)
+    ,   sequence_offset(that.sequence_offset)
+    ,   sequence_length(that.sequence_length)
 {
 }
 
 
-Sequence::Sequence(const char *data)
-    :   is_owner(false)
-    ,   id(NULL)
-    ,   id_size(0)
+Sequence::Sequence(const char *data, const bool &owns)
+    :   is_owner(owns)
     ,   data(data)
-    ,   data_size(strlen(data))
+    ,   id_offset(0)
+    ,   id_length(0)
+    ,   sequence_offset(0)
+    ,   sequence_length(strlen(data))
 {
 }
 
 
-Sequence::Sequence(const char *data, size_t data_size)
-    :   is_owner(false)
-    ,   id(NULL)
-    ,   id_size(0)
+Sequence::Sequence(const char *data, const size_t &length, const bool &owns)
+    :   is_owner(owns)
     ,   data(data)
-    ,   data_size(data_size)
+    ,   id_offset(0)
+    ,   id_length(0)
+    ,   sequence_offset(0)
+    ,   sequence_length(length)
 {
 }
 
 
-Sequence::Sequence(const char *id, size_t id_size,
-                   const char *data, size_t data_size)
-    :   is_owner(false)
-    ,   id(id)
-    ,   id_size(id_size)
+Sequence::Sequence(const char *data,
+                   const size_t &id_offset,
+                   const size_t &id_length,
+                   const size_t &sequence_offset,
+                   const size_t &sequence_length,
+                   const bool &owns)
+    :   is_owner(owns)
     ,   data(data)
-    ,   data_size(data_size)
+    ,   id_offset(id_offset)
+    ,   id_length(id_length)
+    ,   sequence_offset(sequence_offset)
+    ,   sequence_length(sequence_length)
 {
 }
 
@@ -86,10 +95,10 @@ void Sequence::align(const Sequence &that, int &score, int &ndig, int &alen)
     cell_t **tbl = NULL;
     int **del = NULL;
     int **ins = NULL;
-    sequence_t s1 = { "", this->data, this->data_size };
-    sequence_t s2 = { "", that.data, that.data_size };
+    sequence_t s1 = { "", &this->data[this->sequence_offset], this->sequence_length };
+    sequence_t s2 = { "", &that.data[that.sequence_offset], that.sequence_length };
 
-    bigger = this->data_size > that.data_size ? this->data_size : that.data_size;
+    bigger = s1.size > s2.size ? s1.size : s2.size;
     tbl = pg_alloc_tbl(2, bigger);
     del = pg_alloc_int(2, bigger);
     ins = pg_alloc_int(2, bigger);
@@ -110,20 +119,20 @@ void Sequence::align(const Sequence &that, int &score, int &ndig, int &alen)
 Sequence::operator string() const
 {
     assert(NULL != data);
-    assert(data_size > 0);
+    assert(sequence_length > 0);
 
-    return string(data, data_size);
+    return string(&data[sequence_offset], sequence_length);
 }
 
 
 ostream &operator << (ostream &os, const Sequence &s)
 {
-    for (size_t i = 0; i < s.id_size; ++i) {
-        os << s.id[i];
+    for (size_t i = 0; i < s.id_length; ++i) {
+        os << s.data[s.id_offset + i];
     }
     os << endl;
-    for (size_t i = 0; i < s.data_size; ++i) {
-        os << s.data[i];
+    for (size_t i = 0; i < s.sequence_length; ++i) {
+        os << s.data[s.sequence_offset + i];
     }
     os << endl;
     return os;

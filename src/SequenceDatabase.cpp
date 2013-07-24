@@ -163,7 +163,10 @@ void SequenceDatabase::read_and_parse_fasta_lomem(MPI_File in,
     }
 
     chunk_size = file_size / MPI_Offset(comm_size);
-    assert(budget >= chunk_size);
+    if (budget < chunk_size) {
+        if (0 == comm_rank) cerr << "insufficient memory budget" << endl;
+        MPI_Abort(comm, -1);
+    }
     start = comm_rank * chunk_size;
     end = (comm_rank+1) * chunk_size;
     if (comm_size == comm_rank+1) {
@@ -171,9 +174,6 @@ void SequenceDatabase::read_and_parse_fasta_lomem(MPI_File in,
         end = file_size;
     }
     local_size = end-start;
-    mpix_print_sync(comm, "start", start);
-    mpix_print_sync(comm, "end", end);
-    mpix_print_sync(comm, "local_size", local_size);
 
     /* allocate memory to hold file buffer */
     file_buffer = new char[local_size+1];
@@ -183,7 +183,6 @@ void SequenceDatabase::read_and_parse_fasta_lomem(MPI_File in,
                                 MPI_CHAR, MPI_STATUS_IGNORE);
     CHECK_MPI_IERR(ierr, comm_rank, comm);
     file_buffer[local_size] = '\0';
-    mpix_print_sync(comm, "file_buffer", string(file_buffer));
 
     /* everyone can close the file now */
     ierr = MPI_File_close(&in);
@@ -202,7 +201,6 @@ void SequenceDatabase::read_and_parse_fasta_lomem(MPI_File in,
         }
     }
     mpix_allreduce(counts, MPI_MAX, comm);
-    mpix_print_sync(comm, "counts", vec_to_string(counts));
 
     /* send broken chunks left */
     if (comm_size > 0) {
@@ -240,10 +238,6 @@ void SequenceDatabase::read_and_parse_fasta_lomem(MPI_File in,
         extra_buffer[first_index_other] = '\0';
     }
     local_cache_size = local_size - first_index_mine + first_index_other;
-    mpix_print_sync(comm, "first_index_mine", first_index_mine);
-    mpix_print_sync(comm, "first_index_other", first_index_other);
-    mpix_print_sync(comm, "local_cache_size", local_cache_size);
-    mpix_print_sync(comm, "extra_buffer", string(extra_buffer));
 
     assert(comm == MPI_COMM_WORLD); /* until we handle ARMCI groups */
 
@@ -277,18 +271,14 @@ void SequenceDatabase::read_and_parse_fasta_lomem(MPI_File in,
             ptr_arr[comm_rank][local_cache_size] = '\0';
         }
     }
-    mpix_print_sync(comm, "armci buffer", string(ptr_arr[comm_rank]));
 
     /* determine the first sequence index */
     for (int i=0; i<comm_rank; ++i) {
         first_id += counts[i];
     }
-    mpix_print_sync(comm, "first_id", first_id);
 
     pack_and_index_fasta(ptr_arr[comm_rank], local_cache_size, DELIMITER,
                          first_id, new_size);
-    mpix_print_sync(comm, "new_size", new_size);
-    mpix_print_sync(comm, "armci buffer", string(ptr_arr[comm_rank]));
 
     exchange_local_cache();
 }
@@ -309,7 +299,6 @@ void SequenceDatabase::read_and_parse_fasta_himem(MPI_File in,
     ierr = MPI_File_read_at_all(in, 0, local_data, file_size,
             MPI_CHAR, MPI_STATUS_IGNORE);
     CHECK_MPI_IERR(ierr, comm_rank, comm);
-    mpix_print_sync(comm, "local_data", string(local_data));
 
     /* everyone can close the file now */
     ierr = MPI_File_close(&in);
@@ -319,7 +308,6 @@ void SequenceDatabase::read_and_parse_fasta_himem(MPI_File in,
     pack_and_index_fasta(local_data, file_size, DELIMITER, 0, new_size);
     local_data[new_size] = DELIMITER;
     local_data[new_size+1] = '\0';
-    mpix_print_sync(comm, "local_data", string(local_data));
     assert(!local_cache.empty());
     assert(local_cache.size() > 0);
 
@@ -368,11 +356,13 @@ void SequenceDatabase::pack_and_index_fasta(char *buffer,
                 if (r+1 >= size || buffer[r+1] == '>') {
                     buffer[w++] = delimiter;
                     local_cache[id++] =
-                        new Sequence(&buffer[last_gt], last_hash - last_gt,
-                                 &buffer[last_hash + 1], w - last_hash - 1);
+                        new Sequence(&buffer[last_gt],
+                                     0,
+                                     last_hash - last_gt,
+                                     last_hash - last_gt + 1,
+                                     w - last_hash - 1);
                     assert(!local_cache.empty());
                     assert(local_cache.size() > 0);
-                    if (comm_rank == 0) cout << id-1 << endl << *local_cache[id-1] << endl;
                 }
             }
             /* or file wasn't terminated with a newline */
@@ -381,12 +371,14 @@ void SequenceDatabase::pack_and_index_fasta(char *buffer,
                 assert(w<r);
                 buffer[w++] = delimiter;
                 local_cache[id++] =
-                    new Sequence(&buffer[last_gt], last_hash - last_gt,
-                             &buffer[last_hash + 1], w - last_hash - 1);
+                    new Sequence(&buffer[last_gt],
+                                 0,
+                                 last_hash - last_gt,
+                                 last_hash - last_gt + 1,
+                                 w - last_hash - 1);
                 assert(!local_cache.empty());
                 assert(local_cache.size() > 0);
                 assert(0);
-                if (comm_rank == 0) cout << id-1 << endl << *local_cache[id-1] << endl;
             }
             r++;
         }
@@ -420,10 +412,7 @@ Sequence &SequenceDatabase::get_sequence(size_t i)
             size_t j = 0;
 
             buffer = (char*)ARMCI_Malloc_local(sizes[i]+2);
-            printf("%d get_sequence(%zu) before ARMCI_Get\n", comm_rank, i);
             ARMCI_Get((void*)addresses[i], buffer, sizes[i], owners[i]);
-            printf("%d get_sequence(%zu)=\"%s\"\n", comm_rank, i,
-                    string(buffer, sizes[i]).c_str());
             assert('>' == buffer[0]);
             assert('$' == buffer[sizes[i]-1]);
             for (j=0; j<sizes[i]; ++j) {
@@ -431,17 +420,8 @@ Sequence &SequenceDatabase::get_sequence(size_t i)
                     break;
                 }
             }
-            id_len = j;
-            data = buffer + j + 1;
-            data_len = sizes[i] - j - 1;
-            assert(NULL != data);
-            printf("%d get_sequence(%zu) id=\"%s\"\n",
-                    comm_rank, i, string(buffer, id_len).c_str());
-            printf("%d get_sequence(%zu) data=\"%s\"\n",
-                    comm_rank, i, string(data, data_len).c_str());
-            remote_cache[i] = new Sequence(buffer, id_len, data, data_len);
-            printf("%d get_sequence(%zu) string=\"%s\"\n",
-                    comm_rank, i, string(*remote_cache[i]).c_str());
+            assert(j<sizes[i]);
+            remote_cache[i] = new Sequence(buffer, 0, j, j+1, sizes[i]-j-1);
             return *remote_cache[i];
         }
     }
@@ -454,31 +434,25 @@ void SequenceDatabase::exchange_local_cache()
 
     global_count = local_cache.size();
     mpix_allreduce(global_count, MPI_SUM, comm);
-    mpix_print_sync(comm, "global_count", global_count);
 
     owners.assign(global_count, 0);
     addresses.assign(global_count, 0);
     sizes.assign(global_count, 0);
 
     for (it=local_cache.begin(); it!=local_cache.end(); ++it) {
+        const char *data = NULL;
+        size_t data_size = 0;
+
         assert(it->first >= 0);
         assert(it->first < global_count);
+        it->second->get_data(data, data_size);
         owners[it->first] = comm_rank;
-        addresses[it->first] = MPI_Aint(it->second->get_id());
-        sizes[it->first] = it->second->get_id_size() + it->second->get_data_size() + 1;
+        addresses[it->first] = MPI_Aint(data);
+        sizes[it->first] = data_size;
     }
-
-    mpix_print_sync(comm, "owners", vec_to_string(owners));
-    mpix_print_sync(comm, "addresses", vec_to_string(addresses));
-    mpix_print_sync(comm, "sizes", vec_to_string(sizes));
 
     mpix_allreduce(owners, MPI_MAX, comm);
     mpix_allreduce(addresses, MPI_MAX, comm);
     mpix_allreduce(sizes, MPI_MAX, comm);
-
-    mpix_print_sync(comm, "owners", vec_to_string(owners));
-    mpix_print_sync(comm, "addresses", vec_to_string(addresses));
-    mpix_print_sync(comm, "sizes", vec_to_string(sizes));
-
 }
 
