@@ -54,8 +54,8 @@ host_triplet = @host@
 bin_PROGRAMS = apps/align$(EXEEXT) apps/ccd$(EXEEXT)
 noinst_PROGRAMS = tests/test_align$(EXEEXT) \
 	tests/test_combinations$(EXEEXT) tests/test_dynamic$(EXEEXT) \
-	tests/test_garray$(EXEEXT) tests/test_read$(EXEEXT) \
-	tests/test_read_fasta$(EXEEXT) tests/test_read_serial$(EXEEXT)
+	tests/test_read$(EXEEXT) tests/test_read_fasta$(EXEEXT) \
+	tests/test_read_serial$(EXEEXT)
 subdir = .
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) \
@@ -131,12 +131,6 @@ tests_test_dynamic_LDADD = $(LDADD)
 tests_test_dynamic_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
-am_tests_test_garray_OBJECTS = tests/test_garray.$(OBJEXT)
-tests_test_garray_OBJECTS = $(am_tests_test_garray_OBJECTS)
-tests_test_garray_LDADD = $(LDADD)
-tests_test_garray_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
 am_tests_test_read_OBJECTS = tests/test_read.$(OBJEXT)
 tests_test_read_OBJECTS = $(am_tests_test_read_OBJECTS)
 tests_test_read_LDADD = $(LDADD)
@@ -210,14 +204,14 @@ am__v_CXXLD_1 =
 SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
 	$(apps_ccd_SOURCES) $(tests_test_align_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
-	$(tests_test_dynamic_SOURCES) $(tests_test_garray_SOURCES) \
-	$(tests_test_read_SOURCES) $(tests_test_read_fasta_SOURCES) \
+	$(tests_test_dynamic_SOURCES) $(tests_test_read_SOURCES) \
+	$(tests_test_read_fasta_SOURCES) \
 	$(tests_test_read_serial_SOURCES)
 DIST_SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
 	$(apps_ccd_SOURCES) $(tests_test_align_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
-	$(tests_test_dynamic_SOURCES) $(tests_test_garray_SOURCES) \
-	$(tests_test_read_SOURCES) $(tests_test_read_fasta_SOURCES) \
+	$(tests_test_dynamic_SOURCES) $(tests_test_read_SOURCES) \
+	$(tests_test_read_fasta_SOURCES) \
 	$(tests_test_read_serial_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
@@ -448,7 +442,6 @@ apps_ccd_SOURCES = apps/ccd.c
 tests_test_align_SOURCES = tests/test_align.c
 tests_test_combinations_SOURCES = tests/test_combinations.cc
 tests_test_dynamic_SOURCES = tests/test_dynamic.c
-tests_test_garray_SOURCES = tests/test_garray.c
 tests_test_read_SOURCES = tests/test_read.cc
 tests_test_read_fasta_SOURCES = tests/test_read_fasta.cc
 tests_test_read_serial_SOURCES = tests/test_read_serial.cc
@@ -632,11 +625,6 @@ tests/test_dynamic.$(OBJEXT): tests/$(am__dirstamp) \
 tests/test_dynamic$(EXEEXT): $(tests_test_dynamic_OBJECTS) $(tests_test_dynamic_DEPENDENCIES) $(EXTRA_tests_test_dynamic_DEPENDENCIES) tests/$(am__dirstamp)
 	@rm -f tests/test_dynamic$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(tests_test_dynamic_OBJECTS) $(tests_test_dynamic_LDADD) $(LIBS)
-tests/test_garray.$(OBJEXT): tests/$(am__dirstamp) \
-	tests/$(DEPDIR)/$(am__dirstamp)
-tests/test_garray$(EXEEXT): $(tests_test_garray_OBJECTS) $(tests_test_garray_DEPENDENCIES) $(EXTRA_tests_test_garray_DEPENDENCIES) tests/$(am__dirstamp)
-	@rm -f tests/test_garray$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(tests_test_garray_OBJECTS) $(tests_test_garray_LDADD) $(LIBS)
 tests/test_read.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 tests/test_read$(EXEEXT): $(tests_test_read_OBJECTS) $(tests_test_read_DEPENDENCIES) $(EXTRA_tests_test_read_DEPENDENCIES) tests/$(am__dirstamp)
@@ -679,7 +667,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_combinations.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_dynamic.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_garray.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_read.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_read_fasta.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_read_serial.Po@am__quote@

@@ -406,12 +406,11 @@ Sequence &SequenceDatabase::get_sequence(size_t i)
         else {
             Sequence *sequence = NULL;
             char *buffer = NULL;
-            char *data = NULL;
-            size_t id_len = 0;
-            size_t data_len = 0;
             size_t j = 0;
 
             buffer = (char*)ARMCI_Malloc_local(sizes[i]+2);
+            assert(buffer);
+            (void)memset(buffer, 0, sizes[i]+2);
             ARMCI_Get((void*)addresses[i], buffer, sizes[i], owners[i]);
             assert('>' == buffer[0]);
             assert('$' == buffer[sizes[i]-1]);
@@ -439,20 +438,35 @@ void SequenceDatabase::exchange_local_cache()
     addresses.assign(global_count, 0);
     sizes.assign(global_count, 0);
 
-    for (it=local_cache.begin(); it!=local_cache.end(); ++it) {
-        const char *data = NULL;
-        size_t data_size = 0;
+    for (size_t i=0; i<comm_size; ++i) {
+        if (i == comm_rank) {
+            for (it=local_cache.begin(); it!=local_cache.end(); ++it) {
+                const char *data = NULL;
+                size_t data_size = 0;
 
-        assert(it->first >= 0);
-        assert(it->first < global_count);
-        it->second->get_data(data, data_size);
-        owners[it->first] = comm_rank;
-        addresses[it->first] = MPI_Aint(data);
-        sizes[it->first] = data_size;
+                assert(it->first >= 0);
+                assert(it->first < global_count);
+                it->second->get_data(data, data_size);
+                owners[it->first] = comm_rank;
+                addresses[it->first] = MPI_Aint(data);
+                sizes[it->first] = data_size;
+                cout << "[" << comm_rank << "] "
+                    << (void*)data
+                    << "\t"
+                    << MPI_Aint(data)
+                    << "\t'"
+                    << string(data, data_size)
+                    << "'" << endl;
+            }
+        }
+        MPI_Barrier(comm);
     }
 
     mpix_allreduce(owners, MPI_MAX, comm);
     mpix_allreduce(addresses, MPI_MAX, comm);
     mpix_allreduce(sizes, MPI_MAX, comm);
+    mpix_print_sync(comm, "owners", vec_to_string(owners));
+    mpix_print_sync(comm, "addresses", vec_to_string(addresses));
+    mpix_print_sync(comm, "sizes", vec_to_string(sizes));
 }
 
