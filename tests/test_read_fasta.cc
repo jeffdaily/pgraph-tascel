@@ -10,6 +10,9 @@
 #include <vector>
 
 #include <mpi.h>
+extern "C" {
+#include <armci.h>
+}
 
 #include "SequenceDatabase.hpp"
 #include "mpix.hpp"
@@ -88,31 +91,29 @@ int main(int argc, char **argv)
         budget *= 1073741824; /* gigabyte */
     }
 
-    SequenceDatabase sd(argv[1], budget, MPI_COMM_WORLD);
-    sequences_t *sequences = pg_load_fasta(argv[1], '$');
-    mpix_print_zero(comm, "sd.get_global_count()", sd.get_global_count());
+    {
+        SequenceDatabase sd(argv[1], budget, MPI_COMM_WORLD);
+        sequences_t *sequences = pg_load_fasta(argv[1], '$');
 
-    for (size_t p=0; p<nprocs; ++p) {
-        if (p == rank) {
-            for (size_t i=0; i<sd.get_global_count(); ++i) {
-                Sequence &seq1 = sd.get_sequence(i);
-                sequence_t *seq2 = &sequences->seq[i];
-                string str1(seq1);
-                string str2(seq2->str);
-                if (str1 != str2) {
-                    cout << "[" << rank << "] i=" << i << " mismatch" << endl;
-                    cout << str1 << endl;
-                    cout << str2 << endl;
+        for (size_t i=0; i<sd.get_global_count(); ++i) {
+            Sequence &seq1 = sd.get_sequence(i);
+            sequence_t *seq2 = &sequences->seq[i];
+            string str1(seq1);
+            string str2(seq2->str);
+            if (str1 != str2) {
+                cout << "[" << rank << "] i=" << i << " mismatch" << endl;
+                cout << str1 << endl;
+                cout << str2 << endl;
 
-                }
-                assert(str1==str2);
             }
+            assert(str1==str2);
         }
-        MPI_Barrier(comm);
+
+        ARMCI_Barrier();
+        pg_free_sequences(sequences);
     }
 
     /* clean up */
-    pg_free_sequences(sequences);
     MPI_Comm_free(&comm);
     MPI_Finalize();
 

@@ -19,7 +19,10 @@
 #include <string>
 #include <utility>
 
+/* ANL's armci does not extern "C" inside the header */
+extern "C" {
 #include <armci.h>
+}
 
 #include "Sequence.hpp"
 #include "SequenceDatabase.hpp"
@@ -33,8 +36,37 @@ using std::make_pair;
 using std::ostringstream;
 using std::string;
 
+#define DEBUG 0
 #define TAG 2345
 #define DELIMITER '$'
+
+#if DEBUG || 1
+string carr_to_string(
+    char* *collection,
+    const size_t &size,
+    char const *delimiter = ",",
+    const string &name = "")
+{
+    std::ostringstream os;
+
+    if (!name.empty()) {
+        os << name << "=";
+    }
+
+    if (size == 0) {
+        os << "{}";
+    }
+    else {
+        os << "{" << (void*)collection[0];
+        for (size_t i=1; i < size; ++i) {
+            os << delimiter << (void*)collection[i];
+        }
+        os << "}";
+    }
+
+    return os.str();
+}
+#endif
 
 
 SequenceDatabaseException::SequenceDatabaseException(
@@ -80,11 +112,21 @@ SequenceDatabase::SequenceDatabase(const string &file_name, size_t budget,
 {
     int ierr = 0;
 
+    ARMCI_Init();
+
+#if defined(ARMCI_TS)
+    ARMCI_Group group_world;
+    ARMCI_Group_get_world(&group_world);
+    ARMCI_Group_rank(&group_world, &comm_rank);
+    ARMCI_Group_size(&group_world, &comm_size);
+    comm = armci_group_comm(&group_world);
+#else
     /* rank and size */
     ierr = MPI_Comm_rank(comm, &comm_rank);
     CHECK_MPI_IERR(ierr, comm_rank, comm);
     ierr = MPI_Comm_size(comm, &comm_size);
     CHECK_MPI_IERR(ierr, comm_rank, comm);
+#endif
 
     read_and_parse_fasta();
 }
@@ -157,10 +199,12 @@ void SequenceDatabase::read_and_parse_fasta_lomem(MPI_File in,
     vector<int> counts(comm_size, 0);
     int first_id = 0;
 
+#if 0
     /* initialize ARMCI, if needed */
     if (!ARMCI_Initialized()) {
         ARMCI_Init();
     }
+#endif
 
     chunk_size = file_size / MPI_Offset(comm_size);
     if (budget < chunk_size) {
@@ -242,9 +286,11 @@ void SequenceDatabase::read_and_parse_fasta_lomem(MPI_File in,
     assert(comm == MPI_COMM_WORLD); /* until we handle ARMCI groups */
 
     /* allocate the ARMCI memory to hold the sequences and copy buffers */
-    char **ptr_arr = new char*[comm_size];
+    ptr_arr = new char*[comm_size];
     (void)ARMCI_Malloc((void**)ptr_arr, local_cache_size+1);
     local_data = ptr_arr[comm_rank];
+    //mpix_print_sync(comm, "local_data", (void*)local_data);
+    //mpix_print_sync(comm, "ptr_arr", carr_to_string(ptr_arr, comm_size));
     if (comm_size > 0) {
         if (0 == comm_rank) {
             (void)memcpy(ptr_arr[comm_rank],
@@ -272,13 +318,35 @@ void SequenceDatabase::read_and_parse_fasta_lomem(MPI_File in,
         }
     }
 
+#if DEBUG
+    for (size_t p=0; p<comm_size; ++p) {
+        if (p == comm_rank) {
+            cout << "[" << p << "] ARMCI ptr_arr[me]" << endl;
+            cout << ptr_arr[p] << endl;
+        }
+        ARMCI_Barrier();
+    }
+#endif
+
     /* determine the first sequence index */
     for (int i=0; i<comm_rank; ++i) {
         first_id += counts[i];
     }
 
-    pack_and_index_fasta(ptr_arr[comm_rank], local_cache_size, DELIMITER,
-                         first_id, new_size);
+    pack_and_index_fasta(ptr_arr[comm_rank], local_cache_size,
+            DELIMITER, first_id, new_size);
+
+#if DEBUG
+    for (size_t p=0; p<comm_size; ++p) {
+        if (p == comm_rank) {
+            cout << "[" << p << "] ARMCI ptr_arr[me]" << endl;
+            cout << (void*)ptr_arr[p] << endl;
+            cout << ptr_arr[p] << endl;
+        }
+        ARMCI_Barrier();
+    }
+#endif
+
 
     exchange_local_cache();
 }
@@ -411,7 +479,17 @@ Sequence &SequenceDatabase::get_sequence(size_t i)
             buffer = (char*)ARMCI_Malloc_local(sizes[i]+2);
             assert(buffer);
             (void)memset(buffer, 0, sizes[i]+2);
+#if 1
             ARMCI_Get((void*)addresses[i], buffer, sizes[i], owners[i]);
+#else
+                cout << "[" << comm_rank << "] "
+                    << addresses[i]
+                    << "\t"
+                    << addresses[i]
+                    << "\t'"
+                    << string(addresses[i], sizes[i])
+                    << "'" << endl;
+#endif
             assert('>' == buffer[0]);
             assert('$' == buffer[sizes[i]-1]);
             for (j=0; j<sizes[i]; ++j) {
@@ -430,6 +508,7 @@ Sequence &SequenceDatabase::get_sequence(size_t i)
 void SequenceDatabase::exchange_local_cache()
 {
     map<size_t, Sequence*>::const_iterator it;
+    vector<ptrdiff_t> offsets;
 
     global_count = local_cache.size();
     mpix_allreduce(global_count, MPI_SUM, comm);
@@ -437,36 +516,43 @@ void SequenceDatabase::exchange_local_cache()
     owners.assign(global_count, 0);
     addresses.assign(global_count, 0);
     sizes.assign(global_count, 0);
+    offsets.assign(global_count, 0);
 
-    for (size_t i=0; i<comm_size; ++i) {
-        if (i == comm_rank) {
-            for (it=local_cache.begin(); it!=local_cache.end(); ++it) {
-                const char *data = NULL;
-                size_t data_size = 0;
+    for (it=local_cache.begin(); it!=local_cache.end(); ++it) {
+        const char *data = NULL;
+        size_t data_size = 0;
 
-                assert(it->first >= 0);
-                assert(it->first < global_count);
-                it->second->get_data(data, data_size);
-                owners[it->first] = comm_rank;
-                addresses[it->first] = MPI_Aint(data);
-                sizes[it->first] = data_size;
-                cout << "[" << comm_rank << "] "
-                    << (void*)data
-                    << "\t"
-                    << MPI_Aint(data)
-                    << "\t'"
-                    << string(data, data_size)
-                    << "'" << endl;
-            }
-        }
-        MPI_Barrier(comm);
+        assert(it->first >= 0);
+        assert(it->first < global_count);
+
+        it->second->get_data(data, data_size);
+        owners[it->first] = comm_rank;
+        offsets[it->first] = data - local_data;
+        sizes[it->first] = data_size;
+        //cout << "[" << comm_rank << "] "
+        //    << (void*)data
+        //    << "\t"
+        //    << MPI_Aint(data)
+        //    << "\t'"
+        //    << string(data, data_size)
+        //    << "'" << endl;
     }
 
-    mpix_allreduce(owners, MPI_MAX, comm);
-    mpix_allreduce(addresses, MPI_MAX, comm);
-    mpix_allreduce(sizes, MPI_MAX, comm);
-    mpix_print_sync(comm, "owners", vec_to_string(owners));
-    mpix_print_sync(comm, "addresses", vec_to_string(addresses));
-    mpix_print_sync(comm, "sizes", vec_to_string(sizes));
+    mpix_allreduce(owners, MPI_SUM, comm);
+    mpix_allreduce(offsets, MPI_SUM, comm);
+    mpix_allreduce(sizes, MPI_SUM, comm);
+    //mpix_print_sync(comm, "owners", vec_to_string(owners));
+    //mpix_print_sync(comm, "offsets", vec_to_string(offsets));
+    //mpix_print_sync(comm, "sizes", vec_to_string(sizes));
+
+    /* ARMCI is screwey. If the MPI ranks are on the same SMP node, the
+     * addresses returned in the ptr_arr are different than the addresses on
+     * the procs (due to mmapping the shared memory on each process
+     * differently) so we can't use the addresses as we have them. We must make
+     * everything relative to each process' own ptr_arr. */
+    for (size_t i=0; i<global_count; ++i) {
+        addresses[i] = &ptr_arr[owners[i]][offsets[i]];
+    }
+    //mpix_print_sync(comm, "addresses", vec_to_string(addresses));
 }
 

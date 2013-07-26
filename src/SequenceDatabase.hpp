@@ -127,7 +127,7 @@ class SequenceDatabase
         map<size_t, Sequence*> local_cache; /**< TODO */
         size_t global_count;/**< total number of sequences */
         vector<int> owners; /**< mapping from seq id to rank owner */
-        vector<MPI_Aint> addresses; /**< where each sequence data block begins */
+        vector<const void*> addresses; /**< where each sequence data block begins */
         vector<size_t> sizes; /**< length of each sequence data block */
         char **ptr_arr;     /**< TODO */
         map<size_t, Sequence*> remote_cache; /**< TODO */
