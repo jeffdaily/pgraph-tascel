@@ -7,6 +7,7 @@
  */
 
 /* C++ STL */
+#include <cstddef>
 #include <string>
 #include <vector>
 
@@ -17,6 +18,7 @@
 #include "io.hpp"
 #include "mpix.hpp"
 
+using std::size_t;
 using std::string;
 using std::vector;
 

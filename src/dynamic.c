@@ -283,17 +283,14 @@ void pg_affine_gap_align(
 }
 
 
-void pg_affine_gap_align_blosum(
-        const sequence_t *_s1, const sequence_t *_s2,
+void pg_affine_gap_align_blosum2(
+        const char *s1, size_t s1Len,
+        const char *s2, size_t s2Len,
         cell_t *result, cell_t **tbl, int **del, int **ins,
         int open, int gap)
 {
     size_t i;                           /* first sequence char index */
     size_t j;                           /* second sequence char index */
-    const char *s1 = _s1->str;          /* char string of first sequence */
-    size_t s1Len = _s1->size;           /* length of second sequence */
-    const char *s2 = _s2->str;          /* char string of second sequence */
-    size_t s2Len = _s2->size;           /* length of second sequence */
     cell_t lastCol = {INT_MIN, 0, 0};   /* max cell in last col */
     cell_t lastRow = {INT_MIN, 0, 0};   /* max cell in last row */
     cell_t *tI = NULL;                  /* current DP table row */
@@ -389,6 +386,15 @@ void pg_affine_gap_align_blosum(
     } /* end of i loop */
 
     *result = (lastCol.score > lastRow.score) ? lastCol : lastRow;
+}
+
+
+void pg_affine_gap_align_blosum(
+        const sequence_t *s1, const sequence_t *s2,
+        cell_t *result, cell_t **tbl, int **del, int **ins,
+        int open, int gap)
+{
+    pg_affine_gap_align_blosum2(s1->str, s1->size, s2->str, s2->size, result, tbl, del, ins, open, gap);
 }
 
 

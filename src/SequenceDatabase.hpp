@@ -8,19 +8,15 @@
 #ifndef SEQUENCE_DATABASE_H_
 #define SEQUENCE_DATABASE_H_
 
-#include <stdint.h>
-
+#include <cstddef>
 #include <exception>
-#include <map>
 #include <string>
-#include <vector>
 
 #include "Sequence.hpp"
 
 using std::exception;
-using std::map;
+using std::size_t;
 using std::string;
-using std::vector;
 
 
 /**
@@ -48,7 +44,6 @@ class SequenceDatabaseException : public exception
 class SequenceDatabase
 {
     public:
-
         /**
          * Creates a sequence database from the given file with the given
          * memory budget.
@@ -58,27 +53,26 @@ class SequenceDatabase
          * @param[in] budget the memory budget, 0 for unlimited
          * @param[in] comm MPI communicator
          */
-        explicit SequenceDatabase(const string &filename, size_t budget,
-                                  MPI_Comm comm);
+        SequenceDatabase();
 
         /**
          * Destroys the SequenceDatabase.
          */
-        ~SequenceDatabase();
+        virtual ~SequenceDatabase();
 
         /**
          * Returns how many sequences are stored on this process.
          *
          * @return how many sequences are stored on this process.
          */
-        size_t get_local_count() const;
+        virtual size_t get_local_count() const = 0;
 
         /**
          * Returns how many sequences are stored collectively by every process.
          *
          * @return how many sequences are stored collectively by every process.
          */
-        size_t get_global_count() const;
+        virtual size_t get_global_count() const = 0;
 
         /**
          * Returns a reference to the Sequence based on the global index i.
@@ -86,51 +80,36 @@ class SequenceDatabase
          * @param[in] i the index based on the global count of sequences
          * @return the Sequence reference (owned by this SequenceDatabase)
          */
-        Sequence &get_sequence(size_t i);
+        virtual Sequence &get_sequence(size_t i) = 0;
+
+        /**
+         * Sets the number of threads that might possibly access this db.
+         *
+         * @param[in] num the number of threads
+         */
+        virtual void set_num_threads(size_t num) = 0;
 
         /**
          * Computes the alignment between the two sequence IDs.
-         */
-    private:
-        void read_and_parse_fasta();
-        void read_and_parse_fasta_lomem(MPI_File in, MPI_Offset file_size);
-        void read_and_parse_fasta_himem(MPI_File in, MPI_Offset file_size);
-
-        /**
-         * Preprocesses a fasta file buffer.
          *
-         * We remove all newlines unless it is the newline that terminates the
-         * sequence ID. We replace the ID-terminating newline with '#'. We replace
-         * the sequence terminating newline with the given delimiter.
-         *
-         * @param[in] buffer the fasta file buffer
-         * @param[in] size of the fasta file buffer
-         * @param[in] delimiter to append to each sequence (can be '\0')
-         * @param[in] index of first sequence
-         * @param[out] new_size of the packed buffer
+         * @param[in] i first Sequence index
+         * @param[in] j second Sequence index
+         * @param[out] score TODO
+         * @param[out] ndig TODO
+         * @param[out] align TODO
+         * @param[in] open penalty
+         * @param[in] gap penalty
+         * @param[in] tid thread ID, defaulting to 0
          */
-        void pack_and_index_fasta(char *buffer, size_t size, char delimiter,
-                                  size_t index, size_t &new_size);
+        virtual void align(size_t i,
+                           size_t j,
+                           int &score,
+                           int &ndig,
+                           int &align,
+                           int open=-10,
+                           int gap=-1,
+                           int tid=0) = 0;
 
-        /**
-         * Exchanges metadata associated with each local cache.
-         */
-        void exchange_local_cache();
-
-        MPI_Comm comm;      /**< communicator */
-        int comm_rank;      /**< communicator rank */
-        int comm_size;      /**< communicator size */
-        bool is_replicated; /**< is budget sufficient to hold entire file? */
-        size_t budget;      /**< max amount of memory to use */
-        string file_name;   /**< fasta file name */
-        char *local_data;   /**< memory allocated for local sequences */
-        map<size_t, Sequence*> local_cache; /**< TODO */
-        size_t global_count;/**< total number of sequences */
-        vector<int> owners; /**< mapping from seq id to rank owner */
-        vector<const void*> addresses; /**< where each sequence data block begins */
-        vector<size_t> sizes; /**< length of each sequence data block */
-        char **ptr_arr;     /**< TODO */
-        map<size_t, Sequence*> remote_cache; /**< TODO */
 };
 
 #endif /* SEQUENCE_DATABASE_H_ */

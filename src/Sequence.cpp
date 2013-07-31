@@ -6,6 +6,7 @@
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  */
 #include <cassert>
+#include <cstddef>
 #include <cstring>
 #include <iostream>
 #include <string>
@@ -15,6 +16,7 @@
 #include "Sequence.hpp"
 
 using std::endl;
+using std::size_t;
 using std::string;
 using std::strlen;
 

@@ -8,11 +8,14 @@
 #ifndef SEQUENCE_H_
 #define SEQUENCE_H_
 
+#include <cassert>
+#include <cstddef>
 #include <cstring>
 #include <iostream>
 #include <string>
 
 using std::ostream;
+using std::size_t;
 using std::string;
 
 
@@ -110,6 +113,15 @@ class Sequence
         void get_id(const char * &id, size_t &length) {
             id = &data[id_offset];
             length = id_length;
+        }
+
+        /**
+         * Retrieves length of sequence.
+         *
+         * @return length of the sequence character buffer
+         */
+        size_t get_sequence_length() {
+            return sequence_length;
         }
 
         /**

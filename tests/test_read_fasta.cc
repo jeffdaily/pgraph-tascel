@@ -14,7 +14,7 @@ extern "C" {
 #include <armci.h>
 }
 
-#include "SequenceDatabase.hpp"
+#include "SequenceDatabaseArmci.hpp"
 #include "mpix.hpp"
 #include "csequence.h"
 
@@ -92,7 +92,7 @@ int main(int argc, char **argv)
     }
 
     {
-        SequenceDatabase sd(argv[1], budget, MPI_COMM_WORLD);
+        SequenceDatabaseArmci sd(argv[1], budget, MPI_COMM_WORLD);
         sequences_t *sequences = pg_load_fasta(argv[1], '$');
 
         for (size_t i=0; i<sd.get_global_count(); ++i) {

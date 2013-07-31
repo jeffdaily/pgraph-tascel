@@ -8,9 +8,11 @@
 #ifndef FASTA_IO_H_
 #define FASTA_IO_H_
 
+#include <cstddef>
 #include <string>
 #include <vector>
 
+using std::size_t;
 using std::string;
 using std::vector;
 

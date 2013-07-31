@@ -5,13 +5,14 @@
  *
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  */
-#include <assert.h>
-#include <stdio.h>
-#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <cassert>
+#include <cstddef>
+#include <cstdio>
+#include <cstring>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -22,6 +23,7 @@
 
 using std::cout;
 using std::endl;
+using std::size_t;
 using std::string;
 using std::vector;
 

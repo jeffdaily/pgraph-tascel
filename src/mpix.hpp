@@ -11,6 +11,7 @@
 #ifndef _MPIX_H_
 #define _MPIX_H_
 
+#include <cstddef>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -23,6 +24,7 @@ using std::cout;
 using std::endl;
 using std::ostringstream;
 using std::pair;
+using std::size_t;
 using std::string;
 using std::vector;
 

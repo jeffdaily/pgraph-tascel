@@ -160,6 +160,30 @@ void pg_affine_gap_align_blosum(
 
 
 /**
+ * Implementation of affine gap pairwise protein sequence alignment using
+ * blosum.
+ *
+ * It is a space efficient version: only two rows are required; also mem for
+ * all dynamic tables are allocated ONLY ONCE outside of this function call
+ * using alloc_tbl() and alloc_int() and passed as tbl, del, and ins arguments.
+ *
+ * @param[in] s1 sequence s1
+ * @param[in] s2 sequence s2
+ * @param[out] result alignment result <score, ndig, alen>
+ * @param[in] tbl pre-allocated score table
+ * @param[in] del pre-allocated deletion table
+ * @param[in] ins pre-allocated insertion table
+ * @param[in] open gap penalty
+ * @param[in] gap extension penalty
+ */
+void pg_affine_gap_align_blosum2(
+        const char *s1, size_t l1,
+        const char *s2, size_t l2,
+        cell_t *result, cell_t **tbl, int **del, int **ins,
+        int open, int gap);
+
+
+/**
  * Prints the given row to stdout (for debugging purposes).
  *
  * @param[in] tbl the cell_t table

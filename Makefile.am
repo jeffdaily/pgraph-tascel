@@ -61,12 +61,15 @@ libpgraph_la_SOURCES += src/Sequence.cpp
 libpgraph_la_SOURCES += src/Sequence.hpp
 libpgraph_la_SOURCES += src/SequenceDatabase.cpp
 libpgraph_la_SOURCES += src/SequenceDatabase.hpp
+libpgraph_la_SOURCES += src/SequenceDatabaseArmci.cpp
+libpgraph_la_SOURCES += src/SequenceDatabaseArmci.hpp
 libpgraph_la_SOURCES += src/stree.c
 libpgraph_la_SOURCES += src/stree.h
 libpgraph_la_SOURCES += src/timer.h
 
 bin_PROGRAMS =
 bin_PROGRAMS += apps/align
+bin_PROGRAMS += apps/align2
 bin_PROGRAMS += apps/ccd
 
 noinst_PROGRAMS =
@@ -100,6 +103,7 @@ noinst_PROGRAMS += tests/test_read_serial
 #endif
 
 apps_align_SOURCES = apps/align.cc
+apps_align2_SOURCES = apps/align2.cc
 apps_ccd_SOURCES = apps/ccd.c
 
 #sandbox_blast_SOURCES                      = sandbox/blast.cc
