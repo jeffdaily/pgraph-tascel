@@ -52,7 +52,7 @@ int pg_match_blosum(char one, char two);
 /**
  * Calculates the score if the given sequence were aligned with itself.
  *
- * @param[in] s the sequence
+ * @param[in] seq the sequence
  * @param[in] callback the match function callback
  * @return the self score
  */
@@ -62,11 +62,20 @@ int pg_self_score(const sequence_t *seq, match_t callback);
 /**
  * Calculates the score if the given sequence were aligned with itself.
  *
- * @param[in] s the sequence
- * @param[in] callback the match function callback
+ * @param[in] seq the sequence
  * @return the self score
  */
 int pg_self_score_blosum(const sequence_t *seq);
+
+
+/**
+ * Calculates the score if the given sequence were aligned with itself.
+ *
+ * @param[in] seq the sequence
+ * @param[in] len the length of seq
+ * @return the self score
+ */
+int pg_self_score_blosum2(const char *seq, size_t len);
 
 
 /**

@@ -44,7 +44,6 @@ using std::size_t;
 using std::string;
 using tascel::LockGuard;
 using tascel::PthreadMutex;
-using tascel::NUM_WORKERS;
 
 #define TAG 2345
 
@@ -53,6 +52,7 @@ SequenceDatabaseArmci::SequenceDatabaseArmci(
         const string &file_name,
         size_t budget,
         MPI_Comm comm,
+        size_t num_threads,
         char delimiter)
     :   SequenceDatabase()
     ,   comm(comm)
@@ -60,6 +60,7 @@ SequenceDatabaseArmci::SequenceDatabaseArmci(
     ,   comm_size(0)
     ,   is_replicated(false)
     ,   budget(budget)
+    ,   num_threads(num_threads)
     ,   delimiter(delimiter)
     ,   file_name(file_name)
     ,   local_data(NULL)
@@ -241,7 +242,7 @@ void SequenceDatabaseArmci::read_and_parse_fasta_lomem(MPI_File in,
     }
     local_cache_size = local_size - first_index_mine + first_index_other;
 
-    assert(comm == MPI_COMM_WORLD); /* until we handle ARMCI groups */
+    //assert(comm == MPI_COMM_WORLD); /* until we handle ARMCI groups */
 
     /* allocate the ARMCI memory to hold the sequences and copy buffers */
     ptr_arr = new char*[comm_size];
@@ -410,28 +411,35 @@ void SequenceDatabaseArmci::pack_and_index_fasta(char *buffer,
     mpix_allreduce(max_seq_size, MPI_MAX, comm);
     mpix_print_zero(comm, "max_seq_size", max_seq_size);
 
-    tbl = new cell_t**[NUM_WORKERS];
-    del = new int**[NUM_WORKERS];
-    ins = new int**[NUM_WORKERS];
-    for (size_t worker=0; worker<NUM_WORKERS; ++worker) {
+    assert(num_threads > 0);
+    tbl = new cell_t**[num_threads];
+    del = new int**[num_threads];
+    ins = new int**[num_threads];
+    for (size_t worker=0; worker<num_threads; ++worker) {
+#if 1
+        size_t max_seq_size_p1 = max_seq_size + 1;
+        tbl[worker] = new cell_t*[2];
+        tbl[worker][0] = new cell_t[max_seq_size_p1];
+        tbl[worker][1] = new cell_t[max_seq_size_p1];
+        del[worker] = new int*[2];
+        del[worker][0] = new int[max_seq_size_p1];
+        del[worker][1] = new int[max_seq_size_p1];
+        ins[worker] = new int*[2];
+        ins[worker][0] = new int[max_seq_size_p1];
+        ins[worker][1] = new int[max_seq_size_p1];
+#if USE_MEMSET
+        (void)memset(tbl[worker][0], 0, sizeof(cell_t)*max_seq_size_p1);
+        (void)memset(tbl[worker][1], 0, sizeof(cell_t)*max_seq_size_p1);
+        (void)memset(del[worker][0], 0, sizeof(int)*max_seq_size_p1);
+        (void)memset(del[worker][1], 0, sizeof(int)*max_seq_size_p1);
+        (void)memset(ins[worker][0], 0, sizeof(int)*max_seq_size_p1);
+        (void)memset(ins[worker][1], 0, sizeof(int)*max_seq_size_p1);
+#endif
+#else
         tbl[worker] = pg_alloc_tbl(2, max_seq_size);
         del[worker] = pg_alloc_int(2, max_seq_size);
         ins[worker] = pg_alloc_int(2, max_seq_size);
-        tbl[worker] = new cell_t*[2];
-        tbl[worker][0] = new cell_t[max_seq_size];
-        tbl[worker][1] = new cell_t[max_seq_size];
-        (void)memset(tbl[worker][0], 0, sizeof(cell_t)*max_seq_size);
-        (void)memset(tbl[worker][1], 0, sizeof(cell_t)*max_seq_size);
-        del[worker] = new int*[2];
-        del[worker][0] = new int[max_seq_size];
-        del[worker][1] = new int[max_seq_size];
-        (void)memset(del[worker][0], 0, sizeof(int)*max_seq_size);
-        (void)memset(del[worker][1], 0, sizeof(int)*max_seq_size);
-        ins[worker] = new int*[2];
-        ins[worker][0] = new int[max_seq_size];
-        ins[worker][1] = new int[max_seq_size];
-        (void)memset(ins[worker][0], 0, sizeof(int)*max_seq_size);
-        (void)memset(ins[worker][1], 0, sizeof(int)*max_seq_size);
+#endif
     }
 }
 
@@ -470,7 +478,7 @@ Sequence &SequenceDatabaseArmci::get_sequence(size_t i)
                     << "'" << endl;
 #endif
             assert('>' == buffer[0]);
-            assert(delimiter == buffer[sizes[i]-1]);
+            //assert(delimiter == buffer[sizes[i]-1]);
             for (j=0; j<sizes[i]; ++j) {
                 if ('#' == buffer[j]) {
                     break;
@@ -486,6 +494,7 @@ Sequence &SequenceDatabaseArmci::get_sequence(size_t i)
 
 void SequenceDatabaseArmci::set_num_threads(size_t num)
 {
+    assert(0); // not used yet
     assert(tbl == NULL);
     assert(del == NULL);
     assert(ins == NULL);
@@ -516,14 +525,15 @@ void SequenceDatabaseArmci::align(size_t i,
 {
     Sequence &s1 = get_sequence(i);
     Sequence &s2 = get_sequence(j);
-    const char *c1;
-    const char *c2;
-    size_t l1;
-    size_t l2;
+    const char *c1 = NULL;
+    const char *c2 = NULL;
+    size_t l1 = 0;
+    size_t l2 = 0;
     cell_t result;
 
     assert(max_seq_size > 0);
 
+#if 0
     if (tbl[tid] == NULL) {
         tbl[tid] = new cell_t*[2];
         tbl[tid][0] = new cell_t[max_seq_size];
@@ -537,9 +547,27 @@ void SequenceDatabaseArmci::align(size_t i,
         ins[tid][0] = new int[max_seq_size];
         ins[tid][1] = new int[max_seq_size];
     }
+#else
+    assert(tbl);
+    assert(tbl[tid]);
+    assert(tbl[tid][0]);
+    assert(tbl[tid][1]);
+    assert(del);
+    assert(del[tid]);
+    assert(del[tid][0]);
+    assert(del[tid][1]);
+    assert(ins);
+    assert(ins[tid]);
+    assert(ins[tid][0]);
+    assert(ins[tid][1]);
+#endif
 
     s1.get_sequence(c1,l1);
+    assert(c1);
+    assert(l1);
     s2.get_sequence(c2,l2);
+    assert(c2);
+    assert(l2);
     pg_affine_gap_align_blosum2(c1, l1, c2, l2,
             &result, tbl[tid], del[tid], ins[tid], open, gap);
 
@@ -548,6 +576,59 @@ void SequenceDatabaseArmci::align(size_t i,
     alen = result.alen;
 }
 
+
+bool SequenceDatabaseArmci::is_edge(size_t i,
+                                    size_t j,
+                                    const int &score,
+                                    const int &ndig,
+                                    const int &alen,
+                                    const int &AOL,
+                                    const int &SIM,
+                                    const int &OS,
+                                    int &sscore,
+                                    size_t &max_len)
+{
+    Sequence &s1 = get_sequence(i);
+    Sequence &s2 = get_sequence(j);
+    const char *c1;
+    const char *c2;
+    size_t l1;
+    size_t l2;
+    int nmatch = 0;
+
+    /* DO NOT need to compute the sscore value every time, if the later check
+     * failed at the first step, the sscore computation is wasted */
+    s1.get_sequence(c1,l1);
+    s2.get_sequence(c2,l2);
+
+    assert(l1);
+    assert(l2);
+
+    if (l1 > l2) {
+        max_len = l1;
+        sscore = pg_self_score_blosum2(c1,l1);
+    }
+    else {
+        max_len = l2;
+        sscore = pg_self_score_blosum2(c2,l2);
+    }
+
+    nmatch = ndig;
+
+    /* order the condition in strict->loose way, performance perspective
+     * comparison using integers, no overflow could happen */
+    if (score <= 0) {
+        return false;
+    }
+    else if ((alen * 100 >= AOL * max_len)
+             && (nmatch * 100 >= SIM * alen)
+             && (score * 100 >= OS * sscore)) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
 
 void SequenceDatabaseArmci::exchange_local_cache()
 {

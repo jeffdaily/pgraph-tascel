@@ -110,6 +110,32 @@ class SequenceDatabase
                            int gap=-1,
                            int tid=0) = 0;
 
+        /**
+         * Computes whether an edge exists between the two sequence IDs.
+         *
+         * @param[in] i first Sequence index
+         * @param[in] j second Sequence index
+         * @param[in] score TODO
+         * @param[in] ndig TODO
+         * @param[in] align TODO
+         * @param[in] AOL TODO
+         * @param[in] SIM TODO
+         * @param[in] OS TODO
+         * @param[out] sscore self score
+         * @param[out] max_len longest of the two sequences 
+         * @return the answer
+         */
+        virtual bool is_edge(size_t i,
+                             size_t j,
+                             const int &score,
+                             const int &ndig,
+                             const int &align,
+                             const int &AOL,
+                             const int &SIM,
+                             const int &OS,
+                             int &sscore,
+                             size_t &max_len) = 0;
+
 };
 
 #endif /* SEQUENCE_DATABASE_H_ */

@@ -49,6 +49,7 @@ class SequenceDatabaseArmci : public SequenceDatabase
         SequenceDatabaseArmci(const string &filename,
                               size_t budget,
                               MPI_Comm comm,
+                              size_t num_threads=1,
                               char delimiter='$');
 
         /**
@@ -106,6 +107,32 @@ class SequenceDatabaseArmci : public SequenceDatabase
                    int gap=-1,
                    int tid=0);
 
+        /**
+         * Computes whether an edge exists between the two sequence IDs.
+         *
+         * @param[in] i first Sequence index
+         * @param[in] j second Sequence index
+         * @param[in] score TODO
+         * @param[in] ndig TODO
+         * @param[in] align TODO
+         * @param[in] AOL TODO
+         * @param[in] SIM TODO
+         * @param[in] OS TODO
+         * @param[out] sscore self score
+         * @param[out] max_len longest of the two sequences 
+         * @return the answer
+         */
+        virtual bool is_edge(size_t i,
+                             size_t j,
+                             const int &score,
+                             const int &ndig,
+                             const int &align,
+                             const int &AOL,
+                             const int &SIM,
+                             const int &OS,
+                             int &sscore,
+                             size_t &max_len);
+
     private:
         void read_and_parse_fasta();
         void read_and_parse_fasta_lomem(MPI_File in, MPI_Offset file_size);
@@ -137,6 +164,7 @@ class SequenceDatabaseArmci : public SequenceDatabase
         int comm_size;      /**< communicator size */
         bool is_replicated; /**< is budget sufficient to hold entire file? */
         size_t budget;      /**< max amount of memory to use */
+        size_t num_threads; /**< max number of threads using this DB */
         char delimiter;     /**< delimiter to separate sequences */
         string file_name;   /**< fasta file name */
         char *local_data;   /**< memory allocated for local sequences */

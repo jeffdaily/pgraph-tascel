@@ -109,13 +109,19 @@ int pg_self_score(const sequence_t *s, match_t callback)
 
 int pg_self_score_blosum(const sequence_t *s)
 {
+    return pg_self_score_blosum2(s->str, s->size);
+}
+
+
+int pg_self_score_blosum2(const char *s, size_t len)
+{
     size_t i = 0;
     int score = 0;
 
     init_blosum_map();
 
-    for (i = 0; i < s->size; i++) {
-        score += BLOSUM(s->str[i], s->str[i]);
+    for (i = 0; i < len; i++) {
+        score += BLOSUM(s[i], s[i]);
     }
 
     return score;
