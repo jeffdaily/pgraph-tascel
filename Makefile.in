@@ -88,11 +88,11 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libpgraph_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
-am_libpgraph_la_OBJECTS = src/align.lo src/bucket.lo \
-	src/combinations.lo src/csequence.lo src/dynamic.lo src/io.lo \
-	src/mpix.lo src/param.lo src/Sequence.lo \
-	src/SequenceDatabase.lo src/SequenceDatabaseArmci.lo \
-	src/stree.lo
+am_libpgraph_la_OBJECTS = src/align.lo src/alignment.lo src/bucket.lo \
+	src/cdynamic.lo src/combinations.lo src/csequence.lo \
+	src/dynamic.lo src/io.lo src/mpix.lo src/param.lo \
+	src/Sequence.lo src/SequenceDatabaseArmci.lo \
+	src/SequenceDatabase.lo src/stree.lo
 libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -414,18 +414,18 @@ LDADD = libpgraph.la $(TASCEL_LIBS) $(ARMCI_LIBS) $(PT_MPI_LIBS) \
 	$(GMP_LIBS)
 #LDADD += $(GA_FLIBS)
 noinst_LTLIBRARIES = libpgraph.la
-libpgraph_la_SOURCES = src/align.c src/align.h src/AlignStats.hpp \
-	src/blosum/blosum40.h src/blosum/blosum45.h \
-	src/blosum/blosum62.h src/blosum/blosum75.h \
-	src/blosum/blosum80.h src/blosum/blosum90.h src/bucket.c \
-	src/bucket.h src/combinations.c src/combinations.h \
+libpgraph_la_SOURCES = src/align.c src/align.h src/alignment.cpp \
+	src/alignment.hpp src/AlignStats.hpp src/blosum/blosum40.h \
+	src/blosum/blosum45.h src/blosum/blosum62.h \
+	src/blosum/blosum75.h src/blosum/blosum80.h \
+	src/blosum/blosum90.h src/bucket.c src/bucket.h src/cdynamic.c \
+	src/cdynamic.h src/combinations.c src/combinations.h \
 	src/constants.h src/csequence.c src/csequence.h src/dynamic.c \
 	src/dynamic.h src/io.cpp src/io.hpp src/mpix.cpp src/mpix.hpp \
 	src/param.c src/param.h src/pthread_fixes.h src/Sequence.cpp \
-	src/Sequence.hpp src/SequenceDatabase.cpp \
-	src/SequenceDatabase.hpp src/SequenceDatabaseArmci.cpp \
-	src/SequenceDatabaseArmci.hpp src/stree.c src/stree.h \
-	src/timer.h
+	src/SequenceDatabaseArmci.cpp src/SequenceDatabaseArmci.hpp \
+	src/SequenceDatabase.cpp src/SequenceDatabase.hpp \
+	src/Sequence.hpp src/stree.c src/stree.h src/timer.h
 #if HAVE_UTC_ITER
 #noinst_PROGRAMS += sandbox/brute_force_iter
 #endif
@@ -528,7 +528,9 @@ src/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) src/$(DEPDIR)
 	@: > src/$(DEPDIR)/$(am__dirstamp)
 src/align.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/alignment.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/bucket.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/cdynamic.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/combinations.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/csequence.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/dynamic.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
@@ -536,9 +538,9 @@ src/io.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/mpix.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/param.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/Sequence.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
-src/SequenceDatabase.lo: src/$(am__dirstamp) \
-	src/$(DEPDIR)/$(am__dirstamp)
 src/SequenceDatabaseArmci.lo: src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
+src/SequenceDatabase.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
 src/stree.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 libpgraph.la: $(libpgraph_la_OBJECTS) $(libpgraph_la_DEPENDENCIES) $(EXTRA_libpgraph_la_DEPENDENCIES) 
@@ -676,7 +678,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabase.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabaseArmci.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/align.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/alignment.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/bucket.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/cdynamic.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/combinations.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/csequence.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/dynamic.Plo@am__quote@
