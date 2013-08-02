@@ -12,6 +12,8 @@
 #include <tascel/UniformTaskCollSplitHybrid.h>
 
 #include <algorithm>
+#include <cassert>
+#include <cctype>
 #include <cfloat>
 #include <cmath>
 #include <cstdio>
@@ -28,12 +30,15 @@
 #include "AlignStats.hpp"
 #include "constants.h"
 #include "combinations.h"
-#include "dynamic.h"
+#include "alignment.hpp"
 #include "mpix.hpp"
 #include "tascelx.hpp"
+#include "SequenceDatabase.hpp"
+#include "SequenceDatabaseArmci.hpp"
 
 using namespace std;
 using namespace tascel;
+using namespace pgraph;
 
 #define SEP ","
 #define ALL_RESULTS 1
@@ -73,12 +78,9 @@ class EdgeResult {
 
 int rank = 0;
 int nprocs = 0;
-cell_t ***tbl = 0;
-int ***del = 0;
-int ***ins = 0;
 UniformTaskCollSplitHybrid** utcs = 0;
 AlignStats *stats = 0;
-sequences_t *sequences;
+SequenceDatabase *sequences = 0;
 vector<EdgeResult> *edge_results = 0;
 
 #if defined(THREADED)
@@ -112,6 +114,46 @@ typedef struct {
 
 
 
+static size_t parse_memory_budget(const string& value)
+{
+    long budget = 0;
+    char budget_multiplier = 0;
+    istringstream iss(value);
+
+    if (isdigit(*value.rbegin())) {
+        iss >> budget;
+    }
+    else {
+        iss >> budget >> budget_multiplier;
+    }
+
+    if (budget <= 0) {
+        cerr << "memory budget must be positive real number" << endl;
+        assert(budget > 0);
+    }
+
+    if (budget_multiplier == 'b' || budget_multiplier == 'B') {
+        budget *= 1; /* byte */
+    }
+    else if (budget_multiplier == 'k' || budget_multiplier == 'K') {
+        budget *= 1024; /* kilobyte */
+    }
+    else if (budget_multiplier == 'm' || budget_multiplier == 'M') {
+        budget *= 1048576; /* megabyte */
+    }
+    else if (budget_multiplier == 'g' || budget_multiplier == 'G') {
+        budget *= 1073741824; /* gigabyte */
+    }
+    else if (budget_multiplier != 0) {
+        cerr << "unrecognized size multiplier" << endl;
+        assert(0);
+    }
+
+    assert(budget > 0);
+    return size_t(budget);
+}
+
+
 static void alignment_task(
         UniformTaskCollection *utc,
         void *_bigd, int bigd_len,
@@ -120,43 +162,28 @@ static void alignment_task(
     task_description *desc = (task_description*)_bigd;
     unsigned long seq_id[2];
     cell_t result;
-    param_t param;
-    int is_edge_answer = 0;
+    bool is_edge_answer = false;
     double t = 0;
     int sscore;
-    size_t maxLen;
+    size_t max_len;
 
-    param.open = -10;
-    param.gap = -1;
-    param.AOL = 8;
-    param.SIM = 4;
-    param.OS = 3;
+    int open = -10;
+    int gap = -1;
+    int AOL = 8;
+    int SIM = 4;
+    int OS = 3;
 
     seq_id[0] = desc->id1;
     seq_id[1] = desc->id2;
     {
         t = MPI_Wtime();
-#if 1
-        pg_affine_gap_align_blosum(
-                &(sequences->seq[seq_id[0]]),
-                &(sequences->seq[seq_id[1]]),
-                &result, tbl[thd], del[thd], ins[thd],
-                param.open, param.gap);
-        is_edge_answer = pg_is_edge_blosum(result,
-                &(sequences->seq[seq_id[0]]),
-                &(sequences->seq[seq_id[1]]),
-                param, &sscore, &maxLen);
-#else
-        pg_affine_gap_align(
-                &(sequences->seq[seq_id[0]]),
-                &(sequences->seq[seq_id[1]]),
-                &result, tbl[thd], del[thd], ins[thd],
-                param.open, param.gap, pg_match_blosum);
-        is_edge_answer = pg_is_edge(result,
-                &(sequences->seq[seq_id[0]]),
-                &(sequences->seq[seq_id[1]]),
-                param, &sscore, &maxLen, pg_match_blosum);
-#endif
+        sequences->align(seq_id[0], seq_id[1], result.score, result.matches, result.length, open, gap, thd);
+        is_edge_answer = sequences->is_edge(
+                seq_id[0],
+                seq_id[1],
+                result.score, result.matches, result.length,
+                AOL, SIM, OS,
+                sscore, max_len);
         ++stats[thd].align_counts;
 
         if (is_edge_answer || ALL_RESULTS)
@@ -173,12 +200,12 @@ static void alignment_task(
             edge_results[thd].push_back(EdgeResult(
                         seq_id[0], seq_id[1],
 #if 0
-                        1.0*result.alen/maxLen,
+                        1.0*result.alen/max_len,
                         1.0*result.ndig/result.alen,
                         1.0*result.score/sscore
 #else
-                        result.alen,
-                        result.ndig,
+                        result.length,
+                        result.matches,
                         result.score
 #endif
 #if ALL_RESULTS
@@ -262,9 +289,6 @@ int main(int argc, char **argv)
 
     /* initialize tascel */
     TascelConfig::initialize(NUM_WORKERS_DEFAULT, comm);
-    tbl = new cell_t**[NUM_WORKERS];
-    del = new int**[NUM_WORKERS];
-    ins = new int **[NUM_WORKERS];
     utcs = new UniformTaskCollSplitHybrid*[NUM_WORKERS];
     stats = new AlignStats[NUM_WORKERS];
     edge_results = new vector<EdgeResult>[NUM_WORKERS];
@@ -309,108 +333,34 @@ int main(int argc, char **argv)
     }
 #endif
 
+    cout << vec_to_string(all_argv) << endl;
     /* sanity check that we got the correct number of arguments */
-    if (all_argv.size() <= 1 || all_argv.size() >= 4) {
+    if (all_argv.size() <= 2 || all_argv.size() >= 4) {
         if (0 == rank) {
             if (all_argv.size() <= 1) {
                 printf("missing input file\n");
             }
+            else if (all_argv.size() <= 2) {
+                printf("missing memory budget\n");
+            }
             else if (all_argv.size() >= 4) {
                 printf("too many arguments\n");
             }
-            printf("usage: brute_force sequence_file [combinations_per_task]\n");
+            printf("usage: align2 sequence_file memory_budget\n");
         }
         MPI_Comm_free(&comm);
         MPI_Finalize();
         return 1;
     }
 
-    /* process 0 open the file locally to determine its size */
-    if (0 == rank) {
-        FILE *file = fopen(all_argv[1].c_str(), "r");
-        if (NULL == file) {
-            printf("unable to open file on process 0\n");
-            MPI_Abort(comm, 1);
-        }
-        if (0 != fseek(file, 0, SEEK_END)) {
-            printf("unable to seek to end of file on process 0\n");
-            MPI_Abort(comm, 1);
-        }
-        file_size = ftell(file);
-        if (-1 == file_size) {
-            printf("unable to get size of file on process 0\n");
-            MPI_Abort(comm, 1);
-        }
-        if (0 != fclose(file)) {
-            printf("unable to get close file on process 0\n");
-            MPI_Abort(comm, 1);
-        }
-    }
+    sequences = new SequenceDatabaseArmci(all_argv[1],
+            parse_memory_budget(all_argv[2].c_str()), comm, NUM_WORKERS, '\0');
 
-    /* the file_size is broadcast to all */
-    MPI_CHECK(MPI_Bcast(&file_size, 1, MPI_LONG, 0, comm));
-    if (0 == trank(0)) {
-        printf("file_size=%ld\n", file_size);
-    }
-    /* allocate a buffer for the file, of the entire size */
-    file_buffer = new char[file_size+1];
-
-    /* all procs read the entire file */
-    MPI_CHECK(MPI_File_open(comm, const_cast<char*>(all_argv[1].c_str()),
-                MPI_MODE_RDONLY|MPI_MODE_UNIQUE_OPEN,
-                MPI_INFO_NULL, &fh));
-    MPI_CHECK(MPI_File_read_all(fh, file_buffer, file_size, MPI_CHAR, &status));
-    MPI_CHECK(MPI_File_close(&fh));
-    file_buffer[file_size] = '\0';
-
-    sequences = pg_parse_fasta(file_buffer, file_size, '\0');
-#if DEBUG
-    /* print the sequence count on each process */
-    for (int i=0; i<nprocs; ++i) {
-        if (i == rank) {
-            printf("[%d] sequences->size=%ld\n", rank, long(sequences->size));
-        }
-        MPI_Barrier(comm);
-    }
-    /* print the max_seq_len on each process */
-    for (int i=0; i<nprocs; ++i) {
-        if (i == rank) {
-            printf("[%d] max_seq_len=%ld\n",
-                    rank, long(sequences->max_seq_size));
-        }
-        MPI_Barrier(comm);
-    }
-#endif
-#if DEBUG_VERBOSE
-    for (size_t i=0; i<sequences->size; ++i) {
-        cout << i << endl;
-        cout << sequences->seq[i].gid << endl;
-        cout << sequences->seq[i].str << endl;
-        cout << sequences->seq[i].size << endl;
-    }
-#endif
-#if DEBUG
-    /* print the first sequence on each process */
-    for (int i=0; i<nprocs; ++i) {
-        if (i == rank) {
-            printf("[%d] sequences[0]=%s\n", rank, sequences->seq[0].str);
-        }
-        MPI_Barrier(comm);
-    }
-    /* print the last sequence on each process */
-    for (int i=0; i<nprocs; ++i) {
-        if (i == rank) {
-            printf("[%d] sequences->seq[size-1]=%s\n",
-                    rank, sequences->seq[sequences->size-1].str);
-        }
-        MPI_Barrier(comm);
-    }
-#endif
     /* how many combinations of sequences are there? */
-    nCk = binomial_coefficient(sequences->size, 2);
+    nCk = binomial_coefficient(sequences->get_global_count(), 2);
     if (0 == trank(0)) {
         printf("brute force %lu C 2 has %lu combinations\n",
-                sequences->size, nCk);
+                sequences->get_global_count(), nCk);
     }
 
     double selectivity = 1.0;
@@ -433,14 +383,6 @@ int main(int argc, char **argv)
         printf("max_tasks_per_worker=%lu\n", max_tasks_per_worker);
     }
     MPI_Barrier(comm);
-
-    /* some more dynamic initialization */
-    assert(NROW == 2);
-    for (int worker=0; worker<NUM_WORKERS; ++worker) {
-        tbl[worker] = pg_alloc_tbl(NROW, sequences->max_seq_size);
-        del[worker] = pg_alloc_int(NROW, sequences->max_seq_size);
-        ins[worker] = pg_alloc_int(NROW, sequences->max_seq_size);
-    }
 
     /* the tascel part */
     double populate_times[NUM_WORKERS];
@@ -596,9 +538,6 @@ int main(int argc, char **argv)
     ofstream edge_out(get_edges_filename(rank).c_str());
     /* clean up */
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
-        pg_free_tbl(tbl[worker], NROW);
-        pg_free_int(del[worker], NROW);
-        pg_free_int(ins[worker], NROW);
         delete utcs[worker];
         for (size_t i=0,limit=edge_results[worker].size(); i<limit; ++i) {
             edge_out << edge_results[worker][i] << endl;
@@ -607,7 +546,7 @@ int main(int argc, char **argv)
     edge_out.close();
 
     delete [] edge_results;
-    pg_free_sequences(sequences);
+    delete sequences;
 
     TascelConfig::finalize();
     MPI_Comm_free(&comm);

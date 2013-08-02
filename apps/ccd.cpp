@@ -7,20 +7,24 @@
  * Copyright 2010 Washington State University. All rights reserved.
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  */
-#include <assert.h>
-#include <limits.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include "config.h"
+
+#include <cassert>
+#include <climits>
+#include <cstddef>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
+
 #include <unistd.h>
 
-#include "bucket.h"
+#include "bucket.hpp"
 #include "constants.h"
 #include "csequence.h"
-#include "stree.h"
+#include "stree.hpp"
+
+using namespace pgraph;
 
 static void parse_command_line(int argc, char **argv,
         char *sequence_file, char *config_file, size_t *n_sequences);
@@ -52,7 +56,7 @@ int main(int argc, char *argv[])
     parse_command_line(argc, argv, sequence_file, config_file, &n_sequences);
 
     /* read in configurations */
-    pg_get_params(config_file, &param);
+    get_params(config_file, &param);
     
     printf("----------------------------------------------\n");
     printf("%-15s: %.78s\n", "fasta seq", sequence_file);
@@ -69,7 +73,7 @@ int main(int argc, char *argv[])
             sequences->size, (long long)(t2-t1));
 
     (void) time(&t1);
-    suffix_buckets = pg_create_suffix_buckets(sequences, param);
+    suffix_buckets = create_suffix_buckets(sequences, param);
     (void) time(&t2);
     printf("Bucketing finished in <%lld> secs\n", (long long)(t2-t1));
     
@@ -92,7 +96,7 @@ int main(int argc, char *argv[])
     #endif
 
     n_triangular = sequences->size * (sequences->size + 1U) / 2U;
-    dup = malloc(n_triangular * sizeof(int));
+    dup = new int[n_triangular];
     for (i = 0; i < n_triangular; ++i) {
         dup[i] = 2;
     }
@@ -102,10 +106,10 @@ int main(int argc, char *argv[])
     size_t count = 0;
     for (i = 0; i < suffix_buckets->buckets_size; ++i) {
         if (NULL != suffix_buckets->buckets[i].suffixes) {
-            stree_t *tree = pg_build_tree(
+            stree_t *tree = build_tree(
                     sequences, &(suffix_buckets->buckets[i]), param);
-            pg_generate_pairs(tree, sequences, dup, param);
-            pg_free_tree(tree);
+            generate_pairs(tree, sequences, dup, param);
+            free_tree(tree);
             ++count;
         }
     }
@@ -115,7 +119,7 @@ int main(int argc, char *argv[])
             count, (long long)(t2-t1));
     
     pg_free_sequences(sequences);
-    pg_free_suffix_buckets(suffix_buckets);
+    free_suffix_buckets(suffix_buckets);
 
     return EXIT_SUCCESS; 
 }

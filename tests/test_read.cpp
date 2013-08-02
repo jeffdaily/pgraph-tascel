@@ -5,6 +5,8 @@
  * process opening and reading the file so we would like to have MPIIO handle
  * the details. But MPIIO can fail on systems with limited memory.
  */
+#include "config.h"
+
 #include <mpi.h>
 #include <sys/stat.h>
 

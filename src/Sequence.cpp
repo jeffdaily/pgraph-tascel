@@ -5,13 +5,15 @@
  *
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  */
+#include "config.h"
+
 #include <cassert>
 #include <cstddef>
 #include <cstring>
 #include <iostream>
 #include <string>
 
-#include "dynamic.h"
+#include "alignment.hpp"
 
 #include "Sequence.hpp"
 
@@ -19,6 +21,8 @@ using std::endl;
 using std::size_t;
 using std::string;
 using std::strlen;
+
+namespace pgraph {
 
 
 Sequence::Sequence()
@@ -97,24 +101,27 @@ void Sequence::align(const Sequence &that, int &score, int &ndig, int &alen)
     cell_t **tbl = NULL;
     int **del = NULL;
     int **ins = NULL;
-    sequence_t s1 = { "", &this->data[this->sequence_offset], this->sequence_length };
-    sequence_t s2 = { "", &that.data[that.sequence_offset], that.sequence_length };
 
-    bigger = s1.size > s2.size ? s1.size : s2.size;
-    tbl = pg_alloc_tbl(2, bigger);
-    del = pg_alloc_int(2, bigger);
-    ins = pg_alloc_int(2, bigger);
+    bigger = this->sequence_length > that.sequence_length ?
+        this->sequence_length :
+        that.sequence_length;
+    tbl = allocate_cell_table(2, bigger);
+    del = allocate_int_table(2, bigger);
+    ins = allocate_int_table(2, bigger);
 
-    pg_affine_gap_align_blosum(&s1, &s2, &result, tbl, del, ins, 10, 1);
+    result = affine_gap_align_blosum(
+            &this->data[sequence_offset], this->sequence_length,
+            &that.data[sequence_offset], that.sequence_length,
+            tbl, del, ins, 10, 1);
 
-    pg_free_tbl(tbl, 2);
-    pg_free_int(del, 2);
-    pg_free_int(ins, 2);
+    free_cell_table(tbl, 2);
+    free_int_table(del, 2);
+    free_int_table(ins, 2);
 
     /* return */
     score = result.score;
-    ndig = result.ndig;
-    alen = result.alen;
+    ndig = result.matches;
+    alen = result.length;
 }
 
 
@@ -139,3 +146,6 @@ ostream &operator << (ostream &os, const Sequence &s)
     os << endl;
     return os;
 }
+
+}; /* namespace pgraph */
+

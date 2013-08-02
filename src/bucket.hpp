@@ -1,5 +1,5 @@
 /**
- * @file bucket.h
+ * @file bucket.hpp
  *
  * @author andy.cj.wu@gmail.com
  * @author jeff.daily@pnnl.gov
@@ -7,13 +7,15 @@
  * Copyright 2010 Washington State University. All rights reserved.
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  */
-#ifndef BUCKET_H_
-#define BUCKET_H_
+#ifndef _PGRAPH_BUCKET_H_
+#define _PGRAPH_BUCKET_H_
 
-#include <stddef.h>
+#include <cstddef>
 
-#include "param.h"
+#include "param.hpp"
 #include "csequence.h"
+
+namespace pgraph {
 
 /**
  * A suffix of a sequence_t, as a linked list item.
@@ -53,13 +55,13 @@ typedef struct {
  * @return suffixes and buckets
  */
 suffix_buckets_t*
-pg_create_suffix_buckets(const sequences_t *sequences, param_t param);
+create_suffix_buckets(const sequences_t *sequences, param_t param);
 
 
 /**
  * Free memory associated with suffixes and buckets.
  */
-void pg_free_suffix_buckets(suffix_buckets_t *suffix_buckets);
+void free_suffix_buckets(suffix_buckets_t *suffix_buckets);
 
 
 /**
@@ -82,4 +84,6 @@ size_t print_bucket(bucket_t *buckets, size_t index);
  */
 size_t print_suffixes(suffix_t *suffixes);
 
-#endif /* end of bucket.h */
+}; /* namespace pgraph */
+
+#endif /* _PGRAPH_BUCKET_H_ */

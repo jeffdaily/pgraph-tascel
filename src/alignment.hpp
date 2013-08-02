@@ -112,7 +112,7 @@ void free_int_table(int **table, size_t nrow);
  * @return the self score
  */
 int self_score(const char * const restrict seq, size_t len,
-               const int ** const restrict sub,
+               const int * const restrict * const restrict sub,
                const int * const restrict map, char first);
 
 
@@ -193,7 +193,7 @@ cell_t affine_gap_align(
         int ** const restrict del,
         int ** const restrict ins,
         int open, int gap,
-        const int ** const restrict sub,
+        const int * const restrict * const restrict sub,
         const int * const restrict map, char first);
 
 
@@ -314,7 +314,7 @@ bool is_edge(
         int OS,
         int &self_score,
         size_t &max_len,
-        const int ** const restrict sub,
+        const int * const restrict * const restrict sub,
         const int * const restrict map, char first);
 
 

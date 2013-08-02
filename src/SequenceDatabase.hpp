@@ -18,6 +18,8 @@ using std::exception;
 using std::size_t;
 using std::string;
 
+namespace pgraph {
+
 
 /**
  * Generic excpetion thrown by the SequenceDatabase.
@@ -137,5 +139,7 @@ class SequenceDatabase
                              size_t &max_len) = 0;
 
 };
+
+}; /* namespace pgraph */
 
 #endif /* SEQUENCE_DATABASE_H_ */

@@ -7,11 +7,12 @@
  * Copyright 2010 Washington State University. All rights reserved.
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  */
-#ifndef STREE_H_
-#define STREE_H_
+#ifndef _PGRAPH_STREE_H_
+#define _PGRAPH_STREE_H_
 
-#include "bucket.h"
-#include "dynamic.h"
+#include "bucket.hpp"
+
+namespace pgraph {
 
 /**
  * suffix tree node
@@ -47,14 +48,14 @@ typedef struct {
  * @param[in] bucket linked list of suffixes for this bucket
  * @return the suffix tree
  */
-stree_t* pg_build_tree(
+stree_t* build_tree(
         sequences_t *sequences, bucket_t *bucket, param_t param);
 
 
 /**
  * TODO
  */
-void pg_free_tree(stree_t *tree);
+void free_tree(stree_t *tree);
 
 
 /**
@@ -65,8 +66,10 @@ void pg_free_tree(stree_t *tree);
  * @param[in] dup
  * @param[in] param
  */
-void pg_generate_pairs(
+void generate_pairs(
         stree_t *tree, sequences_t *sequences, int *dup, param_t param);
 
 
-#endif /* STREE_H_ */
+}; /* namespace pgraph */
+
+#endif /* _PGRAPH_STREE_H_ */

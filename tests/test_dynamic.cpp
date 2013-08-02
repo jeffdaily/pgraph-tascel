@@ -5,14 +5,20 @@
  *
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  */
-#include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include "config.h"
 
+#include <cassert>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+
+#include "alignment.hpp"
 #include "constants.h"
-#include "dynamic.h"
+#include "csequence.h"
+#include "param.hpp"
 #include "timer.h"
+
+using namespace pgraph;
 
 static const char seq0[] = 
 "MMVLEIRNVAVIGAGSMGHAIAEVVAIHGFNVKLMDVSEDQLKRAMEKIEEGLRKSYERGYISEDPEKVLKRIEATADLIEVAKDADLVIEAIPEIFDLKKKVFSEIEQYCPDHTIFATNTSSLSITKLAEATKRPEKFIGMHFFNPPKILKLLEIVWGEKTSEETIRIVEDFARKIDRIIIHVRKDVPGFIVNRIFVTMSNEASWAVEMGEGTIEEIDSAVKYRLGLPMGLFELHDVLGGGSVDVSYHVLEYYRQTLGESYRPSPLFERLFKAGHYGKKTGKGFYDWSEGKTNEVPLRAGANFDLLRLVAPAVNEAAWLIEKGVASAEEIDLAVLHGLNYPRGLLRMADDFGIDSIVKKLNELYEKYNGEERYKVNPVLQKMVEEGKLGRTTGEGFYKYGD";
@@ -58,42 +64,53 @@ int test(const char *seq1, const char *seq2)
     int max_seq_len = seq1_len > seq2_len ? seq1_len : seq2_len;
     cell_t result;
     param_t param;
-    int is_edge_answer = 0;
+    bool is_edge_answer = false;
     int sscore;
     size_t maxLen;
     sequence_t s1 = {"",seq1,seq1_len};
     sequence_t s2 = {"",seq2,seq2_len};
 
     assert(NROW == 2);
-    tbl = pg_alloc_tbl(NROW, max_seq_len);
-    del = pg_alloc_int(NROW, max_seq_len);
-    ins = pg_alloc_int(NROW, max_seq_len);
+    tbl = allocate_cell_table(NROW, max_seq_len);
+    del = allocate_int_table(NROW, max_seq_len);
+    ins = allocate_int_table(NROW, max_seq_len);
 
-    pg_affine_gap_align_blosum(&s1, &s2, &result, tbl, del, ins, -10, -1);
+    result = affine_gap_align_blosum(
+            seq1, seq1_len,
+            seq2, seq2_len,
+            tbl, del, ins,
+            -10, -1);
     param.AOL = 8;
     param.SIM = 4;
     param.OS = 3;
-    is_edge_answer = pg_is_edge_blosum(
-            result, &s1, &s2, param, &sscore, &maxLen);
+    is_edge_answer = is_edge_blosum(result,
+            seq1, seq1_len,
+            seq2, seq2_len,
+            param.AOL, param.SIM, param.OS,
+            sscore, maxLen);
     printf("---------------------------------------------------\n");
     printf("result->score=%d\n", result.score);
-    printf("result->ndig=%d\n", result.ndig);
-    printf("result->alen=%d\n", result.alen);
+    printf("result->matches=%d\n", result.matches);
+    printf("result->length=%d\n", result.length);
     printf("is_edge_answer=%d\n", is_edge_answer);
-    printf("alen/maxLen=%f\n", 1.0*result.alen/maxLen);
-    printf("nmatch/alen=%f\n", 1.0*result.ndig/result.alen);
+    printf("length/maxLen=%f\n", 1.0*result.length/maxLen);
+    printf("nmatch/length=%f\n", 1.0*result.matches/result.length);
     printf("score/sscore=%f\n", 1.0*result.score/sscore);
     printf("timing 10000 calls to pgraph_affine_gap_align\n");
     unsigned long long t = timer_start();
     for (i = 0; i < 10000U; ++i) {
-        pg_affine_gap_align_blosum(&s1, &s2, &result, tbl, del, ins, -10, -1);
+        result = affine_gap_align_blosum(
+                seq1, seq1_len,
+                seq2, seq2_len,
+                tbl, del, ins,
+                -10, -1);
     }
     t = timer_end(t);
     printf("%s timer took %llu units\n", timer_name(), t);
 
-    pg_free_tbl(tbl, NROW);
-    pg_free_int(del, NROW);
-    pg_free_int(ins, NROW);
+    free_cell_table(tbl, NROW);
+    free_int_table(del, NROW);
+    free_int_table(ins, NROW);
 
     return 0;
 }

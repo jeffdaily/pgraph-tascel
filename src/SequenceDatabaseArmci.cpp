@@ -7,6 +7,8 @@
  *
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  */
+#include "config.h"
+
 #include <mpi.h>
 
 #include <cassert>
@@ -27,7 +29,7 @@ extern "C" {
 
 #include <tascel.h>
 
-#include "dynamic.h"
+#include "alignment.hpp"
 #include "csequence.h"
 #include "Sequence.hpp"
 #include "SequenceDatabase.hpp"
@@ -46,6 +48,8 @@ using tascel::LockGuard;
 using tascel::PthreadMutex;
 
 #define TAG 2345
+
+namespace pgraph {
 
 
 SequenceDatabaseArmci::SequenceDatabaseArmci(
@@ -436,9 +440,9 @@ void SequenceDatabaseArmci::pack_and_index_fasta(char *buffer,
         (void)memset(ins[worker][1], 0, sizeof(int)*max_seq_size_p1);
 #endif
 #else
-        tbl[worker] = pg_alloc_tbl(2, max_seq_size);
-        del[worker] = pg_alloc_int(2, max_seq_size);
-        ins[worker] = pg_alloc_int(2, max_seq_size);
+        tbl[worker] = allocate_cell_table(2, max_seq_size);
+        del[worker] = allocate_int_table(2, max_seq_size);
+        ins[worker] = allocate_int_table(2, max_seq_size);
 #endif
     }
 }
@@ -568,12 +572,12 @@ void SequenceDatabaseArmci::align(size_t i,
     s2.get_sequence(c2,l2);
     assert(c2);
     assert(l2);
-    pg_affine_gap_align_blosum2(c1, l1, c2, l2,
-            &result, tbl[tid], del[tid], ins[tid], open, gap);
+    result = affine_gap_align_blosum(c1, l1, c2, l2,
+            tbl[tid], del[tid], ins[tid], open, gap);
 
     score = result.score;
-    ndig = result.ndig;
-    alen = result.alen;
+    ndig = result.matches;
+    alen = result.length;
 }
 
 
@@ -606,11 +610,11 @@ bool SequenceDatabaseArmci::is_edge(size_t i,
 
     if (l1 > l2) {
         max_len = l1;
-        sscore = pg_self_score_blosum2(c1,l1);
+        sscore = self_score_blosum(c1,l1);
     }
     else {
         max_len = l2;
-        sscore = pg_self_score_blosum2(c2,l2);
+        sscore = self_score_blosum(c2,l2);
     }
 
     nmatch = ndig;
@@ -680,4 +684,7 @@ void SequenceDatabaseArmci::exchange_local_cache()
     }
     //mpix_print_sync(comm, "addresses", vec_to_string(addresses));
 }
+
+
+}; /* namespace pgraph */
 

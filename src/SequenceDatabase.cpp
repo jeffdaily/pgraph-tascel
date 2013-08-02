@@ -5,12 +5,16 @@
  *
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  */
+#include "config.h"
+
 #include <sstream>
 
 #include "Sequence.hpp"
 #include "SequenceDatabase.hpp"
 
 using std::ostringstream;
+
+namespace pgraph {
 
 
 SequenceDatabaseException::SequenceDatabaseException(
@@ -46,4 +50,7 @@ SequenceDatabase::SequenceDatabase()
 SequenceDatabase::~SequenceDatabase()
 {
 }
+
+
+}; /* namespace pgraph */
 

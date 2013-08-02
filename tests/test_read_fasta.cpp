@@ -3,6 +3,8 @@
  *
  * Test the function read_fasta in libpgraph.
  */
+#include "config.h"
+
 #include <cstdlib>
 #include <cassert>
 #include <iostream>
@@ -25,6 +27,7 @@ using std::exit;
 using std::istringstream;
 using std::vector;
 
+using namespace pgraph;
 
 static void sync_exit(int value, MPI_Comm comm)
 {

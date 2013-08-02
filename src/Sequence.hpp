@@ -5,8 +5,8 @@
  *
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  */
-#ifndef SEQUENCE_H_
-#define SEQUENCE_H_
+#ifndef _PGRAPH_SEQUENCE_H_
+#define _PGRAPH_SEQUENCE_H_
 
 #include <cassert>
 #include <cstddef>
@@ -14,9 +14,13 @@
 #include <iostream>
 #include <string>
 
+#include "alignment.hpp"
+
 using std::ostream;
 using std::size_t;
 using std::string;
+
+namespace pgraph {
 
 
 /**
@@ -178,4 +182,230 @@ class Sequence
 };
 
 
-#endif /* SEQUENCE_H_ */
+/* for easy use with functions in alignment.hpp */
+/**
+ * Implementation of affine gap pairwise sequence alignment.
+ *
+ * It is a space efficient version using only two rows. Also, memory for
+ * all dynamic tables are allocated ONLY ONCE outside of this function call
+ * using allocate_cell_table() and allocate_int_table() and passed as
+ * tbl, del, and ins arguments.
+ *
+ * @param[in] s1 first Sequence
+ * @param[in] s2 second Sequence
+ * @param[in] tbl pre-allocated score table
+ * @param[in] del pre-allocated deletion table
+ * @param[in] ins pre-allocated insertion table
+ * @param[in] open gap penalty
+ * @param[in] gap extension penalty
+ * @param[in] sub substitution matrix e.g. BLOSUM
+ * @param[in] map mapping for substitution matrix
+ * @param[in] first (zeroth) character of mapping alphabet e.g. 'A'
+ * @return alignment result
+ */
+cell_t affine_gap_align(
+        const Sequence &s1,
+        const Sequence &s1,
+        cell_t ** const restrict tbl,
+        int ** const restrict del,
+        int ** const restrict ins,
+        int open, int gap,
+        const int ** const restrict sub,
+        const int * const restrict map, char first);
+
+
+/**
+ * Implementation of affine gap pairwise sequence alignment.
+ *
+ * It is a space efficient version using only two rows. Also, memory for
+ * all dynamic tables are allocated ONLY ONCE outside of this function call
+ * using allocate_cell_table() and allocate_int_table() and passed as
+ * tbl, del, and ins arguments.
+ *
+ * @param[in] s1 first Sequence
+ * @param[in] s2 second Sequence
+ * @param[in] tbl pre-allocated score table
+ * @param[in] del pre-allocated deletion table
+ * @param[in] ins pre-allocated insertion table
+ * @param[in] open gap penalty
+ * @param[in] gap extension penalty
+ * @param[in] match callback function to calculate any character match/mismatch
+ * @return alignment result
+ */
+cell_t affine_gap_align(
+        const Sequence &s1,
+        const Sequence &s2,
+        cell_t ** const restrict tbl,
+        int ** const restrict del,
+        int ** const restrict ins,
+        int open, int gap,
+        match_t match);
+
+
+/**
+ * Implementation of affine gap pairwise sequence alignment.
+ *
+ * It is a space efficient version using only two rows. Also, memory for
+ * all dynamic tables are allocated ONLY ONCE outside of this function call
+ * using allocate_cell_table() and allocate_int_table() and passed as
+ * tbl, del, and ins arguments.
+ *
+ * @param[in] s1 first Sequence
+ * @param[in] s2 second Sequence
+ * @param[in] tbl pre-allocated score table
+ * @param[in] del pre-allocated deletion table
+ * @param[in] ins pre-allocated insertion table
+ * @param[in] open gap penalty
+ * @param[in] gap extension penalty
+ * @param[in] match score
+ * @param[in] mismatch score
+ * @return alignment result
+ */
+cell_t affine_gap_align(
+        const Sequence &s1,
+        const Sequence &s2,
+        cell_t ** const restrict tbl,
+        int ** const restrict del,
+        int ** const restrict ins,
+        int open, int gap,
+        int match, int mismatch);
+
+
+/**
+ * Implementation of affine gap pairwise sequence alignment using blosum.
+ *
+ * It is a space efficient version using only two rows. Also, memory for
+ * all dynamic tables are allocated ONLY ONCE outside of this function call
+ * using allocate_cell_table() and allocate_int_table() and passed as
+ * tbl, del, and ins arguments.
+ *
+ * @param[in] s1 first Sequence
+ * @param[in] s2 second Sequence
+ * @param[in] tbl pre-allocated score table
+ * @param[in] del pre-allocated deletion table
+ * @param[in] ins pre-allocated insertion table
+ * @param[in] open gap penalty
+ * @param[in] gap extension penalty
+ * @return alignment result
+ */
+cell_t affine_gap_align_blosum(
+        const Sequence &s1,
+        const Sequence &s1,
+        cell_t ** const restrict tbl,
+        int ** const restrict del,
+        int ** const restrict ins,
+        int open, int gap);
+
+
+/**
+ * Asks whether the given cell_t alignment result is an edge, based on
+ * the given parameters.
+ *
+ * @param[in] result the dynamic programming alignment result
+ * @param[in] s1 first Sequence
+ * @param[in] s2 second Sequence
+ * @param[in] AOL alignment over longer sequence (heuristic)
+ * @param[in] SIM match similarity (heuristic)
+ * @param[in] OS optimal score over self score (heuristic)
+ * @param[out] self_score self score
+ * @param[out] max_len longer of s1_len and s2_len
+ * @param[in] sub substitution matrix
+ * @param[in] map index mapping for substitution matrix
+ * @param[in] first character offset (see doc above)
+ * @return true if this is an edge, false otherwise
+ */
+bool is_edge(
+        const cell_t &result,
+        const Sequence &s1,
+        const Sequence &s2,
+        int AOL,
+        int SIM,
+        int OS,
+        int &self_score,
+        size_t &max_len,
+        const int ** const restrict sub,
+        const int * const restrict map, char first);
+
+
+/**
+ * Asks whether the given cell_t alignment result is an edge, based on
+ * the given parameters.
+ *
+ * @param[in] result the dynamic programming alignment result
+ * @param[in] s1 first Sequence
+ * @param[in] s2 second Sequence
+ * @param[in] AOL alignment over longer sequence (heuristic)
+ * @param[in] SIM match similarity (heuristic)
+ * @param[in] OS optimal score over self score (heuristic)
+ * @param[out] self_score self score
+ * @param[out] max_len longer of s1_len and s2_len
+ * @param[in] match callback function to calculate any character match/mismatch
+ * @return true if this is an edge, false otherwise
+ */
+bool is_edge(
+        const cell_t &result,
+        const Sequence &s1,
+        const Sequence &s2,
+        int AOL,
+        int SIM,
+        int OS,
+        int &self_score,
+        size_t &max_len,
+        match_t match);
+
+
+/**
+ * Asks whether the given cell_t alignment result is an edge, based on
+ * the given parameters.
+ *
+ * @param[in] result the dynamic programming alignment result
+ * @param[in] s1 first Sequence
+ * @param[in] s2 second Sequence
+ * @param[in] AOL alignment over longer sequence (heuristic)
+ * @param[in] SIM match similarity (heuristic)
+ * @param[in] OS optimal score over self score (heuristic)
+ * @param[out] self_score self score
+ * @param[out] max_len longer of s1_len and s2_len
+ * @param[in] match the static score of a character match
+ * @return true if this is an edge, false otherwise
+ */
+bool is_edge(
+        const cell_t &result,
+        const Sequence &s1,
+        const Sequence &s2,
+        int AOL,
+        int SIM,
+        int OS,
+        int &self_score,
+        size_t &max_len,
+        int match);
+
+
+/**
+ * Asks whether the given cell_t alignment result is an edge, based on
+ * the given parameters.
+ *
+ * @param[in] result the dynamic programming alignment result
+ * @param[in] s1 first Sequence
+ * @param[in] s2 second Sequence
+ * @param[in] AOL alignment over longer sequence (heuristic)
+ * @param[in] SIM match similarity (heuristic)
+ * @param[in] OS optimal score over self score (heuristic)
+ * @param[out] self_score self score
+ * @param[out] max_len longer of s1_len and s2_len
+ * @return true if this is an edge, false otherwise
+ */
+bool is_edge_blosum(
+        const cell_t &result,
+        const Sequence &s1,
+        const Sequence &s2,
+        int AOL,
+        int SIM,
+        int OS,
+        int &self_score,
+        size_t &max_len);
+
+
+}; /* namespace pgraph */
+
+#endif /* _PGRAPH_SEQUENCE_H_ */

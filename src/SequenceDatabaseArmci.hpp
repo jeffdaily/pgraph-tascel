@@ -16,7 +16,6 @@
 
 #include <tascel.h>
 
-#include "dynamic.h"
 #include "Sequence.hpp"
 #include "SequenceDatabase.hpp"
 
@@ -27,6 +26,7 @@ using std::string;
 using std::vector;
 using tascel::PthreadMutex;
 
+namespace pgraph {
 
 
 /**
@@ -181,5 +181,7 @@ class SequenceDatabaseArmci : public SequenceDatabase
         int ***del;
         int ***ins;
 };
+
+}; /* namespace pgraph */
 
 #endif /* SEQUENCE_DATABASE_ARMCI_H_ */

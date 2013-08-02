@@ -40,7 +40,7 @@ namespace pgraph {
 
 
 /** points to selected blosum table (default blosum62) */
-static int (*blosum)[24] = blosum62;
+static const int (*blosum)[24] = blosum62;
 
 
 cell_t **allocate_cell_table(size_t nrow, size_t ncol)
@@ -95,7 +95,7 @@ void free_int_table(int **table, size_t nrow)
 
 int self_score(
         const char * const restrict seq, size_t len,
-        const int ** const restrict sub,
+        const int * const restrict * const restrict sub,
         const int * const restrict map, char first)
 {
     size_t i = 0;
@@ -282,7 +282,7 @@ cell_t affine_gap_align(
         int ** const restrict del,
         int ** const restrict ins,
         int open, int gap,
-        const int ** const restrict sub,
+        const int * const restrict * const restrict sub,
         const int * const restrict map, char first)
 {
     AFFINE_GAP_ALIGN_DECL
@@ -384,7 +384,7 @@ bool is_edge(
         int OS,
         int &self_score_,
         size_t &max_len,
-        const int ** const restrict sub,
+        const int * const restrict * const restrict sub,
         const int * const restrict map, char first)
 {
     IS_EDGE_ASSERT

@@ -7,15 +7,18 @@
  * Copyright 2010 Washington State University. All rights reserved.
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  */
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include "config.h"
 
-#include "bucket.h"
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
+
+#include "bucket.hpp"
 #include "constants.h"
-#include "dynamic.h"
-#include "stree.h"
+#include "alignment.hpp"
+#include "stree.hpp"
 
+namespace pgraph {
 
 /**
  * compute lset according to the left character of pid to
@@ -200,7 +203,7 @@ build_tree_recursive(
 }
 
 
-stree_t* pg_build_tree(
+stree_t* build_tree(
         sequences_t *sequences, bucket_t *bucket, param_t param)
 {
     stree_t *tree = NULL;
@@ -208,26 +211,26 @@ stree_t* pg_build_tree(
     size_t i = 0;
 
     /* allocate tree */
-    tree = malloc(sizeof(stree_t));
+    tree = new stree_t;
     if (NULL == tree) {
-        perror("pg_build_tree: malloc tree");
+        perror("build_tree: malloc tree");
         exit(EXIT_FAILURE);
     }
 
     /* allocate tree nodes */
     n_nodes = 2 * bucket->size;
-    tree->nodes = malloc(n_nodes * sizeof(stnode_t));
+    tree->nodes = new stnode_t[n_nodes];
     if (NULL == tree->nodes) {
-        perror("pg_build_tree: malloc tree nodes");
+        perror("build_tree: malloc tree nodes");
         exit(EXIT_FAILURE);
     }
 
     tree->size = 0;
 
     /* allocate lset pointer memory for tree nodes */
-    tree->lset_array = malloc(SIGMA * n_nodes * sizeof(suffix_t*));
+    tree->lset_array = new suffix_t*[SIGMA * n_nodes];
     if (NULL == tree->lset_array) {
-        perror("pg_build_tree: malloc lset array");
+        perror("build_tree: malloc lset array");
         exit(EXIT_FAILURE);
     }
     /* initialize lset pointer memory */
@@ -251,7 +254,7 @@ stree_t* pg_build_tree(
 }
 
 
-void pg_free_tree(stree_t *tree)
+void free_tree(stree_t *tree)
 {
     assert(NULL != tree);
     free(tree->nodes);
@@ -328,8 +331,11 @@ is_candidate(sequence_t *seqs, size_t nSeqs,
         if (dup[index] == MAYBE) {
             int ignore1;
             size_t ignore2;
-            dup[index] = pg_is_edge_blosum(
-                    result, &seqs[f1], &seqs[f2], param, &ignore1, &ignore2);
+            dup[index] = is_edge_blosum(result,
+                    seqs[f1].str, seqs[f1].size,
+                    seqs[f2].str, seqs[f2].size,
+                    param.AOL, param.SIM, param.OS,
+                    ignore1, ignore2);
         }
         
         return dup[index];
@@ -355,7 +361,7 @@ count_sort(stnode_t *stNodes, int *srtIndex, size_t nStNodes, size_t maxSeqLen)
     int *cnt = NULL;
     int depth;
 
-    cnt = malloc(maxSeqLen * sizeof(int));
+    cnt = new int[maxSeqLen];
     if (NULL == cnt) {
         perror("count_sort: malloc cnt");
         exit(EXIT_FAILURE);
@@ -446,7 +452,7 @@ procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, 
 
 
 
-void pg_generate_pairs(
+void generate_pairs(
         stree_t *tree, sequences_t *sequences, int *dup, param_t param)
 {
     stnode_t *stNodes = NULL;
@@ -478,7 +484,7 @@ void pg_generate_pairs(
     int cutOff; /* cut off value of filter 1 */
     cell_t result;
 
-    srtIndex = malloc(tree->size * sizeof(int));
+    srtIndex = new int[tree->size];
     count_sort(tree->nodes, srtIndex, tree->size, sequences->max_seq_size);
     stNodes = tree->nodes;
     nStNodes = tree->size;
@@ -492,9 +498,9 @@ void pg_generate_pairs(
     EM = param.exact_match_len;
     cutOff = param.AOL * param.SIM;
 
-    tbl = pg_alloc_tbl(NROW, maxSeqLen);
-    del = pg_alloc_int(NROW, maxSeqLen);
-    ins = pg_alloc_int(NROW, maxSeqLen);
+    tbl = allocate_cell_table(NROW, maxSeqLen);
+    del = allocate_int_table(NROW, maxSeqLen);
+    ins = allocate_int_table(NROW, maxSeqLen);
 
 
     /* srtIndex maintain an order of NON-increasing depth of stNodes[] */
@@ -579,8 +585,10 @@ void pg_generate_pairs(
 
     /* free */
     free(srtIndex);
-    pg_free_tbl(tbl, NROW);
-    pg_free_int(del, NROW);
-    pg_free_int(ins, NROW);
+    free_cell_table(tbl, NROW);
+    free_int_table(del, NROW);
+    free_int_table(ins, NROW);
 }
+
+}; /* namespace pgraph */
 

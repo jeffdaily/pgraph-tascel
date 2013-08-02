@@ -1,5 +1,5 @@
 /**
- * @file bucket.c
+ * @file bucket.cpp
  *
  * @author andy.cj.wu@gmail.com
  * @author jeff.daily@pnnl.gov
@@ -7,14 +7,15 @@
  * Copyright 2010 Washington State University. All rights reserved.
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  */
-#include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cassert>
+#include <cstdlib>
+#include <cstdio>
 
-#include "bucket.h"
+#include "bucket.hpp"
 #include "constants.h"
 #include "csequence.h"
 
+namespace pgraph {
 
 /** power function for size_t */
 size_t powz(size_t base, size_t n)
@@ -51,7 +52,7 @@ static inline size_t entry_index(const char *kmer, int k)
 
 
 suffix_buckets_t*
-pg_create_suffix_buckets(const sequences_t *sequences, param_t param)
+create_suffix_buckets(const sequences_t *sequences, param_t param)
 {
     suffix_buckets_t *suffix_buckets = NULL;
     suffix_t *suffixes = NULL;
@@ -63,9 +64,9 @@ pg_create_suffix_buckets(const sequences_t *sequences, param_t param)
 
     /* allocate buckets */
     n_buckets = powz(SIGMA, param.window_size);
-    buckets = malloc(n_buckets * sizeof(bucket_t));
+    buckets = new bucket_t[n_buckets];
     if (NULL == buckets) {
-        perror("pg_create_suffix_buckets: malloc buckets");
+        perror("create_suffix_buckets: malloc buckets");
         exit(EXIT_FAILURE);
     }
 
@@ -77,9 +78,9 @@ pg_create_suffix_buckets(const sequences_t *sequences, param_t param)
 
     /* allocate suffixes */
     n_suffixes = sequences->n_chars - sequences->size * param.window_size;
-    suffixes = malloc(n_suffixes*sizeof(suffix_t));
+    suffixes = new suffix_t[n_suffixes];
     if (NULL == suffixes) {
-        perror("pg_create_suffix_buckets: malloc suffixes");
+        perror("create_suffix_buckets: malloc suffixes");
         exit(EXIT_FAILURE);
     }
 
@@ -116,9 +117,9 @@ pg_create_suffix_buckets(const sequences_t *sequences, param_t param)
     }
 
     /* return values */
-    suffix_buckets = malloc(sizeof(suffix_buckets_t));
+    suffix_buckets = new suffix_buckets_t;
     if (NULL == suffix_buckets) {
-        perror("pg_create_suffix_buckets: malloc suffix_buckets");
+        perror("create_suffix_buckets: malloc suffix_buckets");
         exit(EXIT_FAILURE);
     }
     suffix_buckets->suffixes = suffixes;
@@ -130,7 +131,7 @@ pg_create_suffix_buckets(const sequences_t *sequences, param_t param)
 }
 
 
-void pg_free_suffix_buckets(suffix_buckets_t *suffix_buckets)
+void free_suffix_buckets(suffix_buckets_t *suffix_buckets)
 {
     free(suffix_buckets->suffixes);
     free(suffix_buckets->buckets);
@@ -158,3 +159,6 @@ size_t print_suffixes(suffix_t *suffixes)
 
     return i;
 }
+
+}; /* namespace pgraph */
+

@@ -1,5 +1,5 @@
 /**
- * @file param.h
+ * @file param.hpp
  *
  * @author andy.cj.wu@gmail.com
  * @author jeff.daily@pnnl.gov
@@ -7,8 +7,10 @@
  * Copyright 2010 Washington State University. All rights reserved.
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  */
-#ifndef _PARAM_H_
-#define _PARAM_H_
+#ifndef _PGRAPH_PARAM_H_
+#define _PGRAPH_PARAM_H_
+
+namespace pgraph {
 
 /**
  * parameters for is_edge test, packed in struct
@@ -24,8 +26,10 @@ typedef struct {
 } param_t;
 
 
-int pg_get_param_int(const char *param_file, const char *key);
+int get_param_int(const char *param_file, const char *key);
 
-void pg_get_params(const char *param_file, param_t *param);
+void get_params(const char *param_file, param_t *param);
 
-#endif /* _PARAM_H_ */
+}; /* namespace pgraph */
+
+#endif /* _PGRAPH_PARAM_H_ */
