@@ -1,5 +1,5 @@
 /**
- * @file stree.h
+ * @file stree.hpp
  *
  * @author andy.cj.wu@gmail.com
  * @author jeff.daily@pnnl.gov
@@ -46,6 +46,7 @@ typedef struct {
  *
  * @param[in] sequences all fasta sequences
  * @param[in] bucket linked list of suffixes for this bucket
+ * @param[in] param alignment parameters
  * @return the suffix tree
  */
 stree_t* build_tree(
@@ -54,6 +55,8 @@ stree_t* build_tree(
 
 /**
  * TODO
+ *
+ * @param[in] tree TODO
  */
 void free_tree(stree_t *tree);
 

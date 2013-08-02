@@ -1,5 +1,5 @@
 /**
- * @file SequenceDatabaseArmci.h
+ * @file SequenceDatabaseArmci.hpp
  *
  * @author jeff.daily@pnnl.gov
  *
@@ -44,6 +44,7 @@ class SequenceDatabaseArmci : public SequenceDatabase
          * @param[in] filename the file to open (fasta format)
          * @param[in] budget the memory budget, 0 for unlimited
          * @param[in] comm MPI communicator
+         * @param[in] num_threads number of threads which migth access this DB
          * @param[in] delimiter used to separate sequences
          */
         SequenceDatabaseArmci(const string &filename,

@@ -1,5 +1,5 @@
 /**
- * @file stree.c
+ * @file stree.cpp
  *
  * @author andy.cj.wu@gmail.com
  * @author jeff.daily@pnnl.gov

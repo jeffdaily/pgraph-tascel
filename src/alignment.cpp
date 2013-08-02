@@ -1,5 +1,5 @@
 /**
- * @file align.c
+ * @file alignment.cpp
  *
  * @author andy.cj.wu@gmail.com
  * @author jeff.daily@pnnl.gov

@@ -1,5 +1,5 @@
 /**
- * @file ccd.c
+ * @file constants.h
  *
  * @author andy.cj.wu@gmail.com
  * @author jeff.daily@pnnl.gov

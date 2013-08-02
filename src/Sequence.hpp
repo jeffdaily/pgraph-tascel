@@ -1,5 +1,5 @@
 /**
- * @file Sequence.h
+ * @file Sequence.hpp
  *
  * @author jeff.daily@pnnl.gov
  *
@@ -183,6 +183,7 @@ class Sequence
 
 
 /* for easy use with functions in alignment.hpp */
+
 /**
  * Implementation of affine gap pairwise sequence alignment.
  *
@@ -205,7 +206,7 @@ class Sequence
  */
 cell_t affine_gap_align(
         const Sequence &s1,
-        const Sequence &s1,
+        const Sequence &s2,
         cell_t ** const restrict tbl,
         int ** const restrict del,
         int ** const restrict ins,
@@ -290,7 +291,7 @@ cell_t affine_gap_align(
  */
 cell_t affine_gap_align_blosum(
         const Sequence &s1,
-        const Sequence &s1,
+        const Sequence &s2,
         cell_t ** const restrict tbl,
         int ** const restrict del,
         int ** const restrict ins,

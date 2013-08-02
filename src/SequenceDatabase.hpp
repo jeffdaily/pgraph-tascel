@@ -1,5 +1,5 @@
 /**
- * @file SequenceDatabase.h
+ * @file SequenceDatabase.hpp
  *
  * @author jeff.daily@pnnl.gov
  *
@@ -49,11 +49,6 @@ class SequenceDatabase
         /**
          * Creates a sequence database from the given file with the given
          * memory budget.
-         *
-         * @pre !filename.empty()
-         * @param[in] filename the file to open (fasta format)
-         * @param[in] budget the memory budget, 0 for unlimited
-         * @param[in] comm MPI communicator
          */
         SequenceDatabase();
 

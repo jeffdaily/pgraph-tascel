@@ -64,7 +64,7 @@ int **allocate_int_table(size_t nrow, size_t ncol);
  * @see allocate_cell_table().
  *
  * @param[in] table the cell_t table
- * @param[in] the number of rows
+ * @param[in] nrow the number of rows
  */
 void free_cell_table(cell_t **table, size_t nrow);
 
@@ -75,7 +75,7 @@ void free_cell_table(cell_t **table, size_t nrow);
  * @see allocate_int_table().
  *
  * @param[in] table the int table
- * @param[in] the number of rows
+ * @param[in] nrow the number of rows
  */
 void free_int_table(int **table, size_t nrow);
 
@@ -124,7 +124,7 @@ int self_score(const char * const restrict seq, size_t len,
  *
  * @param[in] seq the sequence
  * @param[in] len the length of the sequence
- * @param[in] match callback function to calculate any character match/mismatch
+ * @param[in] callback function to calculate any character match/mismatch
  * @return the self score
  */
 int self_score(const char * const restrict seq, size_t len, match_t callback);

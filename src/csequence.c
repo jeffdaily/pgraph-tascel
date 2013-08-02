@@ -1,5 +1,5 @@
 /**
- * @file sequence.c
+ * @file csequence.c
  *
  * @author andy.cj.wu@gmail.com
  * @author jeff.daily@pnnl.gov

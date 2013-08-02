@@ -1,5 +1,5 @@
 /**
- * @file Sequence.cc
+ * @file Sequence.cpp
  *
  * @author jeff.daily@pnnl.gov
  *

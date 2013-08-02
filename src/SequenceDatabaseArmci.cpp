@@ -1,5 +1,5 @@
 /**
- * @file SequenceDatabaseArmci.cc
+ * @file SequenceDatabaseArmci.cpp
  *
  * @author jeff.daily@pnnl.gov
  *

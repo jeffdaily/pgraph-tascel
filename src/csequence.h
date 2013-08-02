@@ -1,5 +1,5 @@
 /**
- * @file sequence.h
+ * @file csequence.h
  *
  * @author andy.cj.wu@gmail.com
  * @author jeff.daily@pnnl.gov
@@ -54,7 +54,8 @@ sequences_t* pg_load_fasta(const char *file_name, char delimiter);
 /**
  * Parses the given fasta buffer.
  *
- * @param[in] file_name the fasta file
+ * @param[in] buffer a fasta file buffer
+ * @param[in] size size of the fasta file buffer
  * @param[in] delimiter character to indicate end of a sequence e.g. '$'
  * @return array of sequences and metadata
  */

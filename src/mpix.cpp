@@ -1,5 +1,5 @@
 /**
- * @file mpix.cc
+ * @file mpix.cpp
  *
  * @author jeff.daily@pnnl.gov
  *
@@ -215,6 +215,7 @@ MPI_Offset mpix_get_file_size(const string &file_name, MPI_Comm comm)
  * @param[in] file_name to open
  * @param[out] file_buffer to store file contents
  * @param[out] file_size of the given file
+ * @param[out] chunk_size max size to read at one time
  */
 void mpix_read_file(
     MPI_Comm comm, const string &file_name,
@@ -235,6 +236,7 @@ void mpix_read_file(
  * @param[in] file_name to open
  * @param[out] file_buffer to store file contents
  * @param[out] file_size of the given file
+ * @param[out] chunk_size max size to read at one time
  */
 void mpix_read_file_mpiio(
     MPI_Comm comm, const string &file_name,
@@ -303,6 +305,7 @@ void mpix_read_file_mpiio(
  * @param[in] file_name to open
  * @param[out] file_buffer to store file contents
  * @param[out] file_size of the given file
+ * @param[out] chunk_size max size to read at one time
  */
 void mpix_read_file_bcast(
     MPI_Comm comm, const string &file_name,

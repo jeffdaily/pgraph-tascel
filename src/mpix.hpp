@@ -1,5 +1,5 @@
 /**
- * @file mpix.h
+ * @file mpix.hpp
  *
  * @author jeff.daily@pnnl.gov
  *
