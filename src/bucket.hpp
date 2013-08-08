@@ -17,6 +17,8 @@
 
 namespace pgraph {
 
+class SequenceDatabase;
+
 /**
  * A suffix of a sequence_t, as a linked list item.
  */
@@ -55,7 +57,7 @@ typedef struct {
  * @return suffixes and buckets
  */
 suffix_buckets_t*
-create_suffix_buckets(const sequences_t *sequences, param_t param);
+create_suffix_buckets_old(const sequences_t *sequences, param_t param);
 
 
 /**

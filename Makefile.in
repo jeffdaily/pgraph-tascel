@@ -51,7 +51,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = apps/align$(EXEEXT) apps/ccd$(EXEEXT)
+bin_PROGRAMS = apps/align$(EXEEXT) apps/ccd$(EXEEXT) \
+	apps/ccd2$(EXEEXT)
 noinst_PROGRAMS = tests/test_align$(EXEEXT) \
 	tests/test_combinations$(EXEEXT) tests/test_dynamic$(EXEEXT) \
 	tests/test_read$(EXEEXT) tests/test_read_fasta$(EXEEXT) \
@@ -89,8 +90,9 @@ libpgraph_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
 am_libpgraph_la_OBJECTS = src/alignment.lo src/bucket.lo \
 	src/combinations.lo src/csequence.lo src/io.lo src/mpix.lo \
-	src/param.lo src/Sequence.lo src/SequenceDatabaseArmci.lo \
-	src/SequenceDatabase.lo src/stree.lo
+	src/Parameters.lo src/param.lo src/Sequence.lo \
+	src/SequenceDatabaseArmci.lo src/SequenceDatabase.lo \
+	src/stree.lo src/SuffixBuckets.lo src/SuffixTree.lo
 libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -109,6 +111,12 @@ am_apps_ccd_OBJECTS = apps/ccd.$(OBJEXT)
 apps_ccd_OBJECTS = $(am_apps_ccd_OBJECTS)
 apps_ccd_LDADD = $(LDADD)
 apps_ccd_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
+am_apps_ccd2_OBJECTS = apps/ccd2.$(OBJEXT)
+apps_ccd2_OBJECTS = $(am_apps_ccd2_OBJECTS)
+apps_ccd2_LDADD = $(LDADD)
+apps_ccd2_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 am_tests_test_align_OBJECTS = tests/test_align.$(OBJEXT)
@@ -202,14 +210,14 @@ am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
-	$(apps_ccd_SOURCES) $(tests_test_align_SOURCES) \
-	$(tests_test_combinations_SOURCES) \
+	$(apps_ccd_SOURCES) $(apps_ccd2_SOURCES) \
+	$(tests_test_align_SOURCES) $(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_read_SOURCES) \
 	$(tests_test_read_fasta_SOURCES) \
 	$(tests_test_read_serial_SOURCES)
 DIST_SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
-	$(apps_ccd_SOURCES) $(tests_test_align_SOURCES) \
-	$(tests_test_combinations_SOURCES) \
+	$(apps_ccd_SOURCES) $(apps_ccd2_SOURCES) \
+	$(tests_test_align_SOURCES) $(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_read_SOURCES) \
 	$(tests_test_read_fasta_SOURCES) \
 	$(tests_test_read_serial_SOURCES)
@@ -412,16 +420,20 @@ libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
 	src/blosum/blosum80.h src/blosum/blosum90.h src/bucket.cpp \
 	src/bucket.hpp src/combinations.c src/combinations.h \
 	src/constants.h src/csequence.c src/csequence.h src/io.cpp \
-	src/io.hpp src/mpix.cpp src/mpix.hpp src/param.cpp \
-	src/param.hpp src/pthread_fixes.h src/Sequence.cpp \
+	src/io.hpp src/mpix.cpp src/mpix.hpp src/Parameters.cpp \
+	src/Parameters.hpp src/param.cpp src/param.hpp \
+	src/pthread_fixes.h src/Sequence.cpp src/Sequence.hpp \
 	src/SequenceDatabaseArmci.cpp src/SequenceDatabaseArmci.hpp \
 	src/SequenceDatabase.cpp src/SequenceDatabase.hpp \
-	src/Sequence.hpp src/stree.cpp src/stree.hpp src/timer.h
+	src/stree.cpp src/stree.hpp src/SuffixBuckets.cpp \
+	src/SuffixBuckets.hpp src/SuffixTree.cpp src/SuffixTree.hpp \
+	src/timer.h
 #if HAVE_UTC_ITER
 #noinst_PROGRAMS += sandbox/brute_force_iter
 #endif
 apps_align_SOURCES = apps/align.cpp
 apps_ccd_SOURCES = apps/ccd.cpp
+apps_ccd2_SOURCES = apps/ccd2.cpp
 
 #sandbox_blast_SOURCES                      = sandbox/blast.cpp
 #sandbox_brute_force_SOURCES                = sandbox/brute_force.cpp
@@ -523,6 +535,7 @@ src/combinations.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/csequence.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/io.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/mpix.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/Parameters.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/param.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/Sequence.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/SequenceDatabaseArmci.lo: src/$(am__dirstamp) \
@@ -530,6 +543,9 @@ src/SequenceDatabaseArmci.lo: src/$(am__dirstamp) \
 src/SequenceDatabase.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
 src/stree.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/SuffixBuckets.lo: src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
+src/SuffixTree.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 libpgraph.la: $(libpgraph_la_OBJECTS) $(libpgraph_la_DEPENDENCIES) $(EXTRA_libpgraph_la_DEPENDENCIES) 
 	$(AM_V_CXXLD)$(CXXLINK)  $(libpgraph_la_OBJECTS) $(libpgraph_la_LIBADD) $(LIBS)
 install-binPROGRAMS: $(bin_PROGRAMS)
@@ -606,6 +622,11 @@ apps/ccd.$(OBJEXT): apps/$(am__dirstamp) \
 apps/ccd$(EXEEXT): $(apps_ccd_OBJECTS) $(apps_ccd_DEPENDENCIES) $(EXTRA_apps_ccd_DEPENDENCIES) apps/$(am__dirstamp)
 	@rm -f apps/ccd$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(apps_ccd_OBJECTS) $(apps_ccd_LDADD) $(LIBS)
+apps/ccd2.$(OBJEXT): apps/$(am__dirstamp) \
+	apps/$(DEPDIR)/$(am__dirstamp)
+apps/ccd2$(EXEEXT): $(apps_ccd2_OBJECTS) $(apps_ccd2_DEPENDENCIES) $(EXTRA_apps_ccd2_DEPENDENCIES) apps/$(am__dirstamp)
+	@rm -f apps/ccd2$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(apps_ccd2_OBJECTS) $(apps_ccd2_LDADD) $(LIBS)
 tests/$(am__dirstamp):
 	@$(MKDIR_P) tests
 	@: > tests/$(am__dirstamp)
@@ -655,9 +676,13 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/ccd.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/ccd2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Parameters.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Sequence.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabase.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabaseArmci.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SuffixBuckets.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SuffixTree.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/alignment.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/bucket.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/combinations.Plo@am__quote@

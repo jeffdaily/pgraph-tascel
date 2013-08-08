@@ -5,6 +5,7 @@
  *
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  */
+#include "config.h"
 
 /* C++ STL */
 #include <cstddef>

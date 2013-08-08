@@ -1,5 +1,5 @@
 /**
- * @file stree.cpp
+ * @file SuffixTree.cpp
  *
  * @author andy.cj.wu@gmail.com
  * @author jeff.daily@pnnl.gov
@@ -13,10 +13,13 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "bucket.hpp"
 #include "constants.h"
-#include "alignment.hpp"
-#include "stree.hpp"
+//#include "alignment.hpp"
+#include "Parameters.hpp"
+#include "Sequence.hpp"
+#include "SequenceDatabase.hpp"
+#include "SuffixBuckets.hpp"
+#include "SuffixTree.hpp"
 
 namespace pgraph {
 
@@ -30,10 +33,10 @@ namespace pgraph {
  * @param lset -
  */
 static inline void
-compute_lset(suffix_t *suffixes, sequence_t *seqs, suffix_t **lset)
+compute_lset(Suffix *suffixes, SequenceDatabase *seqs, Suffix **lset)
 {
-    suffix_t *p = NULL;
-    suffix_t *q = NULL;
+    Suffix *p = NULL;
+    Suffix *q = NULL;
     int lIndex;
 
     for (p = suffixes; p != NULL; p = q) {
@@ -44,7 +47,7 @@ compute_lset(suffix_t *suffixes, sequence_t *seqs, suffix_t **lset)
             lset[lIndex] = p;
         }
         else {
-            lIndex = seqs[p->sid].str[p->pid - 1] - 'A';
+            lIndex = (*seqs)[p->sid][p->pid - 1] - 'A';
             p->next = lset[lIndex];
             lset[lIndex] = p;
         }
@@ -67,10 +70,10 @@ compute_lset(suffix_t *suffixes, sequence_t *seqs, suffix_t **lset)
  * @param[in] window_size - slide window size for bucketing
  * ---------------------------------------------------*/
 static inline int
-nextDiffPos(sequence_t *seqs, suffix_t *suffixes, int depth, int window_size)
+nextDiffPos(SequenceDatabase *seqs, Suffix *suffixes, int depth, int window_size)
 {
     int i;
-    suffix_t *p = NULL;
+    Suffix *p = NULL;
     char pCh;
     char cCh;
 
@@ -80,12 +83,12 @@ nextDiffPos(sequence_t *seqs, suffix_t *suffixes, int depth, int window_size)
 
     while (1) {
         i++; /* step forward one more char for comparison */
-        assert((i + p->pid) < seqs[p->sid].size);
-        pCh = seqs[p->sid].str[p->pid + i];
+        assert((i + p->pid) < (*seqs)[p->sid].get_sequence_length());
+        pCh = (*seqs)[p->sid][p->pid + i];
 
         for (p = p->next; p != NULL; p = p->next) {
-            assert((i + p->pid) < seqs[p->sid].size);
-            cCh = seqs[p->sid].str[p->pid + i];
+            assert((i + p->pid) < (*seqs)[p->sid].get_sequence_length());
+            cCh = (*seqs)[p->sid][p->pid + i];
             if (cCh != pCh) {
                 return i;
             }
@@ -107,18 +110,17 @@ nextDiffPos(sequence_t *seqs, suffix_t *suffixes, int depth, int window_size)
  */
 static inline size_t
 build_tree_recursive(
-    sequence_t *sequences, size_t n_sequences,
-    suffix_t *suffixes, int depth, int window_size,
-    stnode_t *st_nodes, size_t *st_index)
+    SequenceDatabase *sequences, size_t n_sequences,
+    Suffix *suffixes, int depth, int window_size,
+    SuffixTreeNode *st_nodes, size_t *st_index)
 {
     int diffPos;
     size_t i;
     int j; /* store the index of the internal node */
-    suffix_t **heads = NULL;
-    suffix_t *p = NULL;
-    suffix_t *q = NULL;
+    Suffix **heads = NULL;
+    Suffix *p = NULL;
+    Suffix *q = NULL;
     int hIndex;
-    sequence_t *seq = NULL;
     size_t rLeaf = SIZE_MAX;
 
     diffPos = nextDiffPos(sequences, suffixes, depth, window_size);
@@ -127,10 +129,10 @@ build_tree_recursive(
         exit(EXIT_FAILURE);
     }
     else if (diffPos == DOL_END) { /* leaf node */
-        seq = &sequences[suffixes[0].sid];
+        Sequence &seq = (*sequences)[suffixes[0].sid];
 
         /* depth also includes the '$' */
-        st_nodes[*st_index].depth = (seq->size - 1) - suffixes[0].pid;
+        st_nodes[*st_index].depth = (seq.get_sequence_length() - 1) - suffixes[0].pid;
         st_nodes[*st_index].rLeaf = *st_index; /* point to itself */
 
         compute_lset(suffixes, sequences, st_nodes[*st_index].lset);
@@ -158,7 +160,7 @@ build_tree_recursive(
         /* partition suffixes into SIGMA sub-buckets */
         for (p = suffixes; p != NULL; p = q) {
             q = p->next;
-            hIndex = sequences[p->sid].str[p->pid + diffPos] - 'A';
+            hIndex = (*sequences)[p->sid][p->pid + diffPos] - 'A';
             assert(hIndex >= 0 && (unsigned)hIndex < SIGMA);
 
             p->next = heads[hIndex];
@@ -179,7 +181,7 @@ build_tree_recursive(
                 /* branching with '$' */
                 if (i == (DOLLAR - 'A')) {
                     st_nodes[*st_index].depth =
-                        (sequences[heads[i]->sid].size - 1 - heads[i]->pid);
+                        ((*sequences)[heads[i]->sid].get_sequence_length() - 1 - heads[i]->pid);
                     st_nodes[*st_index].rLeaf = *st_index;
 
                     compute_lset(heads[i], sequences, st_nodes[*st_index].lset);
@@ -203,70 +205,70 @@ build_tree_recursive(
 }
 
 
-stree_t* build_tree(
-        sequences_t *sequences, bucket_t *bucket, param_t param)
+SuffixTree::SuffixTree(
+        SequenceDatabase *sequences, Bucket *bucket, const Parameters &param)
+    :   sequences(sequences)
+    ,   bucket(bucket)
+    ,   param(param)
+    ,   nodes(NULL)
+    ,   size(0)
+    ,   lset_array(NULL)
 {
-    stree_t *tree = NULL;
+    create();
+}
+
+
+void SuffixTree::create()
+{
     size_t n_nodes = 0;
     size_t i = 0;
 
-    /* allocate tree */
-    tree = new stree_t;
-    if (NULL == tree) {
-        perror("build_tree: malloc tree");
-        exit(EXIT_FAILURE);
-    }
-
     /* allocate tree nodes */
     n_nodes = 2 * bucket->size;
-    tree->nodes = new stnode_t[n_nodes];
-    if (NULL == tree->nodes) {
+    this->nodes = new SuffixTreeNode[n_nodes];
+    if (NULL == this->nodes) {
         perror("build_tree: malloc tree nodes");
         exit(EXIT_FAILURE);
     }
 
-    tree->size = 0;
+    this->size = 0;
 
     /* allocate lset pointer memory for tree nodes */
-    tree->lset_array = new suffix_t*[SIGMA * n_nodes];
-    if (NULL == tree->lset_array) {
+    this->lset_array = new Suffix*[SIGMA * n_nodes];
+    if (NULL == this->lset_array) {
         perror("build_tree: malloc lset array");
         exit(EXIT_FAILURE);
     }
     /* initialize lset pointer memory */
     for (i = 0; i < SIGMA * n_nodes; ++i) {
-        tree->lset_array[i] = NULL;
+        this->lset_array[i] = NULL;
     }
 
     /* initialize tree nodes */
     for (i = 0; i < n_nodes; ++i) {
-        tree->nodes[i].depth = 0;
-        tree->nodes[i].rLeaf = 0;
-        tree->nodes[i].lset = &(tree->lset_array[i*SIGMA]);
+        this->nodes[i].depth = 0;
+        this->nodes[i].rLeaf = 0;
+        this->nodes[i].lset = &(this->lset_array[i*SIGMA]);
     }
 
     build_tree_recursive(
-            sequences->seq, sequences->size,
+            sequences, sequences->get_global_count(),
             bucket->suffixes, param.window_size - 1, param.window_size,
-            tree->nodes, &(tree->size));
-
-    return tree;
+            this->nodes, &(this->size));
 }
 
 
-void free_tree(stree_t *tree)
+SuffixTree::~SuffixTree()
 {
-    assert(NULL != tree);
-    delete [] tree->nodes;
-    delete [] tree->lset_array;
-    delete tree;
+    delete [] this->nodes;
+    delete [] this->lset_array;
 }
 
 
 static inline int
-is_candidate(sequence_t *seqs, size_t nSeqs,
-             suffix_t *p, suffix_t *q,
-             cell_t **tbl, int **ins, int **del, param_t param, int *dup)
+is_candidate(SequenceDatabase *seqs, size_t nSeqs,
+             Suffix *p, Suffix *q,
+             cell_t **tbl, int **ins, int **del, Parameters param, int *dup)
 {
     size_t s1Len = 0;
     size_t s2Len = 0;
@@ -293,8 +295,8 @@ is_candidate(sequence_t *seqs, size_t nSeqs,
         return FALSE;
     }
 
-    s1Len = seqs[f1].size - 1;
-    s2Len = seqs[f2].size - 1;
+    s1Len = (*seqs)[f1].get_sequence_length() - 1;
+    s2Len = (*seqs)[f2].get_sequence_length() - 1;
 
     if (dup[index] == MAYBE) {
         if (s1Len <= s2Len) {
@@ -332,8 +334,8 @@ is_candidate(sequence_t *seqs, size_t nSeqs,
             int ignore1;
             size_t ignore2;
             dup[index] = is_edge_blosum(result,
-                    seqs[f1].str, seqs[f1].size,
-                    seqs[f2].str, seqs[f2].size,
+                    &(*seqs)[f1][0], (*seqs)[f1].get_sequence_length(),
+                    &(*seqs)[f2][0], (*seqs)[f2].get_sequence_length(),
                     param.AOL, param.SIM, param.OS,
                     ignore1, ignore2);
         }
@@ -355,7 +357,7 @@ is_candidate(sequence_t *seqs, size_t nSeqs,
  * @param maxSeqLen -
  * -----------------------------------------------------------*/
 static inline void
-count_sort(stnode_t *stNodes, int *srtIndex, size_t nStNodes, size_t maxSeqLen)
+count_sort(SuffixTreeNode *stNodes, int *srtIndex, size_t nStNodes, size_t maxSeqLen)
 {
     size_t i;
     int *cnt = NULL;
@@ -397,12 +399,12 @@ count_sort(stnode_t *stNodes, int *srtIndex, size_t nStNodes, size_t maxSeqLen)
 
 
 static inline void
-procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, int **del, param_t param, int *dup)
+procLeaf(Suffix **lset, SequenceDatabase *seqs, int nSeqs, cell_t **tbl, int **ins, int **del, Parameters param, int *dup)
 {
     size_t i;
     size_t j;
-    suffix_t *p = NULL;
-    suffix_t *q = NULL;
+    Suffix *p = NULL;
+    Suffix *q = NULL;
     int f1, f2;
     int s1Len, s2Len;
     cell_t result;
@@ -452,19 +454,18 @@ procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, 
 
 
 
-void generate_pairs(
-        stree_t *tree, sequences_t *sequences, int *dup, param_t param)
+void SuffixTree::generate_pairs(int *dup)
 {
-    stnode_t *stNodes = NULL;
+    SuffixTreeNode *stNodes = NULL;
     int *srtIndex = NULL;
     size_t nStNodes = 0;
-    sequence_t *seqs = NULL;
+    SequenceDatabase *seqs = NULL;
     int nSeqs = 0;
     int maxSeqLen = 0;
     size_t i = 0;
     int j = 0;
     int r = 0;
-    stnode_t *stnode = NULL;
+    SuffixTreeNode *stnode = NULL;
     int sIndex;
     int eIndex;
     cell_t **tbl = NULL;
@@ -474,8 +475,8 @@ void generate_pairs(
     size_t n;
     size_t s;
     size_t t;
-    suffix_t *p = NULL;
-    suffix_t *q = NULL;
+    Suffix *p = NULL;
+    Suffix *q = NULL;
     int f1;
     int f2;
     int s1Len;
@@ -484,13 +485,12 @@ void generate_pairs(
     int cutOff; /* cut off value of filter 1 */
     cell_t result;
 
-    srtIndex = new int[tree->size];
-    count_sort(tree->nodes, srtIndex, tree->size, sequences->max_seq_size);
-    stNodes = tree->nodes;
-    nStNodes = tree->size;
-    seqs = sequences->seq;
-    nSeqs = sequences->size;
-    maxSeqLen = sequences->max_seq_size;
+    srtIndex = new int[this->size];
+    count_sort(this->nodes, srtIndex, this->size, sequences->get_max_length());
+    stNodes = this->nodes;
+    nStNodes = this->size;
+    nSeqs = sequences->get_global_count();
+    maxSeqLen = sequences->get_max_length();
 
     /* only two rows are allocated */
     assert(NROW == 2);
@@ -514,7 +514,7 @@ void generate_pairs(
 
         if (stnode->depth >= EM - 1) {
             if (stnode->rLeaf == sIndex) { /* leaf node */
-                procLeaf(stnode->lset, seqs, nSeqs, tbl, del, ins, param, dup);
+                procLeaf(stnode->lset, sequences, nSeqs, tbl, del, ins, param, dup);
             }
             else {                       /* internal node */
                 eIndex = stnode->rLeaf;
@@ -528,12 +528,12 @@ void generate_pairs(
                                     for (p = stNodes[m].lset[s]; p != NULL; p = p->next) {
                                         for (q = stNodes[n].lset[t]; q != NULL; q = q->next) {
                                             if (TRUE == is_candidate(
-                                                        seqs, nSeqs, p, q,
+                                                        sequences, nSeqs, p, q,
                                                         tbl, ins, del,
                                                         param, dup)) {
                                                 //printf("edge:%s#%s\n",
-                                                    //seqs[p->sid].gid,
-                                                    //seqs[q->sid].gid);
+                                                    //(*sequences)[p->sid].gid,
+                                                    //(*sequences)[q->sid].gid);
                                                 if (p->sid > q->sid) {
                                                     printf("edge\t%zu\t%zu\n",
                                                             q->sid, p->sid);

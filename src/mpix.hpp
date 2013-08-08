@@ -41,7 +41,7 @@ using std::vector;
     }                                                     \
 } while (0)
 
-#define CHECK_MPI_IERR(what,rank,comm) do {               \
+#define MPI_CHECK_IERR(what,rank,comm) do {               \
     int __err;                                            \
     __err = what;                                         \
     if (MPI_SUCCESS != __err) {                           \
@@ -193,6 +193,21 @@ void mpix_bcast(vector<T> &object, int root = 0, MPI_Comm comm = MPI_COMM_WORLD)
 }
 
 template <class T>
+void mpix_reduce(T &object, MPI_Op op, int root = 0, MPI_Comm comm = MPI_COMM_WORLD)
+{
+    int rank = 0;
+    MPI_Datatype datatype = mpix_get_mpi_datatype(object);
+
+    MPI_CHECK(MPI_Comm_rank(comm, &rank));
+    if (root == rank) {
+        MPI_CHECK_C(MPI_Reduce(MPI_IN_PLACE, &object, 1, datatype, op, root, comm));
+    }
+    else {
+        MPI_CHECK_C(MPI_Reduce(&object, NULL, 1, datatype, op, root, comm));
+    }
+}
+
+template <class T>
 void mpix_allreduce(T &object, MPI_Op op, MPI_Comm comm = MPI_COMM_WORLD)
 {
     MPI_Datatype datatype = mpix_get_mpi_datatype(object);
@@ -207,13 +222,27 @@ void mpix_allreduce(vector<T> &object, MPI_Op op, MPI_Comm comm = MPI_COMM_WORLD
                               datatype, op, comm));
 }
 
+template <class T>
+void mpix_alltoall(vector<T> &sendbuf, vector<T> &recvbuf, MPI_Comm comm = MPI_COMM_WORLD)
+{
+    int size = 0;
+    int count = 0;
+    MPI_Datatype datatype = mpix_get_mpi_datatype(sendbuf[0]);
+
+    MPI_CHECK_C(MPI_Comm_size(comm, &size));
+    assert(sendbuf.size() % size == 0);
+    count = sendbuf.size() / size;
+    MPI_CHECK_C(MPI_Alltoall(&sendbuf[0], count, datatype,
+                &recvbuf[0], count, datatype, comm));
+}
+
 /* overloads of mpix_print_sync */
-void mpix_print_sync(MPI_Comm comm, const string &name, const vector<string> &what);
-void mpix_print_sync(MPI_Comm comm, const string &name, const string &what);
-void mpix_print_sync(MPI_Comm comm, const string &what);
+void mpix_print_sync(const string &name, const vector<string> &what, MPI_Comm comm=MPI_COMM_WORLD);
+void mpix_print_sync(const string &name, const string &what, MPI_Comm comm=MPI_COMM_WORLD);
+void mpix_print_sync(const string &what, MPI_Comm comm=MPI_COMM_WORLD);
 /* template to capture remaining generic cases */
 template <class T>
-void mpix_print_sync(MPI_Comm comm, const string &name, const T &what)
+void mpix_print_sync(const string &name, const T &what, MPI_Comm comm=MPI_COMM_WORLD)
 {
     int rank;
     int size;
@@ -237,12 +266,12 @@ void mpix_print_sync(MPI_Comm comm, const string &name, const T &what)
 
 
 /* overloads of mpix_print_zero */
-void mpix_print_zero(MPI_Comm comm, const string &name, const vector<string> &what);
-void mpix_print_zero(MPI_Comm comm, const string &name, const string &what);
-void mpix_print_zero(MPI_Comm comm, const string &what);
+void mpix_print_zero(const string &name, const vector<string> &what, MPI_Comm comm=MPI_COMM_WORLD);
+void mpix_print_zero(const string &name, const string &what, MPI_Comm comm=MPI_COMM_WORLD);
+void mpix_print_zero(const string &what, MPI_Comm comm=MPI_COMM_WORLD);
 /* template to capture remaining generic cases */
 template <class T>
-void mpix_print_zero(MPI_Comm comm, const string &name, const T &what)
+void mpix_print_zero(const string &name, const T &what, MPI_Comm comm=MPI_COMM_WORLD)
 {
     int rank;
     T what_copy = what;
@@ -262,9 +291,9 @@ void mpix_bcast_argv(int argc, char **argv,
 MPI_Offset mpix_get_file_size(
     const string &file_name, MPI_Comm comm = MPI_COMM_WORLD);
 
-void mpix_read_file(MPI_Comm comm, const string &file_name, char *&file_buffer, MPI_Offset &file_size, long chunk_size = 1073741824);
-void mpix_read_file_bcast(MPI_Comm comm, const string &file_name, char *&file_buffer, MPI_Offset &file_size, long chunk_size = 1073741824);
-void mpix_read_file_mpiio(MPI_Comm comm, const string &file_name, char *&file_buffer, MPI_Offset &file_size, long chunk_size = 1073741824);
+void mpix_read_file(const string &file_name, char *&file_buffer, MPI_Offset &file_size, long chunk_size = 1073741824, MPI_Comm comm=MPI_COMM_WORLD);
+void mpix_read_file_bcast(const string &file_name, char *&file_buffer, MPI_Offset &file_size, long chunk_size = 1073741824, MPI_Comm comm=MPI_COMM_WORLD);
+void mpix_read_file_mpiio(const string &file_name, char *&file_buffer, MPI_Offset &file_size, long chunk_size = 1073741824, MPI_Comm comm=MPI_COMM_WORLD);
 
 template <class Collection>
 string vec_to_string(
@@ -288,6 +317,33 @@ string vec_to_string(
         os << "{" << *(beg++);
         for (; beg != end; ++beg) {
             os << delimiter << *beg;
+        }
+        os << "}";
+    }
+
+    return os.str();
+}
+
+template <class T>
+string arr_to_string(
+    const T *array,
+    size_t size,
+    char const *delimiter = ",",
+    const string &name = "")
+{
+    std::ostringstream os;
+
+    if (!name.empty()) {
+        os << name << "=";
+    }
+
+    if (0 == size) {
+        os << "{}";
+    }
+    else {
+        os << "{" << array[0];
+        for (size_t i=1; i<size; ++i) {
+            os << delimiter << array[i];
         }
         os << "}";
     }

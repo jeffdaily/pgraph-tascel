@@ -59,21 +59,24 @@ int main(int argc, char *argv[])
     get_params(config_file, &param);
     
     printf("----------------------------------------------\n");
-    printf("%-15s: %.78s\n", "fasta seq", sequence_file);
-    printf("%-15s: %.78s\n", "config file", config_file);
-    printf("%-15s: %d\n", "slide size", param.window_size);
-    printf("%-15s: %d\n", "exactMatch len", param.exact_match_len);
-    printf("%-15s: %zu\n", "nseqs", n_sequences);
+    printf("%-20s: %.78s\n", "fasta seq", sequence_file);
+    printf("%-20s: %.78s\n", "config file", config_file);
+    printf("%-20s: %d\n", "slide size", param.window_size);
+    printf("%-20s: %d\n", "exactMatch len", param.exact_match_len);
+    printf("%-20s: %d\n", "AlignOverLongerSeq", param.AOL);
+    printf("%-20s: %d\n", "MatchSimilarity", param.SIM);
+    printf("%-20s: %d\n", "OptimalScoreOverSelfScore", param.OS);
+    printf("%-20s: %zu\n", "nseqs", n_sequences);
     printf("----------------------------------------------\n");
 
     (void) time(&t1);
     sequences = pg_load_fasta(sequence_file, DOLLAR);
     (void) time(&t2);
-    printf("<%zu> amino acids are loaded in <%lld> secs\n",
-            sequences->size, (long long)(t2-t1));
+    printf("<%zu> amino acids (<%zu> chars) are loaded in <%lld> secs\n",
+            sequences->size, sequences->n_chars, (long long)(t2-t1));
 
     (void) time(&t1);
-    suffix_buckets = create_suffix_buckets(sequences, param);
+    suffix_buckets = create_suffix_buckets_old(sequences, param);
     (void) time(&t2);
     printf("Bucketing finished in <%lld> secs\n", (long long)(t2-t1));
     
@@ -102,6 +105,8 @@ int main(int argc, char *argv[])
     }
     
     /* suffix tree construction & processing */
+    printf("n_buckets=%zu\n", suffix_buckets->buckets_size);
+    printf("n_suffixes=%zu\n", suffix_buckets->suffixes_size);
     (void) time(&t1);
     size_t count = 0;
     for (i = 0; i < suffix_buckets->buckets_size; ++i) {
@@ -114,7 +119,7 @@ int main(int argc, char *argv[])
         }
     }
     (void) time(&t2);
-    free(dup);
+    delete [] dup;
     printf("%zu non-empty trees constructed and processed in <%lld> secs\n",
             count, (long long)(t2-t1));
     

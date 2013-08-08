@@ -7,6 +7,8 @@
  * Copyright 2010 Washington State University. All rights reserved.
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  */
+#include "config.h"
+
 #include <cassert>
 #include <cstdlib>
 #include <cstdio>
@@ -52,7 +54,7 @@ static inline size_t entry_index(const char *kmer, int k)
 
 
 suffix_buckets_t*
-create_suffix_buckets(const sequences_t *sequences, param_t param)
+create_suffix_buckets_old(const sequences_t *sequences, param_t param)
 {
     suffix_buckets_t *suffix_buckets = NULL;
     suffix_t *suffixes = NULL;
@@ -133,9 +135,9 @@ create_suffix_buckets(const sequences_t *sequences, param_t param)
 
 void free_suffix_buckets(suffix_buckets_t *suffix_buckets)
 {
-    free(suffix_buckets->suffixes);
-    free(suffix_buckets->buckets);
-    free(suffix_buckets);
+    delete [] suffix_buckets->suffixes;
+    delete [] suffix_buckets->buckets;
+    delete suffix_buckets;
 }
 
 

@@ -1,25 +1,24 @@
 /**
  * @file param.cpp
  *
- * @author andy.cj.wu@gmail.com
  * @author jeff.daily@pnnl.gov
  *
  * Copyright 2010 Washington State University. All rights reserved.
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  */
+#include "config.h"
+
 #include <cassert>
-#include <cctype>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 
 #include "param.hpp"
+#include "mpix.hpp"
 
-#define CFG_MAX_LINE_LEN 400
 #define COMMENT '#'
+
 
 namespace pgraph {
 
+#define CFG_MAX_LINE_LEN 1024
 int get_param_int(const char *param_file, const char *key)
 {
     FILE *fp = NULL;

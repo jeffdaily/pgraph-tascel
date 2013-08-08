@@ -333,7 +333,6 @@ int main(int argc, char **argv)
     }
 #endif
 
-    cout << vec_to_string(all_argv) << endl;
     /* sanity check that we got the correct number of arguments */
     if (all_argv.size() <= 2 || all_argv.size() >= 4) {
         if (0 == rank) {
@@ -346,7 +345,7 @@ int main(int argc, char **argv)
             else if (all_argv.size() >= 4) {
                 printf("too many arguments\n");
             }
-            printf("usage: align2 sequence_file memory_budget\n");
+            printf("usage: align sequence_file memory_budget\n");
         }
         MPI_Comm_free(&comm);
         MPI_Finalize();

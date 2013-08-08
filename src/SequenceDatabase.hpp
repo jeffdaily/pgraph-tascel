@@ -65,11 +65,25 @@ class SequenceDatabase
         virtual size_t get_local_count() const = 0;
 
         /**
+         * Returns how many characters are stored on this process.
+         *
+         * @return how many characters are stored on this process.
+         */
+        virtual size_t get_local_size() const = 0;
+
+        /**
          * Returns how many sequences are stored collectively by every process.
          *
          * @return how many sequences are stored collectively by every process.
          */
         virtual size_t get_global_count() const = 0;
+
+        /**
+         * Returns how many characters are stored collectively by every process.
+         *
+         * @return how many characters are stored collectively by every process.
+         */
+        virtual size_t get_global_size() const = 0;
 
         /**
          * Returns a reference to the Sequence based on the global index i.
@@ -80,11 +94,26 @@ class SequenceDatabase
         virtual Sequence &get_sequence(size_t i) = 0;
 
         /**
+         * Returns a reference to the Sequence based on the global index i.
+         *
+         * @param[in] i the index based on the global count of sequences
+         * @return the Sequence reference (owned by this SequenceDatabase)
+         */
+        virtual Sequence &operator[](size_t i) = 0;
+
+        /**
          * Sets the number of threads that might possibly access this db.
          *
          * @param[in] num the number of threads
          */
         virtual void set_num_threads(size_t num) = 0;
+
+        /**
+         * Gets the size of the largest sequence in this database.
+         *
+         * @return the size of the largest sequence in this database.
+         */
+        virtual size_t get_max_length() const = 0;
 
         /**
          * Computes the alignment between the two sequence IDs.

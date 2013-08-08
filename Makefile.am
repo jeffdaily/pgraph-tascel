@@ -52,22 +52,29 @@ libpgraph_la_SOURCES += src/io.cpp
 libpgraph_la_SOURCES += src/io.hpp
 libpgraph_la_SOURCES += src/mpix.cpp
 libpgraph_la_SOURCES += src/mpix.hpp
+libpgraph_la_SOURCES += src/Parameters.cpp
+libpgraph_la_SOURCES += src/Parameters.hpp
 libpgraph_la_SOURCES += src/param.cpp
 libpgraph_la_SOURCES += src/param.hpp
 libpgraph_la_SOURCES += src/pthread_fixes.h
 libpgraph_la_SOURCES += src/Sequence.cpp
+libpgraph_la_SOURCES += src/Sequence.hpp
 libpgraph_la_SOURCES += src/SequenceDatabaseArmci.cpp
 libpgraph_la_SOURCES += src/SequenceDatabaseArmci.hpp
 libpgraph_la_SOURCES += src/SequenceDatabase.cpp
 libpgraph_la_SOURCES += src/SequenceDatabase.hpp
-libpgraph_la_SOURCES += src/Sequence.hpp
 libpgraph_la_SOURCES += src/stree.cpp
 libpgraph_la_SOURCES += src/stree.hpp
+libpgraph_la_SOURCES += src/SuffixBuckets.cpp
+libpgraph_la_SOURCES += src/SuffixBuckets.hpp
+libpgraph_la_SOURCES += src/SuffixTree.cpp
+libpgraph_la_SOURCES += src/SuffixTree.hpp
 libpgraph_la_SOURCES += src/timer.h
 
 bin_PROGRAMS =
 bin_PROGRAMS += apps/align
 bin_PROGRAMS += apps/ccd
+bin_PROGRAMS += apps/ccd2
 
 noinst_PROGRAMS =
 #noinst_PROGRAMS += sandbox/blast
@@ -101,6 +108,7 @@ noinst_PROGRAMS += tests/test_read_serial
 
 apps_align_SOURCES = apps/align.cpp
 apps_ccd_SOURCES = apps/ccd.cpp
+apps_ccd2_SOURCES = apps/ccd2.cpp
 
 #sandbox_blast_SOURCES                      = sandbox/blast.cpp
 #sandbox_brute_force_SOURCES                = sandbox/brute_force.cpp

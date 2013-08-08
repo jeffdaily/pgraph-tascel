@@ -164,6 +164,10 @@ class Sequence
             }
         }
 
+        const char & operator[](size_t i) const {
+            return data[sequence_offset+i];
+        }
+
         /** affine gap align, returning score, #matches, and align length */
         void align(const Sequence &that, int &score, int &ndig, int &alen);
 

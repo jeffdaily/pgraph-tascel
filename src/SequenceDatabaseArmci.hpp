@@ -14,6 +14,11 @@
 #include <string>
 #include <vector>
 
+/* ANL's armci does not extern "C" inside the header */
+extern "C" {
+#include <armci.h>
+}
+
 #include <tascel.h>
 
 #include "Sequence.hpp"
@@ -66,11 +71,25 @@ class SequenceDatabaseArmci : public SequenceDatabase
         virtual size_t get_local_count() const;
 
         /**
+         * Returns how many characters are stored on this process.
+         *
+         * @return how many characters are stored on this process.
+         */
+        virtual size_t get_local_size() const;
+
+        /**
          * Returns how many sequences are stored collectively by every process.
          *
          * @return how many sequences are stored collectively by every process.
          */
         virtual size_t get_global_count() const;
+
+        /**
+         * Returns how many characters are stored collectively by every process.
+         *
+         * @return how many characters are stored collectively by every process.
+         */
+        virtual size_t get_global_size() const;
 
         /**
          * Returns a reference to the Sequence based on the global index i.
@@ -81,11 +100,26 @@ class SequenceDatabaseArmci : public SequenceDatabase
         virtual Sequence &get_sequence(size_t i);
 
         /**
+         * Returns a reference to the Sequence based on the global index i.
+         *
+         * @param[in] i the index based on the global count of sequences
+         * @return the Sequence reference (owned by this SequenceDatabaseArmci)
+         */
+        virtual Sequence &operator[](size_t i);
+
+        /**
          * Sets the number of threads that might possibly access this db.
          *
          * @param[in] num the number of threads
          */
         virtual void set_num_threads(size_t num);
+
+        /**
+         * Gets the size of the largest sequence in this database.
+         *
+         * @return the size of the largest sequence in this database.
+         */
+        virtual size_t get_max_length() const { return max_seq_size; }
 
         /**
          * Computes the alignment between the two sequence IDs.
@@ -160,9 +194,14 @@ class SequenceDatabaseArmci : public SequenceDatabase
          */
         void exchange_local_cache();
 
-        MPI_Comm comm;      /**< communicator */
+        MPI_Comm comm_orig; /**< original communicator */
+        int comm_orig_rank; /**< original communicator rank */
+        int comm_orig_size; /**< original communicator size */
+        MPI_Comm comm;      /**< sub communicator for smaller domain */
         int comm_rank;      /**< communicator rank */
         int comm_size;      /**< communicator size */
+        ARMCI_Group armci_group_orig;/**< ARMCI group corresponding to comm_orig */
+        ARMCI_Group armci_group;/**< ARMCI group corresponding to comm_orig */
         bool is_replicated; /**< is budget sufficient to hold entire file? */
         size_t budget;      /**< max amount of memory to use */
         size_t num_threads; /**< max number of threads using this DB */
@@ -171,6 +210,8 @@ class SequenceDatabaseArmci : public SequenceDatabase
         char *local_data;   /**< memory allocated for local sequences */
         map<size_t, Sequence*> local_cache; /**< TODO */
         size_t global_count;/**< total number of sequences */
+        size_t global_size;/**< total number of characters */
+        size_t local_size;/**< local number of characters */
         vector<int> owners; /**< mapping from seq id to rank owner */
         vector<const void*> addresses; /**< where each sequence data block begins */
         vector<size_t> sizes; /**< length of each sequence data block */

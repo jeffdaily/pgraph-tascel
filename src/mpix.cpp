@@ -5,6 +5,8 @@
  *
  * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
  */
+#include "config.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -30,7 +32,7 @@ using std::vector;
 
 /* MPI standard does not guarantee all procs receive argc and argv */
 void mpix_bcast_argv(
-    int argc, char **argv, vector<string> &all_argv, MPI_Comm comm)
+        int argc, char **argv, vector<string> &all_argv, MPI_Comm comm)
 {
     int rank;
 
@@ -60,7 +62,7 @@ void mpix_bcast_argv(
 
 
 void mpix_print_sync(
-    MPI_Comm comm, const string &name, const vector<string> &what)
+        const string &name, const vector<string> &what, MPI_Comm comm)
 {
     int rank;
     int size;
@@ -82,7 +84,7 @@ void mpix_print_sync(
 }
 
 
-void mpix_print_sync(MPI_Comm comm, const string &name, const string &what)
+void mpix_print_sync(const string &name, const string &what, MPI_Comm comm)
 {
     int rank;
     int size;
@@ -99,7 +101,7 @@ void mpix_print_sync(MPI_Comm comm, const string &name, const string &what)
 }
 
 
-void mpix_print_sync(MPI_Comm comm, const string &what)
+void mpix_print_sync(const string &what, MPI_Comm comm)
 {
     int rank;
     int size;
@@ -117,7 +119,7 @@ void mpix_print_sync(MPI_Comm comm, const string &what)
 
 
 void mpix_print_zero(
-    MPI_Comm comm, const string &name, const vector<string> &what)
+    const string &name, const vector<string> &what, MPI_Comm comm)
 {
     int rank;
 
@@ -133,7 +135,7 @@ void mpix_print_zero(
 }
 
 
-void mpix_print_zero(MPI_Comm comm, const string &name, const string &what)
+void mpix_print_zero(const string &name, const string &what, MPI_Comm comm)
 {
     int rank;
 
@@ -146,7 +148,7 @@ void mpix_print_zero(MPI_Comm comm, const string &name, const string &what)
 }
 
 
-void mpix_print_zero(MPI_Comm comm, const string &what)
+void mpix_print_zero(const string &what, MPI_Comm comm)
 {
     int rank;
 
@@ -199,7 +201,7 @@ MPI_Offset mpix_get_file_size(const string &file_name, MPI_Comm comm)
         printf("file_size=%ld\n", file_size);
     }
 #endif
-    mpix_print_sync(comm, "file_size", file_size);
+    mpix_print_sync("file_size", file_size, comm);
 
     return file_size;
 }
@@ -211,18 +213,18 @@ MPI_Offset mpix_get_file_size(const string &file_name, MPI_Comm comm)
  * All processes within the MPI_Comm instance will receive the entire contents
  * of the file.
  *
- * @param[in] comm instance
  * @param[in] file_name to open
  * @param[out] file_buffer to store file contents
  * @param[out] file_size of the given file
  * @param[out] chunk_size max size to read at one time
+ * @param[in] comm instance
  */
 void mpix_read_file(
-    MPI_Comm comm, const string &file_name,
-    char *&file_buffer, MPI_Offset &file_size, long chunk_size)
+    const string &file_name, char *&file_buffer,
+    MPI_Offset &file_size, long chunk_size, MPI_Comm comm)
 {
-    mpix_read_file_mpiio(comm, file_name, file_buffer, file_size, chunk_size);
-    //mpix_read_file_bcast(comm, file_name, file_buffer, file_size, chunk_size);
+    mpix_read_file_mpiio(file_name, file_buffer, file_size, chunk_size, comm);
+    //mpix_read_file_bcast(file_name, file_buffer, file_size, chunk_size, comm);
 }
 
 
@@ -232,15 +234,15 @@ void mpix_read_file(
  * All processes within the MPI_Comm instance will receive the entire contents
  * of the file.
  *
- * @param[in] comm instance
  * @param[in] file_name to open
  * @param[out] file_buffer to store file contents
  * @param[out] file_size of the given file
  * @param[out] chunk_size max size to read at one time
+ * @param[in] comm instance
  */
 void mpix_read_file_mpiio(
-    MPI_Comm comm, const string &file_name,
-    char *&file_buffer, MPI_Offset &file_size, long chunk_size)
+    const string &file_name, char *&file_buffer,
+    MPI_Offset &file_size, long chunk_size, MPI_Comm comm)
 {
     int rank;
     int size;
@@ -301,15 +303,15 @@ void mpix_read_file_mpiio(
  * All processes within the MPI_Comm instance will receive the entire contents
  * of the file.
  *
- * @param[in] comm instance
  * @param[in] file_name to open
  * @param[out] file_buffer to store file contents
  * @param[out] file_size of the given file
  * @param[out] chunk_size max size to read at one time
+ * @param[in] comm instance
  */
 void mpix_read_file_bcast(
-    MPI_Comm comm, const string &file_name,
-    char *&file_buffer, MPI_Offset &file_size, long chunk_size)
+    const string &file_name, char *&file_buffer,
+    MPI_Offset &file_size, long chunk_size, MPI_Comm comm)
 {
     int rank;
     int size;

@@ -77,9 +77,9 @@ void free_cell_table(cell_t **table, size_t nrow)
 {
     size_t i;
     for (i = 0; i < nrow; i++) {
-        free(table[i]);
+        delete [] table[i];
     }
-    free(table);
+    delete [] table;
 }
 
 
@@ -87,9 +87,9 @@ void free_int_table(int **table, size_t nrow)
 {
     size_t i;
     for (i = 0; i < nrow; i++) {
-        free(table[i]);
+        delete [] table[i];
     }
-    free(table);
+    delete [] table;
 }
 
 

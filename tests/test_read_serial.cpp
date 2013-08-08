@@ -1,6 +1,8 @@
 /**
  * @author jeff.daily@pnnl.gov
  */
+#include "config.h"
+
 #include <stdio.h>
 #include <sys/stat.h>
 
