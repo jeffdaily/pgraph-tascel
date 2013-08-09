@@ -168,6 +168,12 @@ void mpix_bcast(T &object, int root = 0, MPI_Comm comm = MPI_COMM_WORLD)
 }
 
 template <class T>
+void mpix_bcast(T *object, int root = 0, MPI_Comm comm = MPI_COMM_WORLD)
+{
+    MPI_CHECK_C(MPI_Bcast(object, int(sizeof(T)), MPI_CHAR, root, comm));
+}
+
+template <class T>
 void mpix_bcast(vector<T> &object, int root = 0, MPI_Comm comm = MPI_COMM_WORLD)
 {
     typedef typename vector<T>::size_type size_type;

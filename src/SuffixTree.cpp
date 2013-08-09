@@ -12,6 +12,12 @@
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
+#include <utility>
+#include <vector>
+
+using std::make_pair;
+using std::pair;
+using std::vector;
 
 #include "constants.h"
 //#include "alignment.hpp"
@@ -83,6 +89,7 @@ nextDiffPos(SequenceDatabase *seqs, Suffix *suffixes, int depth, int window_size
 
     while (1) {
         i++; /* step forward one more char for comparison */
+        //std::cout << "i+p->pid=" << i+p->pid << " <? p->sid.size=" << (*seqs)[p->sid].get_sequence_length() << std::endl;
         assert((i + p->pid) < (*seqs)[p->sid].get_sequence_length());
         pCh = (*seqs)[p->sid][p->pid + i];
 
@@ -399,7 +406,7 @@ count_sort(SuffixTreeNode *stNodes, int *srtIndex, size_t nStNodes, size_t maxSe
 
 
 static inline void
-procLeaf(Suffix **lset, SequenceDatabase *seqs, int nSeqs, cell_t **tbl, int **ins, int **del, Parameters param, int *dup)
+procLeaf(Suffix **lset, SequenceDatabase *seqs, int nSeqs, cell_t **tbl, int **ins, int **del, Parameters param, int *dup, vector<pair<size_t,size_t> > &pairs)
 {
     size_t i;
     size_t j;
@@ -421,9 +428,11 @@ procLeaf(Suffix **lset, SequenceDatabase *seqs, int nSeqs, cell_t **tbl, int **i
                             //printf("edge:%s#%s\n", seqs[p->sid].gid, seqs[q->sid].gid);
                             if (p->sid > q->sid) {
                                 printf("edge\t%zu\t%zu\n", q->sid, p->sid);
+                                pairs.push_back(make_pair(q->sid, p->sid));
                             }
                             else {
                                 printf("edge\t%zu\t%zu\n", p->sid, q->sid);
+                                pairs.push_back(make_pair(p->sid, q->sid));
                             }
                         }
                     }
@@ -439,9 +448,11 @@ procLeaf(Suffix **lset, SequenceDatabase *seqs, int nSeqs, cell_t **tbl, int **i
                                 //printf("edge:%s#%s\n", seqs[p->sid].gid, seqs[q->sid].gid);
                                 if (p->sid > q->sid) {
                                     printf("edge\t%zu\t%zu\n", q->sid, p->sid);
+                                    pairs.push_back(make_pair(q->sid, p->sid));
                                 }
                                 else {
                                     printf("edge\t%zu\t%zu\n", p->sid, q->sid);
+                                    pairs.push_back(make_pair(p->sid, q->sid));
                                 }
                             }
                         }
@@ -454,7 +465,7 @@ procLeaf(Suffix **lset, SequenceDatabase *seqs, int nSeqs, cell_t **tbl, int **i
 
 
 
-void SuffixTree::generate_pairs(int *dup)
+void SuffixTree::generate_pairs(int *dup, vector<pair<size_t,size_t> > &pairs)
 {
     SuffixTreeNode *stNodes = NULL;
     int *srtIndex = NULL;
@@ -514,7 +525,7 @@ void SuffixTree::generate_pairs(int *dup)
 
         if (stnode->depth >= EM - 1) {
             if (stnode->rLeaf == sIndex) { /* leaf node */
-                procLeaf(stnode->lset, sequences, nSeqs, tbl, del, ins, param, dup);
+                procLeaf(stnode->lset, sequences, nSeqs, tbl, del, ins, param, dup, pairs);
             }
             else {                       /* internal node */
                 eIndex = stnode->rLeaf;
@@ -537,10 +548,12 @@ void SuffixTree::generate_pairs(int *dup)
                                                 if (p->sid > q->sid) {
                                                     printf("edge\t%zu\t%zu\n",
                                                             q->sid, p->sid);
+                                                    pairs.push_back(make_pair(q->sid, p->sid));
                                                 }
                                                 else {
                                                     printf("edge\t%zu\t%zu\n",
                                                             p->sid, q->sid);
+                                                    pairs.push_back(make_pair(p->sid, q->sid));
                                                 }
                                             }
                                         }

@@ -51,8 +51,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = apps/align$(EXEEXT) apps/ccd$(EXEEXT) \
-	apps/ccd2$(EXEEXT)
+bin_PROGRAMS = apps/align$(EXEEXT) apps/align_tree$(EXEEXT) \
+	apps/ccd$(EXEEXT) apps/ccd2$(EXEEXT)
 noinst_PROGRAMS = tests/test_align$(EXEEXT) \
 	tests/test_combinations$(EXEEXT) tests/test_dynamic$(EXEEXT) \
 	tests/test_read$(EXEEXT) tests/test_read_fasta$(EXEEXT) \
@@ -105,6 +105,12 @@ apps_align_OBJECTS = $(am_apps_align_OBJECTS)
 apps_align_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
 apps_align_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
+am_apps_align_tree_OBJECTS = apps/align_tree.$(OBJEXT)
+apps_align_tree_OBJECTS = $(am_apps_align_tree_OBJECTS)
+apps_align_tree_LDADD = $(LDADD)
+apps_align_tree_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 am_apps_ccd_OBJECTS = apps/ccd.$(OBJEXT)
@@ -210,14 +216,16 @@ am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
-	$(apps_ccd_SOURCES) $(apps_ccd2_SOURCES) \
-	$(tests_test_align_SOURCES) $(tests_test_combinations_SOURCES) \
+	$(apps_align_tree_SOURCES) $(apps_ccd_SOURCES) \
+	$(apps_ccd2_SOURCES) $(tests_test_align_SOURCES) \
+	$(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_read_SOURCES) \
 	$(tests_test_read_fasta_SOURCES) \
 	$(tests_test_read_serial_SOURCES)
 DIST_SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
-	$(apps_ccd_SOURCES) $(apps_ccd2_SOURCES) \
-	$(tests_test_align_SOURCES) $(tests_test_combinations_SOURCES) \
+	$(apps_align_tree_SOURCES) $(apps_ccd_SOURCES) \
+	$(apps_ccd2_SOURCES) $(tests_test_align_SOURCES) \
+	$(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_read_SOURCES) \
 	$(tests_test_read_fasta_SOURCES) \
 	$(tests_test_read_serial_SOURCES)
@@ -432,6 +440,7 @@ libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
 #noinst_PROGRAMS += sandbox/brute_force_iter
 #endif
 apps_align_SOURCES = apps/align.cpp
+apps_align_tree_SOURCES = apps/align_tree.cpp
 apps_ccd_SOURCES = apps/ccd.cpp
 apps_ccd2_SOURCES = apps/ccd2.cpp
 
@@ -617,6 +626,11 @@ apps/align.$(OBJEXT): apps/$(am__dirstamp) \
 apps/align$(EXEEXT): $(apps_align_OBJECTS) $(apps_align_DEPENDENCIES) $(EXTRA_apps_align_DEPENDENCIES) apps/$(am__dirstamp)
 	@rm -f apps/align$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_OBJECTS) $(apps_align_LDADD) $(LIBS)
+apps/align_tree.$(OBJEXT): apps/$(am__dirstamp) \
+	apps/$(DEPDIR)/$(am__dirstamp)
+apps/align_tree$(EXEEXT): $(apps_align_tree_OBJECTS) $(apps_align_tree_DEPENDENCIES) $(EXTRA_apps_align_tree_DEPENDENCIES) apps/$(am__dirstamp)
+	@rm -f apps/align_tree$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_OBJECTS) $(apps_align_tree_LDADD) $(LIBS)
 apps/ccd.$(OBJEXT): apps/$(am__dirstamp) \
 	apps/$(DEPDIR)/$(am__dirstamp)
 apps/ccd$(EXEEXT): $(apps_ccd_OBJECTS) $(apps_ccd_DEPENDENCIES) $(EXTRA_apps_ccd_DEPENDENCIES) apps/$(am__dirstamp)
@@ -675,6 +689,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_tree.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/ccd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/ccd2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Parameters.Plo@am__quote@

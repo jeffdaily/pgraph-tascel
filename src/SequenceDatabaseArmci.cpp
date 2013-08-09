@@ -143,9 +143,6 @@ SequenceDatabaseArmci::~SequenceDatabaseArmci()
     delete [] tbl;
     delete [] del;
     delete [] ins;
-    tbl = new cell_t**[num_threads];
-    del = new int**[num_threads];
-    ins = new int**[num_threads];
 
     if (is_replicated) {
         delete [] local_data;

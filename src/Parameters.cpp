@@ -30,6 +30,18 @@ using std::string;
 
 namespace pgraph {
 
+Parameters::Parameters()
+    : AOL(8)
+    , SIM(4)
+    , OS(3)
+    , exact_match_len(4)
+    , window_size(3)
+    , open(-10)
+    , gap(-1)
+{
+}
+
+
 Parameters::Parameters(const char *parameters_file, MPI_Comm comm)
     : AOL(8)
     , SIM(4)
@@ -38,6 +50,12 @@ Parameters::Parameters(const char *parameters_file, MPI_Comm comm)
     , window_size(3)
     , open(-10)
     , gap(-1)
+{
+    parse(parameters_file, comm);
+}
+
+
+void Parameters::parse(const char *parameters_file, MPI_Comm comm)
 {
     int comm_rank = 0;  /* rank 0 will open the file */
     int comm_size = 0;
@@ -89,6 +107,8 @@ Parameters::Parameters(const char *parameters_file, MPI_Comm comm)
             }
         }
     }
+
+    mpix_bcast(this, 0, comm);
 }
 
 }; /* namespace pgraph */

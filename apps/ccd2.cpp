@@ -116,12 +116,13 @@ int main(int argc, char *argv[])
     /* suffix tree construction & processing */
     (void) time(&t1);
     size_t count = 0;
+    vector<pair<size_t,size_t> > pairs;
     /* TODO */
     for (i = 0; i < suffix_buckets->buckets_size; ++i) {
         if (NULL != suffix_buckets->buckets[i].suffixes) {
             SuffixTree *tree = new SuffixTree(
                     sequences, &(suffix_buckets->buckets[i]), parameters);
-            tree->generate_pairs(dup);
+            tree->generate_pairs(dup, pairs);
             delete tree;
             ++count;
         }

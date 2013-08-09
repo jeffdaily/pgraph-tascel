@@ -22,12 +22,24 @@ class Parameters
 public:
 
     /**
+     * Constructs empty (default) parameters.
+     */
+    Parameters();
+
+    /**
      * Constructs and parses the given parameters file.
      *
      * @param[in] parameters_file the parameters file
      * @param[in] comm the communicator
      */
     Parameters(const char *parameters_file, MPI_Comm comm);
+
+    /**
+     * Parses the given parameters file.
+     *
+     * @param[in] parameters_file the parameters file
+     */
+    void parse(const char *parameters_file, MPI_Comm comm);
 
     int AOL;            /**< AlignOverLongerSeq */
     int SIM;            /**< MatchSimilarity */

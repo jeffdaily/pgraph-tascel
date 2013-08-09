@@ -11,8 +11,12 @@
 #define _PGRAPH_SUFFIXTREE_H_
 
 #include <cstddef>
+#include <utility>
+#include <vector>
 
+using std::pair;
 using std::size_t;
+using std::vector;
 
 namespace pgraph {
 
@@ -66,8 +70,9 @@ class SuffixTree
          * Generate promising pairs for alignment.
          *
          * @param[in] dup
+         * @param[out] pairs
          */
-        void generate_pairs(int *dup);
+        void generate_pairs(int *dup, vector<pair<size_t,size_t> > &pairs);
 
     private:
         void create();
