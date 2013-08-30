@@ -160,6 +160,8 @@ mpix_get_mpi_datatype(const void *&x)
 }
 #endif
 
+void mpix_bcast(string &object, int root = 0, MPI_Comm comm = MPI_COMM_WORLD);
+
 template <class T>
 void mpix_bcast(T &object, int root = 0, MPI_Comm comm = MPI_COMM_WORLD)
 {

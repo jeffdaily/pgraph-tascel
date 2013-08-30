@@ -73,6 +73,7 @@ libpgraph_la_SOURCES += src/timer.h
 
 bin_PROGRAMS =
 bin_PROGRAMS += apps/align
+bin_PROGRAMS += apps/align_counter
 bin_PROGRAMS += apps/align_tree
 bin_PROGRAMS += apps/ccd
 bin_PROGRAMS += apps/ccd2
@@ -108,6 +109,7 @@ noinst_PROGRAMS += tests/test_read_serial
 #endif
 
 apps_align_SOURCES = apps/align.cpp
+apps_align_counter_SOURCES = apps/align_counter.cpp
 apps_align_tree_SOURCES = apps/align_tree.cpp
 apps_ccd_SOURCES = apps/ccd.cpp
 apps_ccd2_SOURCES = apps/ccd2.cpp

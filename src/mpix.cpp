@@ -30,6 +30,31 @@ using std::string;
 using std::vector;
 
 
+void mpix_bcast(string &object, int root, MPI_Comm comm)
+{
+    int rank = 0;
+    int size = 0;
+
+    MPI_CHECK(MPI_Comm_rank(comm, &rank));
+
+    if (rank == root) {
+        size = int(object.size());
+        mpix_bcast(size, root, comm);
+        MPI_CHECK_C(MPI_Bcast(const_cast<char*>(object.data()),
+                    size, MPI_CHAR, root, comm));
+    }
+    else {
+        char *data = NULL;
+
+        mpix_bcast(size, root, comm);
+        data = new char[size];
+        MPI_CHECK_C(MPI_Bcast(data, size, MPI_CHAR, root, comm));
+        object.assign(data, size);
+        delete [] data;
+    }
+}
+
+
 /* MPI standard does not guarantee all procs receive argc and argv */
 void mpix_bcast_argv(
         int argc, char **argv, vector<string> &all_argv, MPI_Comm comm)
@@ -195,7 +220,7 @@ MPI_Offset mpix_get_file_size(const string &file_name, MPI_Comm comm)
     }
 
     /* the file_size is broadcast to all */
-    mpix_bcast(file_size);
+    mpix_bcast(file_size, 0, comm);
 #if 0
     if (0 == rank) {
         printf("file_size=%ld\n", file_size);
