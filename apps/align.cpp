@@ -193,8 +193,8 @@ static void alignment_task(
                 << ": aligned " << seq_id[0] << " " << seq_id[1]
                 << ": (score,ndig,alen)=("
                 << result.score << ","
-                << result.ndig << ","
-                << result.alen << ")"
+                << result.matches << ","
+                << result.length << ")"
                 << ": edge? " << is_edge_answer << endl;
 #endif
             edge_results[thd].push_back(EdgeResult(

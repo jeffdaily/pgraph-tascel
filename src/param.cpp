@@ -9,6 +9,8 @@
 #include "config.h"
 
 #include <cassert>
+#include <cstdlib>
+#include <cstring>
 
 #include "param.hpp"
 #include "mpix.hpp"

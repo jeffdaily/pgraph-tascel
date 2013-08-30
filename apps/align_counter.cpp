@@ -34,16 +34,16 @@ extern "C" {
 #include <strstream>
 #include <vector>
 
-#include "AlignStats.hpp"
-#include "constants.h"
-#include "combinations.h"
 #include "alignment.hpp"
+#include "AlignStats.hpp"
+#include "combinations.h"
+#include "constants.h"
 #include "mpix.hpp"
+#include "Parameters.hpp"
 
 using namespace std;
 using namespace pgraph;
 
-#define DEBUG 1
 #define SEP ","
 #define ALL_RESULTS 1
 #define GB (1073741824)
@@ -59,9 +59,9 @@ static string _generate_shm_name();
 static void* _shm_create(MPI_Comm comm, size_t size, string &name);
 static sem_t* _sem_create(MPI_Comm comm, string &sem_name);
 static void _pack_and_index_fasta(char *buffer, size_t size,
-        char delimiter, vector<sequence_t> &sequences, size_t max_seq_size);
+        char delimiter, vector<sequence_t> &sequences, size_t &max_seq_size);
 static void _index_fasta(const char *buffer, size_t size,
-        char delimiter, vector<sequence_t> &sequences, size_t max_seq_size);
+        char delimiter, vector<sequence_t> &sequences, size_t &max_seq_size);
 
 
 class EdgeResult {
@@ -95,117 +95,6 @@ class EdgeResult {
             return os;
         }
 };
-
-#if 0
-static void alignment_task(
-        UniformTaskCollection *utc,
-        void *_bigd, int bigd_len,
-        void *pldata, int pldata_len,
-        vector<void *> data_bufs, int thd) {
-    task_description *desc = (task_description*)_bigd;
-    unsigned long seq_id[2];
-    cell_t result;
-    bool is_edge_answer = false;
-    double t = 0;
-    int sscore;
-    size_t max_len;
-
-    int open = -10;
-    int gap = -1;
-    int AOL = 8;
-    int SIM = 4;
-    int OS = 3;
-
-    seq_id[0] = desc->id1;
-    seq_id[1] = desc->id2;
-    {
-        t = MPI_Wtime();
-        sequences->align(seq_id[0], seq_id[1], result.score, result.matches, result.length, open, gap, thd);
-        is_edge_answer = sequences->is_edge(
-                seq_id[0],
-                seq_id[1],
-                result.score, result.matches, result.length,
-                AOL, SIM, OS,
-                sscore, max_len);
-        ++stats[thd].align_counts;
-
-        if (is_edge_answer || ALL_RESULTS)
-        {
-#if DEBUG
-            cout << trank(thd)
-                << ": aligned " << seq_id[0] << " " << seq_id[1]
-                << ": (score,ndig,alen)=("
-                << result.score << ","
-                << result.ndig << ","
-                << result.alen << ")"
-                << ": edge? " << is_edge_answer << endl;
-#endif
-            edge_results[thd].push_back(EdgeResult(
-                        seq_id[0], seq_id[1],
-#if 0
-                        1.0*result.alen/max_len,
-                        1.0*result.ndig/result.alen,
-                        1.0*result.score/sscore
-#else
-                        result.length,
-                        result.matches,
-                        result.score
-#endif
-#if ALL_RESULTS
-                        ,is_edge_answer
-#endif
-                        ));
-            if (is_edge_answer) {
-                ++stats[thd].edge_counts;
-            }
-        }
-        t = MPI_Wtime() - t;
-        stats[thd].align_times_tot += t;
-        stats[thd].calc_min(t);
-        stats[thd].calc_max(t);
-    }
-}
-#endif
-
-
-#if 0
-unsigned long populate_tasks(
-        unsigned long ntasks, unsigned long tasks_per_worker, int worker)
-{
-    task_description desc;
-    int wrank = trank(worker);
-    unsigned long count = 0;
-    unsigned long i;
-    unsigned long lower_limit = wrank*tasks_per_worker;
-    unsigned long upper_limit = lower_limit + tasks_per_worker;
-    unsigned long remainder = ntasks % (size_world*NUM_WORKERS);
-
-    unsigned long seq_id[2];
-    k_combination(lower_limit, 2, seq_id);
-    for (i=lower_limit; i<upper_limit; ++i) {
-        desc.id1 = seq_id[0];
-        desc.id2 = seq_id[1];
-#if DEBUG
-        cout << wrank << " added " << seq_id[0] << "," << seq_id[1] << endl;
-#endif
-        next_combination(2, seq_id);
-        utcs[worker]->addTask(&desc, sizeof(desc));
-        count++;
-    }
-    /* if I'm the last worker, add the remainder of the tasks */
-    if (wrank == size_world*NUM_WORKERS-1) {
-        for (/*ignore*/; i<upper_limit+remainder; ++i) {
-            count++;
-            desc.id1 = seq_id[0];
-            desc.id2 = seq_id[1];
-            next_combination(2, seq_id);
-            utcs[worker]->addTask(&desc, sizeof(desc));
-        }
-    }
-
-    return count;
-}
-#endif
 
 
 int main(int argc, char **argv)
@@ -242,6 +131,9 @@ int main(int argc, char **argv)
     MPI_CHECK_C(MPI_Comm_rank(comm_world, &rank_world));
     MPI_CHECK_C(MPI_Comm_size(comm_world, &size_world));
     
+    /* initialize ARMCI */
+    ARMCI_Init_args(&argc, &argv);
+
     /* split comm_world based on hostid */
     MPI_CHECK_C(MPI_Comm_split(comm_world, gethostid(), rank_world, &comm_node));
     MPI_CHECK_C(MPI_Comm_rank(comm_node, &rank_node));
@@ -261,13 +153,14 @@ int main(int argc, char **argv)
         size_master = -1;
     }
 
+#if DEBUG
     mpix_print_sync("rank_world", rank_world, comm_world);
     mpix_print_sync("rank_node",  rank_node, comm_world);
     mpix_print_sync("rank_master",rank_master, comm_world);
     mpix_print_sync("size_world", size_world, comm_world);
     mpix_print_sync("size_node",  size_node, comm_world);
     mpix_print_sync("size_master",size_master, comm_world);
-
+#endif
 
     /* MPI standard does not guarantee all procs receive argc and argv */
     if (0 == rank_world) {
@@ -318,8 +211,6 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    sem = _sem_create(comm_node, sem_name);
-
     /* rank_world 0 on each node will open the file into shared memory */
     if (0 == rank_node) {
         file_size = mpix_get_file_size(all_argv[1], comm_master);
@@ -331,31 +222,24 @@ int main(int argc, char **argv)
     if (0 == rank_node) {
         mpix_read_file(all_argv[1], file_buffer, file_size, GB, comm_master);
         _pack_and_index_fasta(file_buffer, file_size, '\0', sequences, max_seq_size);
-        // unlock all other ranks on this node
-        for (int i=0; i<size_node-1; ++i) {
-            retval = sem_post(sem);
-            if (-1 == retval) {
-                perror("sem_post");
-                MPI_Abort(MPI_COMM_WORLD, -1);
-            }
+        retval = msync(file_buffer, file_size, MS_SYNC|MS_INVALIDATE);
+        if (-1 == retval) {
+            perror("msync");
+            MPI_Abort(MPI_COMM_WORLD, -1);
         }
     }
     else {
-        retval = sem_wait(sem);
-        if (-1 == retval) {
-            perror("sem_wait");
-            MPI_Abort(MPI_COMM_WORLD, -1);
-        }
         while (file_buffer[0] != '>') {
-            cout << "waiting for shm file" << endl;
+            //cout << "waiting for shm file" << endl;
             sleep(1);
-            cout << string(file_buffer, file_size) << endl;
         }
         _index_fasta(file_buffer, file_size, '\0', sequences, max_seq_size);
     }
     MPI_Barrier(comm_world);
 
+#if DEBUG
     mpix_print_sync("max_seq_size", max_seq_size, comm_world);
+#endif
 
     {
         size_t max_seq_size_p1 = max_seq_size + 1;
@@ -379,6 +263,7 @@ int main(int argc, char **argv)
     }
 
     /* how many combinations of sequences are there? */
+    sequence_count = sequences.size();
     nCk = binomial_coefficient(sequence_count, 2);
     if (0 == rank_world) {
         printf("brute force %lu C 2 has %lu combinations\n",
@@ -389,16 +274,108 @@ int main(int argc, char **argv)
     if (all_argv.size() == 3) {
       selectivity  = fabs(min(1.0,atof(all_argv[2].c_str())));
     }
-    unsigned long nalignments = (long)(0.5+selectivity*nCk);
+    long nalignments = (long)(0.5+selectivity*nCk);
     if (0 == rank_world) {
         printf("selectivity=%lf\n", selectivity);
-        printf("nalignments=%lu\n", nalignments);
+        printf("nalignments=%ld\n", nalignments);
     }
     MPI_Barrier(comm_world);
 
+    /* allocate task counter */
+    long task_id = rank_world;
+    long armci_retval = 0;
+    long bytes = 0;
+    long times = 0;
+    long **counter = NULL;
+
+    counter = new long*[size_world];
+    bytes = (0 == rank_world) ? sizeof(long) : 0;
+    retval = ARMCI_Malloc((void**)counter, bytes);
+    assert(0 == retval);
+    ARMCI_Barrier();
+    if (0 == rank_world) {
+        counter[0][0] = size_world; /* init counter */
+    }
+    ARMCI_Barrier();
+
     double mytimer = MPI_Wtime();
     // TODO TAKS COUNTER AND ALIGNMENT LOOP
+    while (task_id < nalignments) {
+        unsigned long seq_id[2];
+        k_combination2(task_id, seq_id);
+        assert(seq_id[0] < sequence_count);
+        assert(seq_id[1] < sequence_count);
+        assert(sequences[seq_id[0]].str);
+        assert(sequences[seq_id[1]].str);
+        assert(sequences[seq_id[0]].size);
+        assert(sequences[seq_id[1]].size);
+        assert(sequences[seq_id[0]].size <= max_seq_size);
+        assert(sequences[seq_id[1]].size <= max_seq_size);
+        {
+            cell_t result;
+            double t = MPI_Wtime();
+            int sscore;
+            size_t maxLen;
+            Parameters param;
+            param.AOL = 8;
+            param.SIM = 4;
+            param.OS = 3;
+            param.open = -10;
+            param.gap = -1;
+            result = pgraph::affine_gap_align_blosum(
+                    sequences[seq_id[0]].str, sequences[seq_id[0]].size,
+                    sequences[seq_id[1]].str, sequences[seq_id[1]].size,
+                    tbl, del, ins, param.open, param.gap);
+            bool is_edge_answer = pgraph::is_edge_blosum(result,
+                    sequences[seq_id[0]].str, sequences[seq_id[0]].size,
+                    sequences[seq_id[1]].str, sequences[seq_id[1]].size,
+                    param.AOL, param.SIM, param.OS, sscore, maxLen);
+
+            ++stats.align_counts;
+
+            if (is_edge_answer || ALL_RESULTS)
+            {
+#if DEBUG
+                cout << rank_world
+                    << ": aligned " << seq_id[0] << " " << seq_id[1]
+                    << ": (score,matches,length)=("
+                    << result.score << ","
+                    << result.matches << ","
+                    << result.length << ")"
+                    << ": edge? " << is_edge_answer << endl;
+#endif
+                edge_results.push_back(EdgeResult(
+                            seq_id[0], seq_id[1],
+#if 0
+                            1.0*result.length/max_len,
+                            1.0*result.matches/result.length,
+                            1.0*result.score/sscore
+#else
+                            result.length,
+                            result.matches,
+                            result.score
+#endif
+#if ALL_RESULTS
+                            ,is_edge_answer
+#endif
+                            ));
+                if (is_edge_answer) {
+                    ++stats.edge_counts;
+                }
+            }
+            t = MPI_Wtime() - t;
+            stats.align_times_tot += t;
+            stats.calc_min(t);
+            stats.calc_max(t);
+        }
+
+        // next task
+        retval = ARMCI_Rmw(ARMCI_FETCH_AND_ADD_LONG, &task_id, counter[0], 1, 0);
+        assert(0 == retval);
+    }
+
     mytimer = MPI_Wtime() - mytimer;
+
     if (0 == rank_world) {
         cout << "mytimer=" << mytimer << endl;
     }
@@ -442,16 +419,18 @@ int main(int argc, char **argv)
         }
     }
 
-    retval = sem_close(sem);
-    if (-1 == retval) {
-        perror("sem_close");
-    }
-    if (0 == rank_node) {
-        retval = sem_unlink(sem_name.c_str());
-        if (-1 == retval) {
-            perror("sem_unlink");
-        }
-    }
+    /* clean up DP tables */
+    delete [] tbl[0];
+    delete [] tbl[1];
+    delete [] del[0];
+    delete [] del[1];
+    delete [] ins[0];
+    delete [] ins[1];
+    delete [] tbl;
+    delete [] del;
+    delete [] ins;
+
+    ARMCI_Finalize();
 
     if (MPI_COMM_NULL != comm_master) {
         MPI_Comm_free(&comm_master);
@@ -601,13 +580,11 @@ static sem_t* _sem_create(MPI_Comm comm, string &name)
         cname = name.c_str();
 
         /* create shared semaphore */
-        printf("_sem_create(%s, O_CREAT|O_EXCL, S_IRUSR|S_IWUSR, 0)\n", cname);
         sem = sem_open(cname, O_CREAT|O_EXCL, S_IRUSR|S_IWUSR, 0);
         if (SEM_FAILED == sem) {
             perror("_sem_create: sem_open");
             MPI_Abort(MPI_COMM_WORLD, -1);
         }
-        printf("_sem_create(%s, O_CREAT|O_EXCL, S_IRUSR|S_IWUSR, 0) OKAY\n", cname);
 
         /* broadcast the name */
         mpix_bcast(name, 0, comm);
@@ -618,13 +595,11 @@ static sem_t* _sem_create(MPI_Comm comm, string &name)
         cname = name.c_str();
 
         /* open shared semaphore */
-        printf("_sem_create(%s, 0)\n", cname);
         sem = sem_open(cname, 0);
         if (SEM_FAILED == sem) {
             perror("_sem_create: sem_open");
             MPI_Abort(MPI_COMM_WORLD, -1);
         }
-        printf("_sem_create(%s, 0) OKAY\n", cname);
     }
 
     return sem;
@@ -652,7 +627,7 @@ static string _generate_shm_name()
 
 
 static void _pack_and_index_fasta(char *buffer, size_t size,
-        char delimiter, vector<sequence_t> &sequences, size_t max_seq_size)
+        char delimiter, vector<sequence_t> &sequences, size_t &max_seq_size)
 {
     size_t r = 0;           /* read index */
     size_t w = 0;           /* write index */
@@ -684,7 +659,7 @@ static void _pack_and_index_fasta(char *buffer, size_t size,
             if (r<size) {
                 if (r+1 >= size || buffer[r+1] == '>') {
                     buffer[w++] = delimiter;
-                    size_t sequence_offset = last_hash - last_gt + 1;
+                    size_t sequence_offset = last_hash + 1;
                     size_t sequence_length = w - last_hash - 1;
                     if (delimiter == '\0') {
                         sequence_length -= 1;
@@ -698,66 +673,18 @@ static void _pack_and_index_fasta(char *buffer, size_t size,
             }
             /* or file wasn't terminated with a newline */
             else {
-                /* hopefully space enough to append the delimiter anyway */
-                assert(w<r);
-                {
-                    buffer[w++] = delimiter;
-                    size_t sequence_offset = last_hash - last_gt + 1;
-                    size_t sequence_length = w - last_hash - 1;
-                    if (delimiter == '\0') {
-                        sequence_length -= 1;
-                    }
-                    sequence.str = &buffer[sequence_offset];
-                    sequence.size = sequence_length;
-                    sequences.push_back(sequence);
-                    max_seq_size = sequence.size > max_seq_size ?
-                        sequence.size : max_seq_size;
-                }
                 assert(0);
             }
             r++;
         }
     }
-
-#if 0
-    tbl = new cell_t**[num_threads];
-    del = new int**[num_threads];
-    ins = new int**[num_threads];
-    for (size_t worker=0; worker<num_threads; ++worker) {
-#if 1
-        size_t max_seq_size_p1 = max_seq_size + 1;
-        tbl[worker] = new cell_t*[2];
-        tbl[worker][0] = new cell_t[max_seq_size_p1];
-        tbl[worker][1] = new cell_t[max_seq_size_p1];
-        del[worker] = new int*[2];
-        del[worker][0] = new int[max_seq_size_p1];
-        del[worker][1] = new int[max_seq_size_p1];
-        ins[worker] = new int*[2];
-        ins[worker][0] = new int[max_seq_size_p1];
-        ins[worker][1] = new int[max_seq_size_p1];
-#if USE_MEMSET
-        (void)memset(tbl[worker][0], 0, sizeof(cell_t)*max_seq_size_p1);
-        (void)memset(tbl[worker][1], 0, sizeof(cell_t)*max_seq_size_p1);
-        (void)memset(del[worker][0], 0, sizeof(int)*max_seq_size_p1);
-        (void)memset(del[worker][1], 0, sizeof(int)*max_seq_size_p1);
-        (void)memset(ins[worker][0], 0, sizeof(int)*max_seq_size_p1);
-        (void)memset(ins[worker][1], 0, sizeof(int)*max_seq_size_p1);
-#endif
-#else
-        tbl[worker] = allocate_cell_table(2, max_seq_size);
-        del[worker] = allocate_int_table(2, max_seq_size);
-        ins[worker] = allocate_int_table(2, max_seq_size);
-#endif
-    }
-#endif
 }
 
 
 static void _index_fasta(const char *buffer, size_t size,
-        char delimiter, vector<sequence_t> &sequences, size_t max_seq_size)
+        char delimiter, vector<sequence_t> &sequences, size_t &max_seq_size)
 {
     size_t r = 0;           /* read index */
-    size_t w = 0;           /* write index */
     size_t last_gt = 0;     /* index of last '>' seen */
     size_t last_hash = 0;   /* index of last '#' inserted */
     sequence_t sequence;
@@ -770,88 +697,36 @@ static void _index_fasta(const char *buffer, size_t size,
 
     while (r<size) {
         if (buffer[r] == '>') {
-            last_gt = w;
-            while (r<size && buffer[r] != '\n') {
-                w++;
-                r++;
-            }
-            last_hash = w;
-            w++;
-            r++;
-        }
-        else {
-            while (r<size && buffer[r] != '\n') {
-                w++;
-                r++;
-            }
-            /* peek at next character, either EOF or '>' */
-            if (r<size) {
-                if (r+1 >= size || buffer[r+1] == '>') {
-                    w++;
-                    size_t sequence_offset = last_hash - last_gt + 1;
-                    size_t sequence_length = w - last_hash - 1;
-                    if (delimiter == '\0') {
-                        sequence_length -= 1;
-                    }
-                    sequence.str = &buffer[sequence_offset];
-                    sequence.size = sequence_length;
-                    sequences.push_back(sequence);
-                    max_seq_size = sequence.size > max_seq_size ?
-                        sequence.size : max_seq_size;
+            if (r > 0) {
+                size_t sequence_offset = last_hash + 1;
+                size_t sequence_length = r - last_hash - 1;
+                if (delimiter == '\0') {
+                    sequence_length -= 1;
                 }
+                sequence.str = &buffer[sequence_offset];
+                sequence.size = sequence_length;
+                sequences.push_back(sequence);
+                max_seq_size = sequence.size > max_seq_size ?
+                    sequence.size : max_seq_size;
             }
-            /* or file wasn't terminated with a newline */
-            else {
-                /* hopefully space enough to append the delimiter anyway */
-                assert(w<r);
-                {
-                    w++;
-                    size_t sequence_offset = last_hash - last_gt + 1;
-                    size_t sequence_length = w - last_hash - 1;
-                    if (delimiter == '\0') {
-                        sequence_length -= 1;
-                    }
-                    sequence.str = &buffer[sequence_offset];
-                    sequence.size = sequence_length;
-                    sequences.push_back(sequence);
-                    max_seq_size = sequence.size > max_seq_size ?
-                        sequence.size : max_seq_size;
-                }
-                assert(0);
-            }
-            r++;
+            last_gt = r;
         }
+        else if (buffer[r] == '#') {
+            last_hash = r;
+        }
+        ++r;
     }
-#if 0
-    tbl = new cell_t**[num_threads];
-    del = new int**[num_threads];
-    ins = new int**[num_threads];
-    for (size_t worker=0; worker<num_threads; ++worker) {
-#if 1
-        size_t max_seq_size_p1 = max_seq_size + 1;
-        tbl[worker] = new cell_t*[2];
-        tbl[worker][0] = new cell_t[max_seq_size_p1];
-        tbl[worker][1] = new cell_t[max_seq_size_p1];
-        del[worker] = new int*[2];
-        del[worker][0] = new int[max_seq_size_p1];
-        del[worker][1] = new int[max_seq_size_p1];
-        ins[worker] = new int*[2];
-        ins[worker][0] = new int[max_seq_size_p1];
-        ins[worker][1] = new int[max_seq_size_p1];
-#if USE_MEMSET
-        (void)memset(tbl[worker][0], 0, sizeof(cell_t)*max_seq_size_p1);
-        (void)memset(tbl[worker][1], 0, sizeof(cell_t)*max_seq_size_p1);
-        (void)memset(del[worker][0], 0, sizeof(int)*max_seq_size_p1);
-        (void)memset(del[worker][1], 0, sizeof(int)*max_seq_size_p1);
-        (void)memset(ins[worker][0], 0, sizeof(int)*max_seq_size_p1);
-        (void)memset(ins[worker][1], 0, sizeof(int)*max_seq_size_p1);
-#endif
-#else
-        tbl[worker] = allocate_cell_table(2, max_seq_size);
-        del[worker] = allocate_int_table(2, max_seq_size);
-        ins[worker] = allocate_int_table(2, max_seq_size);
-#endif
+    {
+        size_t sequence_offset = last_hash + 1;
+        size_t sequence_length = r - last_hash - 1;
+        if (delimiter == '\0') {
+            sequence_length -= 1;
+        }
+        sequence.str = &buffer[sequence_offset];
+        sequence.size = sequence_length;
+        sequences.push_back(sequence);
+        max_seq_size = sequence.size > max_seq_size ?
+            sequence.size : max_seq_size;
     }
-#endif
 }
 

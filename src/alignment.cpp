@@ -342,7 +342,93 @@ cell_t affine_gap_align_blosum(
 
     AFFINE_GAP_ALIGN_ASSERT
 
-    AFFINE_GAP_ALIGN_BODY(BLOSUM(ch1, ch2))
+    /* init first row of 3 tables */                                        
+    tbl[0][0].score = 0;                                                    
+    tbl[0][0].matches = 0;                                                  
+    tbl[0][0].length = 0;                                                   
+    del[0][0] = 0;                                                          
+    ins[0][0] = 0;                                                          
+    tI = tbl[0];                                                            
+    for (j = 1; j <= s2Len; j++) {                                          
+        tI[j].score = open + j * gap;                                       
+        tI[j].matches = 0;                                                  
+        tI[j].length = 0;                                                   
+        del[0][j] = INT_MIN;                                                
+        ins[0][j] = open + j * gap;                                         
+    }                                                                       
+                                                                            
+    for (i = 1; i <= s1Len; ++i) {                                          
+        int dig = 0;        /* diagonal value in DP table */                
+        int up = 0;         /* upper value in DP table */                   
+        int left = 0;       /* left value in DP table */                    
+        int maxScore = 0;   /* max of dig, up, and left in DP table */      
+        size_t cr = 0;      /* current row index in DP table */             
+        size_t pr = 0;      /* previous row index in DP table */            
+        char ch1 = 0;       /* current character in first sequence */       
+                                                                            
+        cr = CROW(i);                                                       
+        pr = PROW(i);                                                       
+        ch1 = s1[i - 1];                                                    
+        tI = tbl[cr];                                                       
+        pI = tbl[pr];                                                       
+                                                                            
+        /* init first column of 3 tables */                                 
+        tI[0].score = open + i * gap;                                       
+        tI[0].matches = 0;                                                  
+        tI[0].length = 0;                                                   
+        del[cr][0] = open + i * gap;                                        
+        ins[cr][0] = INT_MIN;                                               
+                                                                            
+        for (j = 1; j <= s2Len; j++) {                                      
+            int tmp1 = 0;   /* temporary during DP calculation */           
+            int tmp2 = 0;   /* temporary during DP calculation */           
+            char ch2 = 0;   /* current character in second sequence */      
+                                                                            
+            ch2 = s2[j - 1];                                                
+                                                                            
+            /* overflow could happen, INT_MIN-1 = 2147483647 */             
+            tmp1 = pI[j].score + open + gap;                                
+            tmp2 = NEG_ADD(del[pr][j], gap);                                
+            up = MAX(tmp1, tmp2);                                           
+            del[cr][j] = up;                                                
+            tmp1 = tI[j - 1].score + open + gap;                            
+            tmp2 = NEG_ADD(ins[cr][j - 1], gap);                            
+            left = MAX(tmp1, tmp2);                                         
+            ins[cr][j] = left;                                              
+            maxScore = MAX(up, left);                                       
+            int tmp3 = BLOSUM(ch1, ch2);                       
+            dig = pI[j - 1].score + tmp3;
+            maxScore = MAX(maxScore, dig);                                  
+            tI[j].score = maxScore;                                         
+                                                                            
+            if (maxScore == dig) {                                          
+                tI[j].matches = pI[j - 1].matches + ((ch1 == ch2) ? 1 : 0); 
+                tI[j].length = pI[j - 1].length + 1;                        
+            }                                                               
+            else if (maxScore == up) {                                      
+                tI[j].matches = pI[j].matches;                              
+                tI[j].length = pI[j].length + 1;                            
+            }                                                               
+            else {                                                          
+                tI[j].matches = tI[j - 1].matches;                          
+                tI[j].length = tI[j - 1].length + 1;                        
+            }                                                               
+                                                                            
+            /* track the maximum of last row */                             
+            if (i == s1Len && tI[j].score > lastRow.score) {                
+                lastRow = tI[j];                                            
+            }                                                               
+        } /* end of j loop */                                               
+                                                                            
+        assert(j == (s2Len + 1));                                           
+                                                                            
+        /* update the maximum of last column */                             
+        if (tI[s2Len].score > lastCol.score) {                              
+            lastCol = tI[s2Len];                                            
+        }                                                                   
+    } /* end of i loop */                                                   
+                                                                            
+    return (lastCol.score > lastRow.score) ? lastCol : lastRow;
 }
 
 

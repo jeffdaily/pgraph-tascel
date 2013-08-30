@@ -595,7 +595,7 @@ PACKAGE_STRING='parallel sequence graph construction using work stealing 0.1'
 PACKAGE_BUGREPORT='jeff.daily@pnnl.gov'
 PACKAGE_URL=''
 
-ac_unique_file="src/dynamic.h"
+ac_unique_file="src/Sequence.cpp"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>

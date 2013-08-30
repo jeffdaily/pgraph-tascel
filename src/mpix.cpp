@@ -279,7 +279,9 @@ void mpix_read_file_mpiio(
 
     /* allocate a buffer for the file, of the entire size */
     file_size = mpix_get_file_size(file_name, comm);
-    file_buffer = new char[file_size];
+    if (NULL == file_buffer) {
+        file_buffer = new char[file_size];
+    }
 
     if (file_size > chunk_size) {
         long offset = 0;
@@ -346,7 +348,9 @@ void mpix_read_file_bcast(
 
     /* allocate a buffer for the file, of the entire size */
     file_size = mpix_get_file_size(file_name, comm);
-    file_buffer = new char[file_size];
+    if (NULL == file_buffer) {
+        file_buffer = new char[file_size];
+    }
 
     if (0 == rank) {
         FILE *file = NULL;

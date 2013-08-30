@@ -11,6 +11,7 @@
 
 #include <mpi.h>
 
+#include <algorithm>
 #include <cassert>
 #include <cstdlib>
 #include <cstdio>

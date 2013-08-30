@@ -9,6 +9,7 @@
 
 /* C++ STL */
 #include <cstddef>
+#include <cstdlib>
 #include <string>
 #include <vector>
 
