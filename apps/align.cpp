@@ -9,7 +9,11 @@
 #include <mpi.h>
 #include <tascel.h>
 #include <tascel/UniformTaskCollection.h>
+#ifdef USE_ITER
+#include <tascel/UniformTaskCollIter.h>
+#else
 #include <tascel/UniformTaskCollSplitHybrid.h>
+#endif
 
 #include <algorithm>
 #include <cassert>
@@ -42,7 +46,6 @@ using namespace pgraph;
 
 #define SEP ","
 #define ALL_RESULTS 1
-
 
 class EdgeResult {
     public:
@@ -78,7 +81,11 @@ class EdgeResult {
 
 int rank = 0;
 int nprocs = 0;
+#ifdef USE_ITER
+UniformTaskCollIter** utcs = 0;
+#else
 UniformTaskCollSplitHybrid** utcs = 0;
+#endif
 AlignStats *stats = 0;
 SequenceDatabase *sequences = 0;
 vector<EdgeResult> *edge_results = 0;
@@ -107,10 +114,22 @@ static string get_edges_filename(int rank)
 }
 
 
+#ifdef USE_ITER
+typedef struct {
+    unsigned long id;
+} task_description;
+void createTaskFn(void *tsk, int tsk_size, TaskIndex tidx) {
+    assert(tsk_size == sizeof(task_description));
+    *(unsigned long*)tsk = tidx;
+}
+#else
 typedef struct {
     unsigned long id1;
     unsigned long id2;
 } task_description;
+#endif
+
+
 
 
 
@@ -173,8 +192,12 @@ static void alignment_task(
     int SIM = 4;
     int OS = 3;
 
+#ifdef USE_ITER
+    k_combination2(desc->id, seq_id);
+#else
     seq_id[0] = desc->id1;
     seq_id[1] = desc->id2;
+#endif
     {
         t = MPI_Wtime();
         sequences->align(seq_id[0], seq_id[1], result.score, result.matches, result.length, open, gap, thd);
@@ -224,6 +247,8 @@ static void alignment_task(
 }
 
 
+#ifdef USE_ITER
+#else
 unsigned long populate_tasks(
         unsigned long ntasks, unsigned long tasks_per_worker, int worker)
 {
@@ -260,6 +285,7 @@ unsigned long populate_tasks(
 
     return count;
 }
+#endif
 
 
 int main(int argc, char **argv)
@@ -289,7 +315,11 @@ int main(int argc, char **argv)
 
     /* initialize tascel */
     TascelConfig::initialize(NUM_WORKERS_DEFAULT, comm);
+#ifdef USE_ITER
+    utcs = new UniformTaskCollIter*[NUM_WORKERS];
+#else
     utcs = new UniformTaskCollSplitHybrid*[NUM_WORKERS];
+#endif
     stats = new AlignStats[NUM_WORKERS];
     edge_results = new vector<EdgeResult>[NUM_WORKERS];
 #if defined(THREADED)
@@ -389,19 +419,36 @@ int main(int argc, char **argv)
     for (int worker=0; worker<NUM_WORKERS; ++worker)
     {
         edge_results[worker].reserve(tasks_per_worker);
+#ifdef USE_ITER
+        UniformTaskCollIter*& utc = utcs[worker];
+#else
         UniformTaskCollSplitHybrid*& utc = utcs[worker];
+#endif
         TslFuncRegTbl *frt = new TslFuncRegTbl();
         TslFunc tf = frt->add(alignment_task);
         TaskCollProps props;
         props.functions(tf, frt)
             .taskSize(sizeof(task_description))
             .maxTasks(max_tasks_per_worker);
+#ifdef USE_ITER
+        //int wrank = trank(worker);
+        //unsigned long lower_limit = wrank*tasks_per_worker;
+        //unsigned long upper_limit = lower_limit + tasks_per_worker;
+        //unsigned long remainder = ntasks % (nprocs*NUM_WORKERS);
+        //utc = new UniformTaskCollIter(props, createTaskFn, lower_limit, upper_limit, worker);
+        if (trank(worker) == 0) {
+            utc = new UniformTaskCollIter(props, createTaskFn, 0, ntasks-1, worker);
+        }
+        else {
+            utc = new UniformTaskCollIter(props, createTaskFn, 0, -1, worker);
+        }
+#else
         utc = new UniformTaskCollSplitHybrid(props, worker);
-
         /* add some tasks */
         populate_times[worker] = MPI_Wtime();
         count[worker] = populate_tasks(ntasks, tasks_per_worker, worker);
         populate_times[worker] = MPI_Wtime() - populate_times[worker];
+#endif
     }
 #if DEBUG
     double *g_populate_times = new double[nprocs*NUM_WORKERS];
@@ -534,15 +581,21 @@ int main(int argc, char **argv)
     amBarrier();
     MPI_Barrier(comm);
 
+#if OUTPUT_EDGES
     ofstream edge_out(get_edges_filename(rank).c_str());
+#endif
     /* clean up */
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
         delete utcs[worker];
+#if OUTPUT_EDGES
         for (size_t i=0,limit=edge_results[worker].size(); i<limit; ++i) {
             edge_out << edge_results[worker][i] << endl;
         }
+#endif
     }
+#if OUTPUT_EDGES
     edge_out.close();
+#endif
 
     delete [] edge_results;
     delete sequences;

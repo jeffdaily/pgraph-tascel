@@ -12,7 +12,11 @@
 
 #include <pthread.h>
 #include <tascel.h>
+#if USE_ITER
+#include <tascel/UniformTaskCollIter.h>
+#else
 #include <tascel/UniformTaskCollSplitHybrid.h>
+#endif
 
 using namespace tascel;
 /* For now, the pgraph namespace is only used in pthread_fixes.h header.
@@ -98,13 +102,21 @@ static void *server_thread(void *_args)
  */
 typedef struct worker_thread_args {
     unsigned int rank;
+#if USE_ITER
+    UniformTaskCollIter *utcs;
+#else
     UniformTaskCollSplitHybrid *utcs;
+#endif
     pthread_barrier_t *workers_start;
     pthread_barrier_t *workers_end;
 
     worker_thread_args(
         unsigned int rank,
+#if USE_ITER
+        UniformTaskCollIter *utcs,
+#else
         UniformTaskCollSplitHybrid *utcs,
+#endif
         pthread_barrier_t *workers_start,
         pthread_barrier_t *workers_end)
         :   rank(rank)

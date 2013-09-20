@@ -299,10 +299,16 @@ int main(int argc, char **argv)
     ARMCI_Barrier();
 
     double mytimer = MPI_Wtime();
+    double mytime_combo = 0.0;
+    double mytime_fetch = 0.0;
     // TODO TAKS COUNTER AND ALIGNMENT LOOP
     while (task_id < nalignments) {
         unsigned long seq_id[2];
+        double timer;
+        timer = MPI_Wtime();
         k_combination2(task_id, seq_id);
+        timer = MPI_Wtime() - timer;
+        mytime_combo += timer;
         assert(seq_id[0] < sequence_count);
         assert(seq_id[1] < sequence_count);
         assert(sequences[seq_id[0]].str);
@@ -370,14 +376,24 @@ int main(int argc, char **argv)
         }
 
         // next task
+        timer = MPI_Wtime();
         retval = ARMCI_Rmw(ARMCI_FETCH_AND_ADD_LONG, &task_id, counter[0], 1, 0);
+        timer = MPI_Wtime() - timer;
+        mytime_fetch += timer;
         assert(0 == retval);
     }
+
+    //if (0 == rank_world) {
+        retval = ARMCI_Free(counter[rank_world]);
+        free(counter);
+    //}
 
     mytimer = MPI_Wtime() - mytimer;
 
     if (0 == rank_world) {
         cout << "mytimer=" << mytimer << endl;
+        cout << "mytime_combo=" << mytime_combo << endl;
+        cout << "mytime_fetch=" << mytime_fetch << endl;
     }
 
     MPI_Barrier(comm_world);
@@ -400,6 +416,38 @@ int main(int argc, char **argv)
     }
     delete [] rstats;
     rstats=NULL;
+
+    double * combo_stats = new double[size_world];
+    MPI_Gather(&mytime_combo, 1, MPI_DOUBLE,
+            combo_stats, 1, MPI_DOUBLE,
+            0, comm_world);
+    if (0 == rank_world) {
+        double totals;
+        cout << " pid k_combination_time" << endl;
+        for (int i=0; i<size_world; ++i) {
+            totals += combo_stats[i];
+            cout << std::setw(4) << std::right << i << " " << combo_stats[i] << endl;
+        }
+        cout << "==============================================" << endl;
+        cout << setw(4) << right << "TOT " << totals << " AVG " << totals/size_world << endl;
+    }
+    delete [] combo_stats;
+
+    double * fetch_stats = new double[size_world];
+    MPI_Gather(&mytime_fetch, 1, MPI_DOUBLE,
+            fetch_stats, 1, MPI_DOUBLE,
+            0, comm_world);
+    if (0 == rank_world) {
+        double totals;
+        cout << " pid fetch_time" << endl;
+        for (int i=0; i<size_world; ++i) {
+            totals += fetch_stats[i];
+            cout << std::setw(4) << std::right << i << " " << fetch_stats[i] << endl;
+        }
+        cout << "==============================================" << endl;
+        cout << setw(4) << right << "TOT " << totals << " AVG " << totals/size_world << endl;
+    }
+    delete [] fetch_stats;
 
     MPI_Barrier(comm_world);
 

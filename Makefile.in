@@ -80,7 +80,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = apps/align$(EXEEXT) apps/align_counter$(EXEEXT) \
-	apps/align_tree$(EXEEXT) apps/ccd$(EXEEXT) apps/ccd2$(EXEEXT)
+	apps/align_iter$(EXEEXT) apps/align_tree$(EXEEXT) \
+	apps/ccd$(EXEEXT) apps/ccd2$(EXEEXT)
 noinst_PROGRAMS = tests/test_align$(EXEEXT) \
 	tests/test_combinations$(EXEEXT) tests/test_dynamic$(EXEEXT) \
 	tests/test_read$(EXEEXT) tests/test_read_fasta$(EXEEXT) \
@@ -139,6 +140,12 @@ am_apps_align_counter_OBJECTS = apps/align_counter.$(OBJEXT)
 apps_align_counter_OBJECTS = $(am_apps_align_counter_OBJECTS)
 apps_align_counter_LDADD = $(LDADD)
 apps_align_counter_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
+am_apps_align_iter_OBJECTS = apps/apps_align_iter-align.$(OBJEXT)
+apps_align_iter_OBJECTS = $(am_apps_align_iter_OBJECTS)
+apps_align_iter_LDADD = $(LDADD)
+apps_align_iter_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 am_apps_align_tree_OBJECTS = apps/align_tree.$(OBJEXT)
@@ -250,16 +257,18 @@ am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
-	$(apps_align_counter_SOURCES) $(apps_align_tree_SOURCES) \
-	$(apps_ccd_SOURCES) $(apps_ccd2_SOURCES) \
-	$(tests_test_align_SOURCES) $(tests_test_combinations_SOURCES) \
+	$(apps_align_counter_SOURCES) $(apps_align_iter_SOURCES) \
+	$(apps_align_tree_SOURCES) $(apps_ccd_SOURCES) \
+	$(apps_ccd2_SOURCES) $(tests_test_align_SOURCES) \
+	$(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_read_SOURCES) \
 	$(tests_test_read_fasta_SOURCES) \
 	$(tests_test_read_serial_SOURCES)
 DIST_SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
-	$(apps_align_counter_SOURCES) $(apps_align_tree_SOURCES) \
-	$(apps_ccd_SOURCES) $(apps_ccd2_SOURCES) \
-	$(tests_test_align_SOURCES) $(tests_test_combinations_SOURCES) \
+	$(apps_align_counter_SOURCES) $(apps_align_iter_SOURCES) \
+	$(apps_align_tree_SOURCES) $(apps_ccd_SOURCES) \
+	$(apps_ccd2_SOURCES) $(tests_test_align_SOURCES) \
+	$(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_read_SOURCES) \
 	$(tests_test_read_fasta_SOURCES) \
 	$(tests_test_read_serial_SOURCES)
@@ -475,9 +484,11 @@ libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
 #endif
 apps_align_SOURCES = apps/align.cpp
 apps_align_counter_SOURCES = apps/align_counter.cpp
+apps_align_iter_SOURCES = apps/align.cpp
 apps_align_tree_SOURCES = apps/align_tree.cpp
 apps_ccd_SOURCES = apps/ccd.cpp
 apps_ccd2_SOURCES = apps/ccd2.cpp
+apps_align_iter_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_ITER
 
 #sandbox_blast_SOURCES                      = sandbox/blast.cpp
 #sandbox_brute_force_SOURCES                = sandbox/brute_force.cpp
@@ -669,6 +680,12 @@ apps/align_counter.$(OBJEXT): apps/$(am__dirstamp) \
 apps/align_counter$(EXEEXT): $(apps_align_counter_OBJECTS) $(apps_align_counter_DEPENDENCIES) $(EXTRA_apps_align_counter_DEPENDENCIES) apps/$(am__dirstamp)
 	@rm -f apps/align_counter$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_counter_OBJECTS) $(apps_align_counter_LDADD) $(LIBS)
+apps/apps_align_iter-align.$(OBJEXT): apps/$(am__dirstamp) \
+	apps/$(DEPDIR)/$(am__dirstamp)
+
+apps/align_iter$(EXEEXT): $(apps_align_iter_OBJECTS) $(apps_align_iter_DEPENDENCIES) $(EXTRA_apps_align_iter_DEPENDENCIES) apps/$(am__dirstamp)
+	@rm -f apps/align_iter$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_iter_OBJECTS) $(apps_align_iter_LDADD) $(LIBS)
 apps/align_tree.$(OBJEXT): apps/$(am__dirstamp) \
 	apps/$(DEPDIR)/$(am__dirstamp)
 
@@ -743,6 +760,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_counter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_tree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_iter-align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/ccd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/ccd2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Parameters.Plo@am__quote@
@@ -813,6 +831,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LTCXXCOMPILE) -c -o $@ $<
+
+apps/apps_align_iter-align.o: apps/align.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_iter_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_iter-align.o -MD -MP -MF apps/$(DEPDIR)/apps_align_iter-align.Tpo -c -o apps/apps_align_iter-align.o `test -f 'apps/align.cpp' || echo '$(srcdir)/'`apps/align.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_iter-align.Tpo apps/$(DEPDIR)/apps_align_iter-align.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align.cpp' object='apps/apps_align_iter-align.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_iter_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_iter-align.o `test -f 'apps/align.cpp' || echo '$(srcdir)/'`apps/align.cpp
+
+apps/apps_align_iter-align.obj: apps/align.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_iter_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_iter-align.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_iter-align.Tpo -c -o apps/apps_align_iter-align.obj `if test -f 'apps/align.cpp'; then $(CYGPATH_W) 'apps/align.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_iter-align.Tpo apps/$(DEPDIR)/apps_align_iter-align.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align.cpp' object='apps/apps_align_iter-align.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_iter_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_iter-align.obj `if test -f 'apps/align.cpp'; then $(CYGPATH_W) 'apps/align.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align.cpp'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
