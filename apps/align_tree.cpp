@@ -323,14 +323,13 @@ unsigned long populate_tasks(
     }
     
     task_description desc;
-    int wrank = trank(worker);
     count = 0;
     for (vector<pair<size_t,size_t> >::iterator it=pairs.begin();
             it!=pairs.end(); ++it) {
         desc.id1 = it->first;
         desc.id2 = it->second;
 #if DEBUG
-        cout << wrank << " added " << desc.id1 << "," << desc.id2 << endl;
+        cout << trank(worker) << " added " << desc.id1 << "," << desc.id2 << endl;
 #endif
         utcs[worker]->addTask(&desc, sizeof(desc));
         count++;
@@ -346,10 +345,6 @@ int main(int argc, char **argv)
 {
     MPI_Comm comm = MPI_COMM_NULL;
     vector<string> all_argv;
-    long file_size = -1;
-    char *file_buffer = NULL;
-    MPI_File fh;
-    MPI_Status status;
     unsigned long nCk;
 
     /* initialize MPI */

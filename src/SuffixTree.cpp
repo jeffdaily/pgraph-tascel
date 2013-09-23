@@ -412,9 +412,6 @@ procLeaf(Suffix **lset, SequenceDatabase *seqs, int nSeqs, cell_t **tbl, int **i
     size_t j;
     Suffix *p = NULL;
     Suffix *q = NULL;
-    int f1, f2;
-    int s1Len, s2Len;
-    cell_t result;
     int cutOff;
 
     cutOff = param.AOL * param.SIM;
@@ -470,12 +467,10 @@ void SuffixTree::generate_pairs(int *dup, vector<pair<size_t,size_t> > &pairs)
     SuffixTreeNode *stNodes = NULL;
     int *srtIndex = NULL;
     size_t nStNodes = 0;
-    SequenceDatabase *seqs = NULL;
     int nSeqs = 0;
     int maxSeqLen = 0;
     size_t i = 0;
     int j = 0;
-    int r = 0;
     SuffixTreeNode *stnode = NULL;
     int sIndex;
     int eIndex;
@@ -488,13 +483,8 @@ void SuffixTree::generate_pairs(int *dup, vector<pair<size_t,size_t> > &pairs)
     size_t t;
     Suffix *p = NULL;
     Suffix *q = NULL;
-    int f1;
-    int f2;
-    int s1Len;
-    int s2Len;
     int EM;
     int cutOff; /* cut off value of filter 1 */
-    cell_t result;
 
     srtIndex = new int[this->size];
     count_sort(this->nodes, srtIndex, this->size, sequences->get_max_length());

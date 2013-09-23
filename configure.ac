@@ -49,6 +49,7 @@ AC_CHECK_HEADERS([stdlib.h])
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
 AC_C_RESTRICT
+AC_TYPE_INT8_T
 
 AC_CHECK_TYPES([pthread_barrier_t], [], [], [[#include <pthread.h>]])
 AM_CONDITIONAL([HAVE_PTHREAD_BARRIER_T],

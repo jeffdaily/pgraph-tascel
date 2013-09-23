@@ -278,8 +278,8 @@ is_candidate(sequence_t *seqs, size_t nSeqs,
 
     f1 = p->sid;
     f2 = q->sid;
-    assert(f1 < nSeqs);
-    assert(f2 < nSeqs);
+    assert(size_t(f1) < nSeqs);
+    assert(size_t(f2) < nSeqs);
 
     if (f1 > f2) {
         int swap = f1;
@@ -403,9 +403,6 @@ procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, 
     size_t j;
     suffix_t *p = NULL;
     suffix_t *q = NULL;
-    int f1, f2;
-    int s1Len, s2Len;
-    cell_t result;
     int cutOff;
 
     cutOff = param.AOL * param.SIM;
@@ -463,7 +460,6 @@ void generate_pairs(
     int maxSeqLen = 0;
     size_t i = 0;
     int j = 0;
-    int r = 0;
     stnode_t *stnode = NULL;
     int sIndex;
     int eIndex;
@@ -476,13 +472,8 @@ void generate_pairs(
     size_t t;
     suffix_t *p = NULL;
     suffix_t *q = NULL;
-    int f1;
-    int f2;
-    int s1Len;
-    int s2Len;
     int EM;
     int cutOff; /* cut off value of filter 1 */
-    cell_t result;
 
     srtIndex = new int[tree->size];
     count_sort(tree->nodes, srtIndex, tree->size, sequences->max_seq_size);

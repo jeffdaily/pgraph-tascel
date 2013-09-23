@@ -35,8 +35,8 @@ static void set_affinity(const unsigned int rank)
     CPU_ZERO(&cpuset);
     thread = pthread_self();
     CPU_SET(rank, &cpuset);
-    int ret = pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
-    //int ret = sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
+    (void)pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
+    //(void)sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
 #endif
 }
 

@@ -18,6 +18,7 @@
 #include "alignment.hpp"
 #include "blosum/blosum40.h"
 #include "blosum/blosum45.h"
+#include "blosum/blosum50.h"
 #include "blosum/blosum62.h"
 #include "blosum/blosum75.h"
 #include "blosum/blosum80.h"
@@ -451,7 +452,7 @@ cell_t affine_gap_align_blosum(
     if (result.score <= 0) {                                                \
         return false;                                                       \
     }                                                                       \
-    else if ((result.length * 100 >= AOL * max_len)                         \
+    else if ((result.length * 100 >= AOL * int(max_len))                    \
              && (result.matches * 100 >= SIM * result.length)               \
              && (result.score * 100 >= OS * self_score_)) {                 \
         return true;                                                        \

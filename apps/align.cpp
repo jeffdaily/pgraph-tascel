@@ -292,10 +292,6 @@ int main(int argc, char **argv)
 {
     MPI_Comm comm = MPI_COMM_NULL;
     vector<string> all_argv;
-    long file_size = -1;
-    char *file_buffer = NULL;
-    MPI_File fh;
-    MPI_Status status;
     unsigned long nCk;
 
     /* initialize MPI */
@@ -414,8 +410,11 @@ int main(int argc, char **argv)
     MPI_Barrier(comm);
 
     /* the tascel part */
+#ifdef USE_ITER
+#else
     double populate_times[NUM_WORKERS];
     unsigned long count[NUM_WORKERS];
+#endif
     for (int worker=0; worker<NUM_WORKERS; ++worker)
     {
         edge_results[worker].reserve(tasks_per_worker);

@@ -82,7 +82,6 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
 
         while (getline(is, line)) {
             string key;
-            int value;
             istringstream line_(line);
 
             if (line.empty() || *line.begin() == COMMENT) {

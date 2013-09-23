@@ -124,7 +124,6 @@ SequenceDatabaseArmci::~SequenceDatabaseArmci()
 
     for (size_t worker=0; worker<num_threads; ++worker) {
 #if 1
-        size_t max_seq_size_p1 = max_seq_size + 1;
         delete [] tbl[worker][1];
         delete [] tbl[worker][0];
         delete [] tbl[worker];
@@ -274,7 +273,7 @@ void SequenceDatabaseArmci::read_and_parse_fasta_lomem(MPI_File in,
     int first_id = 0;
 
     chunk_size = file_size / MPI_Offset(comm_size);
-    if (budget < chunk_size) {
+    if (MPI_Offset(budget) < chunk_size) {
         if (0 == comm_rank) cerr << "insufficient memory budget" << endl;
         MPI_Abort(comm, -1);
     }
@@ -749,7 +748,7 @@ bool SequenceDatabaseArmci::is_edge(size_t i,
     if (score <= 0) {
         return false;
     }
-    else if ((alen * 100 >= AOL * max_len)
+    else if ((alen * 100 >= AOL * int(max_len))
              && (nmatch * 100 >= SIM * alen)
              && (score * 100 >= OS * sscore)) {
         return true;
