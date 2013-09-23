@@ -70,6 +70,10 @@ libpgraph_la_SOURCES += src/SuffixBuckets.hpp
 libpgraph_la_SOURCES += src/SuffixTree.cpp
 libpgraph_la_SOURCES += src/SuffixTree.hpp
 libpgraph_la_SOURCES += src/timer.h
+libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.c
+libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.h
+libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.cpp
+libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h
 
 bin_PROGRAMS =
 bin_PROGRAMS += apps/align
@@ -78,6 +82,9 @@ bin_PROGRAMS += apps/align_iter
 bin_PROGRAMS += apps/align_tree
 bin_PROGRAMS += apps/ccd
 bin_PROGRAMS += apps/ccd2
+if HAVE_ZLIB
+bin_PROGRAMS += apps/ssw_test
+endif
 
 noinst_PROGRAMS =
 #noinst_PROGRAMS += sandbox/blast
@@ -115,8 +122,15 @@ apps_align_iter_SOURCES = apps/align.cpp
 apps_align_tree_SOURCES = apps/align_tree.cpp
 apps_ccd_SOURCES = apps/ccd.cpp
 apps_ccd2_SOURCES = apps/ccd2.cpp
+apps_ssw_test_SOURCES =
+apps_ssw_test_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/main.c
+apps_ssw_test_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/kseq.h
 
 apps_align_iter_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_ITER
+
+apps_ssw_test_LDFLAGS = $(ZLIB_LDFLAGS) $(AM_LDFLAGS)
+
+apps_ssw_test_LDADD = $(LDADD) $(ZLIB_LIBS) $(LIBS)
 
 #sandbox_blast_SOURCES                      = sandbox/blast.cpp
 #sandbox_brute_force_SOURCES                = sandbox/brute_force.cpp

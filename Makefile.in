@@ -81,7 +81,8 @@ build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = apps/align$(EXEEXT) apps/align_counter$(EXEEXT) \
 	apps/align_iter$(EXEEXT) apps/align_tree$(EXEEXT) \
-	apps/ccd$(EXEEXT) apps/ccd2$(EXEEXT)
+	apps/ccd$(EXEEXT) apps/ccd2$(EXEEXT) $(am__EXEEXT_1)
+@HAVE_ZLIB_TRUE@am__append_1 = apps/ssw_test
 noinst_PROGRAMS = tests/test_align$(EXEEXT) \
 	tests/test_combinations$(EXEEXT) tests/test_dynamic$(EXEEXT) \
 	tests/test_read$(EXEEXT) tests/test_read_fasta$(EXEEXT) \
@@ -121,12 +122,15 @@ am_libpgraph_la_OBJECTS = src/alignment.lo src/bucket.lo \
 	src/combinations.lo src/csequence.lo src/io.lo src/mpix.lo \
 	src/Parameters.lo src/param.lo src/Sequence.lo \
 	src/SequenceDatabaseArmci.lo src/SequenceDatabase.lo \
-	src/stree.lo src/SuffixBuckets.lo src/SuffixTree.lo
+	src/stree.lo src/SuffixBuckets.lo src/SuffixTree.lo \
+	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.lo \
+	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.lo
 libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+@HAVE_ZLIB_TRUE@am__EXEEXT_1 = apps/ssw_test$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
 am_apps_align_OBJECTS = apps/align.$(OBJEXT)
@@ -166,6 +170,16 @@ apps_ccd2_LDADD = $(LDADD)
 apps_ccd2_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
+am_apps_ssw_test_OBJECTS = contrib/Complete-Striped-Smith-Waterman-Library/src/main.$(OBJEXT)
+apps_ssw_test_OBJECTS = $(am_apps_ssw_test_OBJECTS)
+am__DEPENDENCIES_2 = libpgraph.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
+apps_ssw_test_DEPENDENCIES = $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+apps_ssw_test_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(apps_ssw_test_LDFLAGS) $(LDFLAGS) -o $@
 am_tests_test_align_OBJECTS = tests/test_align.$(OBJEXT)
 tests_test_align_OBJECTS = $(am_tests_test_align_OBJECTS)
 tests_test_align_LDADD = $(LDADD)
@@ -259,16 +273,16 @@ am__v_CXXLD_1 =
 SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
 	$(apps_align_counter_SOURCES) $(apps_align_iter_SOURCES) \
 	$(apps_align_tree_SOURCES) $(apps_ccd_SOURCES) \
-	$(apps_ccd2_SOURCES) $(tests_test_align_SOURCES) \
-	$(tests_test_combinations_SOURCES) \
+	$(apps_ccd2_SOURCES) $(apps_ssw_test_SOURCES) \
+	$(tests_test_align_SOURCES) $(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_read_SOURCES) \
 	$(tests_test_read_fasta_SOURCES) \
 	$(tests_test_read_serial_SOURCES)
 DIST_SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
 	$(apps_align_counter_SOURCES) $(apps_align_iter_SOURCES) \
 	$(apps_align_tree_SOURCES) $(apps_ccd_SOURCES) \
-	$(apps_ccd2_SOURCES) $(tests_test_align_SOURCES) \
-	$(tests_test_combinations_SOURCES) \
+	$(apps_ccd2_SOURCES) $(apps_ssw_test_SOURCES) \
+	$(tests_test_align_SOURCES) $(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_read_SOURCES) \
 	$(tests_test_read_fasta_SOURCES) \
 	$(tests_test_read_serial_SOURCES)
@@ -397,6 +411,9 @@ TASCEL_CPPFLAGS = @TASCEL_CPPFLAGS@
 TASCEL_LDFLAGS = @TASCEL_LDFLAGS@
 TASCEL_LIBS = @TASCEL_LIBS@
 VERSION = @VERSION@
+ZLIB_CPPFLAGS = @ZLIB_CPPFLAGS@
+ZLIB_LDFLAGS = @ZLIB_LDFLAGS@
+ZLIB_LIBS = @ZLIB_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -478,7 +495,11 @@ libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
 	src/SequenceDatabase.cpp src/SequenceDatabase.hpp \
 	src/stree.cpp src/stree.hpp src/SuffixBuckets.cpp \
 	src/SuffixBuckets.hpp src/SuffixTree.cpp src/SuffixTree.hpp \
-	src/timer.h
+	src/timer.h \
+	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.c \
+	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.h \
+	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.cpp \
+	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h
 #if HAVE_UTC_ITER
 #noinst_PROGRAMS += sandbox/brute_force_iter
 #endif
@@ -488,7 +509,12 @@ apps_align_iter_SOURCES = apps/align.cpp
 apps_align_tree_SOURCES = apps/align_tree.cpp
 apps_ccd_SOURCES = apps/ccd.cpp
 apps_ccd2_SOURCES = apps/ccd2.cpp
+apps_ssw_test_SOURCES =  \
+	contrib/Complete-Striped-Smith-Waterman-Library/src/main.c \
+	contrib/Complete-Striped-Smith-Waterman-Library/src/kseq.h
 apps_align_iter_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_ITER
+apps_ssw_test_LDFLAGS = $(ZLIB_LDFLAGS) $(AM_LDFLAGS)
+apps_ssw_test_LDADD = $(LDADD) $(ZLIB_LIBS) $(LIBS)
 
 #sandbox_blast_SOURCES                      = sandbox/blast.cpp
 #sandbox_brute_force_SOURCES                = sandbox/brute_force.cpp
@@ -601,6 +627,16 @@ src/stree.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/SuffixBuckets.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
 src/SuffixTree.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+contrib/Complete-Striped-Smith-Waterman-Library/src/$(am__dirstamp):
+	@$(MKDIR_P) contrib/Complete-Striped-Smith-Waterman-Library/src
+	@: > contrib/Complete-Striped-Smith-Waterman-Library/src/$(am__dirstamp)
+contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)
+	@: > contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/$(am__dirstamp)
+contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.lo: contrib/Complete-Striped-Smith-Waterman-Library/src/$(am__dirstamp) \
+	contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/$(am__dirstamp)
+contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.lo: contrib/Complete-Striped-Smith-Waterman-Library/src/$(am__dirstamp) \
+	contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/$(am__dirstamp)
 
 libpgraph.la: $(libpgraph_la_OBJECTS) $(libpgraph_la_DEPENDENCIES) $(EXTRA_libpgraph_la_DEPENDENCIES) 
 	$(AM_V_CXXLD)$(CXXLINK)  $(libpgraph_la_OBJECTS) $(libpgraph_la_LIBADD) $(LIBS)
@@ -704,6 +740,12 @@ apps/ccd2.$(OBJEXT): apps/$(am__dirstamp) \
 apps/ccd2$(EXEEXT): $(apps_ccd2_OBJECTS) $(apps_ccd2_DEPENDENCIES) $(EXTRA_apps_ccd2_DEPENDENCIES) apps/$(am__dirstamp)
 	@rm -f apps/ccd2$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(apps_ccd2_OBJECTS) $(apps_ccd2_LDADD) $(LIBS)
+contrib/Complete-Striped-Smith-Waterman-Library/src/main.$(OBJEXT): contrib/Complete-Striped-Smith-Waterman-Library/src/$(am__dirstamp) \
+	contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/$(am__dirstamp)
+
+apps/ssw_test$(EXEEXT): $(apps_ssw_test_OBJECTS) $(apps_ssw_test_DEPENDENCIES) $(EXTRA_apps_ssw_test_DEPENDENCIES) apps/$(am__dirstamp)
+	@rm -f apps/ssw_test$(EXEEXT)
+	$(AM_V_CCLD)$(apps_ssw_test_LINK) $(apps_ssw_test_OBJECTS) $(apps_ssw_test_LDADD) $(LIBS)
 tests/$(am__dirstamp):
 	@$(MKDIR_P) tests
 	@: > tests/$(am__dirstamp)
@@ -750,6 +792,8 @@ tests/test_read_serial$(EXEEXT): $(tests_test_read_serial_OBJECTS) $(tests_test_
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 	-rm -f apps/*.$(OBJEXT)
+	-rm -f contrib/Complete-Striped-Smith-Waterman-Library/src/*.$(OBJEXT)
+	-rm -f contrib/Complete-Striped-Smith-Waterman-Library/src/*.lo
 	-rm -f src/*.$(OBJEXT)
 	-rm -f src/*.lo
 	-rm -f tests/*.$(OBJEXT)
@@ -763,6 +807,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_iter-align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/ccd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/ccd2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/ssw.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/ssw_cpp.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Parameters.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Sequence.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabase.Plo@am__quote@
@@ -852,6 +899,7 @@ mostlyclean-libtool:
 clean-libtool:
 	-rm -rf .libs _libs
 	-rm -rf apps/.libs apps/_libs
+	-rm -rf contrib/Complete-Striped-Smith-Waterman-Library/src/.libs contrib/Complete-Striped-Smith-Waterman-Library/src/_libs
 	-rm -rf src/.libs src/_libs
 	-rm -rf tests/.libs tests/_libs
 
@@ -1108,6 +1156,8 @@ distclean-generic:
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
 	-rm -f apps/$(DEPDIR)/$(am__dirstamp)
 	-rm -f apps/$(am__dirstamp)
+	-rm -f contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/$(am__dirstamp)
+	-rm -f contrib/Complete-Striped-Smith-Waterman-Library/src/$(am__dirstamp)
 	-rm -f src/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/$(am__dirstamp)
 	-rm -f tests/$(DEPDIR)/$(am__dirstamp)
@@ -1123,7 +1173,7 @@ clean-am: clean-binPROGRAMS clean-generic clean-libtool \
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf apps/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf apps/$(DEPDIR) contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -1171,7 +1221,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf apps/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf apps/$(DEPDIR) contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
