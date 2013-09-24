@@ -375,7 +375,7 @@ count_sort(stnode_t *stNodes, int *srtIndex, size_t nStNodes, size_t maxSeqLen)
     /* fill in counters */
     for (i = 0; i < nStNodes; i++) {
         depth = stNodes[i].depth; /* depth starts from 0 */
-        assert(depth < maxSeqLen);
+        assert(depth < int(maxSeqLen));
         cnt[depth]++;
     }
 

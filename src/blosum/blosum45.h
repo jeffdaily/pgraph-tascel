@@ -6,7 +6,7 @@
 #ifndef _PGRAPH_BLOSUM45_H_
 #define _PGRAPH_BLOSUM45_H_
 
-static const int8_t __blosum45[] = {
+static const int8_t blosum45__[] = {
 /*       A   R   N   D   C   Q   E   G   H   I   L   K   M   F   P   S   T   W   Y   V   B   Z   X   * */
 /* A */  5, -2, -1, -2, -1, -1, -1,  0, -2, -1, -1, -1, -1, -2, -1,  1,  0, -2, -2,  0, -1, -1,  0, -5,
 /* R */ -2,  7,  0, -1, -3,  1,  0, -2,  0, -3, -2,  3, -1, -2, -2, -1, -1, -2, -1, -2, -1,  0, -1, -5,
@@ -87,7 +87,7 @@ static const int b45_21[24] = /* B */{-1, -1,  4,  5, -2,  0,  1, -1,  0, -3, -3
 static const int b45_22[24] = /* Z */{-1,  0,  0,  1, -3,  4,  4, -2,  0, -3, -2,  1, -1, -3, -1,  0, -1, -2, -2, -3,  2,  4, -1, -5};
 static const int b45_23[24] = /* X */{ 0, -1, -1, -1, -2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  0,  0, -2, -1, -1, -1, -1, -1, -5};
 static const int b45_24[24] = /* * */{-5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5,  1};
-static const int * const restrict _blosum45[24] = {
+static const int * const restrict blosum45_[24] = {
 b45_01,
 b45_02,
 b45_03,

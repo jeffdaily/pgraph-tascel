@@ -67,10 +67,9 @@ int test(const char *seq1, const char *seq2)
     bool is_edge_answer = false;
     int sscore;
     size_t maxLen;
-    sequence_t s1 = {"",seq1,seq1_len};
-    sequence_t s2 = {"",seq2,seq2_len};
 
     assert(NROW == 2);
+    timer_init();
     tbl = allocate_cell_table(NROW, max_seq_len);
     del = allocate_int_table(NROW, max_seq_len);
     ins = allocate_int_table(NROW, max_seq_len);

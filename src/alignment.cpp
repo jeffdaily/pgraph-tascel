@@ -16,6 +16,7 @@
 #include <iostream>
 
 #include "alignment.hpp"
+#include "alignment_defs.hpp"
 #include "blosum/blosum40.h"
 #include "blosum/blosum45.h"
 #include "blosum/blosum50.h"
@@ -23,6 +24,7 @@
 #include "blosum/blosum75.h"
 #include "blosum/blosum80.h"
 #include "blosum/blosum90.h"
+#include "ssw.h"
 
 #define CROW(i) ((i)%2)
 #define PROW(i) ((i-1)%2)
@@ -41,7 +43,8 @@ namespace pgraph {
 
 
 /** points to selected blosum table (default blosum62) */
-static const int (*blosum)[24] = blosum62;
+static const int (* restrict blosum)[24] = blosum62;
+static const int8_t * restrict blosum__ = blosum62__;
 
 
 cell_t **allocate_cell_table(size_t nrow, size_t ncol)
@@ -147,21 +150,27 @@ void select_blosum(int number)
     switch (number) {
         case 40:
             blosum = blosum40;
+            blosum__ = blosum40__;
             break;
         case 45:
             blosum = blosum45;
+            blosum__ = blosum45__;
             break;
         case 62:
             blosum = blosum62;
+            blosum__ = blosum62__;
             break;
         case 75:
             blosum = blosum75;
+            blosum__ = blosum75__;
             break;
         case 80:
             blosum = blosum80;
+            blosum__ = blosum80__;
             break;
         case 90:
             blosum = blosum90;
+            blosum__ = blosum90__;
             break;
         default:
             cerr << "invalid blosum number (" << number << ")" << endl;
@@ -351,7 +360,7 @@ cell_t affine_gap_align_blosum(
     ins[0][0] = 0;                                                          
     tI = tbl[0];                                                            
     for (j = 1; j <= s2Len; j++) {                                          
-        tI[j].score = open + j * gap;                                       
+        tI[j].score = open + j * gap;
         tI[j].matches = 0;                                                  
         tI[j].length = 0;                                                   
         del[0][j] = INT_MIN;                                                
@@ -374,7 +383,7 @@ cell_t affine_gap_align_blosum(
         pI = tbl[pr];                                                       
                                                                             
         /* init first column of 3 tables */                                 
-        tI[0].score = open + i * gap;                                       
+        tI[0].score = open + j * gap;
         tI[0].matches = 0;                                                  
         tI[0].length = 0;                                                   
         del[cr][0] = open + i * gap;                                        
@@ -383,23 +392,24 @@ cell_t affine_gap_align_blosum(
         for (j = 1; j <= s2Len; j++) {                                      
             int tmp1 = 0;   /* temporary during DP calculation */           
             int tmp2 = 0;   /* temporary during DP calculation */           
+            int tmp3 = 0;   /* temporary during DP calculation */           
             char ch2 = 0;   /* current character in second sequence */      
                                                                             
             ch2 = s2[j - 1];                                                
                                                                             
             /* overflow could happen, INT_MIN-1 = 2147483647 */             
-            tmp1 = pI[j].score + open + gap;                                
+            tmp1 = NEG_ADD(NEG_ADD(pI[j].score, open), gap);
             tmp2 = NEG_ADD(del[pr][j], gap);                                
             up = MAX(tmp1, tmp2);                                           
             del[cr][j] = up;                                                
-            tmp1 = tI[j - 1].score + open + gap;                            
+            tmp1 = NEG_ADD(NEG_ADD(tI[j - 1].score, open), gap);
             tmp2 = NEG_ADD(ins[cr][j - 1], gap);                            
             left = MAX(tmp1, tmp2);                                         
             ins[cr][j] = left;                                              
-            maxScore = MAX(up, left);                                       
-            int tmp3 = BLOSUM(ch1, ch2);                       
-            dig = pI[j - 1].score + tmp3;
-            maxScore = MAX(maxScore, dig);                                  
+            maxScore = MAX(up, left);
+            tmp3 = BLOSUM(ch1, ch2);                       
+            dig = NEG_ADD(pI[j - 1].score, tmp3);
+            maxScore = MAX(maxScore, dig);
             tI[j].score = maxScore;                                         
                                                                             
             if (maxScore == dig) {                                          
@@ -535,6 +545,136 @@ bool is_edge_blosum(
                  self_score_blosum(s2, s2_len))
 }
 
+
+cell_t affine_gap_align_blosum_ssw(
+        const char * const restrict s1, size_t s1_len,
+        const char * const restrict s2, size_t s2_len,
+        int open, int gap)
+{
+    cell_t ret;
+    s_profile *profile = NULL;
+    int8_t *s1_num = new int8_t[s1_len];
+    int8_t *s2_num = new int8_t[s2_len];
+    s_align *result = NULL;
+
+    /* This table is used to transform amino acid letters into numbers. */
+    static const int8_t table[128] = {
+        23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
+        23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
+        23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
+        23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
+        23, 0,  20, 4,  3,  6,  13, 7,  8,  9,  23, 11, 10, 12, 2,  23,
+        14, 5,  1,  15, 16, 23, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23,
+        23, 0,  20, 4,  3,  6,  13, 7,  8,  9,  23, 11, 10, 12, 2,  23,
+        14, 5,  1,  15, 16, 23, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23
+    };
+
+    /* initialize score matrix */
+    for (size_t m = 0; m < s1_len; ++m) s1_num[m] = table[(int)s1[m]];
+    for (size_t m = 0; m < s2_len; ++m) s2_num[m] = table[(int)s2[m]];
+    profile = ssw_init(s1_num, s1_len, blosum__, 24, 2);
+    result = ssw_align(profile, s2_num, s2_len, open, gap, 2, 0, 0, s1_len/2);
+
+    ret.score = result->score1;
+    ret.matches = 0;
+    ret.length = 0;
+
+    s_align* a = result;
+    const char * const restrict ref_seq = s2;
+    const char * const restrict read_seq = s1;
+    const int8_t * const restrict mat = blosum__;
+    int32_t n = 24;
+
+    if (a->cigar) {
+        int32_t i, c = 0, left = 0, e = 0, qb = a->ref_begin1, pb = a->read_begin1;
+        while (e < a->cigarLen || left > 0) {
+            int32_t count = 0;
+            int32_t q = qb;
+            int32_t p = pb;
+            for (c = e; c < a->cigarLen; ++c) {
+                int32_t letter = 0xf&*(a->cigar + c);
+                int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
+                int32_t l = (count == 0 && left > 0) ? left: length;
+                for (i = 0; i < l; ++i) {
+                    if (letter == 1) {}
+                    else {
+                        ++ q;
+                    }
+                    ++ count;
+                    if (count == 60) goto step2;
+                }
+            }
+step2:
+            q = qb;
+            count = 0;
+            for (c = e; c < a->cigarLen; ++c) {
+                int32_t letter = 0xf&*(a->cigar + c);
+                int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
+                int32_t l = (count == 0 && left > 0) ? left: length;
+                for (i = 0; i < l; ++i){ 
+                    if (letter == 0) {
+                        if (table[(int)*(ref_seq + q)] == table[(int)*(read_seq + p)]){
+                            // |
+                            ret.matches += 1;
+                            ret.length += 1;
+                        }
+                        else if (mat[table[(int)*(ref_seq + q)]*n+table[(int)*(read_seq + p)]]>0){
+                            // :
+                            ret.length += 1;
+                        }
+                        else {
+                            // *
+                            ret.length += 1;
+                        }
+                        ++q;
+                        ++p;
+                    } else {
+                        if (letter == 1) ++p;
+                        else ++q;
+                    }
+                    ++ count;
+                    if (count == 60) {
+                        qb = q;
+                        goto step3;
+                    }
+                }
+            }
+step3:
+            p = pb;
+            count = 0;
+            for (c = e; c < a->cigarLen; ++c) {
+                int32_t letter = 0xf&*(a->cigar + c);
+                int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
+                int32_t l = (count == 0 && left > 0) ? left: length;
+                for (i = 0; i < l; ++i) { 
+                    if (letter == 2) {}
+                    else {
+                        ++p;
+                    }
+                    ++ count;
+                    if (count == 60) {
+                        pb = p;
+                        left = l - i - 1;
+                        e = (left == 0) ? (c + 1) : c;
+                        goto end;
+                    }
+                }
+            }
+            e = c;
+            left = 0;
+end:
+            ;
+        }
+    }
+
+    init_destroy(profile);
+    if (result->cigar) free(result->cigar);
+    free(result);
+    delete [] s1_num;
+    delete [] s2_num;
+
+    return ret;
+}
 
 }; /* namespace pgraph */
 

@@ -705,6 +705,39 @@ void SequenceDatabaseArmci::align(size_t i,
 }
 
 
+void SequenceDatabaseArmci::align_ssw(size_t i,
+                                      size_t j,
+                                      int &score,
+                                      int &ndig,
+                                      int &alen,
+                                      int open,
+                                      int gap,
+                                      int tid)
+{
+    Sequence &s1 = get_sequence(i);
+    Sequence &s2 = get_sequence(j);
+    const char *c1 = NULL;
+    const char *c2 = NULL;
+    size_t l1 = 0;
+    size_t l2 = 0;
+    cell_t result;
+
+    assert(max_seq_size > 0);
+
+    s1.get_sequence(c1,l1);
+    assert(c1);
+    assert(l1);
+    s2.get_sequence(c2,l2);
+    assert(c2);
+    assert(l2);
+    result = affine_gap_align_blosum_ssw(c1, l1, c2, l2, open, gap);
+
+    score = result.score;
+    ndig = result.matches;
+    alen = result.length;
+}
+
+
 bool SequenceDatabaseArmci::is_edge(size_t i,
                                     size_t j,
                                     const int &score,

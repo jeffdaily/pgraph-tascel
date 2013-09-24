@@ -13,6 +13,7 @@
 #include <cstring>
 
 #include "alignment.hpp"
+#include "alignment_defs.hpp"
 #include "blosum/blosum62.h"
 #include "timer.h"
 
@@ -80,12 +81,12 @@ int test(const char *seq1, const char *seq2)
             seq2, seq2_len,
             tbl, del, ins,
             OPEN, GAP,
-            _blosum62, MAP_BLOSUM, 'A');
+            blosum62_, MAP_BLOSUM, 'A');
 
     is_edge_answer = is_edge(
             result, seq1, seq1_len, seq2, seq2_len,
             AOL, SIM, OS, sscore, maxLen,
-            _blosum62, MAP_BLOSUM, 'A');
+            blosum62_, MAP_BLOSUM, 'A');
 
     printf("---------------------------------------------------\n");
     printf("result->score=%d\n", result.score);
@@ -103,7 +104,7 @@ int test(const char *seq1, const char *seq2)
                 seq2, seq2_len,
                 tbl, del, ins,
                 OPEN, GAP,
-                _blosum62, MAP_BLOSUM, 'A');
+                blosum62_, MAP_BLOSUM, 'A');
     }
     t = timer_end(t);
     printf("%s timer took %llu units\n", timer_name(), t);

@@ -23,10 +23,8 @@ int nprocs = 0;
 
 int main(int argc, char **argv)
 {
-    int provided;
     long file_size = -1;
     char *file_buffer = NULL;
-    unsigned long seg_count=0;
 
     /* sanity check that we got the correct number of arguments */
     if (argc <= 1 || argc >= 3) {

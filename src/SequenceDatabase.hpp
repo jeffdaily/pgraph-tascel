@@ -137,6 +137,27 @@ class SequenceDatabase
                            int tid=0) = 0;
 
         /**
+         * Computes the alignment between the two sequence IDs.
+         *
+         * @param[in] i first Sequence index
+         * @param[in] j second Sequence index
+         * @param[out] score TODO
+         * @param[out] ndig TODO
+         * @param[out] align TODO
+         * @param[in] open penalty
+         * @param[in] gap penalty
+         * @param[in] tid thread ID, defaulting to 0
+         */
+        virtual void align_ssw(size_t i,
+                           size_t j,
+                           int &score,
+                           int &ndig,
+                           int &align,
+                           int open=-10,
+                           int gap=-1,
+                           int tid=0) = 0;
+
+        /**
          * Computes whether an edge exists between the two sequence IDs.
          *
          * @param[in] i first Sequence index

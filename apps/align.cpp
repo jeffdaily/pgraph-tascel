@@ -200,7 +200,11 @@ static void alignment_task(
 #endif
     {
         t = MPI_Wtime();
+#if USE_SSW
+        sequences->align_ssw(seq_id[0], seq_id[1], result.score, result.matches, result.length, open, gap, thd);
+#else
         sequences->align(seq_id[0], seq_id[1], result.score, result.matches, result.length, open, gap, thd);
+#endif
         is_edge_answer = sequences->is_edge(
                 seq_id[0],
                 seq_id[1],

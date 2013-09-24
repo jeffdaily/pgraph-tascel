@@ -278,7 +278,6 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
 
     /* The suffixes contains sorted suffixes based on the buckets they belong
      * to. That means we can simply update the 'next' links! */
-    size_t max_len = sequences->get_max_length();
     size_t last_id = sequences->get_global_count();
     for (size_t i=0; i<total_amount_to_recv; ++i) {
         assert(suffixes[i].sid < last_id);

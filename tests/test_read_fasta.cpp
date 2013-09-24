@@ -40,7 +40,6 @@ static void sync_exit(int value, MPI_Comm comm)
 int main(int argc, char **argv)
 {
     MPI_Comm comm = MPI_COMM_NULL;
-    int provided = 0;
     int rank = 0;
     int nprocs = 0;
     long budget = 0;
@@ -48,6 +47,7 @@ int main(int argc, char **argv)
 
     /* initialize MPI */
 #if defined(THREADED)
+    int provided = 0;
     MPI_CHECK(MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided));
     assert(provided == MPI_THREAD_MULTIPLE);
 #else

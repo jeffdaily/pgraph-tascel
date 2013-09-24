@@ -6,7 +6,7 @@
 #ifndef _PGRAPH_BLOSUM90_H_
 #define _PGRAPH_BLOSUM90_H_
 
-static const int8_t __blosum90[] = {
+static const int8_t blosum90__[] = {
 /*       A   R   N   D   C   Q   E   G   H   I   L   K   M   F   P   S   T   W   Y   V   B   Z   X   * */
 /* A */  5, -2, -2, -3, -1, -1, -1,  0, -2, -2, -2, -1, -2, -3, -1,  1,  0, -4, -3, -1, -2, -1, -1, -6,
 /* R */ -2,  6, -1, -3, -5,  1, -1, -3,  0, -4, -3,  2, -2, -4, -3, -1, -2, -4, -3, -3, -2,  0, -2, -6,
@@ -87,7 +87,7 @@ static const int b90_21[24] = /* B */{-2, -2,  4,  4, -4, -1,  0, -2, -1, -5, -5
 static const int b90_22[24] = /* Z */{-1,  0, -1,  0, -5,  4,  4, -3,  0, -4, -4,  1, -2, -4, -2, -1, -1, -4, -3, -3,  0,  4, -1, -6}; 
 static const int b90_23[24] = /* X */{-1, -2, -2, -2, -3, -1, -2, -2, -2, -2, -2, -1, -1, -2, -2, -1, -1, -3, -2, -2, -2, -1, -2, -6}; 
 static const int b90_24[24] = /* * */{-6, -6, -6, -6, -6, -6, -6, -6, -6, -6, -6, -6, -6, -6, -6, -6, -6, -6, -6, -6, -6, -6, -6,  1};
-static const int * const restrict _blosum90[24] = {
+static const int * const restrict blosum90_[24] = {
 b90_01,
 b90_02,
 b90_03,

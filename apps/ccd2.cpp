@@ -49,7 +49,6 @@ int main(int argc, char *argv[])
     char config_file[FILENAME_MAX]; /* path to config file */
     size_t n_sequences = 0;         /* number of sequences (cmd line param) */
     SequenceDatabase *sequences = NULL; /* all sequences parsed from fasta file */
-    size_t maxSeqLen = 0;           /* longest sequence length parsed */
     time_t t1 = 0;                  /* start timer */
     time_t t2 = 0;                  /* stop timer */
     SuffixBuckets *suffix_buckets = NULL;

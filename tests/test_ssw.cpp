@@ -16,7 +16,6 @@ extern "C" {
 #include <sys/mman.h>
 #include <sys/time.h>
 #include <unistd.h>
-#include <semaphore.h>
 
 #include <algorithm>
 #include <cassert>
@@ -117,12 +116,9 @@ int main(int argc, char **argv)
     int retval = 0;
     vector<sequence_t> sequences;
     size_t max_seq_size = 0;
-#if USE_SSW
-#else
     cell_t **tbl = NULL;
     int **ins = NULL;
     int **del = NULL;
-#endif
     string shm_name;
 
     /* initialize MPI */
@@ -241,8 +237,6 @@ int main(int argc, char **argv)
     mpix_print_sync("max_seq_size", max_seq_size, comm_world);
 #endif
 
-#if USE_SSW
-#else
     {
         size_t max_seq_size_p1 = max_seq_size + 1;
         tbl = new cell_t*[2];
@@ -263,7 +257,6 @@ int main(int argc, char **argv)
         (void)memset(ins[1], 0, sizeof(int)*max_seq_size_p1);
 #endif
     }
-#endif
 
     /* how many combinations of sequences are there? */
     sequence_count = sequences.size();
@@ -302,6 +295,10 @@ int main(int argc, char **argv)
     double mytimer = MPI_Wtime();
     double mytime_combo = 0.0;
     double mytime_fetch = 0.0;
+    double mytime_org = 0.0;
+    double mytime_ssw = 0.0;
+    int missing = 0;
+    int extra = 0;
     // TODO TAKS COUNTER AND ALIGNMENT LOOP
     while (task_id < nalignments) {
         unsigned long seq_id[2];
@@ -320,30 +317,58 @@ int main(int argc, char **argv)
         assert(sequences[seq_id[1]].size <= max_seq_size);
         {
             cell_t result;
+            cell_t result_ssw;
             double t = MPI_Wtime();
+            double org;
+            double ssw;
             int sscore;
+            int sscore_ssw;
             size_t maxLen;
+            size_t maxLen_ssw;
             Parameters param;
             param.AOL = 8;
             param.SIM = 4;
             param.OS = 3;
             param.open = -10;
             param.gap = -1;
-#if USE_SSW
-            result = pgraph::affine_gap_align_blosum_ssw(
-                    sequences[seq_id[0]].str, sequences[seq_id[0]].size,
-                    sequences[seq_id[1]].str, sequences[seq_id[1]].size,
-                    param.open, param.gap);
-#else
+            org = MPI_Wtime();
             result = pgraph::affine_gap_align_blosum(
                     sequences[seq_id[0]].str, sequences[seq_id[0]].size,
                     sequences[seq_id[1]].str, sequences[seq_id[1]].size,
                     tbl, del, ins, param.open, param.gap);
-#endif
+            mytime_org += MPI_Wtime() - org;
+            ssw = MPI_Wtime();
+            result_ssw = pgraph::affine_gap_align_blosum_ssw(
+                    sequences[seq_id[0]].str, sequences[seq_id[0]].size,
+                    sequences[seq_id[1]].str, sequences[seq_id[1]].size,
+                    param.open, param.gap);
+            mytime_ssw += MPI_Wtime() - ssw;
             bool is_edge_answer = pgraph::is_edge_blosum(result,
                     sequences[seq_id[0]].str, sequences[seq_id[0]].size,
                     sequences[seq_id[1]].str, sequences[seq_id[1]].size,
                     param.AOL, param.SIM, param.OS, sscore, maxLen);
+            bool is_edge_answer_ssw = pgraph::is_edge_blosum(result_ssw,
+                    sequences[seq_id[0]].str, sequences[seq_id[0]].size,
+                    sequences[seq_id[1]].str, sequences[seq_id[1]].size,
+                    param.AOL, param.SIM, param.OS, sscore_ssw, maxLen_ssw);
+            cout << setw(3) << right << seq_id[0] << ":"
+                << setw(3) << left << seq_id[1] << " "
+                << is_edge_answer << "?= " << is_edge_answer_ssw << " "
+                <<  result.score << "?="
+                << result_ssw.score << " "
+                <<  result.matches << "?="
+                << result_ssw.matches << " "
+                <<  result.length << "?="
+                << result_ssw.length << " ";
+            if (is_edge_answer && !is_edge_answer_ssw) {
+                cout << "\tMISSING";
+                missing += 1;
+            }
+            else if (!is_edge_answer && is_edge_answer_ssw) {
+                cout << "\tEXTRA";
+                extra += 1;
+            }
+            cout << endl;
 
             ++stats.align_counts;
 
@@ -393,7 +418,7 @@ int main(int argc, char **argv)
 
     //if (0 == rank_world) {
         retval = ARMCI_Free(counter[rank_world]);
-        free(counter);
+        delete [] counter;
     //}
 
     mytimer = MPI_Wtime() - mytimer;
@@ -402,6 +427,10 @@ int main(int argc, char **argv)
         cout << "mytimer=" << mytimer << endl;
         cout << "mytime_combo=" << mytime_combo << endl;
         cout << "mytime_fetch=" << mytime_fetch << endl;
+        cout << "mytime_org=" << mytime_org << endl;
+        cout << "mytime_ssw=" << mytime_ssw << endl;
+        cout << "missing=" << missing << endl;
+        cout << "extra=" << extra << endl;
     }
 
     MPI_Barrier(comm_world);
@@ -475,8 +504,6 @@ int main(int argc, char **argv)
         }
     }
 
-#if USE_SSW
-#else
     /* clean up DP tables */
     delete [] tbl[0];
     delete [] tbl[1];
@@ -487,7 +514,6 @@ int main(int argc, char **argv)
     delete [] tbl;
     delete [] del;
     delete [] ins;
-#endif
 
     ARMCI_Finalize();
 

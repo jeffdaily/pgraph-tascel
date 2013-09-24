@@ -56,13 +56,15 @@ void reverse_comple(const char* seq, char* rc) {
 	if (start == end) rc[start] = (char)rc_table[(int8_t)seq[start]];			
 }							
 
-void ssw_write (s_align* a, 
+void kseq_ssw_write (s_align* a, 
 			kseq_t* ref_seq,
 			kseq_t* read,
 			char* read_seq,	// strand == 0: original read; strand == 1: reverse complement read
 			int8_t* table, 
 			int8_t strand,	// 0: forward aligned ; 1: reverse complement aligned 
-			int8_t sam) {	// 0: Blast like output; 1: Sam format output
+			int8_t sam,
+            int8_t* mat,
+            int32_t n) {	// 0: Blast like output; 1: Sam format output
 
 	if (sam == 0) {	// Blast like output
 		fprintf(stdout, "target_name: %s\nquery_name: %s\noptimal_alignment_score: %d\t", ref_seq->name.s, read->name.s, a->score1);
@@ -105,6 +107,7 @@ step2:
 					for (i = 0; i < l; ++i){ 
 						if (letter == 0) {
 							if (table[(int)*(ref_seq->seq.s + q)] == table[(int)*(read_seq + p)])fprintf(stdout, "|");
+                            else if (mat[table[(int)*(ref_seq->seq.s + q)]*n+table[(int)*(read_seq + p)]]>0)fprintf(stdout, ":");
 							else fprintf(stdout, "*");
 							++q;
 							++p;
@@ -250,6 +253,35 @@ int main (int argc, char * const argv[]) {
        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -5, 	// X
        -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5,  1 	// *
 	};	
+
+    int8_t mat62[] = {
+        /*       A   R   N   D   C   Q   E   G   H   I   L   K   M   F   P   S   T   W   Y   V   B   Z   X   * */
+        /* A */  4, -1, -2, -2,  0, -1, -1,  0, -2, -1, -1, -1, -1, -2, -1,  1,  0, -3, -2,  0, -2, -1,  0, -4,
+        /* R */ -1,  5,  0, -2, -3,  1,  0, -2,  0, -3, -2,  2, -1, -3, -2, -1, -1, -3, -2, -3, -1,  0, -1, -4,
+        /* N */ -2,  0,  6,  1, -3,  0,  0,  0,  1, -3, -3,  0, -2, -3, -2,  1,  0, -4, -2, -3,  3,  0, -1, -4,
+        /* D */ -2, -2,  1,  6, -3,  0,  2, -1, -1, -3, -4, -1, -3, -3, -1,  0, -1, -4, -3, -3,  4,  1, -1, -4,
+        /* C */  0, -3, -3, -3,  9, -3, -4, -3, -3, -1, -1, -3, -1, -2, -3, -1, -1, -2, -2, -1, -3, -3, -2, -4,
+        /* Q */ -1,  1,  0,  0, -3,  5,  2, -2,  0, -3, -2,  1,  0, -3, -1,  0, -1, -2, -1, -2,  0,  3, -1, -4,
+        /* E */ -1,  0,  0,  2, -4,  2,  5, -2,  0, -3, -3,  1, -2, -3, -1,  0, -1, -3, -2, -2,  1,  4, -1, -4,
+        /* G */  0, -2,  0, -1, -3, -2, -2,  6, -2, -4, -4, -2, -3, -3, -2,  0, -2, -2, -3, -3, -1, -2, -1, -4,
+        /* H */ -2,  0,  1, -1, -3,  0,  0, -2,  8, -3, -3, -1, -2, -1, -2, -1, -2, -2,  2, -3,  0,  0, -1, -4,
+        /* I */ -1, -3, -3, -3, -1, -3, -3, -4, -3,  4,  2, -3,  1,  0, -3, -2, -1, -3, -1,  3, -3, -3, -1, -4,
+        /* L */ -1, -2, -3, -4, -1, -2, -3, -4, -3,  2,  4, -2,  2,  0, -3, -2, -1, -2, -1,  1, -4, -3, -1, -4,
+        /* K */ -1,  2,  0, -1, -3,  1,  1, -2, -1, -3, -2,  5, -1, -3, -1,  0, -1, -3, -2, -2,  0,  1, -1, -4,
+        /* M */ -1, -1, -2, -3, -1,  0, -2, -3, -2,  1,  2, -1,  5,  0, -2, -1, -1, -1, -1,  1, -3, -1, -1, -4,
+        /* F */ -2, -3, -3, -3, -2, -3, -3, -3, -1,  0,  0, -3,  0,  6, -4, -2, -2,  1,  3, -1, -3, -3, -1, -4,
+        /* P */ -1, -2, -2, -1, -3, -1, -1, -2, -2, -3, -3, -1, -2, -4,  7, -1, -1, -4, -3, -2, -2, -1, -2, -4,
+        /* S */  1, -1,  1,  0, -1,  0,  0,  0, -1, -2, -2,  0, -1, -2, -1,  4,  1, -3, -2, -2,  0,  0,  0, -4,
+        /* T */  0, -1,  0, -1, -1, -1, -1, -2, -2, -1, -1, -1, -1, -2, -1,  1,  5, -2, -2,  0, -1, -1,  0, -4,
+        /* W */ -3, -3, -4, -4, -2, -2, -3, -2, -2, -3, -2, -3, -1,  1, -4, -3, -2, 11,  2, -3, -4, -3, -2, -4,
+        /* Y */ -2, -2, -2, -3, -2, -1, -2, -3,  2, -1, -1, -2, -1,  3, -3, -2, -2,  2,  7, -1, -3, -2, -1, -4,
+        /* V */  0, -3, -3, -3, -1, -2, -2, -3, -3,  3,  1, -2,  1, -1, -2, -2,  0, -3, -1,  4, -3, -2, -1, -4,
+        /* B */ -2, -1,  3,  4, -3,  0,  1, -1,  0, -3, -4,  0, -3, -3, -2,  0, -1, -4, -3, -3,  4,  1, -1, -4,
+        /* Z */ -1,  0,  0,  1, -3,  3,  4, -2,  0, -3, -3,  1, -1, -3, -1,  0, -1, -3, -2, -2,  1,  4, -1, -4,
+        /* X */  0, -1, -1, -1, -2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -2,  0,  0, -2, -1, -1, -1, -1, -1, -4,
+        /* * */ -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4,  1
+    };
+
 	
 	/* This table is used to transform amino acid letters into numbers. */
 	int8_t aa_table[128] = {
@@ -321,7 +353,7 @@ int main (int argc, char * const argv[]) {
 	if (protein == 1 && (! strcmp(mat_name, "\0"))) {
 		n = 24;
 		table = aa_table;
-		mat = mat50;
+		mat = mat62;
 	} else if (strcmp(mat_name, "\0")) {
 
 	// Parse score matrix.
@@ -428,11 +460,11 @@ int main (int argc, char * const argv[]) {
 			if (reverse == 1 && protein == 0) 
 				result_rc = ssw_align(p_rc, ref_num, refLen, gap_open, gap_extension, flag, filter, 0, maskLen);
 			if (result_rc && result_rc->score1 > result->score1 && result_rc->score1 >= filter) {
-				if (sam) ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 1);
-				else ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 0);
+				if (sam) kseq_ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 1, mat, n);
+				else kseq_ssw_write (result_rc, ref_seq, read_seq, read_rc, table, 1, 0, mat, n);
 			}else if (result && result->score1 >= filter){
-				if (sam) ssw_write(result, ref_seq, read_seq, read_seq->seq.s, table, 0, 1);
-				else ssw_write(result, ref_seq, read_seq, read_seq->seq.s, table, 0, 0);
+				if (sam) kseq_ssw_write(result, ref_seq, read_seq, read_seq->seq.s, table, 0, 1, mat, n);
+				else kseq_ssw_write(result, ref_seq, read_seq, read_seq->seq.s, table, 0, 0, mat, n);
 			} else if (! result) return 1;
 			if (result_rc) align_destroy(result_rc);
 			align_destroy(result);

@@ -40,7 +40,6 @@ int check_count = 0;
 int main(int argc, char **argv)
 {
     MPI_Comm comm = MPI_COMM_NULL;
-    int provided;
     long file_size = -1;
     char *file_buffer = NULL;
     MPI_File fh;
@@ -51,6 +50,7 @@ int main(int argc, char **argv)
 
     /* initialize MPI */
 #if defined(THREADED)
+    int provided;
     MPI_CHECK(MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided));
     assert(provided == MPI_THREAD_MULTIPLE);
 #else

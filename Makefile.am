@@ -13,6 +13,9 @@ AM_CPPFLAGS += $(ARMCI_CPPFLAGS)
 AM_CPPFLAGS += $(PT_MPI_CPPFLAGS)
 AM_CPPFLAGS += $(GMP_CPPFLAGS)
 AM_CPPFLAGS += -I$(top_srcdir)/src
+if HAVE_SSE2
+AM_CPPFLAGS += -I$(top_srcdir)/contrib/Complete-Striped-Smith-Waterman-Library/src
+endif
 
 AM_LDFLAGS += $(TASCEL_LDFLAGS)
 #AM_LDFLAGS += $(GA_LDFLAGS)
@@ -70,10 +73,12 @@ libpgraph_la_SOURCES += src/SuffixBuckets.hpp
 libpgraph_la_SOURCES += src/SuffixTree.cpp
 libpgraph_la_SOURCES += src/SuffixTree.hpp
 libpgraph_la_SOURCES += src/timer.h
+if HAVE_SSE2
 libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.c
 libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.h
 libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.cpp
 libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h
+endif
 
 bin_PROGRAMS =
 bin_PROGRAMS += apps/align
@@ -82,8 +87,14 @@ bin_PROGRAMS += apps/align_iter
 bin_PROGRAMS += apps/align_tree
 bin_PROGRAMS += apps/ccd
 bin_PROGRAMS += apps/ccd2
+if HAVE_SSE2
+bin_PROGRAMS += apps/align_ssw
+bin_PROGRAMS += apps/align_counter_ssw
+bin_PROGRAMS += apps/align_iter_ssw
+bin_PROGRAMS += apps/align_tree_ssw
 if HAVE_ZLIB
 bin_PROGRAMS += apps/ssw_test
+endif
 endif
 
 noinst_PROGRAMS =
@@ -112,6 +123,9 @@ noinst_PROGRAMS += tests/test_dynamic
 noinst_PROGRAMS += tests/test_read
 noinst_PROGRAMS += tests/test_read_fasta
 noinst_PROGRAMS += tests/test_read_serial
+if HAVE_SSE2
+noinst_PROGRAMS += tests/test_ssw
+endif
 #if HAVE_UTC_ITER
 #noinst_PROGRAMS += sandbox/brute_force_iter
 #endif
@@ -122,11 +136,19 @@ apps_align_iter_SOURCES = apps/align.cpp
 apps_align_tree_SOURCES = apps/align_tree.cpp
 apps_ccd_SOURCES = apps/ccd.cpp
 apps_ccd2_SOURCES = apps/ccd2.cpp
+apps_align_ssw_SOURCES = apps/align.cpp
+apps_align_counter_ssw_SOURCES = apps/align_counter.cpp
+apps_align_iter_ssw_SOURCES = apps/align.cpp
+apps_align_tree_ssw_SOURCES = apps/align_tree.cpp
 apps_ssw_test_SOURCES =
 apps_ssw_test_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/main.c
 apps_ssw_test_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/kseq.h
 
 apps_align_iter_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_ITER
+apps_align_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
+apps_align_counter_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
+apps_align_iter_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
+apps_align_tree_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
 
 apps_ssw_test_LDFLAGS = $(ZLIB_LDFLAGS) $(AM_LDFLAGS)
 
@@ -156,6 +178,7 @@ tests_test_dynamic_SOURCES                 = tests/test_dynamic.cpp
 tests_test_read_SOURCES                    = tests/test_read.cpp
 tests_test_read_fasta_SOURCES              = tests/test_read_fasta.cpp
 tests_test_read_serial_SOURCES             = tests/test_read_serial.cpp
+tests_test_ssw_SOURCES                     = tests/test_ssw.cpp
 #
 #sandbox_brute_force_costs_CPPFLAGS         = $(AM_CPPFLAGS) -DDUMP_COSTS=1
 #sandbox_brute_force_multiple_CPPFLAGS      = $(AM_CPPFLAGS) -DMULTIPLE_PAIRS_PER_TASK=1

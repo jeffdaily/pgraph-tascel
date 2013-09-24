@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include "ssw.h"
 
+#if 0
 //	Print the BLAST like output.
 void ssw_write (s_align* a, 
 			char* ref_seq,
@@ -99,6 +100,7 @@ end:
 		}
 	}
 }
+#endif
 
 //	Align a pair of genome sequences.
 int main (int argc, char * const argv[]) {

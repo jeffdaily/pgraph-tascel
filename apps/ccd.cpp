@@ -37,11 +37,6 @@ int main(int argc, char *argv[])
     char config_file[FILENAME_MAX]; /* path to config file */
     size_t n_sequences = 0;         /* number of sequences (cmd line param) */
     sequences_t *sequences = NULL;  /* all sequences parsed from fasta file */
-    size_t maxSeqLen = 0;           /* longest sequence length parsed */
-    bucket_t *buckets = NULL;       /* all buckets */
-    size_t n_buckets;               /* number of buckets */
-    suffix_t *suffixes = NULL;      /* all suffixes */
-    size_t n_suffixes = 0;          /* number of suffixes */
     param_t param;                  /* config file parameters */
     time_t t1 = 0;                  /* start timer */
     time_t t2 = 0;                  /* stop timer */
@@ -80,14 +75,6 @@ int main(int argc, char *argv[])
     (void) time(&t2);
     printf("Bucketing finished in <%lld> secs\n", (long long)(t2-t1));
     
-#if 0
-    (void) time(&t1);
-    count_sort_buckets(buckets, n_buckets);
-    //qsort(buckets, n_buckets, sizeof *buckets, bktCmp);
-    (void) time(&t2);
-    printf("Bucketing sorted in <%lld> secs\n", (long long)(t2-t1));
-#endif
-
     #ifdef DEBUG
     {
         int i;

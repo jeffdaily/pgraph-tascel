@@ -788,9 +788,11 @@ s_align* ssw_align (const s_profile* prof,
 	r->read_begin1 = -1;
 	r->cigar = 0;
 	r->cigarLen = 0;
+#if 0
 	if (maskLen < 15) {
 		fprintf(stderr, "When maskLen < 15, the function ssw_align doesn't return 2nd best alignment information.\n");
 	}
+#endif
 
 	// Find the alignment scores and ending positions
 	if (prof->profile_byte) {
@@ -859,3 +861,97 @@ void align_destroy (s_align* a) {
 	free(a->cigar);
 	free(a);
 }
+
+
+//	Print the BLAST like output.
+void ssw_write (s_align* a, 
+			char* ref_seq,
+			char* read_seq,
+			int8_t* table,
+            int8_t* mat,
+            int32_t n) { 
+
+	fprintf(stdout, "optimal_alignment_score: %d\tsub-optimal_alignment_score: %d\t", a->score1, a->score2);
+	if (a->ref_begin1 + 1) fprintf(stdout, "target_begin: %d\t", a->ref_begin1 + 1);
+	fprintf(stdout, "target_end: %d\t", a->ref_end1 + 1);
+	if (a->read_begin1 + 1) fprintf(stdout, "query_begin: %d\t", a->read_begin1 + 1);
+	fprintf(stdout, "query_end: %d\n\n", a->read_end1 + 1);
+	if (a->cigar) {
+		int32_t i, c = 0, left = 0, e = 0, qb = a->ref_begin1, pb = a->read_begin1;
+		while (e < a->cigarLen || left > 0) {
+			int32_t count = 0;
+			int32_t q = qb;
+			int32_t p = pb;
+			fprintf(stdout, "Target: %8d    ", q + 1);
+			for (c = e; c < a->cigarLen; ++c) {
+				int32_t letter = 0xf&*(a->cigar + c);
+				int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
+				int32_t l = (count == 0 && left > 0) ? left: length;
+				for (i = 0; i < l; ++i) {
+					if (letter == 1) fprintf(stdout, "-");
+					else {
+						fprintf(stdout, "%c", *(ref_seq + q));
+						++ q;
+					}
+					++ count;
+					if (count == 60) goto step2;
+				}
+			}
+step2:
+			fprintf(stdout, "    %d\n                    ", q);
+			q = qb;
+			count = 0;
+			for (c = e; c < a->cigarLen; ++c) {
+				int32_t letter = 0xf&*(a->cigar + c);
+				int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
+				int32_t l = (count == 0 && left > 0) ? left: length;
+				for (i = 0; i < l; ++i){ 
+					if (letter == 0) {
+						if (table[(int)*(ref_seq + q)] == table[(int)*(read_seq + p)])fprintf(stdout, "|");
+                        else if (mat[table[(int)*(ref_seq + q)]*n + table[(int)*(read_seq + p)]])fprintf(stdout, ":");
+						else fprintf(stdout, "*");
+						++q;
+						++p;
+					} else {
+						fprintf(stdout, "*");
+						if (letter == 1) ++p;
+						else ++q;
+					}
+					++ count;
+					if (count == 60) {
+						qb = q;
+						goto step3;
+					}
+				}
+			}
+step3:
+			p = pb;
+			fprintf(stdout, "\nQuery:  %8d    ", p + 1);
+			count = 0;
+			for (c = e; c < a->cigarLen; ++c) {
+				int32_t letter = 0xf&*(a->cigar + c);
+				int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
+				int32_t l = (count == 0 && left > 0) ? left: length;
+				for (i = 0; i < l; ++i) { 
+					if (letter == 2) fprintf(stdout, "-");
+					else {
+						fprintf(stdout, "%c", *(read_seq + p));
+						++p;
+					}
+					++ count;
+					if (count == 60) {
+						pb = p;
+						left = l - i - 1;
+						e = (left == 0) ? (c + 1) : c;
+						goto end;
+					}
+				}
+			}
+			e = c;
+			left = 0;
+end:
+			fprintf(stdout, "    %d\n\n", p);
+		}
+	}
+}
+

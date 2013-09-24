@@ -41,15 +41,21 @@ AS_IF([test x$with_mpi_wrappers = xyes],
 #GA_REQUIRE
 
 # Checks for header files.
+AC_CHECK_HEADERS([emmintrin.h])
 AC_CHECK_HEADERS([limits.h])
 AC_CHECK_HEADERS([pthread.h])
 AC_CHECK_HEADERS([sched.h])
 AC_CHECK_HEADERS([stdlib.h])
 
+AM_CONDITIONAL([HAVE_SSE2], [test "x$ac_cv_header_emmintrin_h" = xyes])
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
 AC_C_RESTRICT
 AC_TYPE_INT8_T
+AC_TYPE_INT16_T
+AC_TYPE_INT32_T
+AC_TYPE_INT64_T
 
 AC_CHECK_TYPES([pthread_barrier_t], [], [], [[#include <pthread.h>]])
 AM_CONDITIONAL([HAVE_PTHREAD_BARRIER_T],

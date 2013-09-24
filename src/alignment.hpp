@@ -287,6 +287,31 @@ cell_t affine_gap_align_blosum(
 
 
 /**
+ * Implementation of affine gap pairwise sequence alignment using blosum.
+ *
+ * It is a space efficient version using only two rows. Also, memory for
+ * all dynamic tables are allocated ONLY ONCE outside of this function call
+ * using allocate_cell_table() and allocate_int_table() and passed as
+ * tbl, del, and ins arguments.
+ *
+ * @param[in] s1 character sequence one
+ * @param[in] s1_len length of character sequence one
+ * @param[in] s2 character sequence two
+ * @param[in] s2_len length of character sequence two
+ * @param[in] tbl pre-allocated score table
+ * @param[in] del pre-allocated deletion table
+ * @param[in] ins pre-allocated insertion table
+ * @param[in] open gap penalty
+ * @param[in] gap extension penalty
+ * @return alignment result
+ */
+cell_t affine_gap_align_blosum_ssw(
+        const char * const restrict s1, size_t s1_len,
+        const char * const restrict s2, size_t s2_len,
+        int open, int gap);
+
+
+/**
  * Asks whether the given cell_t alignment result is an edge, based on
  * the given parameters.
  *
@@ -401,38 +426,6 @@ bool is_edge_blosum(
         int OS,
         int &self_score,
         size_t &max_len);
-
-
-/** alphabet for BLOSUM in the order in which the matrix is defined */
-static char ALPHABET_BLOSUM[] = {
-        'A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I',
-        'L', 'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V',
-        'B', 'Z', 'X', 'J', 'O', 'U' };
-
-
-/** mapping from BLOSUM alphabet to BLOSUM index; use as BLOSUM[map[ch-'A']] */
-static int MAP_BLOSUM[] = {
-          0,  20,   4,   3,   6,  13,   7,   8,   9,  23,
-         11,  10,  12,   2,  24,  14,   5,   1,  15,  16,
-         25,  19,  17,  22,  18,  21 };
-
-
-static int ALPHABET_DNA[] = { 'A', 'C', 'G', 'T' };
-
-
-static int MAP_DNA[] = {
-          0,  -1,   1,  -1,  -1,  -1,   2,  -1,  -1,  -1,
-         -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,   3,
-         -1,  -1,  -1,  -1,  -1,  -1 };
-
-
-static int SUB_DNA[4][4] = {
-        /*       A   C   G   T */
-        /* A */{ 1,  0,  0,  0},
-        /* C */{ 0,  1,  0,  0},
-        /* G */{ 0,  0,  1,  0},
-        /* T */{ 0,  0,  0,  1}
-};
 
 }; /* namespace pgraph */
 
