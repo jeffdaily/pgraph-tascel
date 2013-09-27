@@ -297,6 +297,7 @@ int main(int argc, char **argv)
     double mytime_fetch = 0.0;
     double mytime_org = 0.0;
     double mytime_ssw = 0.0;
+    double mytime_local = 0.0;
     int missing = 0;
     int extra = 0;
     // TODO TAKS COUNTER AND ALIGNMENT LOOP
@@ -318,13 +319,17 @@ int main(int argc, char **argv)
         {
             cell_t result;
             cell_t result_ssw;
+            cell_t result_local;
             double t = MPI_Wtime();
             double org;
             double ssw;
+            double local;
             int sscore;
             int sscore_ssw;
+            int sscore_local;
             size_t maxLen;
             size_t maxLen_ssw;
+            size_t maxLen_local;
             Parameters param;
             param.AOL = 8;
             param.SIM = 4;
@@ -343,6 +348,12 @@ int main(int argc, char **argv)
                     sequences[seq_id[1]].str, sequences[seq_id[1]].size,
                     param.open, param.gap);
             mytime_ssw += MPI_Wtime() - ssw;
+            local = MPI_Wtime();
+            result_local = pgraph::local_affine_gap_align_blosum(
+                    sequences[seq_id[0]].str, sequences[seq_id[0]].size,
+                    sequences[seq_id[1]].str, sequences[seq_id[1]].size,
+                    tbl, del, ins, param.open, param.gap);
+            mytime_local += MPI_Wtime() - local;
             bool is_edge_answer = pgraph::is_edge_blosum(result,
                     sequences[seq_id[0]].str, sequences[seq_id[0]].size,
                     sequences[seq_id[1]].str, sequences[seq_id[1]].size,
@@ -351,15 +362,24 @@ int main(int argc, char **argv)
                     sequences[seq_id[0]].str, sequences[seq_id[0]].size,
                     sequences[seq_id[1]].str, sequences[seq_id[1]].size,
                     param.AOL, param.SIM, param.OS, sscore_ssw, maxLen_ssw);
+            bool is_edge_answer_local = pgraph::is_edge_blosum(result_local,
+                    sequences[seq_id[0]].str, sequences[seq_id[0]].size,
+                    sequences[seq_id[1]].str, sequences[seq_id[1]].size,
+                    param.AOL, param.SIM, param.OS, sscore_local, maxLen_local);
             cout << setw(3) << right << seq_id[0] << ":"
                 << setw(3) << left << seq_id[1] << " "
-                << is_edge_answer << "?= " << is_edge_answer_ssw << " "
-                <<  result.score << "?="
-                << result_ssw.score << " "
-                <<  result.matches << "?="
-                << result_ssw.matches << " "
-                <<  result.length << "?="
-                << result_ssw.length << " ";
+                << is_edge_answer << ","
+                << is_edge_answer_ssw << ","
+                << is_edge_answer_local << " "
+                << result.score << ","
+                << result_ssw.score << ","
+                << result_local.score << " "
+                << result.matches << ","
+                << result_ssw.matches << ","
+                << result_local.matches << " "
+                << result.length << ","
+                << result_ssw.length << ","
+                << result_local.length << " ";
             if (is_edge_answer && !is_edge_answer_ssw) {
                 cout << "\tMISSING";
                 missing += 1;
@@ -427,8 +447,9 @@ int main(int argc, char **argv)
         cout << "mytimer=" << mytimer << endl;
         cout << "mytime_combo=" << mytime_combo << endl;
         cout << "mytime_fetch=" << mytime_fetch << endl;
-        cout << "mytime_org=" << mytime_org << endl;
-        cout << "mytime_ssw=" << mytime_ssw << endl;
+        cout << "  mytime_org=" << mytime_org << endl;
+        cout << "  mytime_ssw=" << mytime_ssw << endl;
+        cout << "mytime_local=" << mytime_local << endl;
         cout << "missing=" << missing << endl;
         cout << "extra=" << extra << endl;
     }

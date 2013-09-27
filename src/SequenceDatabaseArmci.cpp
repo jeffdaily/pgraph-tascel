@@ -85,6 +85,8 @@ SequenceDatabaseArmci::SequenceDatabaseArmci(
     ,   tbl(NULL)
     ,   del(NULL)
     ,   ins(NULL)
+    ,   replica_count(-1)
+    ,   replica_index(-1)
 {
     int ierr = 0;
 
@@ -227,6 +229,8 @@ void SequenceDatabaseArmci::read_and_parse_fasta()
         if (color == domain_count) {
             color -= 1;
         }
+        this->replica_count = domain_count;
+        this->replica_index = color;
         mpix_print_sync("color", color, comm_orig);
         ierr = MPI_Comm_split(comm_orig, color, comm_orig_rank, &comm);
         MPI_CHECK_IERR(ierr, comm_orig_rank, comm_orig);

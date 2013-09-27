@@ -79,6 +79,20 @@ class SequenceDatabase
         virtual size_t get_global_count() const = 0;
 
         /**
+         * Returns how many complete sets of sequences are stored collectively by every process.
+         *
+         * @return how many complete sets of sequences are stored collectively by every process.
+         */
+        virtual size_t get_global_replica_count() const = 0;
+
+        /**
+         * Returns the index of this replica, 0-based.
+         *
+         * @return the index of this replica, 0-based.
+         */
+        virtual size_t get_global_replica_index() const = 0;
+
+        /**
          * Returns how many characters are stored collectively by every process.
          *
          * @return how many characters are stored collectively by every process.

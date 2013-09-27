@@ -18,6 +18,8 @@
 #include "alignment.hpp"
 #include "stree.hpp"
 
+#define PRINT_EDGES 0
+
 namespace pgraph {
 
 /**
@@ -331,6 +333,7 @@ is_candidate(sequence_t *seqs, size_t nSeqs,
         if (dup[index] == MAYBE) {
             int ignore1;
             size_t ignore2;
+            assert(0);
             dup[index] = is_edge_blosum(result,
                     seqs[f1].str, seqs[f1].size,
                     seqs[f2].str, seqs[f2].size,
@@ -413,6 +416,7 @@ procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, 
                 for (p = lset[i]; p != NULL; p = p->next) {
                     for (q = p->next; q != NULL; q = q->next) {
                         if (TRUE == is_candidate(seqs, nSeqs, p, q, tbl, ins, del, param, dup)) {
+#if PRINT_EDGES
                             //printf("edge:%s#%s\n", seqs[p->sid].gid, seqs[q->sid].gid);
                             if (p->sid > q->sid) {
                                 printf("edge\t%zu\t%zu\n", q->sid, p->sid);
@@ -420,6 +424,7 @@ procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, 
                             else {
                                 printf("edge\t%zu\t%zu\n", p->sid, q->sid);
                             }
+#endif
                         }
                     }
                 }
@@ -431,6 +436,7 @@ procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, 
                     for (p = lset[i]; p != NULL; p = p->next) {
                         for (q = lset[j]; q != NULL; q = q->next) {
                             if (TRUE == is_candidate(seqs, nSeqs, p, q, tbl, ins, del, param, dup)) {
+#if PRINT_EDGES
                                 //printf("edge:%s#%s\n", seqs[p->sid].gid, seqs[q->sid].gid);
                                 if (p->sid > q->sid) {
                                     printf("edge\t%zu\t%zu\n", q->sid, p->sid);
@@ -438,6 +444,7 @@ procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, 
                                 else {
                                     printf("edge\t%zu\t%zu\n", p->sid, q->sid);
                                 }
+#endif
                             }
                         }
                     }
@@ -522,6 +529,7 @@ void generate_pairs(
                                                         seqs, nSeqs, p, q,
                                                         tbl, ins, del,
                                                         param, dup)) {
+#if PRINT_EDGES
                                                 //printf("edge:%s#%s\n",
                                                     //seqs[p->sid].gid,
                                                     //seqs[q->sid].gid);
@@ -533,6 +541,7 @@ void generate_pairs(
                                                     printf("edge\t%zu\t%zu\n",
                                                             p->sid, q->sid);
                                                 }
+#endif
                                             }
                                         }
                                     }

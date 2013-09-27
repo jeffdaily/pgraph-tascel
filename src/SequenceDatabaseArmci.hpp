@@ -85,6 +85,20 @@ class SequenceDatabaseArmci : public SequenceDatabase
         virtual size_t get_global_count() const;
 
         /**
+         * Returns how many complete sets of sequences are stored collectively by every process.
+         *
+         * @return how many complete sets of sequences are stored collectively by every process.
+         */
+        virtual size_t get_global_replica_count() const { return replica_count; }
+
+        /**
+         * Returns the index of this replica, 0-based.
+         *
+         * @return the index of this replica, 0-based.
+         */
+        virtual size_t get_global_replica_index() const { return replica_index; }
+
+        /**
          * Returns how many characters are stored collectively by every process.
          *
          * @return how many characters are stored collectively by every process.
@@ -240,9 +254,11 @@ class SequenceDatabaseArmci : public SequenceDatabase
         map<size_t, Sequence*> remote_cache; /**< TODO */
         PthreadMutex mutex; /**< controls access to remote cache */
         size_t max_seq_size;/**< biggest sequence */
-        cell_t ***tbl;      /**< tables for alignment */
-        int ***del;
-        int ***ins;
+        cell_t ***tbl;      /**< cell table for alignment */
+        int ***del;         /**< del table for alignment */
+        int ***ins;         /**< ins table for alignment */
+        MPI_Offset replica_count; /* how many complete database copies exist */
+        MPI_Offset replica_index; /* which database copy is owned by this process */
 };
 
 }; /* namespace pgraph */

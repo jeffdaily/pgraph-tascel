@@ -62,6 +62,7 @@ create_suffix_buckets_old(const sequences_t *sequences, param_t param)
     size_t n_suffixes = 0;
     size_t n_buckets = 0;
     size_t i = 0;
+    ssize_t d = 0;
     size_t suffix_index = 0;
 
     /* allocate buckets */
@@ -73,9 +74,10 @@ create_suffix_buckets_old(const sequences_t *sequences, param_t param)
     }
 
     /* initialize buckets */
-    for (i = 0; i < n_buckets; ++i) {
-        buckets[i].suffixes = NULL;
-        buckets[i].size = 0;
+#pragma omp parallel for
+    for (d = 0; d < (ssize_t)n_buckets; ++d) {
+        buckets[d].suffixes = NULL;
+        buckets[d].size = 0;
     }
 
     /* allocate suffixes */
@@ -87,10 +89,11 @@ create_suffix_buckets_old(const sequences_t *sequences, param_t param)
     }
 
     /* initialize suffixes */
-    for (i = 0; i < n_suffixes; ++i) {
-        suffixes[i].sid = 0;
-        suffixes[i].pid = 0;
-        suffixes[i].next = NULL;
+#pragma omp parallel for
+    for (d = 0; d < (ssize_t)n_suffixes; ++d) {
+        suffixes[d].sid = 0;
+        suffixes[d].pid = 0;
+        suffixes[d].next = NULL;
     }
 
     /* slide k-mers for every sequence and bucket them */

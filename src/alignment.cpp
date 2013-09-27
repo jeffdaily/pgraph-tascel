@@ -443,6 +443,113 @@ cell_t affine_gap_align_blosum(
 }
 
 
+cell_t local_affine_gap_align_blosum(
+        const char * const restrict s1, size_t s1Len,
+        const char * const restrict s2, size_t s2Len,
+        cell_t ** const restrict tbl,
+        int ** const restrict del,
+        int ** const restrict ins,
+        int open, int gap)
+{
+    size_t i = 0;                       /* first sequence char index */
+    size_t j = 0;                       /* second sequence char index */
+    cell_t result = {INT_MIN, 0, 0};   /* max cell in last col */
+    cell_t * restrict tI = NULL;        /* current DP table row */
+    cell_t * restrict pI = NULL;        /* previous DP table row */
+
+    AFFINE_GAP_ALIGN_ASSERT
+
+    /* init first row of 3 tables */                                        
+    tbl[0][0].score = 0;                                                    
+    tbl[0][0].matches = 0;                                                  
+    tbl[0][0].length = 0;                                                   
+    del[0][0] = 0;                                                          
+    ins[0][0] = 0;                                                          
+    tI = tbl[0];                                                            
+    for (j = 1; j <= s2Len; j++) {                                          
+        tI[j].score = 0;
+        tI[j].matches = 0;                                                  
+        tI[j].length = 0;                                                   
+        del[0][j] = 0;
+        ins[0][j] = 0;
+    }                                                                       
+                                                                            
+    for (i = 1; i <= s1Len; ++i) {                                          
+        int dig = 0;        /* diagonal value in DP table */                
+        int up = 0;         /* upper value in DP table */                   
+        int left = 0;       /* left value in DP table */                    
+        int maxScore = 0;   /* max of dig, up, and left in DP table */      
+        size_t cr = 0;      /* current row index in DP table */             
+        size_t pr = 0;      /* previous row index in DP table */            
+        char ch1 = 0;       /* current character in first sequence */       
+                                                                            
+        cr = CROW(i);                                                       
+        pr = PROW(i);                                                       
+        ch1 = s1[i - 1];                                                    
+        tI = tbl[cr];                                                       
+        pI = tbl[pr];                                                       
+                                                                            
+        /* init first column of 3 tables */                                 
+        tI[0].score = 0;
+        tI[0].matches = 0;                                                  
+        tI[0].length = 0;                                                   
+        del[cr][0] = 0;
+        ins[cr][0] = 0;
+                                                                            
+        for (j = 1; j <= s2Len; j++) {                                      
+            int tmp1 = 0;   /* temporary during DP calculation */           
+            int tmp2 = 0;   /* temporary during DP calculation */           
+            int tmp3 = 0;   /* temporary during DP calculation */           
+            char ch2 = 0;   /* current character in second sequence */      
+                                                                            
+            ch2 = s2[j - 1];                                                
+                                                                            
+            /* overflow could happen, INT_MIN-1 = 2147483647 */             
+            tmp1 = NEG_ADD(pI[j].score, open);
+            tmp2 = NEG_ADD(del[pr][j], gap);                                
+            up = MAX(tmp1, tmp2);                                           
+            del[cr][j] = up;                                                
+            tmp1 = NEG_ADD(tI[j - 1].score, open);
+            tmp2 = NEG_ADD(ins[cr][j - 1], gap);                            
+            left = MAX(tmp1, tmp2);                                         
+            ins[cr][j] = left;                                              
+            maxScore = MAX(up, left);
+            tmp3 = BLOSUM(ch1, ch2);                       
+            dig = NEG_ADD(pI[j - 1].score, tmp3);
+            maxScore = MAX(MAX(maxScore, dig), 0);
+            tI[j].score = maxScore;
+                                                                            
+            if (maxScore == 0) {
+                tI[j].matches = 0;
+                tI[j].length = 0;
+            }
+            else if (maxScore == dig) {
+                tI[j].matches = pI[j - 1].matches + ((ch1 == ch2) ? 1 : 0); 
+                tI[j].length = pI[j - 1].length + 1;                        
+            }                                                               
+            else if (maxScore == up) {                                      
+                tI[j].matches = pI[j].matches;                              
+                tI[j].length = pI[j].length + 1;                            
+            }                                                               
+            else {                                                          
+                tI[j].matches = tI[j - 1].matches;                          
+                tI[j].length = tI[j - 1].length + 1;                        
+            }                                                               
+                                                                            
+            /* track the table max */
+            if (tI[j].score > result.score) {
+                result = tI[j];
+            }
+        } /* end of j loop */                                               
+                                                                            
+        assert(j == (s2Len + 1));                                           
+                                                                            
+    } /* end of i loop */                                                   
+                                                                            
+    return result;
+}
+
+
 #define IS_EDGE_ASSERT  \
     assert(s1);         \
     assert(s2);         \
@@ -547,8 +654,13 @@ bool is_edge_blosum(
 
 
 cell_t affine_gap_align_blosum_ssw(
+#if NOSWAP
         const char * const restrict s1, size_t s1_len,
         const char * const restrict s2, size_t s2_len,
+#else
+        const char * const restrict s2, size_t s2_len,
+        const char * const restrict s1, size_t s1_len,
+#endif
         int open, int gap)
 {
     cell_t ret;
@@ -573,7 +685,7 @@ cell_t affine_gap_align_blosum_ssw(
     for (size_t m = 0; m < s1_len; ++m) s1_num[m] = table[(int)s1[m]];
     for (size_t m = 0; m < s2_len; ++m) s2_num[m] = table[(int)s2[m]];
     profile = ssw_init(s1_num, s1_len, blosum__, 24, 2);
-    result = ssw_align(profile, s2_num, s2_len, open, gap, 2, 0, 0, s1_len/2);
+    result = ssw_align(profile, s2_num, s2_len, -open, -gap, 2, 0, 0, s1_len/2);
 
     ret.score = result->score1;
     ret.matches = 0;
@@ -582,88 +694,27 @@ cell_t affine_gap_align_blosum_ssw(
     s_align* a = result;
     const char * const restrict ref_seq = s2;
     const char * const restrict read_seq = s1;
-    const int8_t * const restrict mat = blosum__;
-    int32_t n = 24;
 
     if (a->cigar) {
-        int32_t i, c = 0, left = 0, e = 0, qb = a->ref_begin1, pb = a->read_begin1;
-        while (e < a->cigarLen || left > 0) {
-            int32_t count = 0;
-            int32_t q = qb;
-            int32_t p = pb;
-            for (c = e; c < a->cigarLen; ++c) {
-                int32_t letter = 0xf&*(a->cigar + c);
-                int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
-                int32_t l = (count == 0 && left > 0) ? left: length;
-                for (i = 0; i < l; ++i) {
-                    if (letter == 1) {}
-                    else {
-                        ++ q;
+        int32_t i, c = 0, qb = a->ref_begin1, pb = a->read_begin1;
+        int32_t q = qb;
+        int32_t p = pb;
+        for (c = 0; c < a->cigarLen; ++c) {
+            int32_t letter = 0xf&*(a->cigar + c);
+            int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
+            for (i = 0; i < length; ++i){ 
+                if (letter == 0) {
+                    if (table[(int)*(ref_seq + q)] == table[(int)*(read_seq + p)]) {
+                        ret.matches += 1;
                     }
-                    ++ count;
-                    if (count == 60) goto step2;
+                    ++q;
+                    ++p;
+                } else {
+                    if (letter == 1) ++p;
+                    else ++q;
                 }
+                ret.length += 1;
             }
-step2:
-            q = qb;
-            count = 0;
-            for (c = e; c < a->cigarLen; ++c) {
-                int32_t letter = 0xf&*(a->cigar + c);
-                int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
-                int32_t l = (count == 0 && left > 0) ? left: length;
-                for (i = 0; i < l; ++i){ 
-                    if (letter == 0) {
-                        if (table[(int)*(ref_seq + q)] == table[(int)*(read_seq + p)]){
-                            // |
-                            ret.matches += 1;
-                            ret.length += 1;
-                        }
-                        else if (mat[table[(int)*(ref_seq + q)]*n+table[(int)*(read_seq + p)]]>0){
-                            // :
-                            ret.length += 1;
-                        }
-                        else {
-                            // *
-                            ret.length += 1;
-                        }
-                        ++q;
-                        ++p;
-                    } else {
-                        if (letter == 1) ++p;
-                        else ++q;
-                    }
-                    ++ count;
-                    if (count == 60) {
-                        qb = q;
-                        goto step3;
-                    }
-                }
-            }
-step3:
-            p = pb;
-            count = 0;
-            for (c = e; c < a->cigarLen; ++c) {
-                int32_t letter = 0xf&*(a->cigar + c);
-                int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
-                int32_t l = (count == 0 && left > 0) ? left: length;
-                for (i = 0; i < l; ++i) { 
-                    if (letter == 2) {}
-                    else {
-                        ++p;
-                    }
-                    ++ count;
-                    if (count == 60) {
-                        pb = p;
-                        left = l - i - 1;
-                        e = (left == 0) ? (c + 1) : c;
-                        goto end;
-                    }
-                }
-            }
-            e = c;
-            left = 0;
-end:
-            ;
         }
     }
 

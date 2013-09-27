@@ -20,6 +20,7 @@
 #include <unistd.h>
 
 #include "bucket.hpp"
+#include "combinations.h"
 #include "constants.h"
 #include "csequence.h"
 #include "stree.hpp"
@@ -41,7 +42,10 @@ int main(int argc, char *argv[])
     time_t t1 = 0;                  /* start timer */
     time_t t2 = 0;                  /* stop timer */
     suffix_buckets_t *suffix_buckets = NULL;
+//#ifdef DEBUG
     size_t i = 0;                   /* for loop index */
+//#endif
+    ssize_t d = 0;                  /* signed for loop index */
     size_t n_triangular = 0;        /* number of possible pairs */
     int *dup = NULL;                /* track duplicate pairs */
 
@@ -69,6 +73,7 @@ int main(int argc, char *argv[])
     (void) time(&t2);
     printf("<%zu> amino acids (<%zu> chars) are loaded in <%lld> secs\n",
             sequences->size, sequences->n_chars, (long long)(t2-t1));
+    printf("max_seq_size %zu\n", sequences->max_seq_size);
 
     (void) time(&t1);
     suffix_buckets = create_suffix_buckets_old(sequences, param);
@@ -77,7 +82,6 @@ int main(int argc, char *argv[])
     
     #ifdef DEBUG
     {
-        int i;
         for (i=0; i<100; ++i) {
             printf("n_buckets[%d] - %d\n", i, buckets[i].size);
         }
@@ -87,8 +91,9 @@ int main(int argc, char *argv[])
 
     n_triangular = sequences->size * (sequences->size + 1U) / 2U;
     dup = new int[n_triangular];
-    for (i = 0; i < n_triangular; ++i) {
-        dup[i] = 2;
+#pragma omp parallel for
+    for (d = 0; d < (ssize_t)n_triangular; ++d) {
+        dup[d] = MAYBE;
     }
     
     /* suffix tree construction & processing */
@@ -96,20 +101,132 @@ int main(int argc, char *argv[])
     printf("n_suffixes=%zu\n", suffix_buckets->suffixes_size);
     (void) time(&t1);
     size_t count = 0;
-    for (i = 0; i < suffix_buckets->buckets_size; ++i) {
-        if (NULL != suffix_buckets->buckets[i].suffixes) {
+#pragma omp parallel for
+    for (d = 0; d < (long)suffix_buckets->buckets_size; ++d) {
+        if (NULL != suffix_buckets->buckets[d].suffixes) {
             stree_t *tree = build_tree(
-                    sequences, &(suffix_buckets->buckets[i]), param);
+                    sequences, &(suffix_buckets->buckets[d]), param);
             generate_pairs(tree, sequences, dup, param);
             free_tree(tree);
-            ++count;
+#pragma omp atomic
+            count += 1;
         }
     }
     (void) time(&t2);
-    delete [] dup;
     printf("%zu non-empty trees constructed and processed in <%lld> secs\n",
             count, (long long)(t2-t1));
     
+    /* generate statistics on how much was saved by filtering */
+    unsigned long ntasks = binomial_coefficient(n_sequences, 2);
+    unsigned long work_no = 0;
+    unsigned long work_yes = 0;
+    unsigned long skipped = 0;
+    unsigned long histo_width = 10000;
+    unsigned long histo_size = sequences->max_seq_size * sequences->max_seq_size / histo_width;
+    unsigned long *histo = new unsigned long[histo_size];
+    (void)memset(histo, 0, sizeof(unsigned long)*histo_size);
+    int cutOff = param.AOL * param.SIM;
+    printf("      ntasks=%lu\n", ntasks);
+    printf("n_triangular=%zu\n", n_triangular);
+    (void) time(&t1);
+#pragma omp parallel for
+    for (d = 0; d < (ssize_t)ntasks; ++d) {
+        unsigned long seq_id[2];
+        size_t index = 0;
+        size_t work = 0;
+        unsigned long histo_index = 0;
+        size_t s1Len = 0;
+        size_t s2Len = 0;
+
+        k_combination2(d, seq_id);
+        s1Len = sequences->seq[seq_id[0]].size;
+        s2Len = sequences->seq[seq_id[1]].size;
+        index = (n_sequences*seq_id[0]) + seq_id[1] - (seq_id[0]*(seq_id[0]+1)/2);
+        work = sequences->seq[seq_id[0]].size * sequences->seq[seq_id[1]].size;
+        histo_index = work / histo_width;
+        if ((s1Len <= s2Len && (100 * s1Len < cutOff * s2Len))
+                || (s2Len < s1Len && (100 * s2Len < cutOff * s1Len))) {
+            dup[index] = NO;
+        }
+        switch (dup[index]) {
+            case NO:
+            case MAYBE:
+#pragma omp atomic
+                work_no += work;
+#pragma omp atomic
+                skipped += 1;
+#pragma omp atomic
+                histo[histo_index] += 1;
+                break;
+            case YES:
+#pragma omp atomic
+                work_yes += work;
+                break;
+            default:
+                assert(0);
+        }
+    }
+    (void) time(&t2);
+    printf("filter analyzed in <%lld> secs\n", (long long)(t2-t1));
+    printf("skipped %zu alignments out of %zu (%f%%)\n",
+            skipped, ntasks, 100.0*double(skipped)/double(ntasks));
+    printf(" work_no=%zu\n", work_no);
+    printf("work_yes=%zu\n", work_yes);
+    printf("work saved is %f%%\n", 100.0*double(work_no)/double(work_no+work_yes));
+    printf("histogram\n");
+    printf("%lu", histo[0]);
+    for (i=1; i<histo_size; ++i) {
+        printf(",%lu", histo[i]);
+    }
+    printf("\n");
+
+    /* now use a simple length-based cutoff filter */
+    printf("using a simple length-based cutoff filter\n");
+    ntasks = binomial_coefficient(n_sequences, 2);
+    work_no = 0;
+    work_yes = 0;
+    skipped = 0;
+    (void)memset(histo, 0, sizeof(unsigned long)*histo_size);
+    (void) time(&t1);
+    for (d = 0; d < (ssize_t)ntasks; ++d) {
+        unsigned long seq_id[2];
+        size_t index = 0;
+        size_t work = 0;
+        unsigned long histo_index = 0;
+        size_t s1Len = 0;
+        size_t s2Len = 0;
+
+        k_combination2(d, seq_id);
+        s1Len = sequences->seq[seq_id[0]].size;
+        s2Len = sequences->seq[seq_id[1]].size;
+        index = (n_sequences*seq_id[0]) + seq_id[1] - (seq_id[0]*(seq_id[0]+1)/2);
+        work = s1Len * s2Len;
+        histo_index = work / histo_width;
+        if ((s1Len <= s2Len && (100 * s1Len < cutOff * s2Len))
+                || (s2Len < s1Len && (100 * s2Len < cutOff * s1Len))) {
+            work_no += work;
+            skipped += 1;
+            histo[histo_index] += 1;
+        }
+        else {
+            work_yes += work;
+        }
+    }
+    (void) time(&t2);
+    printf("filter analyzed in <%lld> secs\n", (long long)(t2-t1));
+    printf("skipped %zu alignments out of %zu (%f%%)\n",
+            skipped, ntasks, 100.0*double(skipped)/double(ntasks));
+    printf(" work_no=%zu\n", work_no);
+    printf("work_yes=%zu\n", work_yes);
+    printf("work saved is %f%%\n", 100.0*double(work_no)/double(work_no+work_yes));
+    printf("histogram\n");
+    printf("%lu", histo[0]);
+    for (i=1; i<histo_size; ++i) {
+        printf(",%lu", histo[i]);
+    }
+    printf("\n");
+
+    delete [] dup;
     pg_free_sequences(sequences);
     free_suffix_buckets(suffix_buckets);
 

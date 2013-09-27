@@ -305,6 +305,34 @@ cell_t affine_gap_align_blosum(
  * @param[in] gap extension penalty
  * @return alignment result
  */
+cell_t local_affine_gap_align_blosum(
+        const char * const restrict s1, size_t s1_len,
+        const char * const restrict s2, size_t s2_len,
+        cell_t ** const restrict tbl,
+        int ** const restrict del,
+        int ** const restrict ins,
+        int open, int gap);
+
+
+/**
+ * Implementation of affine gap pairwise sequence alignment using blosum.
+ *
+ * It is a space efficient version using only two rows. Also, memory for
+ * all dynamic tables are allocated ONLY ONCE outside of this function call
+ * using allocate_cell_table() and allocate_int_table() and passed as
+ * tbl, del, and ins arguments.
+ *
+ * @param[in] s1 character sequence one
+ * @param[in] s1_len length of character sequence one
+ * @param[in] s2 character sequence two
+ * @param[in] s2_len length of character sequence two
+ * @param[in] tbl pre-allocated score table
+ * @param[in] del pre-allocated deletion table
+ * @param[in] ins pre-allocated insertion table
+ * @param[in] open gap penalty
+ * @param[in] gap extension penalty
+ * @return alignment result
+ */
 cell_t affine_gap_align_blosum_ssw(
         const char * const restrict s1, size_t s1_len,
         const char * const restrict s2, size_t s2_len,
