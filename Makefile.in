@@ -136,6 +136,7 @@ am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
 	src/Parameters.hpp src/param.cpp src/param.hpp \
 	src/pthread_fixes.h src/Sequence.cpp src/Sequence.hpp \
 	src/SequenceDatabaseArmci.cpp src/SequenceDatabaseArmci.hpp \
+	src/SequenceDatabaseGArray.cpp src/SequenceDatabaseGArray.hpp \
 	src/SequenceDatabase.cpp src/SequenceDatabase.hpp \
 	src/stree.cpp src/stree.hpp src/SuffixBuckets.cpp \
 	src/SuffixBuckets.hpp src/SuffixTree.cpp src/SuffixTree.hpp \
@@ -150,9 +151,9 @@ am__dirstamp = $(am__leading_dot)dirstamp
 am_libpgraph_la_OBJECTS = src/alignment.lo src/bucket.lo \
 	src/combinations.lo src/csequence.lo src/io.lo src/mpix.lo \
 	src/Parameters.lo src/param.lo src/Sequence.lo \
-	src/SequenceDatabaseArmci.lo src/SequenceDatabase.lo \
-	src/stree.lo src/SuffixBuckets.lo src/SuffixTree.lo \
-	$(am__objects_1)
+	src/SequenceDatabaseArmci.lo src/SequenceDatabaseGArray.lo \
+	src/SequenceDatabase.lo src/stree.lo src/SuffixBuckets.lo \
+	src/SuffixTree.lo $(am__objects_1)
 libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -564,6 +565,7 @@ libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
 	src/Parameters.hpp src/param.cpp src/param.hpp \
 	src/pthread_fixes.h src/Sequence.cpp src/Sequence.hpp \
 	src/SequenceDatabaseArmci.cpp src/SequenceDatabaseArmci.hpp \
+	src/SequenceDatabaseGArray.cpp src/SequenceDatabaseGArray.hpp \
 	src/SequenceDatabase.cpp src/SequenceDatabase.hpp \
 	src/stree.cpp src/stree.hpp src/SuffixBuckets.cpp \
 	src/SuffixBuckets.hpp src/SuffixTree.cpp src/SuffixTree.hpp \
@@ -697,6 +699,8 @@ src/Parameters.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/param.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/Sequence.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/SequenceDatabaseArmci.lo: src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
+src/SequenceDatabaseGArray.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
 src/SequenceDatabase.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
@@ -925,6 +929,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Sequence.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabase.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabaseArmci.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabaseGArray.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SuffixBuckets.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SuffixTree.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/alignment.Plo@am__quote@
