@@ -85,9 +85,9 @@ host_triplet = @host@
 @HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.cpp \
 @HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h
 bin_PROGRAMS = apps/align$(EXEEXT) apps/align_counter$(EXEEXT) \
-	apps/align_iter$(EXEEXT) apps/align_tree$(EXEEXT) \
-	apps/ccd$(EXEEXT) apps/ccd2$(EXEEXT) $(am__EXEEXT_1) \
-	$(am__EXEEXT_2)
+	apps/align_garray$(EXEEXT) apps/align_iter$(EXEEXT) \
+	apps/align_tree$(EXEEXT) apps/ccd$(EXEEXT) apps/ccd2$(EXEEXT) \
+	$(am__EXEEXT_1) $(am__EXEEXT_2)
 @HAVE_SSE2_TRUE@am__append_3 = apps/align_ssw apps/align_counter_ssw \
 @HAVE_SSE2_TRUE@	apps/align_iter_ssw apps/align_tree_ssw
 @HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@am__append_4 = apps/ssw_test
@@ -187,6 +187,12 @@ apps_align_counter_ssw_LDADD = $(LDADD)
 apps_align_counter_ssw_DEPENDENCIES = libpgraph.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am_apps_align_garray_OBJECTS = apps/apps_align_garray-align.$(OBJEXT)
+apps_align_garray_OBJECTS = $(am_apps_align_garray_OBJECTS)
+apps_align_garray_LDADD = $(LDADD)
+apps_align_garray_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_apps_align_iter_OBJECTS = apps/apps_align_iter-align.$(OBJEXT)
 apps_align_iter_OBJECTS = $(am_apps_align_iter_OBJECTS)
 apps_align_iter_LDADD = $(LDADD)
@@ -339,23 +345,23 @@ am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
 	$(apps_align_counter_SOURCES) \
-	$(apps_align_counter_ssw_SOURCES) $(apps_align_iter_SOURCES) \
-	$(apps_align_iter_ssw_SOURCES) $(apps_align_ssw_SOURCES) \
-	$(apps_align_tree_SOURCES) $(apps_align_tree_ssw_SOURCES) \
-	$(apps_ccd_SOURCES) $(apps_ccd2_SOURCES) \
-	$(apps_ssw_test_SOURCES) $(tests_test_align_SOURCES) \
-	$(tests_test_combinations_SOURCES) \
+	$(apps_align_counter_ssw_SOURCES) $(apps_align_garray_SOURCES) \
+	$(apps_align_iter_SOURCES) $(apps_align_iter_ssw_SOURCES) \
+	$(apps_align_ssw_SOURCES) $(apps_align_tree_SOURCES) \
+	$(apps_align_tree_ssw_SOURCES) $(apps_ccd_SOURCES) \
+	$(apps_ccd2_SOURCES) $(apps_ssw_test_SOURCES) \
+	$(tests_test_align_SOURCES) $(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_read_SOURCES) \
 	$(tests_test_read_fasta_SOURCES) \
 	$(tests_test_read_serial_SOURCES) $(tests_test_ssw_SOURCES)
 DIST_SOURCES = $(am__libpgraph_la_SOURCES_DIST) $(apps_align_SOURCES) \
 	$(apps_align_counter_SOURCES) \
-	$(apps_align_counter_ssw_SOURCES) $(apps_align_iter_SOURCES) \
-	$(apps_align_iter_ssw_SOURCES) $(apps_align_ssw_SOURCES) \
-	$(apps_align_tree_SOURCES) $(apps_align_tree_ssw_SOURCES) \
-	$(apps_ccd_SOURCES) $(apps_ccd2_SOURCES) \
-	$(apps_ssw_test_SOURCES) $(tests_test_align_SOURCES) \
-	$(tests_test_combinations_SOURCES) \
+	$(apps_align_counter_ssw_SOURCES) $(apps_align_garray_SOURCES) \
+	$(apps_align_iter_SOURCES) $(apps_align_iter_ssw_SOURCES) \
+	$(apps_align_ssw_SOURCES) $(apps_align_tree_SOURCES) \
+	$(apps_align_tree_ssw_SOURCES) $(apps_ccd_SOURCES) \
+	$(apps_ccd2_SOURCES) $(apps_ssw_test_SOURCES) \
+	$(tests_test_align_SOURCES) $(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_read_SOURCES) \
 	$(tests_test_read_fasta_SOURCES) \
 	$(tests_test_read_serial_SOURCES) $(tests_test_ssw_SOURCES)
@@ -575,6 +581,7 @@ libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
 #endif
 apps_align_SOURCES = apps/align.cpp
 apps_align_counter_SOURCES = apps/align_counter.cpp
+apps_align_garray_SOURCES = apps/align.cpp
 apps_align_iter_SOURCES = apps/align.cpp
 apps_align_tree_SOURCES = apps/align_tree.cpp
 apps_ccd_SOURCES = apps/ccd.cpp
@@ -587,6 +594,7 @@ apps_ssw_test_SOURCES =  \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/main.c \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/kseq.h
 apps_align_iter_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_ITER
+apps_align_garray_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_GARRAY
 apps_align_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
 apps_align_counter_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
 apps_align_iter_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
@@ -803,6 +811,12 @@ apps/apps_align_counter_ssw-align_counter.$(OBJEXT):  \
 apps/align_counter_ssw$(EXEEXT): $(apps_align_counter_ssw_OBJECTS) $(apps_align_counter_ssw_DEPENDENCIES) $(EXTRA_apps_align_counter_ssw_DEPENDENCIES) apps/$(am__dirstamp)
 	@rm -f apps/align_counter_ssw$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_counter_ssw_OBJECTS) $(apps_align_counter_ssw_LDADD) $(LIBS)
+apps/apps_align_garray-align.$(OBJEXT): apps/$(am__dirstamp) \
+	apps/$(DEPDIR)/$(am__dirstamp)
+
+apps/align_garray$(EXEEXT): $(apps_align_garray_OBJECTS) $(apps_align_garray_DEPENDENCIES) $(EXTRA_apps_align_garray_DEPENDENCIES) apps/$(am__dirstamp)
+	@rm -f apps/align_garray$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_garray_OBJECTS) $(apps_align_garray_LDADD) $(LIBS)
 apps/apps_align_iter-align.$(OBJEXT): apps/$(am__dirstamp) \
 	apps/$(DEPDIR)/$(am__dirstamp)
 
@@ -916,6 +930,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_counter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_tree.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_counter_ssw-align_counter.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_garray-align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_iter-align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_iter_ssw-align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_ssw-align.Po@am__quote@
@@ -1009,6 +1024,20 @@ apps/apps_align_counter_ssw-align_counter.obj: apps/align_counter.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_counter.cpp' object='apps/apps_align_counter_ssw-align_counter.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_counter_ssw_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_counter_ssw-align_counter.obj `if test -f 'apps/align_counter.cpp'; then $(CYGPATH_W) 'apps/align_counter.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_counter.cpp'; fi`
+
+apps/apps_align_garray-align.o: apps/align.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_garray_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_garray-align.o -MD -MP -MF apps/$(DEPDIR)/apps_align_garray-align.Tpo -c -o apps/apps_align_garray-align.o `test -f 'apps/align.cpp' || echo '$(srcdir)/'`apps/align.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_garray-align.Tpo apps/$(DEPDIR)/apps_align_garray-align.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align.cpp' object='apps/apps_align_garray-align.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_garray_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_garray-align.o `test -f 'apps/align.cpp' || echo '$(srcdir)/'`apps/align.cpp
+
+apps/apps_align_garray-align.obj: apps/align.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_garray_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_garray-align.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_garray-align.Tpo -c -o apps/apps_align_garray-align.obj `if test -f 'apps/align.cpp'; then $(CYGPATH_W) 'apps/align.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_garray-align.Tpo apps/$(DEPDIR)/apps_align_garray-align.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align.cpp' object='apps/apps_align_garray-align.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_garray_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_garray-align.obj `if test -f 'apps/align.cpp'; then $(CYGPATH_W) 'apps/align.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align.cpp'; fi`
 
 apps/apps_align_iter-align.o: apps/align.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_iter_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_iter-align.o -MD -MP -MF apps/$(DEPDIR)/apps_align_iter-align.Tpo -c -o apps/apps_align_iter-align.o `test -f 'apps/align.cpp' || echo '$(srcdir)/'`apps/align.cpp

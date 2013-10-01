@@ -20,6 +20,7 @@
 #include <cctype>
 #include <cfloat>
 #include <cmath>
+#include <csignal>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -38,7 +39,11 @@
 #include "mpix.hpp"
 #include "tascelx.hpp"
 #include "SequenceDatabase.hpp"
+#ifdef USE_GARRAY
+#include "SequenceDatabaseGArray.hpp"
+#else
 #include "SequenceDatabaseArmci.hpp"
+#endif
 
 using namespace std;
 using namespace tascel;
@@ -46,6 +51,36 @@ using namespace pgraph;
 
 #define SEP ","
 #define ALL_RESULTS 1
+
+
+#define PAUSE_ON_ERROR
+#ifdef PAUSE_ON_ERROR
+static void (*SigSegvOrig)(int) = NULL;
+
+static void SigSegvHandler(int sig)
+{
+    fprintf(stderr,"(%d): Segmentation Violation ... pausing\n",
+            getpid() );
+    pause();
+    if (SigSegvOrig == SIG_DFL) {
+        signal(sig, SIG_DFL);
+    }
+    else if (SigSegvOrig == SIG_IGN) {
+    }
+    else {
+        SigSegvOrig(sig);
+    }
+}
+
+static void TrapSigSegv()
+{
+    if ((SigSegvOrig=signal(SIGSEGV, SigSegvHandler)) == SIG_ERR) {
+        fprintf(stderr, "TrapSigSegv: error from signal setting SIGSEGV");
+        exit(EXIT_FAILURE);
+    }
+}
+#endif
+
 
 class EdgeResult {
     public:
@@ -298,6 +333,10 @@ int main(int argc, char **argv)
     vector<string> all_argv;
     unsigned long nCk;
 
+#ifdef PAUSE_ON_ERROR
+    TrapSigSegv();
+#endif
+
     /* initialize MPI */
 #if defined(THREADED)
     {
@@ -382,8 +421,13 @@ int main(int argc, char **argv)
         return 1;
     }
 
+#ifdef USE_GARRAY
+    sequences = new SequenceDatabaseGArray(all_argv[1],
+            parse_memory_budget(all_argv[2].c_str()), '\0');
+#else
     sequences = new SequenceDatabaseArmci(all_argv[1],
             parse_memory_budget(all_argv[2].c_str()), comm, NUM_WORKERS, '\0');
+#endif
 
     /* how many combinations of sequences are there? */
     nCk = binomial_coefficient(sequences->get_global_count(), 2);
@@ -556,27 +600,28 @@ int main(int argc, char **argv)
     }
     delete [] rstats;
     rstats=NULL;
+    delete [] stats;
 
     StealingStats stt[NUM_WORKERS];
     for(int i=0; i<NUM_WORKERS; i++) {
-      stt[i] = utcs[i]->getStats();
+        stt[i] = utcs[i]->getStats();
     }
 
     StealingStats * rstt = new StealingStats[NUM_WORKERS*nprocs];
     MPI_Gather(stt, sizeof(StealingStats)*NUM_WORKERS, MPI_CHAR, 
-	       rstt, sizeof(StealingStats)*NUM_WORKERS, MPI_CHAR, 
-	       0, comm);
+            rstt, sizeof(StealingStats)*NUM_WORKERS, MPI_CHAR, 
+            0, comm);
 
     /* synchronously print stealing stats all from process 0 */
     if (0 == rank) {
-      StealingStats tstt;
-      cout<<" pid "<<rstt[0].formatString()<<endl;      
-      for(int i=0; i<nprocs*NUM_WORKERS; i++) {
-	tstt += rstt[i];
-	cout<<std::setw(4)<<std::right<<i<<rstt[i]<<endl;
-      }
-      cout<<"=============================================="<<endl;
-      cout<<"TOT "<<tstt<<endl;
+        StealingStats tstt;
+        cout<<" pid "<<rstt[0].formatString()<<endl;      
+        for(int i=0; i<nprocs*NUM_WORKERS; i++) {
+            tstt += rstt[i];
+            cout<<std::setw(4)<<std::right<<i<<rstt[i]<<endl;
+        }
+        cout<<"=============================================="<<endl;
+        cout<<"TOT "<<tstt<<endl;
     }
     delete [] rstt;
     rstt=NULL;
@@ -600,6 +645,7 @@ int main(int argc, char **argv)
     edge_out.close();
 #endif
 
+    delete [] utcs;
     delete [] edge_results;
     delete sequences;
 

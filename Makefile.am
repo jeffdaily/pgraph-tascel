@@ -85,6 +85,7 @@ endif
 bin_PROGRAMS =
 bin_PROGRAMS += apps/align
 bin_PROGRAMS += apps/align_counter
+bin_PROGRAMS += apps/align_garray
 bin_PROGRAMS += apps/align_iter
 bin_PROGRAMS += apps/align_tree
 bin_PROGRAMS += apps/ccd
@@ -134,6 +135,7 @@ endif
 
 apps_align_SOURCES = apps/align.cpp
 apps_align_counter_SOURCES = apps/align_counter.cpp
+apps_align_garray_SOURCES = apps/align.cpp
 apps_align_iter_SOURCES = apps/align.cpp
 apps_align_tree_SOURCES = apps/align_tree.cpp
 apps_ccd_SOURCES = apps/ccd.cpp
@@ -147,6 +149,7 @@ apps_ssw_test_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/mai
 apps_ssw_test_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/kseq.h
 
 apps_align_iter_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_ITER
+apps_align_garray_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_GARRAY
 apps_align_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
 apps_align_counter_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
 apps_align_iter_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW

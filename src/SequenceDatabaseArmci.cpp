@@ -582,7 +582,12 @@ Sequence &SequenceDatabaseArmci::get_sequence(size_t i)
             size_t j = 0;
             int global_rank = ARMCI_Absolute_id(&armci_group, owners[i]);
 
-            buffer = (char*)ARMCI_Malloc_local(sizes[i]+2);
+#if 1
+            {
+                LockGuard<PthreadMutex> guard(mutex);
+                buffer = (char*)ARMCI_Malloc_local(sizes[i]+2);
+            }
+#endif
             assert(buffer);
             (void)memset(buffer, 0, sizes[i]+2);
 #if 1
@@ -607,7 +612,7 @@ Sequence &SequenceDatabaseArmci::get_sequence(size_t i)
                 }
             }
             assert(j<sizes[i]);
-            sequence = new Sequence(buffer, 0, j, j+1, sizes[i]-j-1);
+            sequence = new Sequence(buffer, 0, j, j+1, sizes[i]-j-1, true);
             {
                 LockGuard<PthreadMutex> guard(mutex);
                 remote_cache[i] = sequence;
