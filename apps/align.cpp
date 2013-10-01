@@ -53,7 +53,7 @@ using namespace pgraph;
 #define ALL_RESULTS 1
 
 
-#define PAUSE_ON_ERROR
+//#define PAUSE_ON_ERROR
 #ifdef PAUSE_ON_ERROR
 static void (*SigSegvOrig)(int) = NULL;
 

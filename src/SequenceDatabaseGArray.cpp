@@ -451,7 +451,6 @@ Sequence &SequenceDatabaseGArray::get_sequence(size_t i)
         Sequence *sequence = NULL;
         char *buffer = NULL;
         size_t size = 0;
-        size_t j = 0;
         Box<1> lbox;
         Box<1> gbox;
         GArrayRequest *req1 = GArrayRequest::construct();
@@ -460,10 +459,10 @@ Sequence &SequenceDatabaseGArray::get_sequence(size_t i)
         bool last_id = (long(i) == count_total-1);
 
         size = last_id ? file_size - offsets[i] : offsets[i+1] - offsets[i];
-        buffer = new char[size];
-        (void)memset(buffer, 0, size);
+        buffer = new char[size+1];
+        (void)memset(buffer, 0, size+1);
 
-        /* GArray doesn't have ::access(), so we must ::put() data to it. */
+        /* fetch the sequence data */
         lbox.lo()[0] = 0;
         lbox.hi()[0] = size - 1;
         gbox.lo()[0] = offsets[i];
@@ -486,16 +485,88 @@ Sequence &SequenceDatabaseGArray::get_sequence(size_t i)
         delete req1;
         delete req2;
 
-        for (j=0; j<size; ++j) {
-            if ('\n' == buffer[j]) {
-                break;
+        /* pack fasta */
+        {
+            size_t r = 0;           /* read index */
+            size_t w = 0;           /* write index */
+            size_t last_gt = 0;     /* index of last '>' seen */
+            size_t last_hash = 0;   /* index of last '#' inserted */
+
+            /* We skip all newlines unless it is the newline that terminates
+             * the sequence ID. We replace the ID-terminating newline with '#'.
+             * We replace the sequence terminating newline with the given
+             * delimiter. */
+            if (buffer[0] != '>') {
+                cerr << '[' << comm_rank << "] buffer[0] != '>'" << endl;
+                MPI_Abort(comm, -1);
+            }
+
+            while (r<size) {
+                if (buffer[r] == '>') {
+                    last_gt = w;
+                    while (r<size && buffer[r] != '\n') {
+                        buffer[w++] = buffer[r++];
+                    }
+                    last_hash = w;
+                    buffer[w++] = '#';
+                    r++;
+                }
+                else {
+                    while (r<size && buffer[r] != '\n') {
+                        buffer[w++] = buffer[r++];
+                    }
+                    /* peek at next character, either EOF or '>' */
+                    if (r<size) {
+                        if (r+1 >= size || buffer[r+1] == '>') {
+                            buffer[w++] = delimiter;
+                            size_t id_offset = 0;
+                            size_t id_length = last_hash - last_gt;
+                            size_t sequence_offset = last_hash - last_gt + 1;
+                            size_t sequence_length = w - last_hash - 2;
+                            if (delimiter == '\0') {
+                                sequence_length -= 1;
+                            }
+                            sequence =  new Sequence(&buffer[last_gt],
+                                        id_offset,
+                                        id_length,
+                                        sequence_offset,
+                                        sequence_length,
+                                        true);
+                        }
+                    }
+                    /* or file wasn't terminated with a newline */
+                    else {
+                        /* hopefully space enough to append the delimiter anyway */
+                        buffer[w++] = delimiter;
+                        size_t id_offset = 0;
+                        size_t id_length = last_hash - last_gt;
+                        size_t sequence_offset = last_hash - last_gt + 1;
+                        size_t sequence_length = w - last_hash - 2;
+                        if (delimiter == '\0') {
+                            sequence_length -= 1;
+                        }
+                        sequence =  new Sequence(&buffer[last_gt],
+                                id_offset,
+                                id_length,
+                                sequence_offset,
+                                sequence_length,
+                                true);
+                    }
+                    r++;
+                }
             }
         }
-        assert(j<size);
-        sequence = new Sequence(buffer, 0, j, j+1, size-j-2, true);
         {
             LockGuard<PthreadMutex> guard(mutex);
-            remote_cache[i] = sequence;
+            if (remote_cache.count(i)) {
+                /* another thread already added */
+                delete sequence;
+                sequence = remote_cache[i];
+            }
+            else {
+                /* we are first to add */
+                remote_cache[i] = sequence;
+            }
         }
         return *sequence;
     }
