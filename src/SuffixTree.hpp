@@ -11,12 +11,12 @@
 #define _PGRAPH_SUFFIXTREE_H_
 
 #include <cstddef>
+#include <set>
 #include <utility>
-#include <vector>
 
 using std::pair;
+using std::set;
 using std::size_t;
-using std::vector;
 
 namespace pgraph {
 
@@ -72,7 +72,7 @@ class SuffixTree
          * @param[in] dup
          * @param[out] pairs
          */
-        void generate_pairs(int *dup, vector<pair<size_t,size_t> > &pairs);
+        void generate_pairs(char *dup, set<pair<size_t,size_t> > &pairs);
 
     private:
         void create();

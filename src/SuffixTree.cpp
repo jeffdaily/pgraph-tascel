@@ -12,12 +12,12 @@
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
+#include <set>
 #include <utility>
-#include <vector>
 
 using std::make_pair;
 using std::pair;
-using std::vector;
+using std::set;
 
 #include "constants.h"
 //#include "alignment.hpp"
@@ -275,7 +275,7 @@ SuffixTree::~SuffixTree()
 static inline int
 is_candidate(SequenceDatabase *seqs, size_t nSeqs,
              Suffix *p, Suffix *q,
-             cell_t **tbl, int **ins, int **del, Parameters param, int *dup)
+             cell_t **tbl, int **ins, int **del, Parameters param, char *dup)
 {
     size_t s1Len = 0;
     size_t s2Len = 0;
@@ -340,6 +340,7 @@ is_candidate(SequenceDatabase *seqs, size_t nSeqs,
         if (dup[index] == MAYBE) {
             int ignore1;
             size_t ignore2;
+            assert(0); // we shouldn't reach here
             dup[index] = is_edge_blosum(result,
                     &(*seqs)[f1][0], (*seqs)[f1].get_sequence_length(),
                     &(*seqs)[f2][0], (*seqs)[f2].get_sequence_length(),
@@ -352,6 +353,58 @@ is_candidate(SequenceDatabase *seqs, size_t nSeqs,
     else {
         return FALSE;
     }
+}
+
+
+static inline int
+is_candidate_nodup(SequenceDatabase *seqs, size_t nSeqs,
+             Suffix *p, Suffix *q,
+             cell_t **tbl, int **ins, int **del, Parameters param)
+{
+    size_t s1Len = 0;
+    size_t s2Len = 0;
+    int f1 = 0;
+    int f2 = 0;
+    int cutOff = param.AOL * param.SIM;
+    cell_t result;
+    int retval = FALSE;
+
+    f1 = p->sid;
+    f2 = q->sid;
+    assert(f1 < nSeqs);
+    assert(f2 < nSeqs);
+
+    if (f1 > f2) {
+        int swap = f1;
+        f1 = f2;
+        f2 = swap;
+    }
+
+    if (f1 == f2) {
+        retval = FALSE;
+    }
+    else {
+        s1Len = (*seqs)[f1].get_sequence_length() - 1;
+        s2Len = (*seqs)[f2].get_sequence_length() - 1;
+        if (s1Len <= s2Len) {
+            if (100 * s1Len < cutOff * s2Len) {
+                retval = FALSE;
+            }
+            else {
+                retval = TRUE;
+            }
+        }
+        else {
+            if (100 * s2Len < cutOff * s1Len) {
+                retval = FALSE;
+            }
+            else {
+                retval = TRUE;
+            }
+        }
+    }
+
+    return retval;
 }
 
 
@@ -406,7 +459,7 @@ count_sort(SuffixTreeNode *stNodes, int *srtIndex, size_t nStNodes, size_t maxSe
 
 
 static inline void
-procLeaf(Suffix **lset, SequenceDatabase *seqs, int nSeqs, cell_t **tbl, int **ins, int **del, Parameters param, int *dup, vector<pair<size_t,size_t> > &pairs)
+procLeaf(Suffix **lset, SequenceDatabase *seqs, int nSeqs, cell_t **tbl, int **ins, int **del, Parameters param, char *dup, set<pair<size_t,size_t> > &pairs)
 {
     size_t i;
     size_t j;
@@ -424,12 +477,12 @@ procLeaf(Suffix **lset, SequenceDatabase *seqs, int nSeqs, cell_t **tbl, int **i
                         if (TRUE == is_candidate(seqs, nSeqs, p, q, tbl, ins, del, param, dup)) {
                             //printf("edge:%s#%s\n", seqs[p->sid].gid, seqs[q->sid].gid);
                             if (p->sid > q->sid) {
-                                printf("edge\t%zu\t%zu\n", q->sid, p->sid);
-                                pairs.push_back(make_pair(q->sid, p->sid));
+                                //printf("edge\t%zu\t%zu\n", q->sid, p->sid);
+                                pairs.insert(make_pair(q->sid, p->sid));
                             }
                             else {
-                                printf("edge\t%zu\t%zu\n", p->sid, q->sid);
-                                pairs.push_back(make_pair(p->sid, q->sid));
+                                //printf("edge\t%zu\t%zu\n", p->sid, q->sid);
+                                pairs.insert(make_pair(p->sid, q->sid));
                             }
                         }
                     }
@@ -444,12 +497,12 @@ procLeaf(Suffix **lset, SequenceDatabase *seqs, int nSeqs, cell_t **tbl, int **i
                             if (TRUE == is_candidate(seqs, nSeqs, p, q, tbl, ins, del, param, dup)) {
                                 //printf("edge:%s#%s\n", seqs[p->sid].gid, seqs[q->sid].gid);
                                 if (p->sid > q->sid) {
-                                    printf("edge\t%zu\t%zu\n", q->sid, p->sid);
-                                    pairs.push_back(make_pair(q->sid, p->sid));
+                                    //printf("edge\t%zu\t%zu\n", q->sid, p->sid);
+                                    pairs.insert(make_pair(q->sid, p->sid));
                                 }
                                 else {
-                                    printf("edge\t%zu\t%zu\n", p->sid, q->sid);
-                                    pairs.push_back(make_pair(p->sid, q->sid));
+                                    //printf("edge\t%zu\t%zu\n", p->sid, q->sid);
+                                    pairs.insert(make_pair(p->sid, q->sid));
                                 }
                             }
                         }
@@ -462,7 +515,7 @@ procLeaf(Suffix **lset, SequenceDatabase *seqs, int nSeqs, cell_t **tbl, int **i
 
 
 
-void SuffixTree::generate_pairs(int *dup, vector<pair<size_t,size_t> > &pairs)
+void SuffixTree::generate_pairs(char *dup, set<pair<size_t,size_t> > &pairs)
 {
     SuffixTreeNode *stNodes = NULL;
     int *srtIndex = NULL;
@@ -536,14 +589,14 @@ void SuffixTree::generate_pairs(int *dup, vector<pair<size_t,size_t> > &pairs)
                                                     //(*sequences)[p->sid].gid,
                                                     //(*sequences)[q->sid].gid);
                                                 if (p->sid > q->sid) {
-                                                    printf("edge\t%zu\t%zu\n",
-                                                            q->sid, p->sid);
-                                                    pairs.push_back(make_pair(q->sid, p->sid));
+                                                    //printf("edge\t%zu\t%zu\n",
+                                                    //        q->sid, p->sid);
+                                                    pairs.insert(make_pair(q->sid, p->sid));
                                                 }
                                                 else {
-                                                    printf("edge\t%zu\t%zu\n",
-                                                            p->sid, q->sid);
-                                                    pairs.push_back(make_pair(p->sid, q->sid));
+                                                    //printf("edge\t%zu\t%zu\n",
+                                                    //        p->sid, q->sid);
+                                                    pairs.insert(make_pair(p->sid, q->sid));
                                                 }
                                             }
                                         }

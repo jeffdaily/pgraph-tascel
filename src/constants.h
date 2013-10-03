@@ -21,6 +21,6 @@
 
 enum {ERROR = -1, DOL_END = -2};
 enum {FALSE = 0, TRUE = 1, MAYBE = 2};
-enum {NO = 0, YES = 1};
+enum {NO = 0, YES = 1/*, MAYBE = 2*/};
 
 #endif /* _CONSTANTS_H_ */

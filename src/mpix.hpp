@@ -231,6 +231,14 @@ void mpix_allreduce(vector<T> &object, MPI_Op op, MPI_Comm comm = MPI_COMM_WORLD
 }
 
 template <class T>
+void mpix_allreduce(T *object, size_t size, MPI_Op op, MPI_Comm comm = MPI_COMM_WORLD)
+{
+    MPI_Datatype datatype = mpix_get_mpi_datatype(object[0]);
+    MPI_CHECK_C(MPI_Allreduce(MPI_IN_PLACE, &object[0], size,
+                              datatype, op, comm));
+}
+
+template <class T>
 void mpix_alltoall(vector<T> &sendbuf, vector<T> &recvbuf, MPI_Comm comm = MPI_COMM_WORLD)
 {
     int size = 0;

@@ -16,6 +16,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <set>
 #include <sstream>
 
 #include <unistd.h>
@@ -54,7 +55,7 @@ int main(int argc, char *argv[])
     SuffixBuckets *suffix_buckets = NULL;
     size_t i = 0;                   /* for loop index */
     size_t n_triangular = 0;        /* number of possible pairs */
-    int *dup = NULL;                /* track duplicate pairs */
+    char *dup = NULL;               /* track duplicate pairs */
 
     /* initialize MPI */
     MPI_Init(&argc, &argv);
@@ -107,7 +108,7 @@ int main(int argc, char *argv[])
     
     n_triangular = sequences->get_global_count() *
             (sequences->get_global_count() + 1U) / 2U;
-    dup = new int[n_triangular];
+    dup = new char[n_triangular];
     for (i = 0; i < n_triangular; ++i) {
         dup[i] = 2;
     }
@@ -115,7 +116,7 @@ int main(int argc, char *argv[])
     /* suffix tree construction & processing */
     (void) time(&t1);
     size_t count = 0;
-    vector<pair<size_t,size_t> > pairs;
+    set<pair<size_t,size_t> > pairs;
     /* TODO */
     for (i = 0; i < suffix_buckets->buckets_size; ++i) {
         if (NULL != suffix_buckets->buckets[i].suffixes) {

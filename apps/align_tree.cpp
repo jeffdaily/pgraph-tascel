@@ -85,6 +85,7 @@ AlignStats *stats = 0;
 SequenceDatabase *sequences = 0;
 vector<EdgeResult> *edge_results = 0;
 Parameters parameters;
+char *duplicate_pairs = NULL;                /* track duplicate pairs */
 
 #if defined(THREADED)
 static pthread_t *threadHandles = 0;
@@ -279,8 +280,7 @@ unsigned long populate_tasks(
     time_t t2 = 0;                  /* stop timer */
     SuffixBuckets *suffix_buckets = NULL;
     size_t n_triangular = 0;        /* number of possible pairs */
-    int *dup = NULL;                /* track duplicate pairs */
-    vector<pair<size_t,size_t> > pairs;
+    set<pair<size_t,size_t> > pairs;
 
     if (0 == rank) {
         printf("----------------------------------------------\n");
@@ -301,9 +301,9 @@ unsigned long populate_tasks(
     
     n_triangular = sequences->get_global_count() *
             (sequences->get_global_count() + 1U) / 2U;
-    dup = new int[n_triangular];
+    duplicate_pairs = new char[n_triangular];
     for (size_t i = 0; i < n_triangular; ++i) {
-        dup[i] = 2;
+        duplicate_pairs[i] = MAYBE;
     }
     
     /* suffix tree construction & processing */
@@ -313,22 +313,27 @@ unsigned long populate_tasks(
         if (NULL != suffix_buckets->buckets[i].suffixes) {
             SuffixTree *tree = new SuffixTree(
                     sequences, &(suffix_buckets->buckets[i]), parameters);
-            tree->generate_pairs(dup, pairs);
+            tree->generate_pairs(duplicate_pairs, pairs);
             delete tree;
             ++count;
         }
     }
     (void) time(&t2);
     mpix_reduce(count, MPI_SUM);
-    delete [] dup;
+    /* MAYBE becomes NO */
+    for (size_t i = 0; i < n_triangular; ++i) {
+        if (duplicate_pairs[i] != YES) {
+            duplicate_pairs[i] = NO;
+        }
+    }
+    mpix_allreduce(duplicate_pairs, n_triangular, MPI_MAX, comm);
     if (0 == rank) {
-        printf("%zu non-empty trees constructed and processed in <%lld> secs\n",
-                count, (long long)(t2-t1));
+        printf("%zu out of %zu non-empty trees constructed and processed in <%lld> secs\n",
+                count, suffix_buckets->buckets_size, (long long)(t2-t1));
     }
     
     task_description desc;
-    count = 0;
-    for (vector<pair<size_t,size_t> >::iterator it=pairs.begin();
+    for (set<pair<size_t,size_t> >::iterator it=pairs.begin();
             it!=pairs.end(); ++it) {
         desc.id1 = it->first;
         desc.id2 = it->second;
@@ -336,12 +341,11 @@ unsigned long populate_tasks(
         cout << trank(worker) << " added " << desc.id1 << "," << desc.id2 << endl;
 #endif
         utcs[worker]->addTask(&desc, sizeof(desc));
-        count++;
     }
 
     delete suffix_buckets;
 
-    return count;
+    return pairs.size();
 }
 
 
@@ -466,7 +470,7 @@ int main(int argc, char **argv)
 
     /* the tascel part */
     double populate_times[NUM_WORKERS];
-    unsigned long count[NUM_WORKERS];
+    double count[NUM_WORKERS];
     for (int worker=0; worker<NUM_WORKERS; ++worker)
     {
         edge_results[worker].reserve(tasks_per_worker);
@@ -484,7 +488,7 @@ int main(int argc, char **argv)
         count[worker] = populate_tasks(ntasks, tasks_per_worker, worker, comm);
         populate_times[worker] = MPI_Wtime() - populate_times[worker];
     }
-#if DEBUG
+#if 1
     double *g_populate_times = new double[nprocs*NUM_WORKERS];
     MPI_CHECK(MPI_Gather(populate_times, NUM_WORKERS, MPI_DOUBLE,
                 g_populate_times, NUM_WORKERS, MPI_DOUBLE, 0, comm));
@@ -496,25 +500,39 @@ int main(int argc, char **argv)
             cout << std::setw(4) << std::right << i
                 << setw(14) << fixed << g_populate_times[i] << endl;
         }
+        double avg = tally / (nprocs*NUM_WORKERS);
+        double stddev = 0;
+        for(int i=0; i<nprocs*NUM_WORKERS; i++) {
+            stddev += pow((g_populate_times[i] - avg),2);
+        }
+        stddev = pow(stddev / (nprocs*NUM_WORKERS),0.5);
         cout << "==============================================" << endl;
-        cout << setw(4) << right << "T" << setw(14) << fixed << tally << endl;
+        cout << setw(4) << right << "T" << setw(14) << fixed << tally
+            << " avg " << avg << " +- " << stddev << endl;
     }
     delete [] g_populate_times;
 #endif
-#if DEBUG
-    unsigned long *task_counts = new unsigned long[nprocs*NUM_WORKERS];
-    MPI_CHECK(MPI_Gather(count, NUM_WORKERS, MPI_UNSIGNED_LONG,
-                task_counts, NUM_WORKERS, MPI_UNSIGNED_LONG, 0, comm));
+#if 1
+    double *task_counts = new double[nprocs*NUM_WORKERS];
+    MPI_CHECK(MPI_Gather(count, NUM_WORKERS, MPI_DOUBLE,
+                task_counts, NUM_WORKERS, MPI_DOUBLE, 0, comm));
     if (0 == rank) {
-        unsigned long tally = 0;
+        double tally = 0;
         cout << " pid        ntasks" << endl;
         for(int i=0; i<nprocs*NUM_WORKERS; i++) {
             tally += task_counts[i];
             cout << std::setw(4) << std::right << i
                 << setw(14) << task_counts[i] << endl;
         }
+        double avg = tally / (nprocs*NUM_WORKERS);
+        double stddev = 0;
+        for(int i=0; i<nprocs*NUM_WORKERS; i++) {
+            stddev += pow((task_counts[i] - avg),2);
+        }
+        stddev = pow(stddev / (nprocs*NUM_WORKERS),0.5);
         cout << "==============================================" << endl;
-        cout << setw(4) << right << "T" << setw(14) << tally << endl;
+        cout << setw(4) << right << "T" << setw(14) << fixed << tally
+            << " avg " << avg << " +- " << stddev << endl;
         if (tally != ntasks) {
             cout << "tally != ntasks\t" << tally << " != " << ntasks << endl;
         }
@@ -625,6 +643,7 @@ int main(int argc, char **argv)
     }
     edge_out.close();
 
+    delete [] duplicate_pairs;
     delete [] edge_results;
     delete sequences;
 
