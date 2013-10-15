@@ -29,21 +29,33 @@ class AlignStats
         double align_times_tot;
         double align_times_min;
         double align_times_max;
+        bool empty;
 
         AlignStats()
             : edge_counts(0)
             , align_counts(0)
             , align_times_tot(0.0)
-            , align_times_min(DBL_MAX)
-            , align_times_max(DBL_MIN)
+            , align_times_min(0.0)
+            , align_times_max(0.0)
+            , empty(true)
         { }
 
         AlignStats &operator +=(const AlignStats &other) {
-            edge_counts += other.edge_counts;
-            align_counts += other.align_counts;
-            align_times_tot += other.align_times_tot;
-            align_times_min = MIN(align_times_min, other.align_times_min);
-            align_times_max = MAX(align_times_max, other.align_times_max);
+            if (!empty) {
+                edge_counts += other.edge_counts;
+                align_counts += other.align_counts;
+                align_times_tot += other.align_times_tot;
+                align_times_min = MIN(align_times_min, other.align_times_min);
+                align_times_max = MAX(align_times_max, other.align_times_max);
+            }
+            else {
+                edge_counts = other.edge_counts;
+                align_counts = other.align_counts;
+                align_times_tot = other.align_times_tot;
+                align_times_min = other.align_times_min;
+                align_times_max = other.align_times_max;
+                empty = false;
+            }
             return *this;
         }
 

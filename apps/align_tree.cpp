@@ -85,7 +85,6 @@ AlignStats *stats = 0;
 SequenceDatabase *sequences = 0;
 vector<EdgeResult> *edge_results = 0;
 Parameters parameters;
-char *duplicate_pairs = NULL;                /* track duplicate pairs */
 
 #if defined(THREADED)
 static pthread_t *threadHandles = 0;
@@ -279,7 +278,6 @@ unsigned long populate_tasks(
     time_t t1 = 0;                  /* start timer */
     time_t t2 = 0;                  /* stop timer */
     SuffixBuckets *suffix_buckets = NULL;
-    size_t n_triangular = 0;        /* number of possible pairs */
     set<pair<size_t,size_t> > pairs;
 
     if (0 == rank) {
@@ -299,13 +297,6 @@ unsigned long populate_tasks(
         printf("Bucketing finished in <%lld> secs\n", (long long)(t2-t1));
     }
     
-    n_triangular = sequences->get_global_count() *
-            (sequences->get_global_count() + 1U) / 2U;
-    duplicate_pairs = new char[n_triangular];
-    for (size_t i = 0; i < n_triangular; ++i) {
-        duplicate_pairs[i] = MAYBE;
-    }
-    
     /* suffix tree construction & processing */
     (void) time(&t1);
     size_t count = 0;
@@ -313,20 +304,13 @@ unsigned long populate_tasks(
         if (NULL != suffix_buckets->buckets[i].suffixes) {
             SuffixTree *tree = new SuffixTree(
                     sequences, &(suffix_buckets->buckets[i]), parameters);
-            tree->generate_pairs(duplicate_pairs, pairs);
+            tree->generate_pairs(pairs);
             delete tree;
             ++count;
         }
     }
     (void) time(&t2);
     mpix_reduce(count, MPI_SUM);
-    /* MAYBE becomes NO */
-    for (size_t i = 0; i < n_triangular; ++i) {
-        if (duplicate_pairs[i] != YES) {
-            duplicate_pairs[i] = NO;
-        }
-    }
-    mpix_allreduce(duplicate_pairs, n_triangular, MPI_MAX, comm);
     if (0 == rank) {
         printf("%zu out of %zu non-empty trees constructed and processed in <%lld> secs\n",
                 count, suffix_buckets->buckets_size, (long long)(t2-t1));
@@ -643,7 +627,6 @@ int main(int argc, char **argv)
     }
     edge_out.close();
 
-    delete [] duplicate_pairs;
     delete [] edge_results;
     delete sequences;
 

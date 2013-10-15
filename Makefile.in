@@ -86,8 +86,9 @@ host_triplet = @host@
 @HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h
 bin_PROGRAMS = apps/align$(EXEEXT) apps/align_counter$(EXEEXT) \
 	apps/align_garray$(EXEEXT) apps/align_iter$(EXEEXT) \
-	apps/align_tree$(EXEEXT) apps/ccd$(EXEEXT) apps/ccd2$(EXEEXT) \
-	$(am__EXEEXT_1) $(am__EXEEXT_2)
+	apps/align_tree$(EXEEXT) apps/align_tree_dynamic$(EXEEXT) \
+	apps/ccd$(EXEEXT) apps/ccd2$(EXEEXT) $(am__EXEEXT_1) \
+	$(am__EXEEXT_2)
 @HAVE_SSE2_TRUE@am__append_3 = apps/align_ssw apps/align_counter_ssw \
 @HAVE_SSE2_TRUE@	apps/align_iter_ssw apps/align_tree_ssw
 @HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@am__append_4 = apps/ssw_test
@@ -218,6 +219,14 @@ apps_align_tree_LDADD = $(LDADD)
 apps_align_tree_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
+am_apps_align_tree_dynamic_OBJECTS =  \
+	apps/align_tree_dynamic.$(OBJEXT)
+apps_align_tree_dynamic_OBJECTS =  \
+	$(am_apps_align_tree_dynamic_OBJECTS)
+apps_align_tree_dynamic_LDADD = $(LDADD)
+apps_align_tree_dynamic_DEPENDENCIES = libpgraph.la \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_apps_align_tree_ssw_OBJECTS =  \
 	apps/apps_align_tree_ssw-align_tree.$(OBJEXT)
 apps_align_tree_ssw_OBJECTS = $(am_apps_align_tree_ssw_OBJECTS)
@@ -348,6 +357,7 @@ SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
 	$(apps_align_counter_ssw_SOURCES) $(apps_align_garray_SOURCES) \
 	$(apps_align_iter_SOURCES) $(apps_align_iter_ssw_SOURCES) \
 	$(apps_align_ssw_SOURCES) $(apps_align_tree_SOURCES) \
+	$(apps_align_tree_dynamic_SOURCES) \
 	$(apps_align_tree_ssw_SOURCES) $(apps_ccd_SOURCES) \
 	$(apps_ccd2_SOURCES) $(apps_ssw_test_SOURCES) \
 	$(tests_test_align_SOURCES) $(tests_test_combinations_SOURCES) \
@@ -359,6 +369,7 @@ DIST_SOURCES = $(am__libpgraph_la_SOURCES_DIST) $(apps_align_SOURCES) \
 	$(apps_align_counter_ssw_SOURCES) $(apps_align_garray_SOURCES) \
 	$(apps_align_iter_SOURCES) $(apps_align_iter_ssw_SOURCES) \
 	$(apps_align_ssw_SOURCES) $(apps_align_tree_SOURCES) \
+	$(apps_align_tree_dynamic_SOURCES) \
 	$(apps_align_tree_ssw_SOURCES) $(apps_ccd_SOURCES) \
 	$(apps_ccd2_SOURCES) $(apps_ssw_test_SOURCES) \
 	$(tests_test_align_SOURCES) $(tests_test_combinations_SOURCES) \
@@ -584,6 +595,7 @@ apps_align_counter_SOURCES = apps/align_counter.cpp
 apps_align_garray_SOURCES = apps/align.cpp
 apps_align_iter_SOURCES = apps/align.cpp
 apps_align_tree_SOURCES = apps/align_tree.cpp
+apps_align_tree_dynamic_SOURCES = apps/align_tree_dynamic.cpp
 apps_ccd_SOURCES = apps/ccd.cpp
 apps_ccd2_SOURCES = apps/ccd2.cpp
 apps_align_ssw_SOURCES = apps/align.cpp
@@ -841,6 +853,12 @@ apps/align_tree.$(OBJEXT): apps/$(am__dirstamp) \
 apps/align_tree$(EXEEXT): $(apps_align_tree_OBJECTS) $(apps_align_tree_DEPENDENCIES) $(EXTRA_apps_align_tree_DEPENDENCIES) apps/$(am__dirstamp)
 	@rm -f apps/align_tree$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_OBJECTS) $(apps_align_tree_LDADD) $(LIBS)
+apps/align_tree_dynamic.$(OBJEXT): apps/$(am__dirstamp) \
+	apps/$(DEPDIR)/$(am__dirstamp)
+
+apps/align_tree_dynamic$(EXEEXT): $(apps_align_tree_dynamic_OBJECTS) $(apps_align_tree_dynamic_DEPENDENCIES) $(EXTRA_apps_align_tree_dynamic_DEPENDENCIES) apps/$(am__dirstamp)
+	@rm -f apps/align_tree_dynamic$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_dynamic_OBJECTS) $(apps_align_tree_dynamic_LDADD) $(LIBS)
 apps/apps_align_tree_ssw-align_tree.$(OBJEXT): apps/$(am__dirstamp) \
 	apps/$(DEPDIR)/$(am__dirstamp)
 
@@ -929,6 +947,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_counter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_tree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_tree_dynamic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_counter_ssw-align_counter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_garray-align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_iter-align.Po@am__quote@

@@ -55,7 +55,6 @@ int main(int argc, char *argv[])
     SuffixBuckets *suffix_buckets = NULL;
     size_t i = 0;                   /* for loop index */
     size_t n_triangular = 0;        /* number of possible pairs */
-    char *dup = NULL;               /* track duplicate pairs */
 
     /* initialize MPI */
     MPI_Init(&argc, &argv);
@@ -108,10 +107,6 @@ int main(int argc, char *argv[])
     
     n_triangular = sequences->get_global_count() *
             (sequences->get_global_count() + 1U) / 2U;
-    dup = new char[n_triangular];
-    for (i = 0; i < n_triangular; ++i) {
-        dup[i] = 2;
-    }
     
     /* suffix tree construction & processing */
     (void) time(&t1);
@@ -122,14 +117,13 @@ int main(int argc, char *argv[])
         if (NULL != suffix_buckets->buckets[i].suffixes) {
             SuffixTree *tree = new SuffixTree(
                     sequences, &(suffix_buckets->buckets[i]), parameters);
-            tree->generate_pairs(dup, pairs);
+            tree->generate_pairs(pairs);
             delete tree;
             ++count;
         }
     }
     (void) time(&t2);
     mpix_reduce(count, MPI_SUM);
-    delete [] dup;
     if (0 == comm_rank) {
         printf("%zu non-empty trees constructed and processed in <%lld> secs\n",
                 count, (long long)(t2-t1));

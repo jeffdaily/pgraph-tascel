@@ -69,10 +69,9 @@ class SuffixTree
         /**
          * Generate promising pairs for alignment.
          *
-         * @param[in] dup
          * @param[out] pairs
          */
-        void generate_pairs(char *dup, set<pair<size_t,size_t> > &pairs);
+        void generate_pairs(set<pair<size_t,size_t> > &pairs);
 
     private:
         void create();

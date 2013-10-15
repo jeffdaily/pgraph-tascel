@@ -275,90 +275,6 @@ SuffixTree::~SuffixTree()
 static inline int
 is_candidate(SequenceDatabase *seqs, size_t nSeqs,
              Suffix *p, Suffix *q,
-             cell_t **tbl, int **ins, int **del, Parameters param, char *dup)
-{
-    size_t s1Len = 0;
-    size_t s2Len = 0;
-    int f1 = 0;
-    int f2 = 0;
-    int cutOff = param.AOL * param.SIM;
-    cell_t result;
-    size_t index = 0;
-
-    f1 = p->sid;
-    f2 = q->sid;
-    assert(f1 < nSeqs);
-    assert(f2 < nSeqs);
-
-    if (f1 > f2) {
-        int swap = f1;
-        f1 = f2;
-        f2 = swap;
-    }
-    index = (nSeqs*f1) + f2 - (f1*(f1+1)/2);
-
-    if (f1 == f2) {
-        dup[index] = FALSE;
-        return FALSE;
-    }
-
-    s1Len = (*seqs)[f1].get_sequence_length() - 1;
-    s2Len = (*seqs)[f2].get_sequence_length() - 1;
-
-    if (dup[index] == MAYBE) {
-        if (s1Len <= s2Len) {
-            if (100 * s1Len < cutOff * s2Len) {
-                dup[index] = FALSE;
-            }
-            else {
-#if 0
-                affine_gap_align_blosum(seqs[f1].str, s1Len,
-                        seqs[f2].str, s2Len,
-                        &result, tbl, del, ins,
-                        param.open, param.gap);
-#else
-                dup[index] = TRUE;
-#endif
-            }
-        }
-        else {
-            if (100 * s2Len < cutOff * s1Len) {
-                dup[index] = FALSE;
-            }
-            else {
-#if 0
-                affine_gap_align_blosum(seqs[f2].str, s2Len,
-                        seqs[f1].str, s1Len,
-                        &result, tbl, del, ins,
-                        param.open, param.gap);
-#else
-                dup[index] = TRUE;
-#endif
-            }
-        }
-        /* check if it is an edge */
-        if (dup[index] == MAYBE) {
-            int ignore1;
-            size_t ignore2;
-            assert(0); // we shouldn't reach here
-            dup[index] = is_edge_blosum(result,
-                    &(*seqs)[f1][0], (*seqs)[f1].get_sequence_length(),
-                    &(*seqs)[f2][0], (*seqs)[f2].get_sequence_length(),
-                    param.AOL, param.SIM, param.OS,
-                    ignore1, ignore2);
-        }
-        
-        return dup[index];
-    }
-    else {
-        return FALSE;
-    }
-}
-
-
-static inline int
-is_candidate_nodup(SequenceDatabase *seqs, size_t nSeqs,
-             Suffix *p, Suffix *q,
              cell_t **tbl, int **ins, int **del, Parameters param)
 {
     size_t s1Len = 0;
@@ -366,45 +282,43 @@ is_candidate_nodup(SequenceDatabase *seqs, size_t nSeqs,
     int f1 = 0;
     int f2 = 0;
     int cutOff = param.AOL * param.SIM;
-    cell_t result;
-    int retval = FALSE;
+    char result = FALSE;
 
     f1 = p->sid;
     f2 = q->sid;
     assert(f1 < nSeqs);
     assert(f2 < nSeqs);
 
-    if (f1 > f2) {
-        int swap = f1;
-        f1 = f2;
-        f2 = swap;
-    }
-
     if (f1 == f2) {
-        retval = FALSE;
+        result = FALSE;
     }
     else {
+        if (f1 > f2) {
+            int swap = f1;
+            f1 = f2;
+            f2 = swap;
+        }
         s1Len = (*seqs)[f1].get_sequence_length() - 1;
         s2Len = (*seqs)[f2].get_sequence_length() - 1;
         if (s1Len <= s2Len) {
             if (100 * s1Len < cutOff * s2Len) {
-                retval = FALSE;
+                result = FALSE;
             }
             else {
-                retval = TRUE;
+                result = TRUE;
             }
         }
         else {
             if (100 * s2Len < cutOff * s1Len) {
-                retval = FALSE;
+                result = FALSE;
             }
             else {
-                retval = TRUE;
+                result = TRUE;
             }
         }
     }
 
-    return retval;
+    return result;
 }
 
 
@@ -459,7 +373,7 @@ count_sort(SuffixTreeNode *stNodes, int *srtIndex, size_t nStNodes, size_t maxSe
 
 
 static inline void
-procLeaf(Suffix **lset, SequenceDatabase *seqs, int nSeqs, cell_t **tbl, int **ins, int **del, Parameters param, char *dup, set<pair<size_t,size_t> > &pairs)
+procLeaf(Suffix **lset, SequenceDatabase *seqs, int nSeqs, cell_t **tbl, int **ins, int **del, Parameters param, set<pair<size_t,size_t> > &pairs)
 {
     size_t i;
     size_t j;
@@ -474,7 +388,7 @@ procLeaf(Suffix **lset, SequenceDatabase *seqs, int nSeqs, cell_t **tbl, int **i
             if (i == BEGIN - 'A') { /* inter cross */
                 for (p = lset[i]; p != NULL; p = p->next) {
                     for (q = p->next; q != NULL; q = q->next) {
-                        if (TRUE == is_candidate(seqs, nSeqs, p, q, tbl, ins, del, param, dup)) {
+                        if (TRUE == is_candidate(seqs, nSeqs, p, q, tbl, ins, del, param)) {
                             //printf("edge:%s#%s\n", seqs[p->sid].gid, seqs[q->sid].gid);
                             if (p->sid > q->sid) {
                                 //printf("edge\t%zu\t%zu\n", q->sid, p->sid);
@@ -494,7 +408,7 @@ procLeaf(Suffix **lset, SequenceDatabase *seqs, int nSeqs, cell_t **tbl, int **i
                 if (lset[j]) {
                     for (p = lset[i]; p != NULL; p = p->next) {
                         for (q = lset[j]; q != NULL; q = q->next) {
-                            if (TRUE == is_candidate(seqs, nSeqs, p, q, tbl, ins, del, param, dup)) {
+                            if (TRUE == is_candidate(seqs, nSeqs, p, q, tbl, ins, del, param)) {
                                 //printf("edge:%s#%s\n", seqs[p->sid].gid, seqs[q->sid].gid);
                                 if (p->sid > q->sid) {
                                     //printf("edge\t%zu\t%zu\n", q->sid, p->sid);
@@ -515,7 +429,7 @@ procLeaf(Suffix **lset, SequenceDatabase *seqs, int nSeqs, cell_t **tbl, int **i
 
 
 
-void SuffixTree::generate_pairs(char *dup, set<pair<size_t,size_t> > &pairs)
+void SuffixTree::generate_pairs(set<pair<size_t,size_t> > &pairs)
 {
     SuffixTreeNode *stNodes = NULL;
     int *srtIndex = NULL;
@@ -568,7 +482,7 @@ void SuffixTree::generate_pairs(char *dup, set<pair<size_t,size_t> > &pairs)
 
         if (stnode->depth >= EM - 1) {
             if (stnode->rLeaf == sIndex) { /* leaf node */
-                procLeaf(stnode->lset, sequences, nSeqs, tbl, del, ins, param, dup, pairs);
+                procLeaf(stnode->lset, sequences, nSeqs, tbl, del, ins, param, pairs);
             }
             else {                       /* internal node */
                 eIndex = stnode->rLeaf;
@@ -584,7 +498,7 @@ void SuffixTree::generate_pairs(char *dup, set<pair<size_t,size_t> > &pairs)
                                             if (TRUE == is_candidate(
                                                         sequences, nSeqs, p, q,
                                                         tbl, ins, del,
-                                                        param, dup)) {
+                                                        param)) {
                                                 //printf("edge:%s#%s\n",
                                                     //(*sequences)[p->sid].gid,
                                                     //(*sequences)[q->sid].gid);
