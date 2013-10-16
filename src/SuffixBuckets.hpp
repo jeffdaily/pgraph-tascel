@@ -95,6 +95,8 @@ class SuffixBuckets
         size_t suffixes_size;   /**< size of suffixes array */
         Bucket *buckets;        /**< array of all suffix buckets */
         size_t buckets_size;    /**< size of buckets array */
+        size_t first_bucket;
+        size_t last_bucket;
 };
 
 }; /* namespace pgraph */

@@ -244,16 +244,6 @@ unsigned long populate_tasks(
     time_t t2 = 0;                  /* stop timer */
     unsigned long count = 0;
 
-    if (0 == rank) {
-        printf("----------------------------------------------\n");
-        printf("%-20s: %d\n", "slide size", parameters.window_size);
-        printf("%-20s: %d\n", "exactMatch len", parameters.exact_match_len);
-        printf("%-20s: %d\n", "AlignOverLongerSeq", parameters.AOL);
-        printf("%-20s: %d\n", "MatchSimilarity", parameters.SIM);
-        printf("%-20s: %d\n", "OptimalScoreOverSelfScore", parameters.OS);
-        printf("----------------------------------------------\n");
-    }
-
     (void) time(&t1);
     suffix_buckets = new SuffixBuckets(sequences, parameters, comm);
     (void) time(&t2);
@@ -311,6 +301,8 @@ int main(int argc, char **argv)
     MPI_Comm comm = MPI_COMM_NULL;
     vector<string> all_argv;
     unsigned long nCk;
+    time_t t1 = 0;                  /* start timer */
+    time_t t2 = 0;                  /* stop timer */
 
     /* initialize MPI */
 #if defined(THREADED)
@@ -423,11 +415,27 @@ int main(int argc, char **argv)
         printf("tasks_per_worker=%lu\n", tasks_per_worker);
         printf("max_tasks_per_worker=%lu\n", max_tasks_per_worker);
     }
+    if (0 == trank(0)) {
+        printf("----------------------------------------------\n");
+        printf("%-20s: %d\n", "slide size", parameters.window_size);
+        printf("%-20s: %d\n", "exactMatch len", parameters.exact_match_len);
+        printf("%-20s: %d\n", "AlignOverLongerSeq", parameters.AOL);
+        printf("%-20s: %d\n", "MatchSimilarity", parameters.SIM);
+        printf("%-20s: %d\n", "OptimalScoreOverSelfScore", parameters.OS);
+        printf("----------------------------------------------\n");
+    }
+
     MPI_Barrier(comm);
 
     /* the tascel part */
     double populate_times[NUM_WORKERS];
     double count[NUM_WORKERS];
+    (void) time(&t1);
+    suffix_buckets = new SuffixBuckets(sequences, parameters, comm);
+    (void) time(&t2);
+    if (0 == trank(0)) {
+        printf("Bucketing finished in <%lld> secs\n", (long long)(t2-t1));
+    }
     for (int worker=0; worker<NUM_WORKERS; ++worker)
     {
         edge_results[worker].reserve(tasks_per_worker);
@@ -445,7 +453,33 @@ int main(int argc, char **argv)
 
         /* add some tasks */
         populate_times[worker] = MPI_Wtime();
-        count[worker] = populate_tasks(ntasks, tasks_per_worker, worker, comm);
+        {
+            size_t node_count = suffix_buckets->last_bucket - suffix_buckets->first_bucket + 1UL;
+            size_t worker_count = node_count / NUM_WORKERS;
+            size_t worker_extra = node_count % NUM_WORKERS;
+            size_t worker_start_index = worker * worker_count;
+            if (worker < worker_extra) {
+                worker_count++;
+            }
+            worker_start_index += std::min(size_t(worker),worker_extra);
+            worker_start_index += suffix_buckets->first_bucket;
+            size_t worker_stop_index = worker_start_index + worker_count;
+            mpix_print_sync("worker_count", worker_count, comm);
+            mpix_print_sync("worker_start_index", worker_start_index, comm);
+            mpix_print_sync(" worker_stop_index", worker_stop_index, comm);
+
+            for (size_t i = worker_start_index; i < worker_stop_index; ++i) {
+                if (NULL != suffix_buckets->buckets[i].suffixes) {
+                    task_desc_tree desc;
+                    desc.id1 = i;
+#if DEBUG
+                    cout << trank(worker) << " added " << desc.id1 << endl;
+#endif
+                    utcs[worker]->addTask2(&desc, sizeof(task_desc_tree));
+                    ++count[worker];
+                }
+            }
+        }
         populate_times[worker] = MPI_Wtime() - populate_times[worker];
     }
 #if 1
