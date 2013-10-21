@@ -86,6 +86,10 @@ SequenceDatabase *sequences = 0;
 vector<EdgeResult> *edge_results = 0;
 Parameters parameters;
 
+#if !defined(LOCAL_DUPLICATES)
+set<pair<size_t,size_t> > pairs;
+#endif
+
 #if defined(THREADED)
 static pthread_t *threadHandles = 0;
 static unsigned *threadRanks = 0;
@@ -278,7 +282,9 @@ unsigned long populate_tasks(
     time_t t1 = 0;                  /* start timer */
     time_t t2 = 0;                  /* stop timer */
     SuffixBuckets *suffix_buckets = NULL;
+#if defined(LOCAL_DUPLICATES)
     set<pair<size_t,size_t> > pairs;
+#endif
 
     if (0 == rank) {
         printf("----------------------------------------------\n");

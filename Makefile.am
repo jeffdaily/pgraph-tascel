@@ -88,7 +88,9 @@ bin_PROGRAMS += apps/align_counter
 bin_PROGRAMS += apps/align_garray
 bin_PROGRAMS += apps/align_iter
 bin_PROGRAMS += apps/align_tree
+bin_PROGRAMS += apps/align_tree_dup
 bin_PROGRAMS += apps/align_tree_dynamic
+bin_PROGRAMS += apps/align_tree_dynamic_dup
 bin_PROGRAMS += apps/ccd
 bin_PROGRAMS += apps/ccd2
 if HAVE_SSE2
@@ -139,7 +141,9 @@ apps_align_counter_SOURCES = apps/align_counter.cpp
 apps_align_garray_SOURCES = apps/align.cpp
 apps_align_iter_SOURCES = apps/align.cpp
 apps_align_tree_SOURCES = apps/align_tree.cpp
+apps_align_tree_dup_SOURCES = apps/align_tree.cpp
 apps_align_tree_dynamic_SOURCES = apps/align_tree_dynamic.cpp
+apps_align_tree_dynamic_dup_SOURCES = apps/align_tree_dynamic.cpp
 apps_ccd_SOURCES = apps/ccd.cpp
 apps_ccd2_SOURCES = apps/ccd2.cpp
 apps_align_ssw_SOURCES = apps/align.cpp
@@ -156,6 +160,8 @@ apps_align_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
 apps_align_counter_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
 apps_align_iter_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
 apps_align_tree_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
+apps_align_tree_dup_CPPFLAGS = $(AM_CPPFLAGS) -DLOCAL_DUPLICATES
+apps_align_tree_dynamic_dup_CPPFLAGS = $(AM_CPPFLAGS) -DLOCAL_DUPLICATES
 
 apps_ssw_test_LDFLAGS = $(ZLIB_LDFLAGS) $(AM_LDFLAGS)
 

@@ -87,6 +87,10 @@ vector<EdgeResult> *edge_results = 0;
 Parameters parameters;
 SuffixBuckets *suffix_buckets = NULL;
 
+#if !defined(LOCAL_DUPLICATES)
+set<pair<size_t,size_t> > pairs;
+#endif
+
 #if defined(THREADED)
 static pthread_t *threadHandles = 0;
 static unsigned *threadRanks = 0;
@@ -274,7 +278,9 @@ static void tree_task(
         vector<void *> data_bufs, int worker) {
     task_desc_tree *tree_desc = (task_desc_tree*)_bigd;
     unsigned long i = tree_desc->id1;
+#if defined(LOCAL_DUPLICATES)
     set<pair<size_t,size_t> > pairs;
+#endif
     /* suffix tree construction & processing */
     if (NULL != suffix_buckets->buckets[i].suffixes) {
         SuffixTree *tree = new SuffixTree(
@@ -448,7 +454,7 @@ int main(int argc, char **argv)
             .taskSize(sizeof(task_desc_align))
             .maxTasks(max_tasks_per_worker)
             .taskSize2(sizeof(task_desc_tree))
-            .maxTasks2(pow(26.0,parameters.window_size)); // TODO too big
+            .maxTasks2(long(pow(26.0,parameters.window_size))); // TODO too big
         utc = new UniformTaskCollSplitHybrid(props, worker);
 
         /* add some tasks */
