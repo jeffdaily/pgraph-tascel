@@ -151,7 +151,7 @@ void SequenceDatabaseGArray::read_and_parse_fasta_himem(const string &file_name)
     assert(local_cache.size() > 0);
 
     count_total = local_cache.size();
-    mpix_print_sync("global_size", count_total, comm);
+    //mpix_print_sync("global_size", count_total, comm);
 }
 
 

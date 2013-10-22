@@ -231,7 +231,7 @@ void SequenceDatabaseArmci::read_and_parse_fasta()
         }
         this->replica_count = domain_count;
         this->replica_index = color;
-        mpix_print_sync("color", color, comm_orig);
+        //mpix_print_sync("color", color, comm_orig);
         ierr = MPI_Comm_split(comm_orig, color, comm_orig_rank, &comm);
         MPI_CHECK_IERR(ierr, comm_orig_rank, comm_orig);
         ierr = MPI_Comm_rank(comm, &comm_rank);
@@ -396,7 +396,7 @@ void SequenceDatabaseArmci::read_and_parse_fasta_lomem(MPI_File in,
     pack_and_index_fasta(ptr_arr[comm_rank], local_cache_size,
             delimiter, first_id, new_size);
     mpix_allreduce(global_size, MPI_SUM, comm);
-    mpix_print_sync("global_size", global_size, comm);
+    //mpix_print_sync("global_size", global_size, comm);
 
     exchange_local_cache();
 }
@@ -430,7 +430,7 @@ void SequenceDatabaseArmci::read_and_parse_fasta_himem(MPI_File in,
     assert(local_cache.size() > 0);
 
     global_count = local_cache.size();
-    mpix_print_sync("global_size", global_size, comm);
+    //mpix_print_sync("global_size", global_size, comm);
 }
 
 
@@ -527,7 +527,7 @@ void SequenceDatabaseArmci::pack_and_index_fasta(char *buffer,
 
     mpix_allreduce(max_seq_size, MPI_MAX, comm);
     mpix_print_zero("max_seq_size", max_seq_size, comm);
-    mpix_print_sync("local_size", local_size, comm);
+    //mpix_print_sync("local_size", local_size, comm);
     global_size = local_size;
 
     assert(num_threads > 0);

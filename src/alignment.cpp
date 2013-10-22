@@ -24,7 +24,9 @@
 #include "blosum/blosum75.h"
 #include "blosum/blosum80.h"
 #include "blosum/blosum90.h"
+#if HAVE_EMMINTRIN_H
 #include "ssw.h"
+#endif
 
 #define CROW(i) ((i)%2)
 #define PROW(i) ((i-1)%2)
@@ -664,6 +666,7 @@ cell_t affine_gap_align_blosum_ssw(
         int open, int gap)
 {
     cell_t ret;
+#if HAVE_EMMINTRIN_H
     s_profile *profile = NULL;
     int8_t *s1_num = new int8_t[s1_len];
     int8_t *s2_num = new int8_t[s2_len];
@@ -723,6 +726,9 @@ cell_t affine_gap_align_blosum_ssw(
     free(result);
     delete [] s1_num;
     delete [] s2_num;
+#else
+    assert(0);
+#endif
 
     return ret;
 }

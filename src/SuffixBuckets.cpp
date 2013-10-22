@@ -132,10 +132,12 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     if (stop > sequences->get_global_count()) {
         stop = sequences->get_global_count();
     }
+#if DEBUG
     mpix_print_sync("n_seq", n_seq, comm);
     mpix_print_sync("remainder", remainder, comm);
     mpix_print_sync("start", start, comm);
     mpix_print_sync("stop", stop, comm);
+#endif
 
     /* slide k-mers for every sequence and bucket them */
     for (size_t i = start; i < stop; ++i) {
@@ -176,10 +178,14 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     for (size_t i=0; i<n_buckets; ++i) {
         count += bucket_sizes[i];
     }
+#if DEBUG
     mpix_print_sync("count", count, comm);
+#endif
     assert(count == n_suffixes);
 
+#if DEBUG
     mpix_print_sync("suffix_index", suffix_index, comm);
+#endif
 
 #if 0
     size_t event_split = n_suffixes / comm_size;
@@ -222,9 +228,13 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
         amount_to_send[bucket_owner[i]] += int(buckets[i].size);
         buckets[i].size = 0; /* reset for later */
     }
+#if DEBUG
     mpix_print_sync("amount_to_send", vec_to_string(amount_to_send), comm);
+#endif
     mpix_alltoall(amount_to_send, amount_to_recv, comm);
+#if DEBUG
     mpix_print_sync("amount_to_recv", vec_to_string(amount_to_recv), comm);
+#endif
 
     int total_amount_to_recv = 0;
     for (int i=0; i<comm_size; ++i) {
@@ -244,8 +254,10 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
         send_displacements[i] = send_displacements[i-1] + amount_to_send[i-1];
         recv_displacements[i] = recv_displacements[i-1] + amount_to_recv[i-1];
     }
+#if DEBUG
     mpix_print_sync("send_displacements", vec_to_string(send_displacements), comm);
     mpix_print_sync("recv_displacements", vec_to_string(recv_displacements), comm);
+#endif
 
     /* TODO JEFF where I left off
      * need to alltoallv the buckets to the owning processes
@@ -317,15 +329,14 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
         }
     }
     assert(found_start);
-    if (comm_size > 1) {
-        assert(found_stop);
-    }
-    else {
+    if (!found_stop) {
         last_bucket = buckets_size-1;
     }
 
+#if DEBUG
     mpix_print_sync("first_bucket", first_bucket, comm);
     mpix_print_sync("last_bucket", last_bucket, comm);
+#endif
 }
 
 

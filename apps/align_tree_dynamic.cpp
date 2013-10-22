@@ -189,6 +189,9 @@ static void alignment_task(
     seq_id[1] = desc->id2;
     {
         t = MPI_Wtime();
+        unsigned long s1Len = (*sequences)[seq_id[0]].get_sequence_length();
+        unsigned long s2Len = (*sequences)[seq_id[1]].get_sequence_length();
+        stats[thd].work += s1Len * s2Len;
 #if USE_SSW
         sequences->align_ssw(seq_id[0], seq_id[1], result.score, result.matches, result.length, open, gap, thd);
 #else
@@ -470,9 +473,11 @@ int main(int argc, char **argv)
             worker_start_index += std::min(size_t(worker),worker_extra);
             worker_start_index += suffix_buckets->first_bucket;
             size_t worker_stop_index = worker_start_index + worker_count;
+#if DEBUG
             mpix_print_sync("worker_count", worker_count, comm);
             mpix_print_sync("worker_start_index", worker_start_index, comm);
             mpix_print_sync(" worker_stop_index", worker_stop_index, comm);
+#endif
 
             for (size_t i = worker_start_index; i < worker_stop_index; ++i) {
                 if (NULL != suffix_buckets->buckets[i].suffixes) {

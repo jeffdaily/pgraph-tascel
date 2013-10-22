@@ -218,6 +218,7 @@ static void alignment_task(
     cell_t result;
     bool is_edge_answer = false;
     double t = 0;
+    double tt = 0;
     int sscore;
     size_t max_len;
 
@@ -227,13 +228,30 @@ static void alignment_task(
     int SIM = 4;
     int OS = 3;
 
+    tt = MPI_Wtime();
+
 #ifdef USE_ITER
+    t = MPI_Wtime();
     k_combination2(desc->id, seq_id);
+    t = MPI_Wtime() - t;
+    stats[thd].kcomb_times_tot += t;
 #else
     seq_id[0] = desc->id1;
     seq_id[1] = desc->id2;
 #endif
+    unsigned long s1Len = (*sequences)[seq_id[0]].get_sequence_length();
+    unsigned long s2Len = (*sequences)[seq_id[1]].get_sequence_length();
+#ifdef LENGTH_FILTER
+    int cutOff = AOL * SIM;
+    if ((s1Len <= s2Len && (100 * s1Len < cutOff * s2Len))
+            || (s2Len < s1Len && (100 * s2Len < cutOff * s1Len))) {
+        stats[thd].work_skipped += s1Len * s2Len;
+        ++stats[thd].align_skipped;
+    }
+    else
+#endif
     {
+        stats[thd].work += s1Len * s2Len;
         t = MPI_Wtime();
 #if USE_SSW
         sequences->align_ssw(seq_id[0], seq_id[1], result.score, result.matches, result.length, open, gap, thd);
@@ -283,6 +301,9 @@ static void alignment_task(
         stats[thd].calc_min(t);
         stats[thd].calc_max(t);
     }
+
+    tt = MPI_Wtime() - tt;
+    stats[thd].total_times_tot += tt;
 }
 
 

@@ -184,6 +184,9 @@ static void alignment_task(
     seq_id[1] = desc->id2;
     {
         t = MPI_Wtime();
+        unsigned long s1Len = (*sequences)[seq_id[0]].get_sequence_length();
+        unsigned long s2Len = (*sequences)[seq_id[1]].get_sequence_length();
+        stats[thd].work += s1Len * s2Len;
 #if USE_SSW
         sequences->align_ssw(seq_id[0], seq_id[1], result.score, result.matches, result.length, open, gap, thd);
 #else

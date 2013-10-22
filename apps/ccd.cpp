@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
         s1Len = sequences->seq[seq_id[0]].size;
         s2Len = sequences->seq[seq_id[1]].size;
         index = (n_sequences*seq_id[0]) + seq_id[1] - (seq_id[0]*(seq_id[0]+1)/2);
-        work = sequences->seq[seq_id[0]].size * sequences->seq[seq_id[1]].size;
+        work = s1Len * s2Len;
         histo_index = work / histo_width;
         if ((s1Len <= s2Len && (100 * s1Len < cutOff * s2Len))
                 || (s2Len < s1Len && (100 * s2Len < cutOff * s1Len))) {

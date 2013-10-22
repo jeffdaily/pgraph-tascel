@@ -41,6 +41,11 @@ extern "C" {
 #include "mpix.hpp"
 #include "Parameters.hpp"
 
+#define USE_SEQ_DB 1
+#if USE_SEQ_DB
+#include "SequenceDatabaseArmci.hpp"
+#endif
+
 using namespace std;
 using namespace pgraph;
 
@@ -61,6 +66,7 @@ static void _pack_and_index_fasta(char *buffer, size_t size,
         char delimiter, vector<sequence_t> &sequences, size_t &max_seq_size);
 static void _index_fasta(const char *buffer, size_t size,
         char delimiter, vector<sequence_t> &sequences, size_t &max_seq_size);
+static size_t parse_memory_budget(const string& value);
 
 
 class EdgeResult {
@@ -115,7 +121,11 @@ int main(int argc, char **argv)
     unsigned long nCk = 0;
     size_t sequence_count = 0;
     int retval = 0;
+#if USE_SEQ_DB
+    SequenceDatabaseArmci *sequences = NULL;
+#else
     vector<sequence_t> sequences;
+#endif
     size_t max_seq_size = 0;
 #if USE_SSW
 #else
@@ -134,6 +144,7 @@ int main(int argc, char **argv)
     /* initialize ARMCI */
     ARMCI_Init_args(&argc, &argv);
 
+#if !USE_SEQ_DB
     /* split comm_world based on hostid */
     MPI_CHECK_C(MPI_Comm_split(comm_world, gethostid(), rank_world, &comm_node));
     MPI_CHECK_C(MPI_Comm_rank(comm_node, &rank_node));
@@ -160,6 +171,7 @@ int main(int argc, char **argv)
     mpix_print_sync("size_world", size_world, comm_world);
     mpix_print_sync("size_node",  size_node, comm_world);
     mpix_print_sync("size_master",size_master, comm_world);
+#endif
 #endif
 
     /* MPI standard does not guarantee all procs receive argc and argv */
@@ -196,21 +208,28 @@ int main(int argc, char **argv)
 #endif
 
     /* sanity check that we got the correct number of arguments */
-    if (all_argv.size() <= 1 || all_argv.size() >= 3) {
+    if (all_argv.size() <= 2 || all_argv.size() >= 4) {
         if (0 == rank_world) {
             if (all_argv.size() <= 1) {
                 printf("missing input file\n");
             }
-            else if (all_argv.size() >= 3) {
+            else if (all_argv.size() <= 2) {
+                printf("missing memory budget\n");
+            }
+            else if (all_argv.size() >= 4) {
                 printf("too many arguments\n");
             }
-            printf("usage: align sequence_file\n");
+            printf("usage: align sequence_file memory_budget\n");
         }
         MPI_Comm_free(&comm_world);
         MPI_Finalize();
         return 1;
     }
 
+#if USE_SEQ_DB
+    sequences = new SequenceDatabaseArmci(all_argv[1],
+            parse_memory_budget(all_argv[2].c_str()), comm_world, 1, '\0');
+#else
     /* rank_world 0 on each node will open the file into shared memory */
     if (0 == rank_node) {
         file_size = mpix_get_file_size(all_argv[1], comm_master);
@@ -236,6 +255,7 @@ int main(int argc, char **argv)
         _index_fasta(file_buffer, file_size, '\0', sequences, max_seq_size);
     }
     MPI_Barrier(comm_world);
+#endif
 
 #if DEBUG
     mpix_print_sync("max_seq_size", max_seq_size, comm_world);
@@ -266,7 +286,11 @@ int main(int argc, char **argv)
 #endif
 
     /* how many combinations of sequences are there? */
+#if USE_SEQ_DB
+    sequence_count = sequences->get_global_count();
+#else
     sequence_count = sequences.size();
+#endif
     nCk = binomial_coefficient(sequence_count, 2);
     if (0 == rank_world) {
         printf("brute force %lu C 2 has %lu combinations\n",
@@ -302,48 +326,85 @@ int main(int argc, char **argv)
     double mytimer = MPI_Wtime();
     double mytime_combo = 0.0;
     double mytime_fetch = 0.0;
+    double mytime_misc = 0.0;
+    double mytime_total = 0.0;
     // TODO TAKS COUNTER AND ALIGNMENT LOOP
     while (task_id < nalignments) {
         unsigned long seq_id[2];
+        double timer_total = MPI_Wtime();
         double timer;
+        Parameters param;
+        param.AOL = 8;
+        param.SIM = 4;
+        param.OS = 3;
+        param.open = -10;
+        param.gap = -1;
         timer = MPI_Wtime();
         k_combination2(task_id, seq_id);
         timer = MPI_Wtime() - timer;
         mytime_combo += timer;
+        stats.kcomb_times_tot += timer;
+        timer = MPI_Wtime();
         assert(seq_id[0] < sequence_count);
         assert(seq_id[1] < sequence_count);
+#if !USE_SEQ_DB
         assert(sequences[seq_id[0]].str);
         assert(sequences[seq_id[1]].str);
         assert(sequences[seq_id[0]].size);
         assert(sequences[seq_id[1]].size);
         assert(sequences[seq_id[0]].size <= max_seq_size);
         assert(sequences[seq_id[1]].size <= max_seq_size);
+#endif
+        unsigned long s1Len = (*sequences)[seq_id[0]].get_sequence_length();
+        unsigned long s2Len = (*sequences)[seq_id[1]].get_sequence_length();
+#ifdef LENGTH_FILTER
+        int cutOff = param.AOL * param.SIM;
+        if ((s1Len <= s2Len && (100 * s1Len < cutOff * s2Len))
+                || (s2Len < s1Len && (100 * s2Len < cutOff * s1Len))) {
+            stats.work_skipped += s1Len * s2Len;
+            ++stats.align_skipped;
+        }
+        else
+#endif
         {
             cell_t result;
             double t = MPI_Wtime();
             int sscore;
             size_t maxLen;
-            Parameters param;
-            param.AOL = 8;
-            param.SIM = 4;
-            param.OS = 3;
-            param.open = -10;
-            param.gap = -1;
+            stats.work += s1Len * s2Len;
 #if USE_SSW
+#if USE_SEQ_DB
+            sequences->align_ssw(seq_id[0], seq_id[1], result.score, result.matches, result.length, param.open, param.gap);
+
+#else
             result = pgraph::affine_gap_align_blosum_ssw(
                     sequences[seq_id[0]].str, sequences[seq_id[0]].size,
                     sequences[seq_id[1]].str, sequences[seq_id[1]].size,
                     param.open, param.gap);
+#endif
+#else
+#if USE_SEQ_DB
+            sequences->align(seq_id[0], seq_id[1], result.score, result.matches, result.length, param.open, param.gap);
 #else
             result = pgraph::affine_gap_align_blosum(
                     sequences[seq_id[0]].str, sequences[seq_id[0]].size,
                     sequences[seq_id[1]].str, sequences[seq_id[1]].size,
                     tbl, del, ins, param.open, param.gap);
 #endif
+#endif
+#if USE_SEQ_DB
+            bool is_edge_answer = sequences->is_edge(
+                    seq_id[0],
+                    seq_id[1],
+                    result.score, result.matches, result.length,
+                    param.AOL, param.SIM, param.OS,
+                    sscore, maxLen);
+#else
             bool is_edge_answer = pgraph::is_edge_blosum(result,
                     sequences[seq_id[0]].str, sequences[seq_id[0]].size,
                     sequences[seq_id[1]].str, sequences[seq_id[1]].size,
                     param.AOL, param.SIM, param.OS, sscore, maxLen);
+#endif
 
             ++stats.align_counts;
 
@@ -384,11 +445,16 @@ int main(int argc, char **argv)
         }
 
         // next task
+        timer = MPI_Wtime()- timer;
+        mytime_misc += timer;
         timer = MPI_Wtime();
         retval = ARMCI_Rmw(ARMCI_FETCH_AND_ADD_LONG, &task_id, counter[0], 1, 0);
         timer = MPI_Wtime() - timer;
         mytime_fetch += timer;
         assert(0 == retval);
+        timer_total = MPI_Wtime() - timer_total;
+        mytime_total += timer_total;
+        stats.total_times_tot += timer_total;
     }
 
     //if (0 == rank_world) {
@@ -402,6 +468,8 @@ int main(int argc, char **argv)
         cout << "mytimer=" << mytimer << endl;
         cout << "mytime_combo=" << mytime_combo << endl;
         cout << "mytime_fetch=" << mytime_fetch << endl;
+        cout << "mytime_misc=" << mytime_misc << endl;
+        cout << "mytime_total=" << mytime_total << endl;
     }
 
     MPI_Barrier(comm_world);
@@ -459,6 +527,7 @@ int main(int argc, char **argv)
 
     MPI_Barrier(comm_world);
 
+#if !USE_SEQ_DB
     /* unmap the memory */
     retval = munmap(file_buffer, file_size);
     if (-1 == retval) {
@@ -474,6 +543,7 @@ int main(int argc, char **argv)
             //MPI_Abort(MPI_COMM_WORLD, retval);
         }
     }
+#endif
 
 #if USE_SSW
 #else
@@ -488,13 +558,18 @@ int main(int argc, char **argv)
     delete [] del;
     delete [] ins;
 #endif
+#if USE_SEQ_DB
+    delete sequences;
+#endif
 
     ARMCI_Finalize();
 
+#if !USE_SEQ_DB
     if (MPI_COMM_NULL != comm_master) {
         MPI_Comm_free(&comm_master);
     }
     MPI_Comm_free(&comm_node);
+#endif
     MPI_Comm_free(&comm_world);
     MPI_Finalize();
 
@@ -747,5 +822,45 @@ static void _index_fasta(const char *buffer, size_t size,
         max_seq_size = sequence.size > max_seq_size ?
             sequence.size : max_seq_size;
     }
+}
+
+
+static size_t parse_memory_budget(const string& value)
+{
+    long budget = 0;
+    char budget_multiplier = 0;
+    istringstream iss(value);
+
+    if (isdigit(*value.rbegin())) {
+        iss >> budget;
+    }
+    else {
+        iss >> budget >> budget_multiplier;
+    }
+
+    if (budget <= 0) {
+        cerr << "memory budget must be positive real number" << endl;
+        assert(budget > 0);
+    }
+
+    if (budget_multiplier == 'b' || budget_multiplier == 'B') {
+        budget *= 1; /* byte */
+    }
+    else if (budget_multiplier == 'k' || budget_multiplier == 'K') {
+        budget *= 1024; /* kilobyte */
+    }
+    else if (budget_multiplier == 'm' || budget_multiplier == 'M') {
+        budget *= 1048576; /* megabyte */
+    }
+    else if (budget_multiplier == 'g' || budget_multiplier == 'G') {
+        budget *= 1073741824; /* gigabyte */
+    }
+    else if (budget_multiplier != 0) {
+        cerr << "unrecognized size multiplier" << endl;
+        assert(0);
+    }
+
+    assert(budget > 0);
+    return size_t(budget);
 }
 
