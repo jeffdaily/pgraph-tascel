@@ -151,6 +151,8 @@ SequenceDatabaseArmci::~SequenceDatabaseArmci()
     else {
         ARMCI_Free(local_data);
     }
+
+    ARMCI_Group_free(&armci_group_orig);
 }
 
 

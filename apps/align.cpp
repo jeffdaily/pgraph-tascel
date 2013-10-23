@@ -37,6 +37,7 @@
 #include "combinations.h"
 #include "alignment.hpp"
 #include "mpix.hpp"
+#include "Parameters.hpp"
 #include "tascelx.hpp"
 #include "SequenceDatabase.hpp"
 #ifdef USE_GARRAY
@@ -124,6 +125,7 @@ UniformTaskCollSplitHybrid** utcs = 0;
 AlignStats *stats = 0;
 SequenceDatabase *sequences = 0;
 vector<EdgeResult> *edge_results = 0;
+Parameters parameters;
 
 #if defined(THREADED)
 static pthread_t *threadHandles = 0;
@@ -424,7 +426,7 @@ int main(int argc, char **argv)
 #endif
 
     /* sanity check that we got the correct number of arguments */
-    if (all_argv.size() <= 2 || all_argv.size() >= 4) {
+    if (all_argv.size() <= 2 || all_argv.size() >= 5) {
         if (0 == rank) {
             if (all_argv.size() <= 1) {
                 printf("missing input file\n");
@@ -432,7 +434,7 @@ int main(int argc, char **argv)
             else if (all_argv.size() <= 2) {
                 printf("missing memory budget\n");
             }
-            else if (all_argv.size() >= 4) {
+            else if (all_argv.size() >= 5) {
                 printf("too many arguments\n");
             }
             printf("usage: align sequence_file memory_budget\n");
@@ -440,6 +442,18 @@ int main(int argc, char **argv)
         MPI_Comm_free(&comm);
         MPI_Finalize();
         return 1;
+    }
+    else if (all_argv.size() >= 4) {
+        parameters.parse(all_argv[3].c_str(), comm);
+    }
+    if (0 == trank(0)) {
+        printf("----------------------------------------------\n");
+        printf("%-20s: %d\n", "slide size", parameters.window_size);
+        printf("%-20s: %d\n", "exactMatch len", parameters.exact_match_len);
+        printf("%-20s: %d\n", "AlignOverLongerSeq", parameters.AOL);
+        printf("%-20s: %d\n", "MatchSimilarity", parameters.SIM);
+        printf("%-20s: %d\n", "OptimalScoreOverSelfScore", parameters.OS);
+        printf("----------------------------------------------\n");
     }
 
 #ifdef USE_GARRAY

@@ -170,8 +170,8 @@ apps_align_counter_length_filter_CPPFLAGS = $(AM_CPPFLAGS) -DLENGTH_FILTER
 apps_align_counter_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
 apps_align_iter_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
 apps_align_tree_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
-apps_align_tree_dup_CPPFLAGS = $(AM_CPPFLAGS) -DLOCAL_DUPLICATES
-apps_align_tree_dynamic_dup_CPPFLAGS = $(AM_CPPFLAGS) -DLOCAL_DUPLICATES
+apps_align_tree_dup_CPPFLAGS = $(AM_CPPFLAGS) -DGLOBAL_DUPLICATES
+apps_align_tree_dynamic_dup_CPPFLAGS = $(AM_CPPFLAGS) -DGLOBAL_DUPLICATES
 
 apps_ssw_test_LDFLAGS = $(ZLIB_LDFLAGS) $(AM_LDFLAGS)
 

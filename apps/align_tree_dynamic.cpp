@@ -87,7 +87,7 @@ vector<EdgeResult> *edge_results = 0;
 Parameters parameters;
 SuffixBuckets *suffix_buckets = NULL;
 
-#if !defined(LOCAL_DUPLICATES)
+#if defined(GLOBAL_DUPLICATES)
 set<pair<size_t,size_t> > pairs;
 #endif
 
@@ -243,37 +243,6 @@ static void alignment_task(
 }
 
 
-unsigned long populate_tasks(
-        unsigned long ntasks, unsigned long tasks_per_worker, int worker,
-        MPI_Comm comm)
-{
-    time_t t1 = 0;                  /* start timer */
-    time_t t2 = 0;                  /* stop timer */
-    unsigned long count = 0;
-
-    (void) time(&t1);
-    suffix_buckets = new SuffixBuckets(sequences, parameters, comm);
-    (void) time(&t2);
-    if (0 == rank) {
-        printf("Bucketing finished in <%lld> secs\n", (long long)(t2-t1));
-    }
-    
-    for (size_t i = 0; i < suffix_buckets->buckets_size; ++i) {
-        if (NULL != suffix_buckets->buckets[i].suffixes) {
-            task_desc_tree desc;
-            desc.id1 = i;
-#if DEBUG
-            cout << trank(worker) << " added " << desc.id1 << endl;
-#endif
-            utcs[worker]->addTask2(&desc, sizeof(task_desc_tree));
-            ++count;
-        }
-    }
-
-    return count;
-}
-
-
 static void tree_task(
         UniformTaskCollection *utc,
         void *_bigd, int bigd_len,
@@ -281,20 +250,26 @@ static void tree_task(
         vector<void *> data_bufs, int worker) {
     task_desc_tree *tree_desc = (task_desc_tree*)_bigd;
     unsigned long i = tree_desc->id1;
-#if defined(LOCAL_DUPLICATES)
-    set<pair<size_t,size_t> > pairs;
-#endif
+    set<pair<size_t,size_t> > local_pairs;
     /* suffix tree construction & processing */
     if (NULL != suffix_buckets->buckets[i].suffixes) {
         SuffixTree *tree = new SuffixTree(
                 sequences, &(suffix_buckets->buckets[i]), parameters);
-        tree->generate_pairs(pairs);
+        tree->generate_pairs(local_pairs);
         delete tree;
     }
     
     task_desc_align desc;
-    for (set<pair<size_t,size_t> >::iterator it=pairs.begin();
-            it!=pairs.end(); ++it) {
+    for (set<pair<size_t,size_t> >::iterator it=local_pairs.begin();
+            it!=local_pairs.end(); ++it) {
+#if defined(GLOBAL_DUPLICATES)
+        if (pairs.count(*it) == 0) {
+            pairs.insert(*it);
+        }
+        else {
+            continue;
+        }
+#endif
         desc.id1 = it->first;
         desc.id2 = it->second;
 #if DEBUG
@@ -392,11 +367,12 @@ int main(int argc, char **argv)
         MPI_Finalize();
         return 1;
     }
+    else if (all_argv.size() >= 4) {
+        parameters.parse(all_argv[3].c_str(), comm);
+    }
 
     sequences = new SequenceDatabaseArmci(all_argv[1],
             parse_memory_budget(all_argv[2].c_str()), comm, NUM_WORKERS, DOLLAR);
-
-    parameters.parse(all_argv[3].c_str(), comm);
 
     /* how many combinations of sequences are there? */
     nCk = binomial_coefficient(sequences->get_global_count(), 2);
@@ -439,6 +415,8 @@ int main(int argc, char **argv)
     /* the tascel part */
     double populate_times[NUM_WORKERS];
     double count[NUM_WORKERS];
+    fill(populate_times, populate_times+NUM_WORKERS, 0.0);
+    fill(count, count+NUM_WORKERS, 0.0);
     (void) time(&t1);
     suffix_buckets = new SuffixBuckets(sequences, parameters, comm);
     (void) time(&t2);
@@ -638,16 +616,24 @@ int main(int argc, char **argv)
     amBarrier();
     MPI_Barrier(comm);
 
+#if OUTPUT_EDGES
     ofstream edge_out(get_edges_filename(rank).c_str());
+#endif
     /* clean up */
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
         delete utcs[worker];
+#if OUTPUT_EDGES
         for (size_t i=0,limit=edge_results[worker].size(); i<limit; ++i) {
             edge_out << edge_results[worker][i] << endl;
         }
+#endif
     }
+#if OUTPUT_EDGES
     edge_out.close();
+#endif
 
+    delete suffix_buckets;
+    delete [] utcs;
     delete [] edge_results;
     delete sequences;
 

@@ -58,7 +58,8 @@ typedef struct {
     size_t size;
 } sequence_t;
 
-static string _get_edges_filename(int rank);
+//static string _get_edges_filename(int rank);
+#if !USE_SEQ_DB
 static unsigned long _mytime();
 static string _generate_shm_name();
 static void* _shm_create(MPI_Comm comm, size_t size, string &name);
@@ -66,6 +67,7 @@ static void _pack_and_index_fasta(char *buffer, size_t size,
         char delimiter, vector<sequence_t> &sequences, size_t &max_seq_size);
 static void _index_fasta(const char *buffer, size_t size,
         char delimiter, vector<sequence_t> &sequences, size_t &max_seq_size);
+#endif
 static size_t parse_memory_budget(const string& value);
 
 
@@ -105,35 +107,36 @@ class EdgeResult {
 int main(int argc, char **argv)
 {
     MPI_Comm comm_world = MPI_COMM_NULL;
-    MPI_Comm comm_node = MPI_COMM_NULL;
-    MPI_Comm comm_master = MPI_COMM_NULL;
     int rank_world = 0;
-    int rank_node = 0;
-    int rank_master = 0;
     int size_world = 0;
-    int size_node = 0;
-    int size_master = 0;
     AlignStats stats;
     vector<EdgeResult> edge_results;
+    Parameters parameters;
     vector<string> all_argv;
-    MPI_Offset file_size = -1;
-    char *file_buffer = NULL;
     unsigned long nCk = 0;
     size_t sequence_count = 0;
     int retval = 0;
-#if USE_SEQ_DB
-    SequenceDatabaseArmci *sequences = NULL;
-#else
-    vector<sequence_t> sequences;
-#endif
     size_t max_seq_size = 0;
+#if !USE_SEQ_DB
+    MPI_Comm comm_node = MPI_COMM_NULL;
+    MPI_Comm comm_master = MPI_COMM_NULL;
+    int rank_node = 0;
+    int rank_master = 0;
+    int size_node = 0;
+    int size_master = 0;
+    MPI_Offset file_size = -1;
+    char *file_buffer = NULL;
+    vector<sequence_t> sequences;
+    string shm_name;
+#else
+    SequenceDatabaseArmci *sequences = NULL;
+#endif
 #if USE_SSW
 #else
     cell_t **tbl = NULL;
     int **ins = NULL;
     int **del = NULL;
 #endif
-    string shm_name;
 
     /* initialize MPI */
     MPI_CHECK_C(MPI_Init(&argc, &argv));
@@ -208,7 +211,7 @@ int main(int argc, char **argv)
 #endif
 
     /* sanity check that we got the correct number of arguments */
-    if (all_argv.size() <= 2 || all_argv.size() >= 4) {
+    if (all_argv.size() <= 2 || all_argv.size() >= 5) {
         if (0 == rank_world) {
             if (all_argv.size() <= 1) {
                 printf("missing input file\n");
@@ -216,7 +219,7 @@ int main(int argc, char **argv)
             else if (all_argv.size() <= 2) {
                 printf("missing memory budget\n");
             }
-            else if (all_argv.size() >= 4) {
+            else if (all_argv.size() >= 5) {
                 printf("too many arguments\n");
             }
             printf("usage: align sequence_file memory_budget\n");
@@ -225,10 +228,23 @@ int main(int argc, char **argv)
         MPI_Finalize();
         return 1;
     }
+    else if (all_argv.size() >= 4) {
+        parameters.parse(all_argv[3].c_str(), comm_world);
+    } 
+    if (0 == rank_world) {
+        printf("----------------------------------------------\n");
+        printf("%-20s: %d\n", "slide size", parameters.window_size);
+        printf("%-20s: %d\n", "exactMatch len", parameters.exact_match_len);
+        printf("%-20s: %d\n", "AlignOverLongerSeq", parameters.AOL);
+        printf("%-20s: %d\n", "MatchSimilarity", parameters.SIM);
+        printf("%-20s: %d\n", "OptimalScoreOverSelfScore", parameters.OS);
+        printf("----------------------------------------------\n");
+    }
 
 #if USE_SEQ_DB
     sequences = new SequenceDatabaseArmci(all_argv[1],
             parse_memory_budget(all_argv[2].c_str()), comm_world, 1, '\0');
+    max_seq_size = sequences->get_max_length();
 #else
     /* rank_world 0 on each node will open the file into shared memory */
     if (0 == rank_node) {
@@ -333,12 +349,6 @@ int main(int argc, char **argv)
         unsigned long seq_id[2];
         double timer_total = MPI_Wtime();
         double timer;
-        Parameters param;
-        param.AOL = 8;
-        param.SIM = 4;
-        param.OS = 3;
-        param.open = -10;
-        param.gap = -1;
         timer = MPI_Wtime();
         k_combination2(task_id, seq_id);
         timer = MPI_Wtime() - timer;
@@ -358,7 +368,7 @@ int main(int argc, char **argv)
         unsigned long s1Len = (*sequences)[seq_id[0]].get_sequence_length();
         unsigned long s2Len = (*sequences)[seq_id[1]].get_sequence_length();
 #ifdef LENGTH_FILTER
-        int cutOff = param.AOL * param.SIM;
+        int cutOff = parameters.AOL * parameters.SIM;
         if ((s1Len <= s2Len && (100 * s1Len < cutOff * s2Len))
                 || (s2Len < s1Len && (100 * s2Len < cutOff * s1Len))) {
             stats.work_skipped += s1Len * s2Len;
@@ -374,22 +384,22 @@ int main(int argc, char **argv)
             stats.work += s1Len * s2Len;
 #if USE_SSW
 #if USE_SEQ_DB
-            sequences->align_ssw(seq_id[0], seq_id[1], result.score, result.matches, result.length, param.open, param.gap);
+            sequences->align_ssw(seq_id[0], seq_id[1], result.score, result.matches, result.length, parameters.open, parameters.gap);
 
 #else
             result = pgraph::affine_gap_align_blosum_ssw(
                     sequences[seq_id[0]].str, sequences[seq_id[0]].size,
                     sequences[seq_id[1]].str, sequences[seq_id[1]].size,
-                    param.open, param.gap);
+                    parameters.open, parameters.gap);
 #endif
 #else
 #if USE_SEQ_DB
-            sequences->align(seq_id[0], seq_id[1], result.score, result.matches, result.length, param.open, param.gap);
+            sequences->align(seq_id[0], seq_id[1], result.score, result.matches, result.length, parameters.open, parameters.gap);
 #else
             result = pgraph::affine_gap_align_blosum(
                     sequences[seq_id[0]].str, sequences[seq_id[0]].size,
                     sequences[seq_id[1]].str, sequences[seq_id[1]].size,
-                    tbl, del, ins, param.open, param.gap);
+                    tbl, del, ins, parameters.open, parameters.gap);
 #endif
 #endif
 #if USE_SEQ_DB
@@ -397,13 +407,14 @@ int main(int argc, char **argv)
                     seq_id[0],
                     seq_id[1],
                     result.score, result.matches, result.length,
-                    param.AOL, param.SIM, param.OS,
+                    parameters.AOL, parameters.SIM, parameters.OS,
                     sscore, maxLen);
 #else
             bool is_edge_answer = pgraph::is_edge_blosum(result,
                     sequences[seq_id[0]].str, sequences[seq_id[0]].size,
                     sequences[seq_id[1]].str, sequences[seq_id[1]].size,
-                    param.AOL, param.SIM, param.OS, sscore, maxLen);
+                    parameters.AOL, parameters.SIM, parameters.OS,
+                    sscore, maxLen);
 #endif
 
             ++stats.align_counts;
@@ -459,7 +470,7 @@ int main(int argc, char **argv)
 
     //if (0 == rank_world) {
         retval = ARMCI_Free(counter[rank_world]);
-        free(counter);
+        delete [] counter;
     //}
 
     mytimer = MPI_Wtime() - mytimer;
@@ -577,56 +588,17 @@ int main(int argc, char **argv)
 }
 
 
+#if 0
 static string _get_edges_filename(int rank)
 {
     ostringstream str;
     str << "edges." << rank << ".txt";
     return str.str();
 }
-
-
-#if 0
-static size_t _parse_memory_budget(const string& value)
-{
-    long budget = 0;
-    char budget_multiplier = 0;
-    istringstream iss(value);
-
-    if (isdigit(*value.rbegin())) {
-        iss >> budget;
-    }
-    else {
-        iss >> budget >> budget_multiplier;
-    }
-
-    if (budget <= 0) {
-        cerr << "memory budget must be positive real number" << endl;
-        assert(budget > 0);
-    }
-
-    if (budget_multiplier == 'b' || budget_multiplier == 'B') {
-        budget *= 1; /* byte */
-    }
-    else if (budget_multiplier == 'k' || budget_multiplier == 'K') {
-        budget *= 1024; /* kilobyte */
-    }
-    else if (budget_multiplier == 'm' || budget_multiplier == 'M') {
-        budget *= 1048576; /* megabyte */
-    }
-    else if (budget_multiplier == 'g' || budget_multiplier == 'G') {
-        budget *= 1073741824; /* gigabyte */
-    }
-    else if (budget_multiplier != 0) {
-        cerr << "unrecognized size multiplier" << endl;
-        assert(0);
-    }
-
-    assert(budget > 0);
-    return size_t(budget);
-}
 #endif
 
 
+#if !USE_SEQ_DB
 static void* _shm_create(MPI_Comm comm, size_t size, string &name)
 {
     void *mapped = NULL;
@@ -823,6 +795,7 @@ static void _index_fasta(const char *buffer, size_t size,
             sequence.size : max_seq_size;
     }
 }
+#endif
 
 
 static size_t parse_memory_budget(const string& value)
