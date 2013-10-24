@@ -248,6 +248,8 @@ unsigned long populate_tasks(
     time_t t2 = 0;                  /* stop timer */
     unsigned long count = 0;
 
+    if (suffix_buckets->last_bucket == 0 && suffix_buckets->first_bucket == 0) return 0;
+
     size_t node_count = suffix_buckets->last_bucket - suffix_buckets->first_bucket + 1UL;
     size_t worker_count = node_count / NUM_WORKERS;
     size_t worker_extra = node_count % NUM_WORKERS;
@@ -274,10 +276,13 @@ unsigned long populate_tasks(
     for (size_t i = worker_start_index; i < worker_stop_index; ++i) {
         if (NULL != suffix_buckets->buckets[i].suffixes) {
             set<pair<size_t,size_t> > local_pairs;
+            utcs[worker]->getStats().taskTime2.startTimer();
             SuffixTree *tree = new SuffixTree(
                     sequences, &(suffix_buckets->buckets[i]), parameters);
             tree->generate_pairs(local_pairs);
             delete tree;
+            utcs[worker]->getStats().taskTime2.stopTimer();
+            utcs[worker]->getStats().numTasks2.inc();
 
             for (set<pair<size_t,size_t> >::iterator it=local_pairs.begin();
                     it!=local_pairs.end(); ++it) {
@@ -464,7 +469,7 @@ int main(int argc, char **argv)
         populate_times[worker] = MPI_Wtime() - populate_times[worker];
     }
     delete suffix_buckets;
-#if 1
+#if DEBUG
     double *g_populate_times = new double[nprocs*NUM_WORKERS];
     MPI_CHECK(MPI_Gather(populate_times, NUM_WORKERS, MPI_DOUBLE,
                 g_populate_times, NUM_WORKERS, MPI_DOUBLE, 0, comm));

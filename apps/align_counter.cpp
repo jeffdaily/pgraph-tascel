@@ -513,7 +513,7 @@ int main(int argc, char **argv)
         cout << " pid k_combination_time" << endl;
         for (int i=0; i<size_world; ++i) {
             totals += combo_stats[i];
-            cout << std::setw(4) << std::right << i << " " << combo_stats[i] << endl;
+            //cout << std::setw(4) << std::right << i << " " << combo_stats[i] << endl;
         }
         cout << "==============================================" << endl;
         cout << setw(4) << right << "TOT " << totals << " AVG " << totals/size_world << endl;
@@ -529,7 +529,7 @@ int main(int argc, char **argv)
         cout << " pid fetch_time" << endl;
         for (int i=0; i<size_world; ++i) {
             totals += fetch_stats[i];
-            cout << std::setw(4) << std::right << i << " " << fetch_stats[i] << endl;
+            //cout << std::setw(4) << std::right << i << " " << fetch_stats[i] << endl;
         }
         cout << "==============================================" << endl;
         cout << setw(4) << right << "TOT " << totals << " AVG " << totals/size_world << endl;

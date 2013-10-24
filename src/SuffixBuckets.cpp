@@ -149,7 +149,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
         sequence.get_sequence(sequence_data, sequence_length);
         stop_index = sequence_length - param.window_size - 1;
 
-        assert(sequence_length >= param.window_size);
+        if (sequence_length < param.window_size) continue;
 
         for (size_t j = 0; j <= stop_index; ++j) {
             size_t bucket_index = entry_index(
@@ -181,7 +181,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
 #if DEBUG
     mpix_print_sync("count", count, comm);
 #endif
-    assert(count == n_suffixes);
+    //assert(count == n_suffixes); may not be true if a seq is < window size
 
 #if DEBUG
     mpix_print_sync("suffix_index", suffix_index, comm);
@@ -328,8 +328,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
             }
         }
     }
-    assert(found_start);
-    if (!found_stop) {
+    if (found_start && !found_stop) {
         last_bucket = buckets_size-1;
     }
 

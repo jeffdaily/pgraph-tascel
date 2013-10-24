@@ -440,7 +440,7 @@ int main(int argc, char **argv)
 
         /* add some tasks */
         populate_times[worker] = MPI_Wtime();
-        {
+        if (!(suffix_buckets->last_bucket == 0 && suffix_buckets->first_bucket == 0)) {
             size_t node_count = suffix_buckets->last_bucket - suffix_buckets->first_bucket + 1UL;
             size_t worker_count = node_count / NUM_WORKERS;
             size_t worker_extra = node_count % NUM_WORKERS;
