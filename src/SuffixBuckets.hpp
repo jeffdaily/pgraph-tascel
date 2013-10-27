@@ -14,6 +14,7 @@
 
 #include <cstddef>
 #include <iostream>
+#include <vector>
 
 #include "Parameters.hpp"
 
@@ -97,6 +98,8 @@ class SuffixBuckets
         size_t buckets_size;    /**< size of buckets array */
         size_t first_bucket;
         size_t last_bucket;
+        std::vector<size_t> bucket_owner;
+        size_t bucket_size_total;
 };
 
 }; /* namespace pgraph */

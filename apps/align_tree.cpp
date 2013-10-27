@@ -209,8 +209,8 @@ static void alignment_task(
                 << ": aligned " << seq_id[0] << " " << seq_id[1]
                 << ": (score,ndig,alen)=("
                 << result.score << ","
-                << result.ndig << ","
-                << result.alen << ")"
+                << result.matches << ","
+                << result.length << ")"
                 << ": edge? " << is_edge_answer << endl;
 #endif
             edge_results[thd].push_back(EdgeResult(
@@ -237,78 +237,6 @@ static void alignment_task(
         stats[thd].calc_min(t);
         stats[thd].calc_max(t);
     }
-}
-
-
-unsigned long populate_tasks(
-        unsigned long ntasks, unsigned long tasks_per_worker, int worker,
-        MPI_Comm comm)
-{
-    time_t t1 = 0;                  /* start timer */
-    time_t t2 = 0;                  /* stop timer */
-    unsigned long count = 0;
-
-    if (suffix_buckets->last_bucket == 0 && suffix_buckets->first_bucket == 0) return 0;
-
-    size_t node_count = suffix_buckets->last_bucket - suffix_buckets->first_bucket + 1UL;
-    size_t worker_count = node_count / NUM_WORKERS;
-    size_t worker_extra = node_count % NUM_WORKERS;
-    size_t worker_start_index = worker * worker_count;
-    assert(worker >= 0);
-    if (size_t(worker) < worker_extra) {
-        worker_count++;
-    }
-    worker_start_index += std::min(size_t(worker),worker_extra);
-    worker_start_index += suffix_buckets->first_bucket;
-    size_t worker_stop_index = worker_start_index + worker_count;
-#if DEBUG
-    mpix_print_sync("suffix_buckets->first_bucket", suffix_buckets->first_bucket, comm);
-    mpix_print_sync("suffix_buckets->last_bucket", suffix_buckets->last_bucket, comm);
-    mpix_print_sync("node_count", node_count, comm);
-    mpix_print_sync("worker_count", worker_count, comm);
-    mpix_print_sync("worker_extra", worker_extra, comm);
-    mpix_print_sync("worker_start_index", worker_start_index, comm);
-    mpix_print_sync(" worker_stop_index", worker_stop_index, comm);
-#endif
-
-    /* suffix tree construction & processing */
-    (void) time(&t1);
-    for (size_t i = worker_start_index; i < worker_stop_index; ++i) {
-        if (NULL != suffix_buckets->buckets[i].suffixes) {
-            set<pair<size_t,size_t> > local_pairs;
-            utcs[worker]->getStats().taskTime2.startTimer();
-            SuffixTree *tree = new SuffixTree(
-                    sequences, &(suffix_buckets->buckets[i]), parameters);
-            tree->generate_pairs(local_pairs);
-            delete tree;
-            utcs[worker]->getStats().taskTime2.stopTimer();
-            utcs[worker]->getStats().numTasks2.inc();
-
-            for (set<pair<size_t,size_t> >::iterator it=local_pairs.begin();
-                    it!=local_pairs.end(); ++it) {
-                task_description desc;
-#if defined(GLOBAL_DUPLICATES)
-                if (pairs.count(*it) == 0) {
-                    pairs.insert(*it);
-                }
-                else {
-                    continue;
-                }
-#endif
-                desc.id1 = it->first;
-                desc.id2 = it->second;
-#if DEBUG
-                cout << trank(worker) << " added " << desc.id1 << "," << desc.id2 << endl;
-#endif
-                utcs[worker]->addTask(&desc, sizeof(desc));
-                ++count;
-            }
-        }
-    }
-    (void) time(&t2);
-    
-
-    return count;
 }
 
 
@@ -435,6 +363,8 @@ int main(int argc, char **argv)
     /* the tascel part */
     double populate_times[NUM_WORKERS];
     double count[NUM_WORKERS];
+    fill(populate_times, populate_times+NUM_WORKERS, 0.0);
+    fill(count, count+NUM_WORKERS, 0.0);
     time_t t1 = 0;                  /* start timer */
     time_t t2 = 0;                  /* stop timer */
     (void) time(&t1);
@@ -462,12 +392,68 @@ int main(int argc, char **argv)
             .taskSize(sizeof(task_description))
             .maxTasks(max_tasks_per_worker);
         utc = new UniformTaskCollSplitHybrid(props, worker);
-
-        /* add some tasks */
-        populate_times[worker] = MPI_Wtime();
-        count[worker] = populate_tasks(ntasks, tasks_per_worker, worker, comm);
-        populate_times[worker] = MPI_Wtime() - populate_times[worker];
     }
+
+    if (0 == trank(0)) {
+        printf("created UTCs\n");
+    }
+
+    size_t even_split = suffix_buckets->bucket_size_total / NUM_WORKERS;
+    size_t work = 0;
+    int worker = 0;
+    double poptimer = MPI_Wtime();
+    size_t tasks = 0;
+    for (size_t i = 0; i < suffix_buckets->buckets_size; ++i) {
+        if (suffix_buckets->bucket_owner[i] == rank) {
+            if (NULL != suffix_buckets->buckets[i].suffixes) {
+                set<pair<size_t,size_t> > local_pairs;
+                utcs[worker]->getStats().taskTime2.startTimer();
+                SuffixTree *tree = new SuffixTree(
+                        sequences, &(suffix_buckets->buckets[i]), parameters);
+                tree->generate_pairs(local_pairs);
+                delete tree;
+                utcs[worker]->getStats().taskTime2.stopTimer();
+                utcs[worker]->getStats().numTasks2.inc();
+
+                for (set<pair<size_t,size_t> >::iterator it=local_pairs.begin();
+                        it!=local_pairs.end(); ++it) {
+                    task_description desc;
+#if defined(GLOBAL_DUPLICATES)
+                    if (pairs.count(*it) == 0) {
+                        pairs.insert(*it);
+                    }
+                    else {
+                        continue;
+                    }
+#endif
+                    desc.id1 = it->first;
+                    desc.id2 = it->second;
+#if 1
+                    if (0 == rank)
+                    cout << trank(worker) << " added " << desc.id1 << "," << desc.id2 << endl;
+#endif
+                    utcs[worker]->addTask(&desc, sizeof(desc));
+                    ++count[worker];
+                    ++tasks;
+                }
+                work += suffix_buckets->buckets[i].size;
+                if (work >= even_split) {
+                    if (0 == trank(0)) {
+                        printf("done with worker %d tasks so far %zu\n",
+                                worker, tasks);
+                    }
+                    populate_times[worker] = MPI_Wtime() - poptimer;
+                    poptimer = MPI_Wtime();
+                    work = 0;
+                    ++worker;
+                    if (worker >= NUM_WORKERS) {
+                        worker = NUM_WORKERS-1;
+                    }
+                }
+            }
+        }
+    }
+    populate_times[worker] = MPI_Wtime() - poptimer;
     delete suffix_buckets;
 #if DEBUG
     double *g_populate_times = new double[nprocs*NUM_WORKERS];

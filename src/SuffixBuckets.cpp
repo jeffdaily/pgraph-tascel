@@ -206,7 +206,8 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     mpix_print_sync("owner_last_index", vec_to_string(owner_last_index), comm);
 #else
     size_t even_split = n_suffixes / comm_size;
-    vector<size_t> bucket_owner(n_buckets);
+    //vector<size_t> bucket_owner(n_buckets);
+    bucket_owner.assign(n_buckets, size_t(0));
     size_t rank = 0;
     count = 0;
     for (size_t i=0; i<n_buckets; ++i) {
@@ -293,6 +294,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     /* The suffixes contains sorted suffixes based on the buckets they belong
      * to. That means we can simply update the 'next' links! */
     size_t last_id = sequences->get_global_count();
+    bucket_size_total = 0;
     for (size_t i=0; i<total_amount_to_recv; ++i) {
         assert(suffixes[i].sid < last_id);
         //assert(suffixes[i].pid == ??);
@@ -301,6 +303,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
         suffixes[i].next = buckets[suffixes[i].bid].suffixes;
         buckets[suffixes[i].bid].suffixes = &suffixes[i];
         buckets[suffixes[i].bid].size++;
+        ++bucket_size_total;
     }
 
     suffixes_size = n_suffixes;
@@ -335,6 +338,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
 #if DEBUG
     mpix_print_sync("first_bucket", first_bucket, comm);
     mpix_print_sync("last_bucket", last_bucket, comm);
+    mpix_print_sync("bucket_size_total", bucket_size_total, comm);
 #endif
 }
 
