@@ -90,7 +90,8 @@ bin_PROGRAMS = apps/align$(EXEEXT) apps/align_counter$(EXEEXT) \
 	apps/align_iter_length_filter$(EXEEXT) \
 	apps/align_length_filter$(EXEEXT) apps/align_tree$(EXEEXT) \
 	apps/align_tree_dup$(EXEEXT) apps/align_tree_dynamic$(EXEEXT) \
-	apps/align_tree_dynamic_dup$(EXEEXT) apps/ccd$(EXEEXT) \
+	apps/align_tree_dynamic_dup$(EXEEXT) \
+	apps/align_tree_dynamic_callback$(EXEEXT) apps/ccd$(EXEEXT) \
 	apps/ccd2$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_2)
 @HAVE_SSE2_TRUE@am__append_3 = apps/align_ssw apps/align_counter_ssw \
 @HAVE_SSE2_TRUE@	apps/align_iter_ssw apps/align_tree_ssw
@@ -145,7 +146,7 @@ am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
 	src/SequenceDatabase.cpp src/SequenceDatabase.hpp \
 	src/stree.cpp src/stree.hpp src/SuffixBuckets.cpp \
 	src/SuffixBuckets.hpp src/SuffixTree.cpp src/SuffixTree.hpp \
-	src/timer.h \
+	src/TreeStats.hpp src/timer.h \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.c \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.h \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.cpp \
@@ -260,6 +261,13 @@ apps_align_tree_dynamic_OBJECTS =  \
 	$(am_apps_align_tree_dynamic_OBJECTS)
 apps_align_tree_dynamic_LDADD = $(LDADD)
 apps_align_tree_dynamic_DEPENDENCIES = libpgraph.la \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am_apps_align_tree_dynamic_callback_OBJECTS = apps/apps_align_tree_dynamic_callback-align_tree_dynamic.$(OBJEXT)
+apps_align_tree_dynamic_callback_OBJECTS =  \
+	$(am_apps_align_tree_dynamic_callback_OBJECTS)
+apps_align_tree_dynamic_callback_LDADD = $(LDADD)
+apps_align_tree_dynamic_callback_DEPENDENCIES = libpgraph.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_apps_align_tree_dynamic_dup_OBJECTS =  \
@@ -411,6 +419,7 @@ SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
 	$(apps_align_length_filter_SOURCES) $(apps_align_ssw_SOURCES) \
 	$(apps_align_tree_SOURCES) $(apps_align_tree_dup_SOURCES) \
 	$(apps_align_tree_dynamic_SOURCES) \
+	$(apps_align_tree_dynamic_callback_SOURCES) \
 	$(apps_align_tree_dynamic_dup_SOURCES) \
 	$(apps_align_tree_ssw_SOURCES) $(apps_ccd_SOURCES) \
 	$(apps_ccd2_SOURCES) $(apps_ssw_test_SOURCES) \
@@ -428,6 +437,7 @@ DIST_SOURCES = $(am__libpgraph_la_SOURCES_DIST) $(apps_align_SOURCES) \
 	$(apps_align_length_filter_SOURCES) $(apps_align_ssw_SOURCES) \
 	$(apps_align_tree_SOURCES) $(apps_align_tree_dup_SOURCES) \
 	$(apps_align_tree_dynamic_SOURCES) \
+	$(apps_align_tree_dynamic_callback_SOURCES) \
 	$(apps_align_tree_dynamic_dup_SOURCES) \
 	$(apps_align_tree_ssw_SOURCES) $(apps_ccd_SOURCES) \
 	$(apps_ccd2_SOURCES) $(apps_ssw_test_SOURCES) \
@@ -645,7 +655,7 @@ libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
 	src/SequenceDatabase.cpp src/SequenceDatabase.hpp \
 	src/stree.cpp src/stree.hpp src/SuffixBuckets.cpp \
 	src/SuffixBuckets.hpp src/SuffixTree.cpp src/SuffixTree.hpp \
-	src/timer.h $(am__append_2)
+	src/TreeStats.hpp src/timer.h $(am__append_2)
 #if HAVE_UTC_ITER
 #noinst_PROGRAMS += sandbox/brute_force_iter
 #endif
@@ -660,6 +670,7 @@ apps_align_tree_SOURCES = apps/align_tree.cpp
 apps_align_tree_dup_SOURCES = apps/align_tree.cpp
 apps_align_tree_dynamic_SOURCES = apps/align_tree_dynamic.cpp
 apps_align_tree_dynamic_dup_SOURCES = apps/align_tree_dynamic.cpp
+apps_align_tree_dynamic_callback_SOURCES = apps/align_tree_dynamic.cpp
 apps_ccd_SOURCES = apps/ccd.cpp
 apps_ccd2_SOURCES = apps/ccd2.cpp
 apps_align_ssw_SOURCES = apps/align.cpp
@@ -680,6 +691,7 @@ apps_align_iter_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
 apps_align_tree_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
 apps_align_tree_dup_CPPFLAGS = $(AM_CPPFLAGS) -DGLOBAL_DUPLICATES
 apps_align_tree_dynamic_dup_CPPFLAGS = $(AM_CPPFLAGS) -DGLOBAL_DUPLICATES
+apps_align_tree_dynamic_callback_CPPFLAGS = $(AM_CPPFLAGS) -DCALLBACK
 apps_ssw_test_LDFLAGS = $(ZLIB_LDFLAGS) $(AM_LDFLAGS)
 apps_ssw_test_LDADD = $(LDADD) $(ZLIB_LIBS) $(LIBS)
 
@@ -953,6 +965,12 @@ apps/align_tree_dynamic.$(OBJEXT): apps/$(am__dirstamp) \
 apps/align_tree_dynamic$(EXEEXT): $(apps_align_tree_dynamic_OBJECTS) $(apps_align_tree_dynamic_DEPENDENCIES) $(EXTRA_apps_align_tree_dynamic_DEPENDENCIES) apps/$(am__dirstamp)
 	@rm -f apps/align_tree_dynamic$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_dynamic_OBJECTS) $(apps_align_tree_dynamic_LDADD) $(LIBS)
+apps/apps_align_tree_dynamic_callback-align_tree_dynamic.$(OBJEXT):  \
+	apps/$(am__dirstamp) apps/$(DEPDIR)/$(am__dirstamp)
+
+apps/align_tree_dynamic_callback$(EXEEXT): $(apps_align_tree_dynamic_callback_OBJECTS) $(apps_align_tree_dynamic_callback_DEPENDENCIES) $(EXTRA_apps_align_tree_dynamic_callback_DEPENDENCIES) apps/$(am__dirstamp)
+	@rm -f apps/align_tree_dynamic_callback$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_dynamic_callback_OBJECTS) $(apps_align_tree_dynamic_callback_LDADD) $(LIBS)
 apps/apps_align_tree_dynamic_dup-align_tree_dynamic.$(OBJEXT):  \
 	apps/$(am__dirstamp) apps/$(DEPDIR)/$(am__dirstamp)
 
@@ -1063,6 +1081,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_length_filter-align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_ssw-align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_tree_dup-align_tree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_tree_dynamic_callback-align_tree_dynamic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_tree_dynamic_dup-align_tree_dynamic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_tree_ssw-align_tree.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/ccd.Po@am__quote@
@@ -1267,6 +1286,20 @@ apps/apps_align_tree_dup-align_tree.obj: apps/align_tree.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree.cpp' object='apps/apps_align_tree_dup-align_tree.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dup_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_dup-align_tree.obj `if test -f 'apps/align_tree.cpp'; then $(CYGPATH_W) 'apps/align_tree.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree.cpp'; fi`
+
+apps/apps_align_tree_dynamic_callback-align_tree_dynamic.o: apps/align_tree_dynamic.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dynamic_callback_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_dynamic_callback-align_tree_dynamic.o -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_dynamic_callback-align_tree_dynamic.Tpo -c -o apps/apps_align_tree_dynamic_callback-align_tree_dynamic.o `test -f 'apps/align_tree_dynamic.cpp' || echo '$(srcdir)/'`apps/align_tree_dynamic.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_dynamic_callback-align_tree_dynamic.Tpo apps/$(DEPDIR)/apps_align_tree_dynamic_callback-align_tree_dynamic.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree_dynamic.cpp' object='apps/apps_align_tree_dynamic_callback-align_tree_dynamic.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dynamic_callback_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_dynamic_callback-align_tree_dynamic.o `test -f 'apps/align_tree_dynamic.cpp' || echo '$(srcdir)/'`apps/align_tree_dynamic.cpp
+
+apps/apps_align_tree_dynamic_callback-align_tree_dynamic.obj: apps/align_tree_dynamic.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dynamic_callback_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_dynamic_callback-align_tree_dynamic.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_dynamic_callback-align_tree_dynamic.Tpo -c -o apps/apps_align_tree_dynamic_callback-align_tree_dynamic.obj `if test -f 'apps/align_tree_dynamic.cpp'; then $(CYGPATH_W) 'apps/align_tree_dynamic.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree_dynamic.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_dynamic_callback-align_tree_dynamic.Tpo apps/$(DEPDIR)/apps_align_tree_dynamic_callback-align_tree_dynamic.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree_dynamic.cpp' object='apps/apps_align_tree_dynamic_callback-align_tree_dynamic.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dynamic_callback_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_dynamic_callback-align_tree_dynamic.obj `if test -f 'apps/align_tree_dynamic.cpp'; then $(CYGPATH_W) 'apps/align_tree_dynamic.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree_dynamic.cpp'; fi`
 
 apps/apps_align_tree_dynamic_dup-align_tree_dynamic.o: apps/align_tree_dynamic.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dynamic_dup_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_dynamic_dup-align_tree_dynamic.o -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_dynamic_dup-align_tree_dynamic.Tpo -c -o apps/apps_align_tree_dynamic_dup-align_tree_dynamic.o `test -f 'apps/align_tree_dynamic.cpp' || echo '$(srcdir)/'`apps/align_tree_dynamic.cpp

@@ -10,6 +10,7 @@
 #include <tascel.h>
 #include <tascel/UniformTaskCollection.h>
 #include <tascel/UniformTaskCollSplitHybrid.h>
+#include <tascel/tmpi.h>
 
 #include <algorithm>
 #include <cassert>
@@ -28,6 +29,7 @@
 #include <vector>
 
 #include "AlignStats.hpp"
+#include "TreeStats.hpp"
 #include "constants.h"
 #include "combinations.h"
 #include "alignment.hpp"
@@ -82,6 +84,7 @@ int rank = 0;
 int nprocs = 0;
 UniformTaskCollSplitHybrid** utcs = 0;
 AlignStats *stats = 0;
+TreeStats *treestats = 0;
 SequenceDatabase *sequences = 0;
 vector<EdgeResult> *edge_results = 0;
 Parameters parameters;
@@ -244,6 +247,23 @@ static void alignment_task(
 }
 
 
+struct Callback {
+    int worker;
+
+    Callback(int worker) : worker(worker) {}
+
+    void operator()(pair<size_t,size_t> the_pair) {
+        task_desc_align desc;
+        desc.id1 = the_pair.first;
+        desc.id2 = the_pair.second;
+#if DEBUG
+        cout << trank(worker) << " added " << desc.id1 << "," << desc.id2 << endl;
+#endif
+        utcs[worker]->addTask(&desc, sizeof(desc));
+    }
+};
+
+
 static void tree_task(
         UniformTaskCollection *utc,
         void *_bigd, int bigd_len,
@@ -252,11 +272,16 @@ static void tree_task(
     task_desc_tree *tree_desc = (task_desc_tree*)_bigd;
     unsigned long i = tree_desc->id1;
     set<pair<size_t,size_t> > local_pairs;
+    assert(i < suffix_buckets->buckets_size);
     /* suffix tree construction & processing */
     if (NULL != suffix_buckets->buckets[i].suffixes) {
         SuffixTree *tree = new SuffixTree(
                 sequences, &(suffix_buckets->buckets[i]), parameters);
+#if defined(CALLBACK)
+        tree->generate_pairs_cb(Callback(worker));
+#else
         tree->generate_pairs(local_pairs);
+#endif
         delete tree;
     }
     
@@ -296,12 +321,12 @@ int main(int argc, char **argv)
 #if defined(THREADED)
     {
         int provided;
-        MPI_CHECK(MPI_Init_thread(&argc, &argv,
+        MPI_CHECK(TMPI_Init_thread(&argc, &argv,
                     MPI_THREAD_MULTIPLE, &provided));
         assert(provided == MPI_THREAD_MULTIPLE);
     }
 #else
-    MPI_CHECK(MPI_Init(&argc, &argv));
+    MPI_CHECK(TMPI_Init(&argc, &argv));
 #endif
     MPI_CHECK(MPI_Comm_dup(MPI_COMM_WORLD, &comm));
     MPI_CHECK(MPI_Comm_rank(comm, &rank));
@@ -311,6 +336,7 @@ int main(int argc, char **argv)
     TascelConfig::initialize(NUM_WORKERS_DEFAULT, comm);
     utcs = new UniformTaskCollSplitHybrid*[NUM_WORKERS];
     stats = new AlignStats[NUM_WORKERS];
+    treestats = new TreeStats[NUM_WORKERS];
     edge_results = new vector<EdgeResult>[NUM_WORKERS];
 #if defined(THREADED)
     threadHandles = new pthread_t[NUM_WORKERS + NUM_SERVERS];
@@ -417,10 +443,6 @@ int main(int argc, char **argv)
     MPI_Barrier(comm);
 
     /* the tascel part */
-    double populate_times[NUM_WORKERS];
-    double count[NUM_WORKERS];
-    fill(populate_times, populate_times+NUM_WORKERS, 0.0);
-    fill(count, count+NUM_WORKERS, 0.0);
     (void) time(&t1);
     suffix_buckets = new SuffixBuckets(sequences, parameters, comm);
     (void) time(&t2);
@@ -444,10 +466,10 @@ int main(int argc, char **argv)
     }
 
     size_t even_split = suffix_buckets->bucket_size_total / NUM_WORKERS;
-    size_t work = 0;
     int worker = 0;
     double poptimer = MPI_Wtime();
-    for (size_t i=0; i < suffix_buckets->buckets_size; ++i) {
+    for (size_t i=suffix_buckets->first_bucket;
+            i < suffix_buckets->buckets_size; ++i) {
         if (suffix_buckets->bucket_owner[i] == rank) {
             if (NULL != suffix_buckets->buckets[i].suffixes) {
                 task_desc_tree desc;
@@ -456,13 +478,11 @@ int main(int argc, char **argv)
                 cout << trank(worker) << " added " << desc.id1 << endl;
 #endif
                 utcs[worker]->addTask2(&desc, sizeof(task_desc_tree));
-                ++count[worker];
-
-                work += suffix_buckets->buckets[i].size;
-                if (work >= even_split) {
-                    populate_times[worker] = MPI_Wtime() - poptimer;
+                treestats[worker].trees += 1;
+                treestats[worker].suffixes += suffix_buckets->buckets[i].size;
+                if (treestats[worker].suffixes >= even_split) {
+                    treestats[worker].times = MPI_Wtime() - poptimer;
                     poptimer = MPI_Wtime();
-                    work = 0;
                     ++worker;
                     if (worker >= NUM_WORKERS) {
                         worker = NUM_WORKERS-1;
@@ -470,58 +490,40 @@ int main(int argc, char **argv)
                 }
             }
         }
+        else {
+            break;
+        }
     }
-    populate_times[worker] = MPI_Wtime() - poptimer;
+    treestats[worker].times = MPI_Wtime() - poptimer;
+
 #if 1
-    double *g_populate_times = new double[nprocs*NUM_WORKERS];
-    MPI_CHECK(MPI_Gather(populate_times, NUM_WORKERS, MPI_DOUBLE,
-                g_populate_times, NUM_WORKERS, MPI_DOUBLE, 0, comm));
+    TreeStats * gtreestats = new TreeStats[NUM_WORKERS*nprocs];
+    MPI_Gather(treestats, sizeof(TreeStats)*NUM_WORKERS, MPI_CHAR, 
+	       gtreestats, sizeof(TreeStats)*NUM_WORKERS, MPI_CHAR, 
+	       0, comm);
+
+    /* synchronously print alignment stats all from process 0 */
     if (0 == rank) {
-        double tally = 0;
-        cout << " pid populate_time" << endl;
+        TreeStats totals;
+        TreeStats mins = gtreestats[0];
+        TreeStats maxs = gtreestats[0];
+        cout << setw(4) << right << "pid " << gtreestats[0].getHeader() << endl;
         for(int i=0; i<nprocs*NUM_WORKERS; i++) {
-            tally += g_populate_times[i];
-            cout << std::setw(4) << std::right << i
-                << setw(14) << fixed << g_populate_times[i] << endl;
+            totals += gtreestats[i];
+            mins < gtreestats[i];
+            maxs > gtreestats[i];
+            cout << std::setw(4) << right << i << " " << gtreestats[i] << endl;
         }
-        double avg = tally / (nprocs*NUM_WORKERS);
-        double stddev = 0;
-        for(int i=0; i<nprocs*NUM_WORKERS; i++) {
-            stddev += pow((g_populate_times[i] - avg),2);
-        }
-        stddev = pow(stddev / (nprocs*NUM_WORKERS),0.5);
         cout << "==============================================" << endl;
-        cout << setw(4) << right << "T" << setw(14) << fixed << tally
-            << " avg " << avg << " +- " << stddev << endl;
-    }
-    delete [] g_populate_times;
-#endif
-#if 1
-    double *task_counts = new double[nprocs*NUM_WORKERS];
-    MPI_CHECK(MPI_Gather(count, NUM_WORKERS, MPI_DOUBLE,
-                task_counts, NUM_WORKERS, MPI_DOUBLE, 0, comm));
-    if (0 == rank) {
-        double tally = 0;
-        cout << " pid        ntasks" << endl;
-        for(int i=0; i<nprocs*NUM_WORKERS; i++) {
-            tally += task_counts[i];
-            cout << std::setw(4) << std::right << i
-                << setw(14) << task_counts[i] << endl;
-        }
-        double avg = tally / (nprocs*NUM_WORKERS);
-        double stddev = 0;
-        for(int i=0; i<nprocs*NUM_WORKERS; i++) {
-            stddev += pow((task_counts[i] - avg),2);
-        }
-        stddev = pow(stddev / (nprocs*NUM_WORKERS),0.5);
+        cout << setw(4) << right << "TOT " << totals << endl;
+        cout << setw(4) << right << "MIN " << mins << endl;
+        cout << setw(4) << right << "MAX " << maxs << endl;
+        cout << setw(4) << right << "AVG " << (totals/(nprocs*NUM_WORKERS)) << endl;
+        cout << setw(4) << right << "STD " << (totals.stddev(nprocs*NUM_WORKERS, gtreestats)) << endl;
         cout << "==============================================" << endl;
-        cout << setw(4) << right << "T" << setw(14) << fixed << tally
-            << " avg " << avg << " +- " << stddev << endl;
-        if (tally != ntasks) {
-            cout << "tally != ntasks\t" << tally << " != " << ntasks << endl;
-        }
     }
-    delete [] task_counts;
+    delete [] gtreestats;
+    gtreestats=NULL;
 #endif
 
     amBarrier();
@@ -579,13 +581,22 @@ int main(int argc, char **argv)
     /* synchronously print alignment stats all from process 0 */
     if (0 == rank) {
         AlignStats totals;
+        AlignStats mins;
+        AlignStats maxs;
         cout << setw(4) << right << "pid" << rstats[0].getHeader() << endl;
         for(int i=0; i<nprocs*NUM_WORKERS; i++) {
             totals += rstats[i];
-            cout << std::setw(4) << right << i << rstats[i] << endl;
+            mins < rstats[i];
+            maxs > rstats[i];
+            cout << std::setw(4) << right << i << " " << rstats[i] << endl;
         }
         cout << "==============================================" << endl;
-        cout << setw(4) << right << "TOT" << totals << endl;
+        cout << setw(4) << right << "TOT " << totals << endl;
+        cout << setw(4) << right << "MIN " << mins << endl;
+        cout << setw(4) << right << "MAX " << maxs << endl;
+        cout << setw(4) << right << "AVG " << (totals/(nprocs*NUM_WORKERS)) << endl;
+        cout << setw(4) << right << "STD " << (totals.stddev(nprocs*NUM_WORKERS, rstats)) << endl;
+        cout << "==============================================" << endl;
     }
     delete [] rstats;
     rstats=NULL;
@@ -606,7 +617,7 @@ int main(int argc, char **argv)
       cout<<" pid "<<rstt[0].formatString()<<endl;      
       for(int i=0; i<nprocs*NUM_WORKERS; i++) {
 	tstt += rstt[i];
-	cout<<std::setw(4)<<std::right<<i<<rstt[i]<<endl;
+	cout<<std::setw(4)<<std::right<<i<<" "<<rstt[i]<<endl;
       }
       cout<<"=============================================="<<endl;
       cout<<"TOT "<<tstt<<endl;

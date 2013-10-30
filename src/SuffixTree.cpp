@@ -272,6 +272,7 @@ SuffixTree::~SuffixTree()
 }
 
 
+#if 0
 static inline int
 is_candidate(SequenceDatabase *seqs, size_t nSeqs,
              Suffix *p, Suffix *q,
@@ -320,8 +321,10 @@ is_candidate(SequenceDatabase *seqs, size_t nSeqs,
 
     return result;
 }
+#endif
 
 
+#if 0
 /**
  * counting sort based on the depth of the tree nodes.
  *
@@ -370,6 +373,7 @@ count_sort(SuffixTreeNode *stNodes, int *srtIndex, size_t nStNodes, size_t maxSe
 
     delete [] cnt;
 }
+#endif
 
 
 static inline void

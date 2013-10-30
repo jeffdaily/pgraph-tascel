@@ -218,6 +218,9 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
             if (rank >= comm_size) {
                 rank = comm_size-1;
             }
+            if (rank == comm_rank) {
+                first_bucket = i;
+            }
         }
         bucket_owner[i] = rank;
     }
@@ -309,6 +312,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     suffixes_size = n_suffixes;
     buckets_size = n_buckets;
 
+#if 0
     bool found_start = false;
     bool found_stop = false;
     for (size_t i=0; i<buckets_size; ++i) {
@@ -334,8 +338,9 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     if (found_start && !found_stop) {
         last_bucket = buckets_size-1;
     }
+#endif
 
-#if DEBUG
+#if 1
     mpix_print_sync("first_bucket", first_bucket, comm);
     mpix_print_sync("last_bucket", last_bucket, comm);
     mpix_print_sync("bucket_size_total", bucket_size_total, comm);
