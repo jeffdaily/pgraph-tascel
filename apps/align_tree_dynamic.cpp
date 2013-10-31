@@ -275,13 +275,17 @@ static void tree_task(
     assert(i < suffix_buckets->buckets_size);
     /* suffix tree construction & processing */
     if (NULL != suffix_buckets->buckets[i].suffixes) {
+        double atimer = MPI_Wtime();
         SuffixTree *tree = new SuffixTree(
                 sequences, &(suffix_buckets->buckets[i]), parameters);
+        treestats[worker].time_build += MPI_Wtime() - atimer;
+        atimer = MPI_Wtime();
 #if defined(CALLBACK)
         tree->generate_pairs_cb(Callback(worker));
 #else
         tree->generate_pairs(local_pairs);
 #endif
+        treestats[worker].time_process += MPI_Wtime() - atimer;
         delete tree;
     }
     
@@ -496,36 +500,6 @@ int main(int argc, char **argv)
     }
     treestats[worker].times = MPI_Wtime() - poptimer;
 
-#if 1
-    TreeStats * gtreestats = new TreeStats[NUM_WORKERS*nprocs];
-    MPI_Gather(treestats, sizeof(TreeStats)*NUM_WORKERS, MPI_CHAR, 
-	       gtreestats, sizeof(TreeStats)*NUM_WORKERS, MPI_CHAR, 
-	       0, comm);
-
-    /* synchronously print alignment stats all from process 0 */
-    if (0 == rank) {
-        TreeStats totals;
-        TreeStats mins = gtreestats[0];
-        TreeStats maxs = gtreestats[0];
-        cout << setw(4) << right << "pid " << gtreestats[0].getHeader() << endl;
-        for(int i=0; i<nprocs*NUM_WORKERS; i++) {
-            totals += gtreestats[i];
-            mins < gtreestats[i];
-            maxs > gtreestats[i];
-            cout << std::setw(4) << right << i << " " << gtreestats[i] << endl;
-        }
-        cout << "==============================================" << endl;
-        cout << setw(4) << right << "TOT " << totals << endl;
-        cout << setw(4) << right << "MIN " << mins << endl;
-        cout << setw(4) << right << "MAX " << maxs << endl;
-        cout << setw(4) << right << "AVG " << (totals/(nprocs*NUM_WORKERS)) << endl;
-        cout << setw(4) << right << "STD " << (totals.stddev(nprocs*NUM_WORKERS, gtreestats)) << endl;
-        cout << "==============================================" << endl;
-    }
-    delete [] gtreestats;
-    gtreestats=NULL;
-#endif
-
     amBarrier();
 
 #if defined(THREADED)
@@ -572,6 +546,36 @@ int main(int argc, char **argv)
 
     amBarrier();
     MPI_Barrier(comm);
+
+#if 1
+    TreeStats * gtreestats = new TreeStats[NUM_WORKERS*nprocs];
+    MPI_Gather(treestats, sizeof(TreeStats)*NUM_WORKERS, MPI_CHAR, 
+	       gtreestats, sizeof(TreeStats)*NUM_WORKERS, MPI_CHAR, 
+	       0, comm);
+
+    /* synchronously print alignment stats all from process 0 */
+    if (0 == rank) {
+        TreeStats totals;
+        TreeStats mins = gtreestats[0];
+        TreeStats maxs = gtreestats[0];
+        cout << setw(4) << right << "pid " << gtreestats[0].getHeader() << endl;
+        for(int i=0; i<nprocs*NUM_WORKERS; i++) {
+            totals += gtreestats[i];
+            mins < gtreestats[i];
+            maxs > gtreestats[i];
+            cout << std::setw(4) << right << i << " " << gtreestats[i] << endl;
+        }
+        cout << "==============================================" << endl;
+        cout << setw(4) << right << "TOT " << totals << endl;
+        cout << setw(4) << right << "MIN " << mins << endl;
+        cout << setw(4) << right << "MAX " << maxs << endl;
+        cout << setw(4) << right << "AVG " << (totals/(nprocs*NUM_WORKERS)) << endl;
+        cout << setw(4) << right << "STD " << (totals.stddev(nprocs*NUM_WORKERS, gtreestats)) << endl;
+        cout << "==============================================" << endl;
+    }
+    delete [] gtreestats;
+    gtreestats=NULL;
+#endif
 
     AlignStats * rstats = new AlignStats[NUM_WORKERS*nprocs];
     MPI_Gather(stats, sizeof(AlignStats)*NUM_WORKERS, MPI_CHAR, 

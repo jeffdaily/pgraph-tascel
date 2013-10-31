@@ -417,11 +417,16 @@ int main(int argc, char **argv)
             }
 #endif
             if (NULL != suffix_buckets->buckets[i].suffixes) {
+                double atimer = 0.0;
                 set<pair<size_t,size_t> > local_pairs;
                 utcs[worker]->getStats().taskTime2.startTimer();
+                atimer = MPI_Wtime();
                 SuffixTree *tree = new SuffixTree(
                         sequences, &(suffix_buckets->buckets[i]), parameters);
+                treestats[worker].time_build += MPI_Wtime() - atimer;
+                atimer = MPI_Wtime();
                 tree->generate_pairs(local_pairs);
+                treestats[worker].time_process += MPI_Wtime() - atimer;
                 delete tree;
                 utcs[worker]->getStats().taskTime2.stopTimer();
                 utcs[worker]->getStats().numTasks2.inc();
@@ -482,7 +487,7 @@ int main(int argc, char **argv)
         printf("done with worker %d tasks so far %zu (the end)\n",
                 worker, tasks);
     }
-#else
+//#else
         printf("done with (%d,%d)=trank(%d) tasks so far %zu (the end)\n",
                 rank, worker, trank(worker), tasks);
 #endif
