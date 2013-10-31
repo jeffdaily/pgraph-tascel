@@ -98,7 +98,10 @@ class SuffixBuckets
         size_t buckets_size;    /**< size of buckets array */
         size_t first_bucket;
         size_t last_bucket;
+        std::vector<size_t> bucket_size;
         std::vector<size_t> bucket_owner;
+        std::vector<void*> bucket_offset;
+        std::vector<void*> bucket_address;
         size_t bucket_size_total;
 };
 

@@ -23,6 +23,10 @@
 #include "SequenceDatabase.hpp"
 #include "SuffixBuckets.hpp"
 
+/* ANL's armci does not extern "C" inside the header */
+extern "C" {
+#include <armci.h>
+}
 
 namespace pgraph {
 
@@ -106,7 +110,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     /* allocate buckets */
     n_buckets = powz(SIGMA, param.window_size);
     buckets = new Bucket[n_buckets];
-    vector<size_t> bucket_sizes(n_buckets, 0);
+    vector<size_t> bucket_size(n_buckets, 0);
 
     /* allocate suffixes */
     n_suffixes = sequences->get_global_size()
@@ -160,7 +164,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
             initial_suffixes[suffix_index].pid = j;
             initial_suffixes[suffix_index].bid = bucket_index;
             initial_suffixes[suffix_index].next = NULL;
-            bucket_sizes[bucket_index]++;
+            bucket_size[bucket_index]++;
             buckets[bucket_index].size++;
             suffix_index++;
         }
@@ -170,13 +174,13 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
 #if 0
     /* repartition buckets onto owning processes */
     for (size_t i=0; i<n_buckets; ++i) {
-        bucket_sizes[i] = buckets[i].size;
+        bucket_size[i] = buckets[i].size;
     }
 #endif
-    mpix_allreduce(bucket_sizes, MPI_SUM, comm);
+    mpix_allreduce(bucket_size, MPI_SUM, comm);
     size_t count=0;
     for (size_t i=0; i<n_buckets; ++i) {
-        count += bucket_sizes[i];
+        count += bucket_size[i];
     }
 #if DEBUG
     mpix_print_sync("count", count, comm);
@@ -193,7 +197,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     size_t rank = 0;
     count = 0;
     for (size_t i=0; i<n_buckets; ++i) {
-        count += bucket_sizes[i];
+        count += bucket_size[i];
         if (count > event_split) {
             count = 0;
             owner_last_index[rank++] = i+1; /* exclusive */
@@ -211,7 +215,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     size_t rank = 0;
     count = 0;
     for (size_t i=0; i<n_buckets; ++i) {
-        count += bucket_sizes[i];
+        count += bucket_size[i];
         if (count > even_split) {
             count = 0;
             ++rank;
@@ -251,7 +255,14 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     std::sort(initial_suffixes.begin(),
               initial_suffixes.end(),
               SuffixBucketIndexCompare);
+#if 0
     suffixes = new Suffix[total_amount_to_recv];
+#else
+    bucket_address.assign(comm_size, NULL);
+    (void)ARMCI_Malloc((void**)&bucket_address[0],
+            total_amount_to_recv*sizeof(Suffix));
+    suffixes = (Suffix*)bucket_address[comm_rank];
+#endif
     vector<int> send_displacements(comm_size, 0);
     vector<int> recv_displacements(comm_size, 0);
     for (size_t i=1; i<comm_size; ++i) {
@@ -263,8 +274,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     mpix_print_sync("recv_displacements", vec_to_string(recv_displacements), comm);
 #endif
 
-    /* TODO JEFF where I left off
-     * need to alltoallv the buckets to the owning processes
+    /* need to alltoallv the buckets to the owning processes
      * probably need to add a "bucket_id" field to the Suffix class so that
      * after the data is sent it can be properly recovered to the correct
      * bucket linked lists */
@@ -350,7 +360,11 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
 
 SuffixBuckets::~SuffixBuckets()
 {
+#if 0
     delete [] suffixes;
+#else
+    ARMCI_Free(suffixes);
+#endif
     delete [] buckets;
 }
 
