@@ -119,7 +119,10 @@ static inline size_t
 build_tree_recursive(
     SequenceDatabase *sequences, size_t n_sequences,
     Suffix *suffixes, int depth, int window_size,
-    SuffixTreeNode *st_nodes, size_t *st_index)
+    SuffixTreeNode *st_nodes, size_t *st_index,
+    double &size_internal, double &fanout,
+    double &avgdepth, double &deepest,
+    double &suffix_avg_length, double &suffix_max_length)
 {
     int diffPos;
     size_t i;
@@ -152,6 +155,11 @@ build_tree_recursive(
         (*st_index)++;
         st_nodes[j].depth = diffPos - 1 ;
 
+        avgdepth += st_nodes[j].depth;
+        if (st_nodes[j].depth > deepest) {
+            deepest = st_nodes[j].depth;
+        }
+
         heads = st_nodes[j].lset;
         for (i = 0; i < SIGMA; i++) {
             heads[i] = NULL;
@@ -181,6 +189,13 @@ build_tree_recursive(
             }
         }
 #endif
+        /* compute fanout */
+        size_internal += 1.0;
+        for (i = 0; i < SIGMA; i++) {
+            if (heads[i]) {
+                fanout += 1.0;
+            }
+        }
 
         /* recursively construct the tree in DFS way */
         for (i = 0; i < SIGMA; i++) {
@@ -197,7 +212,10 @@ build_tree_recursive(
                 else {
                     rLeaf = build_tree_recursive(
                             sequences, n_sequences, heads[i], diffPos,
-                            window_size, st_nodes, st_index);
+                            window_size, st_nodes, st_index,
+                            size_internal, fanout,
+                            avgdepth, deepest,
+                            suffix_avg_length, suffix_max_length);
                 }
 
                 /* put it back into NULL */
@@ -220,6 +238,12 @@ SuffixTree::SuffixTree(
     ,   nodes(NULL)
     ,   size(0)
     ,   lset_array(NULL)
+    ,   fanout(0.0)
+    ,   size_internal(0.0)
+    ,   avgdepth(0.0)
+    ,   deepest(0.0)
+    ,   suffix_avg_length(0.0)
+    ,   suffix_max_length(0.0)
 {
     create();
 }
@@ -258,10 +282,37 @@ void SuffixTree::create()
         this->nodes[i].lset = &(this->lset_array[i*SIGMA]);
     }
 
+    /* gather suffix statistics */
+    Suffix *p = NULL;
+    Suffix *q = NULL;
+    for (p = bucket->suffixes; p != NULL; p = q) {
+        q = p->next;
+        Sequence &seq = (*sequences)[p->sid];
+        /* depth also includes the '$' */
+        double len = (seq.get_sequence_length() - 1) - p->pid;
+        this->suffix_avg_length += len;
+        if (len > this->suffix_max_length) {
+            this->suffix_max_length = len;
+        }
+    }
+    if (this->suffix_avg_length > 0 && this->bucket->size > 0) {
+        this->suffix_avg_length /= double(this->bucket->size);
+    }
+
     build_tree_recursive(
             sequences, sequences->get_global_count(),
             bucket->suffixes, param.window_size - 1, param.window_size,
-            this->nodes, &(this->size));
+            this->nodes, &(this->size),
+            this->size_internal, this->fanout,
+            this->avgdepth, this->deepest,
+            this->suffix_avg_length, this->suffix_max_length);
+
+    if (this->fanout > 0 && this->size_internal > 0) {
+        this->fanout /= this->size_internal;
+    }
+    if (this->avgdepth > 0 && this->size_internal > 0) {
+        this->avgdepth /= this->size_internal;
+    }
 }
 
 

@@ -84,6 +84,18 @@ class SuffixTree
         template <class Callback>
         void generate_pairs_cb(Callback callback);
 
+        double get_size_internal() const { return size_internal; }
+
+        double get_avg_fanout() const { return fanout; }
+
+        double get_avg_depth() const { return avgdepth; }
+
+        double get_deepest() const { return deepest; }
+
+        double get_suffix_avg_length() const { return suffix_avg_length; }
+
+        double get_suffix_max_length() const { return suffix_max_length; }
+
     private:
         void create();
 
@@ -93,6 +105,12 @@ class SuffixTree
         SuffixTreeNode *nodes;  /**< tree nodes */
         size_t size;            /**< number of nodes */
         Suffix **lset_array;    /**< memory for all node's lsets (SIGMA*nnodes) */
+        double fanout;          /**< average fanout */
+        double size_internal;   /**< number of internal nodes */
+        double avgdepth;        /**< average node depth */
+        double deepest;         /**< deepest node depth */
+        double suffix_avg_length;   /**< average suffix length */
+        double suffix_max_length;   /**< longest suffix */
 };
 
 /**

@@ -278,6 +278,12 @@ static void tree_task(
         double atimer = MPI_Wtime();
         SuffixTree *tree = new SuffixTree(
                 sequences, &(suffix_buckets->buckets[i]), parameters);
+        treestats[worker].size_internal += tree->get_size_internal();
+        treestats[worker].fanout += tree->get_avg_fanout();
+        treestats[worker].avgdepth += tree->get_avg_depth();
+        treestats[worker].deepest += tree->get_deepest();
+        treestats[worker].suffix_avg_length += tree->get_suffix_avg_length();
+        treestats[worker].suffix_max_length += tree->get_suffix_max_length();
         treestats[worker].time_build += MPI_Wtime() - atimer;
         atimer = MPI_Wtime();
 #if defined(CALLBACK)
