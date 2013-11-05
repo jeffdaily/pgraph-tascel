@@ -17,6 +17,8 @@
 #include <cstdio>
 #include <iostream>
 
+#include <tascel.h>
+
 #include "constants.h"
 #include "mpix.hpp"
 #include "Parameters.hpp"
@@ -30,6 +32,9 @@ extern "C" {
 #include <armci.h>
 }
 #endif
+
+using tascel::LockGuard;
+using tascel::PthreadMutex;
 
 namespace pgraph {
 
@@ -424,6 +429,7 @@ bool SuffixBuckets::owns(size_t bid) const
 
 Suffix* SuffixBuckets::get(size_t bid)
 {
+#if USE_ARMCI
     assert(bid < buckets_size);
 
     size_t size = bucket_size[bid];
@@ -436,11 +442,20 @@ Suffix* SuffixBuckets::get(size_t bid)
         return buckets[bid].suffixes;
     }
     else {
-        suffixes = new Suffix[size];
+        LockGuard<PthreadMutex> guard(mutex);
+        Suffix *remote_suffixes = new Suffix[size];
         ARMCI_Get((void*)&bucket_address[owner][offset],
-                suffixes, size*sizeof(Suffix), owner);
-        return suffixes;
+                remote_suffixes, size*sizeof(Suffix), owner);
+        for (size_t i=0; i<size-1; ++i) {
+            assert(remote_suffixes[i].bid == bid);
+            remote_suffixes[i].next = &remote_suffixes[i+1];
+        }
+        assert(remote_suffixes[size-1].next == NULL);
+        return remote_suffixes;
     }
+#else
+    assert(0);
+#endif
 }
 
 

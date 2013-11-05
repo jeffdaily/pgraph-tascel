@@ -16,7 +16,11 @@
 #include <iostream>
 #include <vector>
 
+#include <tascel.h>
+
 #include "Parameters.hpp"
+
+using tascel::PthreadMutex;
 
 namespace pgraph {
 
@@ -109,6 +113,7 @@ class SuffixBuckets
         std::vector<size_t> bucket_offset;
         std::vector<Suffix*> bucket_address;
         size_t bucket_size_total;
+        PthreadMutex mutex;
 };
 
 }; /* namespace pgraph */

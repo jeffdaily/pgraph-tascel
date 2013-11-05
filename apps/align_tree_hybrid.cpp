@@ -122,12 +122,7 @@ static string get_edges_filename(int rank)
 typedef struct {
     unsigned long id1;
     unsigned long id2;
-} task_desc_align;
-
-
-typedef struct {
-    unsigned long id1;
-} task_desc_tree;
+} task_desc_hybrid;
 
 
 static size_t parse_memory_budget(const string& value)
@@ -175,7 +170,7 @@ static void alignment_task(
         void *_bigd, int bigd_len,
         void *pldata, int pldata_len,
         vector<void *> data_bufs, int thd) {
-    task_desc_align *desc = (task_desc_align*)_bigd;
+    task_desc_hybrid *desc = (task_desc_hybrid*)_bigd;
     unsigned long seq_id[2];
     cell_t result;
     bool is_edge_answer = false;
@@ -273,7 +268,7 @@ struct Callback {
         }
 #endif
         if (proceed) {
-            task_desc_align desc;
+            task_desc_hybrid desc;
             desc.id1 = the_pair.first;
             desc.id2 = the_pair.second;
 #if DEBUG
@@ -290,15 +285,19 @@ static void tree_task(
         void *_bigd, int bigd_len,
         void *pldata, int pldata_len,
         vector<void *> data_bufs, int worker) {
-    task_desc_tree *tree_desc = (task_desc_tree*)_bigd;
+    task_desc_hybrid *tree_desc = (task_desc_hybrid*)_bigd;
     unsigned long i = tree_desc->id1;
     set<pair<size_t,size_t> > local_pairs;
     assert(i < suffix_buckets->buckets_size);
     /* suffix tree construction & processing */
-    if (NULL != suffix_buckets->buckets[i].suffixes) {
+    Suffix *suffixes = suffix_buckets->get(i);
+    Bucket bucket;
+    bucket.suffixes = suffixes;
+    bucket.size = suffix_buckets->bucket_size[i];
+    if (NULL != suffixes) {
         double atimer = MPI_Wtime();
         SuffixTree *tree = new SuffixTree(
-                sequences, &(suffix_buckets->buckets[i]), parameters);
+                sequences, &bucket, parameters);
         treestats[worker].size_internal += tree->get_size_internal();
         treestats[worker].fanout += tree->get_avg_fanout();
         treestats[worker].avgdepth += tree->get_avg_depth();
@@ -306,6 +305,9 @@ static void tree_task(
         treestats[worker].suffix_avg_length += tree->get_suffix_avg_length();
         treestats[worker].suffix_max_length += tree->get_suffix_max_length();
         treestats[worker].time_build += MPI_Wtime() - atimer;
+        treestats[worker].times += MPI_Wtime() - atimer;
+        treestats[worker].trees += 1;
+        treestats[worker].suffixes += bucket.size;
         atimer = MPI_Wtime();
 #if defined(CALLBACK)
         tree->generate_pairs_cb(Callback(worker));
@@ -313,10 +315,14 @@ static void tree_task(
         tree->generate_pairs(local_pairs);
 #endif
         treestats[worker].time_process += MPI_Wtime() - atimer;
+        treestats[worker].times += MPI_Wtime() - atimer;
         delete tree;
+        if (!suffix_buckets->owns(i)) {
+            delete [] suffixes;
+        }
     }
     
-    task_desc_align desc;
+    task_desc_hybrid desc;
     for (set<pair<size_t,size_t> >::iterator it=local_pairs.begin();
             it!=local_pairs.end(); ++it) {
 #if defined(GLOBAL_DUPLICATES)
@@ -336,6 +342,21 @@ static void tree_task(
         cout << trank(worker) << " added " << desc.id1 << "," << desc.id2 << endl;
 #endif
         utcs[worker]->addTask(&desc, sizeof(desc));
+    }
+}
+
+
+static void hybrid_task(
+        UniformTaskCollection *utc,
+        void *_bigd, int bigd_len,
+        void *pldata, int pldata_len,
+        vector<void *> data_bufs, int thd) {
+    task_desc_hybrid *desc = (task_desc_hybrid*)_bigd;
+    if (desc->id1 == desc->id2) {
+        tree_task(utc, _bigd, bigd_len, pldata, pldata_len, data_bufs, thd);
+    }
+    else {
+        alignment_task(utc, _bigd, bigd_len, pldata, pldata_len, data_bufs, thd);
     }
 }
 
@@ -485,35 +506,32 @@ int main(int argc, char **argv)
         edge_results[worker].reserve(tasks_per_worker);
         UniformTaskCollSplitHybrid*& utc = utcs[worker];
         TslFuncRegTbl *frt = new TslFuncRegTbl();
-        TslFunc tf = frt->add(alignment_task);
-        TslFunc tf2 = frt->add(tree_task);
+        TslFunc tf = frt->add(hybrid_task);
         TaskCollProps props;
-        props.functions(tf, frt, tf2)
-            .taskSize(sizeof(task_desc_align))
-            .maxTasks(max_tasks_per_worker)
-            .taskSize2(sizeof(task_desc_tree))
-            .maxTasks2(long(pow(26.0,parameters.window_size))); // TODO too big
+        props.functions(tf, frt)
+            .taskSize(sizeof(task_desc_hybrid))
+            .maxTasks(max_tasks_per_worker);
         utc = new UniformTaskCollSplitHybrid(props, worker);
     }
 
     size_t even_split = suffix_buckets->bucket_size_total / NUM_WORKERS;
+    size_t work = 0;
     int worker = 0;
     double poptimer = MPI_Wtime();
     for (size_t i=suffix_buckets->first_bucket;
             i < suffix_buckets->buckets_size; ++i) {
         if (suffix_buckets->bucket_owner[i] == rank) {
             if (NULL != suffix_buckets->buckets[i].suffixes) {
-                task_desc_tree desc;
+                task_desc_hybrid desc;
                 desc.id1 = i;
+                desc.id2 = i;
 #if DEBUG
                 cout << trank(worker) << " added " << desc.id1 << endl;
 #endif
-                utcs[worker]->addTask2(&desc, sizeof(task_desc_tree));
-                treestats[worker].trees += 1;
-                treestats[worker].suffixes += suffix_buckets->buckets[i].size;
-                if (treestats[worker].suffixes >= even_split) {
-                    treestats[worker].times = MPI_Wtime() - poptimer;
-                    poptimer = MPI_Wtime();
+                utcs[worker]->addTask(&desc, sizeof(task_desc_hybrid));
+                work += suffix_buckets->buckets[i].size;
+                if (work >= even_split) {
+                    work = 0;
                     ++worker;
                     if (worker >= NUM_WORKERS) {
                         worker = NUM_WORKERS-1;
@@ -525,7 +543,6 @@ int main(int argc, char **argv)
             break;
         }
     }
-    treestats[worker].times = MPI_Wtime() - poptimer;
 
     amBarrier();
 

@@ -96,6 +96,11 @@ bin_PROGRAMS += apps/align_tree_dup
 bin_PROGRAMS += apps/align_tree_dynamic
 bin_PROGRAMS += apps/align_tree_dynamic_dup
 bin_PROGRAMS += apps/align_tree_dynamic_callback
+bin_PROGRAMS += apps/align_tree_dynamic_callback_dup
+bin_PROGRAMS += apps/align_tree_hybrid
+bin_PROGRAMS += apps/align_tree_hybrid_dup
+bin_PROGRAMS += apps/align_tree_hybrid_callback
+bin_PROGRAMS += apps/align_tree_hybrid_callback_dup
 bin_PROGRAMS += apps/ccd
 bin_PROGRAMS += apps/ccd2
 if HAVE_SSE2
@@ -154,6 +159,11 @@ apps_align_tree_dup_SOURCES = apps/align_tree.cpp
 apps_align_tree_dynamic_SOURCES = apps/align_tree_dynamic.cpp
 apps_align_tree_dynamic_dup_SOURCES = apps/align_tree_dynamic.cpp
 apps_align_tree_dynamic_callback_SOURCES = apps/align_tree_dynamic.cpp
+apps_align_tree_dynamic_callback_dup_SOURCES = apps/align_tree_dynamic.cpp
+apps_align_tree_hybrid_SOURCES = apps/align_tree_hybrid.cpp
+apps_align_tree_hybrid_dup_SOURCES = apps/align_tree_hybrid.cpp
+apps_align_tree_hybrid_callback_SOURCES = apps/align_tree_hybrid.cpp
+apps_align_tree_hybrid_callback_dup_SOURCES = apps/align_tree_hybrid.cpp
 apps_ccd_SOURCES = apps/ccd.cpp
 apps_ccd2_SOURCES = apps/ccd2.cpp
 apps_align_ssw_SOURCES = apps/align.cpp
@@ -176,6 +186,10 @@ apps_align_tree_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
 apps_align_tree_dup_CPPFLAGS = $(AM_CPPFLAGS) -DGLOBAL_DUPLICATES
 apps_align_tree_dynamic_dup_CPPFLAGS = $(AM_CPPFLAGS) -DGLOBAL_DUPLICATES
 apps_align_tree_dynamic_callback_CPPFLAGS = $(AM_CPPFLAGS) -DCALLBACK
+apps_align_tree_dynamic_callback_dup_CPPFLAGS = $(AM_CPPFLAGS) -DCALLBACK -DGLOBAL_DUPLICATES
+apps_align_tree_hybrid_dup_CPPFLAGS = $(AM_CPPFLAGS) -DGLOBAL_DUPLICATES
+apps_align_tree_hybrid_callback_CPPFLAGS = $(AM_CPPFLAGS) -DCALLBACK
+apps_align_tree_hybrid_callback_dup_CPPFLAGS = $(AM_CPPFLAGS) -DCALLBACK -DGLOBAL_DUPLICATES
 
 apps_ssw_test_LDFLAGS = $(ZLIB_LDFLAGS) $(AM_LDFLAGS)
 
