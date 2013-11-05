@@ -89,7 +89,13 @@ class SuffixBuckets
          */
         ~SuffixBuckets();
 
+        Suffix *get(size_t bid);
+
+        bool owns(size_t bid) const;
+
     //private:
+        int comm_rank;
+        int comm_size;
         SequenceDatabase *sequences;    /**< sequences to process */
         Parameters param;       /**< configuration parameters */
         Suffix *suffixes;       /**< array of all suffixes */
@@ -100,8 +106,8 @@ class SuffixBuckets
         size_t last_bucket;
         std::vector<size_t> bucket_size;
         std::vector<size_t> bucket_owner;
-        std::vector<void*> bucket_offset;
-        std::vector<void*> bucket_address;
+        std::vector<size_t> bucket_offset;
+        std::vector<Suffix*> bucket_address;
         size_t bucket_size_total;
 };
 

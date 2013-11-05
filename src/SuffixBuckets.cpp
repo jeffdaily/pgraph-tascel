@@ -23,10 +23,13 @@
 #include "SequenceDatabase.hpp"
 #include "SuffixBuckets.hpp"
 
+#define USE_ARMCI 1
+#if USE_ARMCI
 /* ANL's armci does not extern "C" inside the header */
 extern "C" {
 #include <armci.h>
 }
+#endif
 
 namespace pgraph {
 
@@ -98,8 +101,6 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     size_t remainder = 0;
     size_t start = 0;
     size_t stop = 0;
-    int comm_rank = 0;
-    int comm_size = 0;
     int ierr = 0;
 
     ierr = MPI_Comm_rank(comm, &comm_rank);
@@ -110,7 +111,9 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     /* allocate buckets */
     n_buckets = powz(SIGMA, param.window_size);
     buckets = new Bucket[n_buckets];
-    vector<size_t> bucket_size(n_buckets, 0);
+    bucket_size.assign(n_buckets, size_t(0));
+    bucket_owner.assign(n_buckets, size_t(0));
+    bucket_offset.assign(n_buckets, size_t(0));
 
     /* allocate suffixes */
     n_suffixes = sequences->get_global_size()
@@ -210,8 +213,6 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     mpix_print_sync("owner_last_index", vec_to_string(owner_last_index), comm);
 #else
     size_t even_split = n_suffixes / comm_size;
-    //vector<size_t> bucket_owner(n_buckets);
-    bucket_owner.assign(n_buckets, size_t(0));
     size_t rank = 0;
     count = 0;
     for (size_t i=0; i<n_buckets; ++i) {
@@ -255,13 +256,13 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     std::sort(initial_suffixes.begin(),
               initial_suffixes.end(),
               SuffixBucketIndexCompare);
-#if 0
-    suffixes = new Suffix[total_amount_to_recv];
-#else
+#if USE_ARMCI
     bucket_address.assign(comm_size, NULL);
     (void)ARMCI_Malloc((void**)&bucket_address[0],
             total_amount_to_recv*sizeof(Suffix));
-    suffixes = (Suffix*)bucket_address[comm_rank];
+    suffixes = bucket_address[comm_rank];
+#else
+    suffixes = new Suffix[total_amount_to_recv];
 #endif
     vector<int> send_displacements(comm_size, 0);
     vector<int> recv_displacements(comm_size, 0);
@@ -304,13 +305,54 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     assert(MPI_SUCCESS == ierr);
     //mpix_print_sync("suffixes", arr_to_string(suffixes, total_amount_to_recv), comm);
 
+#if USE_ARMCI
+    std::sort(suffixes,
+              suffixes+total_amount_to_recv,
+              SuffixBucketIndexCompare);
+    /* The suffixes contains sorted suffixes based on the buckets they belong
+     * to. That means we can simply update the 'next' links! */
+    size_t last_id = sequences->get_global_count();
+    bucket_size_total = 0;
+    for (size_t i=0; i<total_amount_to_recv-1; ++i) {
+        assert(suffixes[i].sid < last_id);
+        assert(suffixes[i].bid < n_buckets);
+        assert(suffixes[i].bid <= suffixes[i+1].bid);
+        assert(suffixes[i].next == NULL);
+        if (suffixes[i].bid == suffixes[i+1].bid) {
+            suffixes[i].next = &suffixes[i+1];
+        }
+        else {
+            suffixes[i].next = NULL;
+        }
+        if (buckets[suffixes[i].bid].suffixes == NULL) {
+            buckets[suffixes[i].bid].suffixes = &suffixes[i];
+            bucket_offset[suffixes[i].bid] = i;
+        }
+        buckets[suffixes[i].bid].size++;
+        ++bucket_size_total;
+    }
+    /* last iteration */
+    {
+        size_t i=total_amount_to_recv-1;
+        assert(suffixes[i].sid < last_id);
+        assert(suffixes[i].bid < n_buckets);
+        assert(suffixes[i].next == NULL);
+        suffixes[i].next = NULL;
+        if (buckets[suffixes[i].bid].suffixes == NULL) {
+            buckets[suffixes[i].bid].suffixes = &suffixes[i];
+            bucket_offset[suffixes[i].bid] = i;
+        }
+        buckets[suffixes[i].bid].size++;
+        ++bucket_size_total;
+    }
+    mpix_allreduce(bucket_offset, MPI_SUM, comm);
+#else
     /* The suffixes contains sorted suffixes based on the buckets they belong
      * to. That means we can simply update the 'next' links! */
     size_t last_id = sequences->get_global_count();
     bucket_size_total = 0;
     for (size_t i=0; i<total_amount_to_recv; ++i) {
         assert(suffixes[i].sid < last_id);
-        //assert(suffixes[i].pid == ??);
         assert(suffixes[i].bid < n_buckets);
         assert(suffixes[i].next == NULL);
         suffixes[i].next = buckets[suffixes[i].bid].suffixes;
@@ -318,6 +360,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
         buckets[suffixes[i].bid].size++;
         ++bucket_size_total;
     }
+#endif
 
     suffixes_size = n_suffixes;
     buckets_size = n_buckets;
@@ -360,13 +403,46 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
 
 SuffixBuckets::~SuffixBuckets()
 {
-#if 0
-    delete [] suffixes;
-#else
+#if USE_ARMCI
     ARMCI_Free(suffixes);
+#else
+    delete [] suffixes;
 #endif
     delete [] buckets;
 }
+
+
+bool SuffixBuckets::owns(size_t bid) const
+{
+    assert(bid < buckets_size);
+
+    size_t owner = bucket_owner[bid];
+
+    return owner == comm_rank;
+}
+
+
+Suffix* SuffixBuckets::get(size_t bid)
+{
+    assert(bid < buckets_size);
+
+    size_t size = bucket_size[bid];
+    size_t owner = bucket_owner[bid];
+    size_t offset = bucket_offset[bid];
+    void *address = bucket_address[owner];
+
+    if (owner == comm_rank) {
+        /* already owned, just return it */
+        return buckets[bid].suffixes;
+    }
+    else {
+        suffixes = new Suffix[size];
+        ARMCI_Get((void*)&bucket_address[owner][offset],
+                suffixes, size*sizeof(Suffix), owner);
+        return suffixes;
+    }
+}
+
 
 }; /* namespace pgraph */
 
