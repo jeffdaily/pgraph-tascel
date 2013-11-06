@@ -17,6 +17,17 @@
 #include <cstring>
 #include <ctime>
 
+#define USE_SET 1
+#if USE_SET
+#include <set>
+#include <vector>
+#include <utility>
+using std::set;
+using std::vector;
+using std::make_pair;
+using std::pair;
+#endif
+
 #include <unistd.h>
 
 #include "bucket.hpp"
@@ -47,7 +58,11 @@ int main(int argc, char *argv[])
 //#endif
     ssize_t d = 0;                  /* signed for loop index */
     size_t n_triangular = 0;        /* number of possible pairs */
+#if USE_SET
+    set<pair<unsigned int,unsigned int> > pairs;
+#else
     int *dup = NULL;                /* track duplicate pairs */
+#endif
 
     setbuf(stdout, (char *)0);
 
@@ -74,6 +89,8 @@ int main(int argc, char *argv[])
     printf("<%zu> amino acids (<%zu> chars) are loaded in <%lld> secs\n",
             sequences->size, sequences->n_chars, (long long)(t2-t1));
     printf("max_seq_size %zu\n", sequences->max_seq_size);
+    unsigned long ntasks = binomial_coefficient(n_sequences, 2);
+    printf("ntasks %lu\n", ntasks);
 
     (void) time(&t1);
     suffix_buckets = create_suffix_buckets_old(sequences, param);
@@ -90,34 +107,110 @@ int main(int argc, char *argv[])
     #endif
 
     n_triangular = sequences->size * (sequences->size + 1U) / 2U;
+#if USE_SET
+#else
     dup = new int[n_triangular];
 #pragma omp parallel for
     for (d = 0; d < (ssize_t)n_triangular; ++d) {
         dup[d] = MAYBE;
     }
+#endif
     
     /* suffix tree construction & processing */
     printf("n_buckets=%zu\n", suffix_buckets->buckets_size);
     printf("n_suffixes=%zu\n", suffix_buckets->suffixes_size);
     (void) time(&t1);
     size_t count = 0;
-#pragma omp parallel for
     for (d = 0; d < (long)suffix_buckets->buckets_size; ++d) {
         if (NULL != suffix_buckets->buckets[d].suffixes) {
             stree_t *tree = build_tree(
                     sequences, &(suffix_buckets->buckets[d]), param);
+#if USE_SET
+            generate_pairs(tree, sequences, pairs, param);
+#else
             generate_pairs(tree, sequences, dup, param);
+#endif
             free_tree(tree);
-#pragma omp atomic
             count += 1;
         }
     }
     (void) time(&t2);
     printf("%zu non-empty trees constructed and processed in <%lld> secs\n",
             count, (long long)(t2-t1));
-    
+#if USE_SET
+    printf("%zu/%lu pairs generated\n", pairs.size(), ntasks);
+    {
+        /* generate statistics on how much was saved by filtering */
+        set<pair<unsigned int,unsigned int> >::iterator it;
+        vector<pair<unsigned int,unsigned int> > pairs_vec(pairs.begin(), pairs.end());
+        unsigned long work_total = 0;
+        unsigned long histo_width = 10000;
+        unsigned long histo_size = sequences->max_seq_size * sequences->max_seq_size / histo_width;
+        unsigned long *histo = new unsigned long[histo_size];
+        (void)memset(histo, 0, sizeof(unsigned long)*histo_size);
+        (void) time(&t1);
+#pragma omp parallel for
+        for (d = 0; d < (ssize_t)pairs_vec.size(); ++d) {
+            size_t work = 0;
+            unsigned long histo_index = 0;
+            size_t s1Len = 0;
+            size_t s2Len = 0;
+
+            s1Len = sequences->seq[pairs_vec[d].first].size;
+            s2Len = sequences->seq[pairs_vec[d].second].size;
+            work = s1Len * s2Len;
+            histo_index = work / histo_width;
+            histo[histo_index] += 1;
+#pragma omp atomic
+            work_total += work;
+        }
+        (void) time(&t2);
+        printf("pairs analyzed in <%lld> secs\n", (long long)(t2-t1));
+        printf("work_total=%lu\n", work_total);
+        printf("histogram\n");
+        printf("%lu", histo[0]);
+        for (i=1; i<histo_size; ++i) {
+            printf(",%lu", histo[i]);
+        }
+        printf("\n");
+    }
+    {
+        /* generate statistics on how much was saved by filtering */
+        unsigned long work_total = 0;
+        unsigned long histo_width = 10000;
+        unsigned long histo_size = sequences->max_seq_size * sequences->max_seq_size / histo_width;
+        unsigned long *histo = new unsigned long[histo_size];
+        (void)memset(histo, 0, sizeof(unsigned long)*histo_size);
+        (void) time(&t1);
+#pragma omp parallel for
+        for (d = 0; d < (ssize_t)ntasks; ++d) {
+            unsigned long seq_id[2];
+            size_t work = 0;
+            unsigned long histo_index = 0;
+            size_t s1Len = 0;
+            size_t s2Len = 0;
+
+            k_combination2(d, seq_id);
+            s1Len = sequences->seq[seq_id[0]].size;
+            s2Len = sequences->seq[seq_id[1]].size;
+            work = s1Len * s2Len;
+            histo_index = work / histo_width;
+            histo[histo_index] += 1;
+#pragma omp atomic
+            work_total += work;
+        }
+        (void) time(&t2);
+        printf("filter analyzed in <%lld> secs\n", (long long)(t2-t1));
+        printf("work_total=%lu\n", work_total);
+        printf("histogram\n");
+        printf("%lu", histo[0]);
+        for (i=1; i<histo_size; ++i) {
+            printf(",%lu", histo[i]);
+        }
+        printf("\n");
+    }
+#else
     /* generate statistics on how much was saved by filtering */
-    unsigned long ntasks = binomial_coefficient(n_sequences, 2);
     unsigned long work_no = 0;
     unsigned long work_yes = 0;
     unsigned long skipped = 0;
@@ -227,6 +320,7 @@ int main(int argc, char *argv[])
     printf("\n");
 
     delete [] dup;
+#endif
     pg_free_sequences(sequences);
     free_suffix_buckets(suffix_buckets);
 

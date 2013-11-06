@@ -12,6 +12,12 @@
 
 #include "bucket.hpp"
 
+#include <set>
+#include <utility>
+
+using std::pair;
+using std::set;
+
 namespace pgraph {
 
 /**
@@ -71,6 +77,18 @@ void free_tree(stree_t *tree);
  */
 void generate_pairs(
         stree_t *tree, sequences_t *sequences, int *dup, param_t param);
+
+
+/**
+ * Generate promising pairs for alignment.
+ *
+ * @param[in] tree
+ * @param[in] sequences
+ * @param[in] dup
+ * @param[in] param
+ */
+void generate_pairs(
+        stree_t *tree, sequences_t *sequences, set<pair<unsigned int,unsigned int> > &dup, param_t param);
 
 
 }; /* namespace pgraph */
