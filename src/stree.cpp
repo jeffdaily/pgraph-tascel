@@ -13,12 +13,19 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include <set>
+#include <utility>
+
 #include "bucket.hpp"
 #include "constants.h"
 #include "alignment.hpp"
 #include "stree.hpp"
 
 #define PRINT_EDGES 0
+
+using std::make_pair;
+using std::pair;
+using std::set;
 
 namespace pgraph {
 
@@ -349,6 +356,60 @@ is_candidate(sequence_t *seqs, size_t nSeqs,
 }
 
 
+static inline int
+is_candidate(sequence_t *seqs, size_t nSeqs,
+             suffix_t *p, suffix_t *q,
+             cell_t **tbl, int **ins, int **del, param_t param, 
+             set<pair<unsigned int,unsigned int> > &dup)
+{
+    size_t s1Len = 0;
+    size_t s2Len = 0;
+    int f1 = 0;
+    int f2 = 0;
+    int cutOff = param.AOL * param.SIM;
+    cell_t result;
+    size_t index = 0;
+
+    f1 = p->sid;
+    f2 = q->sid;
+    assert(size_t(f1) < nSeqs);
+    assert(size_t(f2) < nSeqs);
+
+    if (f1 > f2) {
+        int swap = f1;
+        f1 = f2;
+        f2 = swap;
+    }
+
+    if (f1 == f2) {
+        return FALSE;
+    }
+
+    s1Len = seqs[f1].size - 1;
+    s2Len = seqs[f2].size - 1;
+
+    if (s1Len <= s2Len) {
+        if (100 * s1Len < cutOff * s2Len) {
+            return FALSE;
+        }
+        else {
+            return TRUE;
+        }
+    }
+    else {
+        if (100 * s2Len < cutOff * s1Len) {
+            return FALSE;
+        }
+        else {
+            return TRUE;
+        }
+    }
+
+    assert(0);
+    return FALSE;
+}
+
+
 /**
  * counting sort based on the depth of the tree nodes.
  *
@@ -455,6 +516,56 @@ procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, 
 }
 
 
+static inline void
+procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, int **del, param_t param, set<pair<unsigned int,unsigned int> > &dup)
+{
+    size_t i;
+    size_t j;
+    suffix_t *p = NULL;
+    suffix_t *q = NULL;
+    int cutOff;
+
+    cutOff = param.AOL * param.SIM;
+
+    for (i = 0; i < SIGMA; i++) {
+        if (lset[i]) {
+            if (i == BEGIN - 'A') { /* inter cross */
+                for (p = lset[i]; p != NULL; p = p->next) {
+                    for (q = p->next; q != NULL; q = q->next) {
+                        if (TRUE == is_candidate(seqs, nSeqs, p, q, tbl, ins, del, param, dup)) {
+                            if (p->sid > q->sid) {
+                                dup.insert(make_pair(q->sid,p->sid));
+                            }
+                            else {
+                                dup.insert(make_pair(p->sid,q->sid));
+                            }
+                        }
+                    }
+                }
+            }
+
+            /* intra cross */
+            for (j = i + 1; j < SIGMA; j++) {
+                if (lset[j]) {
+                    for (p = lset[i]; p != NULL; p = p->next) {
+                        for (q = lset[j]; q != NULL; q = q->next) {
+                            if (TRUE == is_candidate(seqs, nSeqs, p, q, tbl, ins, del, param, dup)) {
+                                if (p->sid > q->sid) {
+                                    dup.insert(make_pair(q->sid,p->sid));
+                                }
+                                else {
+                                    dup.insert(make_pair(p->sid,q->sid));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 
 void generate_pairs(
         stree_t *tree, sequences_t *sequences, int *dup, param_t param)
@@ -542,6 +653,134 @@ void generate_pairs(
                                                             p->sid, q->sid);
                                                 }
 #endif
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                /* merge the lsets of subtree */
+                for (m = 0; m < SIGMA; m++) {
+                    p = NULL;
+                    for (j = sIndex + 1; j <= eIndex; j++) {
+                        if ((q = stNodes[j].lset[m])) {
+
+                            /* empty the subtree's ptrs array */
+                            stNodes[j].lset[m] = NULL;
+                            if (p == NULL) {
+                                p = q;
+                                stNodes[sIndex].lset[m] = q;
+                            }
+                            else {
+                                p->next = q;
+                            }
+
+                            /* walk to the end */
+                            while (p->next) {
+                                p = p->next;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        else {
+            /* stnodes are sorted, so later part
+             * will not satisfy EM cutoff */
+            break;
+        }
+    }
+
+    /* free */
+    delete [] srtIndex;
+    free_cell_table(tbl, NROW);
+    free_int_table(del, NROW);
+    free_int_table(ins, NROW);
+}
+
+
+void generate_pairs(
+        stree_t *tree, sequences_t *sequences, set<pair<unsigned int,unsigned int> > &dup, param_t param)
+{
+    stnode_t *stNodes = NULL;
+    int *srtIndex = NULL;
+    size_t nStNodes = 0;
+    sequence_t *seqs = NULL;
+    int nSeqs = 0;
+    int maxSeqLen = 0;
+    size_t i = 0;
+    int j = 0;
+    stnode_t *stnode = NULL;
+    int sIndex;
+    int eIndex;
+    cell_t **tbl = NULL;
+    int **del = NULL;
+    int **ins = NULL;
+    size_t m;
+    size_t n;
+    size_t s;
+    size_t t;
+    suffix_t *p = NULL;
+    suffix_t *q = NULL;
+    int EM;
+    int cutOff; /* cut off value of filter 1 */
+
+    srtIndex = new int[tree->size];
+    count_sort(tree->nodes, srtIndex, tree->size, sequences->max_seq_size);
+    stNodes = tree->nodes;
+    nStNodes = tree->size;
+    seqs = sequences->seq;
+    nSeqs = sequences->size;
+    maxSeqLen = sequences->max_seq_size;
+
+    /* only two rows are allocated */
+    assert(NROW == 2);
+
+    EM = param.exact_match_len;
+    cutOff = param.AOL * param.SIM;
+
+    tbl = allocate_cell_table(NROW, maxSeqLen);
+    del = allocate_int_table(NROW, maxSeqLen);
+    ins = allocate_int_table(NROW, maxSeqLen);
+
+
+    /* srtIndex maintain an order of NON-increasing depth of stNodes[] */
+    for (i = 0; i < nStNodes; i++) {
+        sIndex = srtIndex[i];
+        stnode = &stNodes[sIndex];
+
+#ifdef DEBUG
+        printf("stNode->depth=%d, stnode->rLeaf=%ld, sIndex=%ld\n", stnode->depth, stnode->rLeaf, sIndex);
+#endif
+
+        if (stnode->depth >= EM - 1) {
+            if (stnode->rLeaf == sIndex) { /* leaf node */
+                procLeaf(stnode->lset, seqs, nSeqs, tbl, del, ins, param, dup);
+            }
+            else {                       /* internal node */
+                eIndex = stnode->rLeaf;
+
+                /* pairs generation loop for internal node */
+                for (m = sIndex + 1; m < eIndex; m++) {
+                    for (n = m + 1; n <= eIndex; n++) {
+                        for (s = 0; s < SIGMA; s++) {
+                            for (t = 0; t < SIGMA; t++) {
+                                if (s != t) {
+                                    for (p = stNodes[m].lset[s]; p != NULL; p = p->next) {
+                                        for (q = stNodes[n].lset[t]; q != NULL; q = q->next) {
+                                            if (TRUE == is_candidate(
+                                                        seqs, nSeqs, p, q,
+                                                        tbl, ins, del,
+                                                        param, dup)) {
+                                                if (p->sid > q->sid) {
+                                                    dup.insert(make_pair(q->sid,p->sid));
+                                                }
+                                                else {
+                                                    dup.insert(make_pair(p->sid,q->sid));
+                                                }
                                             }
                                         }
                                     }
