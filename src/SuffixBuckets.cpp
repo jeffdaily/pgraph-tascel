@@ -443,7 +443,8 @@ Suffix* SuffixBuckets::get(size_t bid)
     }
     else {
         LockGuard<PthreadMutex> guard(mutex);
-        Suffix *remote_suffixes = new Suffix[size];
+        //Suffix *remote_suffixes = new Suffix[size];
+        Suffix *remote_suffixes = (Suffix*)ARMCI_Malloc_local(sizeof(Suffix)*size);
         ARMCI_Get((void*)&bucket_address[owner][offset],
                 remote_suffixes, size*sizeof(Suffix), owner);
         for (size_t i=0; i<size-1; ++i) {
