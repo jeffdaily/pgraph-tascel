@@ -215,6 +215,7 @@ int main(int argc, char *argv[])
             printf(",%lu", histo[i]);
         }
         printf("\n");
+        delete [] histo;
     }
     {
         /* generate statistics on how much was saved by filtering */
@@ -250,6 +251,7 @@ int main(int argc, char *argv[])
             printf(",%lu", histo[i]);
         }
         printf("\n");
+        delete [] histo;
     }
 #else
     /* generate statistics on how much was saved by filtering */

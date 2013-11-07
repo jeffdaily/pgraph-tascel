@@ -57,7 +57,7 @@ STATIC void calc_stats(stats_t &stats)
     std::sort(stats.values.begin(), stats.values.end());
 
     // calc median
-    if (stats.values.size() % 2U) {
+    if (stats.values.size() % 2U == 0) {
         // evenly sized
         stats.median =  stats.values[((stats.values.size())/2U)];
         stats.median += stats.values[((stats.values.size())/2U)-1U];
@@ -385,6 +385,7 @@ void free_tree(stree_t *tree)
     assert(NULL != tree);
     delete [] tree->nodes;
     delete [] tree->lset_array;
+    delete [] tree->nset_array;
     delete tree;
 }
 
