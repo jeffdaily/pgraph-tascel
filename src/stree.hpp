@@ -29,12 +29,13 @@ namespace pgraph {
 /**
  * suffix tree node
  */
-typedef struct {
+typedef struct _stnode_t {
     int fanout;
     int depth; /**< depth since the root, not including the initial size k */
     size_t rLeaf; /**< right most leaf index */
     suffix_t **lset;  /**< subtree's nodes branched according to left
                               characters */
+    struct _stnode_t **nset; /**< set of immediate child nodes */
 } stnode_t;
 
 typedef struct _stats_t_ {
@@ -77,6 +78,7 @@ typedef struct {
     size_t size_internal;   /**< number of internal nodes */
     size_t size_leaf;       /**< number of leaf nodes */
     suffix_t **lset_array;  /**< memory for all node's lsets (SIGMA*nnodes) */
+    stnode_t **nset_array;  /**< memory for all node's nsets (SIGMA*nnodes) */
     stats_t fanout; 
     stats_t depth; 
     stats_t sequence_length; 

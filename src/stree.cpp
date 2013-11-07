@@ -32,9 +32,11 @@ using std::map;
 using std::pair;
 using std::set;
 
+#define STATIC static inline
+
 namespace pgraph {
 
-static inline void calc_stats(stats_t &stats)
+STATIC void calc_stats(stats_t &stats)
 {
     map<double,int> counts;
     int count = 0;
@@ -104,7 +106,7 @@ static inline void calc_stats(stats_t &stats)
  * @param seqs - all seqs info
  * @param lset -
  */
-static inline void
+STATIC void
 compute_lset(suffix_t *suffixes, sequence_t *seqs, suffix_t **lset)
 {
     suffix_t *p = NULL;
@@ -141,7 +143,7 @@ compute_lset(suffix_t *suffixes, sequence_t *seqs, suffix_t **lset)
  * @param[in] depth - depth since root, which has 0 depth
  * @param[in] window_size - slide window size for bucketing
  * ---------------------------------------------------*/
-static inline int
+STATIC int
 nextDiffPos(sequence_t *seqs, suffix_t *suffixes, int depth, int window_size)
 {
     int i;
@@ -180,7 +182,7 @@ nextDiffPos(sequence_t *seqs, suffix_t *suffixes, int depth, int window_size)
 /**
  * TODO
  */
-static inline size_t
+STATIC size_t
 build_tree_recursive(
     sequence_t *sequences, size_t n_sequences,
     suffix_t *suffixes, int depth, int window_size,
@@ -188,7 +190,7 @@ build_tree_recursive(
 {
     int diffPos;
     size_t i;
-    int j; /* store the index of the internal node */
+    size_t j; /* store the index of the internal node */
     suffix_t **heads = NULL;
     suffix_t *p = NULL;
     suffix_t *q = NULL;
@@ -231,7 +233,6 @@ build_tree_recursive(
         printf("============================\n");
 #endif
 
-
         /* partition suffixes into SIGMA sub-buckets */
         for (p = suffixes; p != NULL; p = q) {
             q = p->next;
@@ -258,6 +259,7 @@ build_tree_recursive(
         /* recursively construct the tree in DFS way */
         for (i = 0; i < SIGMA; i++) {
             if (heads[i]) {
+                st_nodes[j].nset[i] = &st_nodes[*st_index];
                 /* branching with '$' */
                 if (i == (DOLLAR - 'A')) {
                     st_nodes[*st_index].fanout = 0;
@@ -327,11 +329,23 @@ stree_t* build_tree(
         tree->lset_array[i] = NULL;
     }
 
+    /* allocate nset pointer memory for tree nodes */
+    tree->nset_array = new stnode_t*[SIGMA * n_nodes];
+    if (NULL == tree->nset_array) {
+        perror("build_tree: malloc nset array");
+        exit(EXIT_FAILURE);
+    }
+    /* initialize nset pointer memory */
+    for (i = 0; i < SIGMA * n_nodes; ++i) {
+        tree->nset_array[i] = NULL;
+    }
+
     /* initialize tree nodes */
     for (i = 0; i < n_nodes; ++i) {
         tree->nodes[i].depth = 0;
         tree->nodes[i].rLeaf = 0;
         tree->nodes[i].lset = &(tree->lset_array[i*SIGMA]);
+        tree->nodes[i].nset = &(tree->nset_array[i*SIGMA]);
     }
 
     /* get suffix and sequence statistics */
@@ -346,7 +360,7 @@ stree_t* build_tree(
         }
     }
 
-    build_tree_recursive(
+    (void) build_tree_recursive(
             sequences->seq, sequences->size,
             bucket->suffixes, param.window_size - 1, param.window_size,
             tree->nodes, &(tree->size));
@@ -375,7 +389,7 @@ void free_tree(stree_t *tree)
 }
 
 
-static inline int
+STATIC int
 is_candidate(sequence_t *seqs, size_t nSeqs,
              suffix_t *p, suffix_t *q,
              cell_t **tbl, int **ins, int **del, param_t param, int *dup)
@@ -459,7 +473,7 @@ is_candidate(sequence_t *seqs, size_t nSeqs,
 }
 
 
-static inline int
+STATIC int
 is_candidate(sequence_t *seqs, size_t nSeqs,
              suffix_t *p, suffix_t *q,
              cell_t **tbl, int **ins, int **del, param_t param, 
@@ -521,7 +535,7 @@ is_candidate(sequence_t *seqs, size_t nSeqs,
  * @param nStNodes -
  * @param maxSeqLen -
  * -----------------------------------------------------------*/
-static inline void
+STATIC void
 count_sort(stnode_t *stNodes, int *srtIndex, size_t nStNodes, size_t maxSeqLen)
 {
     size_t i;
@@ -563,7 +577,7 @@ count_sort(stnode_t *stNodes, int *srtIndex, size_t nStNodes, size_t maxSeqLen)
 }
 
 
-static inline void
+STATIC void
 procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, int **del, param_t param, int *dup)
 {
     size_t i;
@@ -619,7 +633,7 @@ procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, 
 }
 
 
-static inline void
+STATIC void
 procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, int **del, param_t param, set<pair<unsigned int,unsigned int> > &dup)
 {
     size_t i;
@@ -668,6 +682,117 @@ procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, 
     }
 }
 
+
+
+STATIC void
+procNode(stnode_t *stNodes, int sIndex, int eIndex, suffix_t **lset, sequence_t *seqs, int nSeqs, cell_t **tbl, int **ins, int **del, param_t param, set<pair<unsigned int,unsigned int> > &dup)
+{
+    size_t m;
+    size_t n;
+    size_t s;
+    size_t t;
+    suffix_t *p = NULL;
+    suffix_t *q = NULL;
+
+#if 0
+    /* pairs generation loop for internal node */
+    for (m = sIndex + 1; m < eIndex; m++) {
+        for (n = m + 1; n <= eIndex; n++) {
+            for (s = 0; s < SIGMA; s++) {
+                for (t = 0; t < SIGMA; t++) {
+                    if (s != t) {
+                        for (p = stNodes[m].lset[s]; p != NULL; p = p->next) {
+                            for (q = stNodes[n].lset[t]; q != NULL; q = q->next) {
+                                if (TRUE == is_candidate(
+                                            seqs, nSeqs, p, q,
+                                            tbl, ins, del,
+                                            param, dup)) {
+                                    if (p->sid > q->sid) {
+                                        dup.insert(make_pair(q->sid,p->sid));
+                                    }
+                                    else {
+                                        dup.insert(make_pair(p->sid,q->sid));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+#else
+    /* only loop over immediate children nodes */
+    stnode_t *current_node = &stNodes[sIndex];
+    for (m = 0; m < SIGMA; m++) {
+        stnode_t *x = current_node->nset[m];
+        if (NULL == x) {
+            continue;
+        }
+        for (n = m + 1; n < SIGMA; n++) {
+            stnode_t *y = current_node->nset[n];
+            if (NULL == y) {
+                continue;
+            }
+            for (s = 0; s < SIGMA; s++) {
+                for (t = 0; t < SIGMA; t++) {
+                    if (s != t) {
+                        for (p = x->lset[s]; p != NULL; p = p->next) {
+                            for (q = y->lset[t]; q != NULL; q = q->next) {
+                                if (TRUE == is_candidate(
+                                            seqs, nSeqs, p, q,
+                                            tbl, ins, del,
+                                            param, dup)) {
+                                    if (p->sid > q->sid) {
+                                        dup.insert(make_pair(q->sid,p->sid));
+                                    }
+                                    else {
+                                        dup.insert(make_pair(p->sid,q->sid));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+#endif
+}
+
+
+STATIC void
+mergeLsets(stnode_t *stNodes, int sIndex, int eIndex)
+{
+    size_t m = 0;
+    int j = 0;
+    suffix_t *p = NULL;
+    suffix_t *q = NULL;
+
+    /* merge the lsets of subtree */
+    for (m = 0; m < SIGMA; m++) {
+        p = NULL;
+        for (j = sIndex + 1; j <= eIndex; j++) {
+            if ((q = stNodes[j].lset[m])) {
+
+                /* empty the subtree's ptrs array */
+                stNodes[j].lset[m] = NULL;
+                if (p == NULL) {
+                    p = q;
+                    stNodes[sIndex].lset[m] = q;
+                }
+                else {
+                    p->next = q;
+                }
+
+                /* walk to the end */
+                while (p->next) {
+                    p = p->next;
+                }
+            }
+        }
+    }
+}
 
 
 void generate_pairs(
@@ -865,57 +990,10 @@ void generate_pairs(
             }
             else {                       /* internal node */
                 eIndex = stnode->rLeaf;
-
                 /* pairs generation loop for internal node */
-                for (m = sIndex + 1; m < eIndex; m++) {
-                    for (n = m + 1; n <= eIndex; n++) {
-                        for (s = 0; s < SIGMA; s++) {
-                            for (t = 0; t < SIGMA; t++) {
-                                if (s != t) {
-                                    for (p = stNodes[m].lset[s]; p != NULL; p = p->next) {
-                                        for (q = stNodes[n].lset[t]; q != NULL; q = q->next) {
-                                            if (TRUE == is_candidate(
-                                                        seqs, nSeqs, p, q,
-                                                        tbl, ins, del,
-                                                        param, dup)) {
-                                                if (p->sid > q->sid) {
-                                                    dup.insert(make_pair(q->sid,p->sid));
-                                                }
-                                                else {
-                                                    dup.insert(make_pair(p->sid,q->sid));
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
+                procNode(stNodes, sIndex, eIndex, stnode->lset, seqs, nSeqs, tbl, del, ins, param, dup);
                 /* merge the lsets of subtree */
-                for (m = 0; m < SIGMA; m++) {
-                    p = NULL;
-                    for (j = sIndex + 1; j <= eIndex; j++) {
-                        if ((q = stNodes[j].lset[m])) {
-
-                            /* empty the subtree's ptrs array */
-                            stNodes[j].lset[m] = NULL;
-                            if (p == NULL) {
-                                p = q;
-                                stNodes[sIndex].lset[m] = q;
-                            }
-                            else {
-                                p->next = q;
-                            }
-
-                            /* walk to the end */
-                            while (p->next) {
-                                p = p->next;
-                            }
-                        }
-                    }
-                }
+                mergeLsets(stNodes, sIndex, eIndex);
             }
         }
         else {
@@ -931,6 +1009,8 @@ void generate_pairs(
     free_int_table(del, NROW);
     free_int_table(ins, NROW);
 }
+
+
 
 }; /* namespace pgraph */
 
