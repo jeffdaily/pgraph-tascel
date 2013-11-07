@@ -27,6 +27,9 @@ using std::vector;
 using std::make_pair;
 using std::pair;
 #endif
+#include <iostream>
+using std::cout;
+using std::endl;
 
 #include <unistd.h>
 
@@ -36,12 +39,21 @@ using std::pair;
 #include "csequence.h"
 #include "stree.hpp"
 
+
+#include <time.h>
+
 using namespace pgraph;
 
 static void parse_command_line(int argc, char **argv,
         char *sequence_file, char *config_file, size_t *n_sequences);
 static inline size_t zpower(size_t base, size_t n);
 
+static inline double wtime() {
+    struct timespec ts;
+    int retval = clock_gettime(CLOCK_REALTIME, &ts);
+    assert(0 == retval);
+    return double(ts.tv_sec) + double(ts.tv_nsec) / 1000000000.0;
+}
 
 int main(int argc, char *argv[])
 {
@@ -121,15 +133,45 @@ int main(int argc, char *argv[])
     printf("n_suffixes=%zu\n", suffix_buckets->suffixes_size);
     (void) time(&t1);
     size_t count = 0;
+    cout << "tree" << ",";
+    stats_t::print_header(cout, "fanout");
+    cout << ",";
+    stats_t::print_header(cout, "depth");
+    cout << ",";
+    stats_t::print_header(cout, "sequence_length");
+    cout << ",";
+    stats_t::print_header(cout, "suffix_length");
+    cout << ",";
+    cout << "time_build";
+    cout << ",";
+    cout << "time_process";
+    cout << endl;
     for (d = 0; d < (long)suffix_buckets->buckets_size; ++d) {
         if (NULL != suffix_buckets->buckets[d].suffixes) {
+            double btimer = wtime();
             stree_t *tree = build_tree(
                     sequences, &(suffix_buckets->buckets[d]), param);
+            btimer = wtime() - btimer;
+            double ptimer = wtime();
 #if USE_SET
             generate_pairs(tree, sequences, pairs, param);
 #else
             generate_pairs(tree, sequences, dup, param);
 #endif
+            ptimer = wtime() - ptimer;
+            cout << d << ",";
+            stats_t::print(cout, tree->fanout);
+            cout << ",";
+            stats_t::print(cout, tree->depth);
+            cout << ",";
+            stats_t::print(cout, tree->sequence_length);
+            cout << ",";
+            stats_t::print(cout, tree->suffix_length);
+            cout << ",";
+            cout << btimer;
+            cout << ",";
+            cout << ptimer;
+            cout << endl;
             free_tree(tree);
             count += 1;
         }

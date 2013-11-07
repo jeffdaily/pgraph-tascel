@@ -12,11 +12,17 @@
 
 #include "bucket.hpp"
 
+#include <iostream>
 #include <set>
+#include <string>
+#include <vector>
 #include <utility>
 
 using std::pair;
+using std::ostream;
 using std::set;
+using std::string;
+using std::vector;
 
 namespace pgraph {
 
@@ -24,11 +30,42 @@ namespace pgraph {
  * suffix tree node
  */
 typedef struct {
+    int fanout;
     int depth; /**< depth since the root, not including the initial size k */
     size_t rLeaf; /**< right most leaf index */
     suffix_t **lset;  /**< subtree's nodes branched according to left
                               characters */
 } stnode_t;
+
+typedef struct _stats_t_ {
+    vector<double> values;
+    double sum;
+    double min;
+    double max;
+    double mean;
+    double mode;
+    double median;
+    double stddev;
+
+    static void print_header(ostream &os, const string &prefix) {
+        os << prefix << "_sum" << ",";
+        os << prefix << "_min" << ",";
+        os << prefix << "_max" << ",";
+        os << prefix << "_mean" << ",";
+        os << prefix << "_mode" << ",";
+        os << prefix << "_median" << ",";
+        os << prefix << "_stddev";
+    }
+    static void print(ostream &os, const _stats_t_ &stats) {
+        os << stats.sum << ",";
+        os << stats.min << ",";
+        os << stats.max << ",";
+        os << stats.mean << ",";
+        os << stats.mode << ",";
+        os << stats.median << ",";
+        os << stats.stddev;
+    }
+} stats_t;
 
 
 /**
@@ -37,7 +74,13 @@ typedef struct {
 typedef struct {
     stnode_t *nodes;        /**< tree nodes */
     size_t size;            /**< number of nodes */
+    size_t size_internal;   /**< number of internal nodes */
+    size_t size_leaf;       /**< number of leaf nodes */
     suffix_t **lset_array;  /**< memory for all node's lsets (SIGMA*nnodes) */
+    stats_t fanout; 
+    stats_t depth; 
+    stats_t sequence_length; 
+    stats_t suffix_length; 
 } stree_t;
 
 

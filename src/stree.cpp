@@ -10,11 +10,15 @@
 #include "config.h"
 
 #include <cassert>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 
+#include <algorithm>
+#include <map>
 #include <set>
 #include <utility>
+#include <vector>
 
 #include "bucket.hpp"
 #include "constants.h"
@@ -24,10 +28,72 @@
 #define PRINT_EDGES 0
 
 using std::make_pair;
+using std::map;
 using std::pair;
 using std::set;
 
 namespace pgraph {
+
+static inline void calc_stats(stats_t &stats)
+{
+    map<double,int> counts;
+    int count = 0;
+
+    stats.sum = 0.0;
+    stats.min = 0.0;
+    stats.max = 0.0;
+    stats.mean = 0.0;
+    stats.mode = 0.0;
+    stats.median = 0.0;
+    stats.stddev = 0.0;
+
+    if (stats.values.empty()) {
+        return;
+    }
+
+    // sort for median
+    std::sort(stats.values.begin(), stats.values.end());
+
+    // calc median
+    if (stats.values.size() % 2U) {
+        // evenly sized
+        stats.median =  stats.values[((stats.values.size())/2U)];
+        stats.median += stats.values[((stats.values.size())/2U)-1U];
+        stats.median =  stats.median / 2.0;
+    }
+    else {
+        // oddly sized
+        stats.median = stats.values[((stats.values.size()+1U)/2U)-1U];
+    }
+
+    // calc mean and mode together
+    for (vector<double>::const_iterator it=stats.values.begin();
+            it!=stats.values.end(); ++it) {
+        stats.sum += *it;
+        stats.min = *it < stats.min ? *it : stats.min;
+        stats.max = *it > stats.max ? *it : stats.max;
+        if (counts.count(*it) == 0) {
+            counts[*it] = 1;
+        }
+        else {
+            counts[*it] += 1;
+        }
+        if (counts[*it] > count) {
+            count = counts[*it];
+            stats.mode = *it;
+        }
+    }
+
+    stats.mean = stats.sum / stats.values.size();
+
+    // calc stddev
+    for (vector<double>::const_iterator it=stats.values.begin();
+            it!=stats.values.end(); ++it) {
+        stats.stddev += std::pow(*it-stats.mean,2.0);
+    }
+    stats.stddev = std::pow(stats.stddev / stats.values.size(), 0.5);
+}
+
 
 /**
  * compute lset according to the left character of pid to
@@ -139,6 +205,7 @@ build_tree_recursive(
         seq = &sequences[suffixes[0].sid];
 
         /* depth also includes the '$' */
+        st_nodes[*st_index].fanout = 0;
         st_nodes[*st_index].depth = (seq->size - 1) - suffixes[0].pid;
         st_nodes[*st_index].rLeaf = *st_index; /* point to itself */
 
@@ -150,6 +217,7 @@ build_tree_recursive(
 
         j = *st_index; /* store st_index in the stack */
         (*st_index)++;
+        st_nodes[j].fanout = 0;
         st_nodes[j].depth = diffPos - 1 ;
 
         heads = st_nodes[j].lset;
@@ -181,12 +249,18 @@ build_tree_recursive(
             }
         }
 #endif
+        for (i = 0; i < SIGMA; i++) {
+            if (heads[i]) {
+                st_nodes[j].fanout += 1;
+            }
+        }
 
         /* recursively construct the tree in DFS way */
         for (i = 0; i < SIGMA; i++) {
             if (heads[i]) {
                 /* branching with '$' */
                 if (i == (DOLLAR - 'A')) {
+                    st_nodes[*st_index].fanout = 0;
                     st_nodes[*st_index].depth =
                         (sequences[heads[i]->sid].size - 1 - heads[i]->pid);
                     st_nodes[*st_index].rLeaf = *st_index;
@@ -234,6 +308,12 @@ stree_t* build_tree(
         exit(EXIT_FAILURE);
     }
 
+    /* allocate statistical stuff */
+    tree->fanout.values.reserve(n_nodes);
+    tree->depth.values.reserve(n_nodes);
+    tree->sequence_length.values.reserve(bucket->size);
+    tree->suffix_length.values.reserve(bucket->size);
+
     tree->size = 0;
 
     /* allocate lset pointer memory for tree nodes */
@@ -254,10 +334,33 @@ stree_t* build_tree(
         tree->nodes[i].lset = &(tree->lset_array[i*SIGMA]);
     }
 
+    /* get suffix and sequence statistics */
+    {
+        suffix_t *p = NULL;
+        suffix_t *q = NULL;
+        for (p = bucket->suffixes; p != NULL; p = q) {
+            size_t len = sequences->seq[p->sid].size;
+            tree->sequence_length.values.push_back(len);
+            tree->suffix_length.values.push_back(len - p->pid);
+            q = p->next;
+        }
+    }
+
     build_tree_recursive(
             sequences->seq, sequences->size,
             bucket->suffixes, param.window_size - 1, param.window_size,
             tree->nodes, &(tree->size));
+
+    /* get tree node statistics */
+    for (i = 0; i < tree->size; ++i) {
+        tree->fanout.values.push_back(tree->nodes[i].fanout);
+        tree->depth.values.push_back(tree->nodes[i].fanout);
+    }
+
+    calc_stats(tree->fanout);
+    calc_stats(tree->depth);
+    calc_stats(tree->sequence_length);
+    calc_stats(tree->suffix_length);
 
     return tree;
 }
