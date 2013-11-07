@@ -92,7 +92,7 @@ Parameters parameters;
 SuffixBuckets *suffix_buckets = NULL;
 
 #if defined(GLOBAL_DUPLICATES)
-set<pair<size_t,size_t> > pairs;
+set<pair<size_t,size_t> > *pairs = NULL;
 #endif
 
 #if defined(THREADED)
@@ -270,6 +270,9 @@ int main(int argc, char **argv)
     stats = new AlignStats[NUM_WORKERS];
     treestats = new TreeStats[NUM_WORKERS];
     edge_results = new vector<EdgeResult>[NUM_WORKERS];
+#if defined(GLOBAL_DUPLICATES)
+    pairs = new set<pair<size_t,size_t> >[NUM_WORKERS];
+#endif
 #if defined(THREADED)
     threadHandles = new pthread_t[NUM_WORKERS + NUM_SERVERS];
     threadRanks = new unsigned[NUM_WORKERS + NUM_SERVERS];
@@ -441,8 +444,8 @@ int main(int argc, char **argv)
                         it!=local_pairs.end(); ++it) {
                     task_description desc;
 #if defined(GLOBAL_DUPLICATES)
-                    if (pairs.count(*it) == 0) {
-                        pairs.insert(*it);
+                    if (pairs[worker].count(*it) == 0) {
+                        pairs[worker].insert(*it);
                     }
                     else {
                         continue;
@@ -640,6 +643,9 @@ int main(int argc, char **argv)
 
     delete [] utcs;
     delete [] edge_results;
+#if defined(GLOBAL_DUPLICATES)
+    delete [] pairs;
+#endif
     delete sequences;
 
     TascelConfig::finalize();
