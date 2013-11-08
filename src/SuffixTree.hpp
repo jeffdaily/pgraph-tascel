@@ -35,6 +35,7 @@ class SuffixTreeNode
         int depth;      /**< depth since the root, not including initial size k */
         size_t rLeaf;   /**< right most leaf index */
         Suffix **lset;  /**< subtree's nodes branched according to left */
+        SuffixTreeNode **nset; /**< node's immediate children */
 };
 
 
@@ -105,6 +106,7 @@ class SuffixTree
         SuffixTreeNode *nodes;  /**< tree nodes */
         size_t size;            /**< number of nodes */
         Suffix **lset_array;    /**< memory for all node's lsets (SIGMA*nnodes) */
+        SuffixTreeNode **nset_array;/**< children nodes for each node */
         double fanout;          /**< average fanout */
         double size_internal;   /**< number of internal nodes */
         double avgdepth;        /**< average node depth */

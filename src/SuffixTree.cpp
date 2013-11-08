@@ -200,6 +200,7 @@ build_tree_recursive(
         /* recursively construct the tree in DFS way */
         for (i = 0; i < SIGMA; i++) {
             if (heads[i]) {
+                st_nodes[j].nset[i] = &st_nodes[*st_index];
                 /* branching with '$' */
                 if (i == (DOLLAR - 'A')) {
                     st_nodes[*st_index].depth =
@@ -238,6 +239,7 @@ SuffixTree::SuffixTree(
     ,   nodes(NULL)
     ,   size(0)
     ,   lset_array(NULL)
+    ,   nset_array(NULL)
     ,   fanout(0.0)
     ,   size_internal(0.0)
     ,   avgdepth(0.0)
@@ -275,11 +277,23 @@ void SuffixTree::create()
         this->lset_array[i] = NULL;
     }
 
+    /* allocate nset pointer memory for tree nodes */
+    this->nset_array = new SuffixTreeNode*[SIGMA * n_nodes];
+    if (NULL == this->nset_array) {
+        perror("build_tree: malloc nset array");
+        exit(EXIT_FAILURE);
+    }
+    /* initialize nset pointer memory */
+    for (i = 0; i < SIGMA * n_nodes; ++i) {
+        this->nset_array[i] = NULL;
+    }
+
     /* initialize tree nodes */
     for (i = 0; i < n_nodes; ++i) {
         this->nodes[i].depth = 0;
         this->nodes[i].rLeaf = 0;
         this->nodes[i].lset = &(this->lset_array[i*SIGMA]);
+        this->nodes[i].nset = &(this->nset_array[i*SIGMA]);
     }
 
     /* gather suffix statistics */
@@ -320,6 +334,7 @@ SuffixTree::~SuffixTree()
 {
     delete [] this->nodes;
     delete [] this->lset_array;
+    delete [] this->nset_array;
 }
 
 
@@ -543,6 +558,7 @@ void SuffixTree::generate_pairs(set<pair<size_t,size_t> > &pairs)
                 eIndex = stnode->rLeaf;
 
                 /* pairs generation loop for internal node */
+#if 0
                 for (m = sIndex + 1; m < eIndex; m++) {
                     for (n = m + 1; n <= eIndex; n++) {
                         for (s = 0; s < SIGMA; s++) {
@@ -555,8 +571,8 @@ void SuffixTree::generate_pairs(set<pair<size_t,size_t> > &pairs)
                                                         tbl, ins, del,
                                                         param)) {
                                                 //printf("edge:%s#%s\n",
-                                                    //(*sequences)[p->sid].gid,
-                                                    //(*sequences)[q->sid].gid);
+                                                //(*sequences)[p->sid].gid,
+                                                //(*sequences)[q->sid].gid);
                                                 if (p->sid > q->sid) {
                                                     //printf("edge\t%zu\t%zu\n",
                                                     //        q->sid, p->sid);
@@ -575,6 +591,43 @@ void SuffixTree::generate_pairs(set<pair<size_t,size_t> > &pairs)
                         }
                     }
                 }
+#else
+                /* only loop over immediate children nodes */
+                SuffixTreeNode *current_node = &stNodes[sIndex];
+                for (m = 0; m < SIGMA; m++) {
+                    SuffixTreeNode *x = current_node->nset[m];
+                    if (NULL == x) {
+                        continue;
+                    }
+                    for (n = m + 1; n < SIGMA; n++) {
+                        SuffixTreeNode *y = current_node->nset[n];
+                        if (NULL == y) {
+                            continue;
+                        }
+                        for (s = 0; s < SIGMA; s++) {
+                            for (t = 0; t < SIGMA; t++) {
+                                if (s != t) {
+                                    for (p = x->lset[s]; p != NULL; p = p->next) {
+                                        for (q = y->lset[t]; q != NULL; q = q->next) {
+                                            if (TRUE == is_candidate(
+                                                        sequences, nSeqs, p, q,
+                                                        tbl, ins, del,
+                                                        param)) {
+                                                if (p->sid > q->sid) {
+                                                    pairs.insert(make_pair(q->sid, p->sid));
+                                                }
+                                                else {
+                                                    pairs.insert(make_pair(p->sid, q->sid));
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+#endif
 
                 /* merge the lsets of subtree */
                 for (m = 0; m < SIGMA; m++) {
