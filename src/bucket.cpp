@@ -105,8 +105,7 @@ create_suffix_buckets_old(const sequences_t *sequences, param_t param)
         sequence = &(sequences->seq[i]);
         stop_index = sequence->size - param.window_size - 1;
 
-        assert(param.window_size > 0);
-        assert(sequence->size >= size_t(param.window_size));
+        if (sequence->size <= param.window_size) continue;
 
         for (j = 0; j <= stop_index; ++j) {
             size_t bucket_index = entry_index(

@@ -254,7 +254,10 @@ static void alignment_task(
 #endif
     {
         stats[thd].work += s1Len * s2Len;
+        ++stats[thd].align_counts;
         t = MPI_Wtime();
+#if defined(NOALIGN)
+#else
 #if USE_SSW
         sequences->align_ssw(seq_id[0], seq_id[1], result.score, result.matches, result.length, open, gap, thd);
 #else
@@ -266,7 +269,6 @@ static void alignment_task(
                 result.score, result.matches, result.length,
                 AOL, SIM, OS,
                 sscore, max_len);
-        ++stats[thd].align_counts;
 
         if (is_edge_answer || ALL_RESULTS)
         {
@@ -298,6 +300,7 @@ static void alignment_task(
                 ++stats[thd].edge_counts;
             }
         }
+#endif
         t = MPI_Wtime() - t;
         stats[thd].align_times_tot += t;
         stats[thd].calc_min(t);

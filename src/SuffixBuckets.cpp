@@ -161,7 +161,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
         sequence.get_sequence(sequence_data, sequence_length);
         stop_index = sequence_length - param.window_size - 1;
 
-        if (sequence_length < param.window_size) continue;
+        if (sequence_length <= param.window_size) continue;
 
         for (size_t j = 0; j <= stop_index; ++j) {
             size_t bucket_index = entry_index(
