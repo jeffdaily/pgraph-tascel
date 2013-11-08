@@ -35,7 +35,6 @@ class SuffixTreeNode
         int depth;      /**< depth since the root, not including initial size k */
         size_t rLeaf;   /**< right most leaf index */
         Suffix **lset;  /**< subtree's nodes branched according to left */
-        SuffixTreeNode **nset; /**< node's immediate children */
 };
 
 
@@ -106,7 +105,6 @@ class SuffixTree
         SuffixTreeNode *nodes;  /**< tree nodes */
         size_t size;            /**< number of nodes */
         Suffix **lset_array;    /**< memory for all node's lsets (SIGMA*nnodes) */
-        SuffixTreeNode **nset_array;/**< children nodes for each node */
         double fanout;          /**< average fanout */
         double size_internal;   /**< number of internal nodes */
         double avgdepth;        /**< average node depth */
@@ -166,8 +164,7 @@ count_sort(SuffixTreeNode *stNodes, int *srtIndex, size_t nStNodes, size_t maxSe
 
 static inline int
 is_candidate(SequenceDatabase *seqs, size_t nSeqs,
-             Suffix *p, Suffix *q,
-             cell_t **tbl, int **ins, int **del, Parameters param)
+             Suffix *p, Suffix *q, Parameters param)
 {
     size_t s1Len = 0;
     size_t s2Len = 0;
@@ -216,7 +213,7 @@ is_candidate(SequenceDatabase *seqs, size_t nSeqs,
 
 template <class Callback>
 static inline void
-procLeaf_cb(Suffix **lset, SequenceDatabase *seqs, int nSeqs, cell_t **tbl, int **ins, int **del, Parameters param, Callback callback)
+procLeaf_cb(Suffix **lset, SequenceDatabase *seqs, int nSeqs, Parameters param, Callback callback)
 {
     size_t i;
     size_t j;
@@ -231,16 +228,11 @@ procLeaf_cb(Suffix **lset, SequenceDatabase *seqs, int nSeqs, cell_t **tbl, int 
             if (i == BEGIN - 'A') { /* inter cross */
                 for (p = lset[i]; p != NULL; p = p->next) {
                     for (q = p->next; q != NULL; q = q->next) {
-                        if (TRUE == is_candidate(seqs, nSeqs, p, q, tbl, ins, del, param)) {
-                            //printf("edge:%s#%s\n", seqs[p->sid].gid, seqs[q->sid].gid);
+                        if (TRUE == is_candidate(seqs, nSeqs, p, q, param)) {
                             if (p->sid > q->sid) {
-                                //printf("edge\t%zu\t%zu\n", q->sid, p->sid);
-                                //pairs.insert(make_pair(q->sid, p->sid));
                                 callback(make_pair(q->sid, p->sid));
                             }
                             else {
-                                //printf("edge\t%zu\t%zu\n", p->sid, q->sid);
-                                //pairs.insert(make_pair(p->sid, q->sid));
                                 callback(make_pair(p->sid, q->sid));
                             }
                         }
@@ -253,16 +245,11 @@ procLeaf_cb(Suffix **lset, SequenceDatabase *seqs, int nSeqs, cell_t **tbl, int 
                 if (lset[j]) {
                     for (p = lset[i]; p != NULL; p = p->next) {
                         for (q = lset[j]; q != NULL; q = q->next) {
-                            if (TRUE == is_candidate(seqs, nSeqs, p, q, tbl, ins, del, param)) {
-                                //printf("edge:%s#%s\n", seqs[p->sid].gid, seqs[q->sid].gid);
+                            if (TRUE == is_candidate(seqs, nSeqs, p, q, param)) {
                                 if (p->sid > q->sid) {
-                                    //printf("edge\t%zu\t%zu\n", q->sid, p->sid);
-                                    //pairs.insert(make_pair(q->sid, p->sid));
                                     callback(make_pair(q->sid, p->sid));
                                 }
                                 else {
-                                    //printf("edge\t%zu\t%zu\n", p->sid, q->sid);
-                                    //pairs.insert(make_pair(p->sid, q->sid));
                                     callback(make_pair(p->sid, q->sid));
                                 }
                             }
@@ -288,9 +275,6 @@ void SuffixTree::generate_pairs_cb(Callback callback)
     SuffixTreeNode *stnode = NULL;
     int sIndex;
     int eIndex;
-    cell_t **tbl = NULL;
-    int **del = NULL;
-    int **ins = NULL;
     size_t m;
     size_t n;
     size_t s;
@@ -313,11 +297,6 @@ void SuffixTree::generate_pairs_cb(Callback callback)
     EM = param.exact_match_len;
     cutOff = param.AOL * param.SIM;
 
-    tbl = allocate_cell_table(NROW, maxSeqLen);
-    del = allocate_int_table(NROW, maxSeqLen);
-    ins = allocate_int_table(NROW, maxSeqLen);
-
-
     /* srtIndex maintain an order of NON-increasing depth of stNodes[] */
     for (i = 0; i < nStNodes; i++) {
         sIndex = srtIndex[i];
@@ -329,37 +308,30 @@ void SuffixTree::generate_pairs_cb(Callback callback)
 
         if (stnode->depth >= EM - 1) {
             if (stnode->rLeaf == sIndex) { /* leaf node */
-                procLeaf_cb(stnode->lset, sequences, nSeqs, tbl, del, ins, param, callback);
+                procLeaf_cb(stnode->lset, sequences, nSeqs, param, callback);
             }
             else {                       /* internal node */
                 eIndex = stnode->rLeaf;
 
                 /* pairs generation loop for internal node */
-                for (m = sIndex + 1; m < eIndex; m++) {
-                    for (n = m + 1; n <= eIndex; n++) {
+                for (m = sIndex + 1; m < eIndex; m = stNodes[m].rLeaf+1) {
+                    for (n = stNodes[m].rLeaf+1; n <= eIndex; n = stNodes[n].rLeaf+1) {
                         for (s = 0; s < SIGMA; s++) {
-                            for (t = 0; t < SIGMA; t++) {
-                                if (s != t) {
-                                    for (p = stNodes[m].lset[s]; p != NULL; p = p->next) {
-                                        for (q = stNodes[n].lset[t]; q != NULL; q = q->next) {
-                                            if (TRUE == is_candidate(
-                                                        sequences, nSeqs, p, q,
-                                                        tbl, ins, del,
-                                                        param)) {
-                                                //printf("edge:%s#%s\n",
-                                                    //(*sequences)[p->sid].gid,
-                                                    //(*sequences)[q->sid].gid);
-                                                if (p->sid > q->sid) {
-                                                    //printf("edge\t%zu\t%zu\n",
-                                                    //        q->sid, p->sid);
-                                                    //pairs.insert(make_pair(q->sid, p->sid));
-                                                    callback(make_pair(q->sid, p->sid));
-                                                }
-                                                else {
-                                                    //printf("edge\t%zu\t%zu\n",
-                                                    //        p->sid, q->sid);
-                                                    //pairs.insert(make_pair(p->sid, q->sid));
-                                                    callback(make_pair(p->sid, q->sid));
+                            if (stNodes[m].lset[s]) {
+                                for (t = 0; t < SIGMA; t++) {
+                                    if (stNodes[n].lset[t]) {
+                                        if (s != t || s == (BEGIN - 'A')) {
+                                            for (p = stNodes[m].lset[s]; p != NULL; p = p->next) {
+                                                for (q = stNodes[n].lset[t]; q != NULL; q = q->next) {
+                                                    if (TRUE == is_candidate(
+                                                                sequences, nSeqs, p, q, param)) {
+                                                        if (p->sid > q->sid) {
+                                                            callback(make_pair(q->sid, p->sid));
+                                                        }
+                                                        else {
+                                                            callback(make_pair(p->sid, q->sid));
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
@@ -404,9 +376,6 @@ void SuffixTree::generate_pairs_cb(Callback callback)
 
     /* free */
     delete [] srtIndex;
-    free_cell_table(tbl, NROW);
-    free_int_table(del, NROW);
-    free_int_table(ins, NROW);
 }
 
 
