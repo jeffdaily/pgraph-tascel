@@ -123,7 +123,6 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     /* allocate suffixes */
     n_suffixes = sequences->get_global_size()
         - sequences->get_global_count() * param.window_size;
-    vector<Suffix> initial_suffixes(n_suffixes);
 
     mpix_print_zero("n_buckets", n_buckets, comm);
     mpix_print_zero("n_suffixes", n_suffixes, comm);
@@ -150,6 +149,13 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     mpix_print_sync("start", start, comm);
     mpix_print_sync("stop", stop, comm);
 #endif
+
+    size_t initial_suffixes_size = 0;
+    for (size_t i = start; i < stop; ++i) {
+        Sequence &sequence = sequences->get_sequence(i);
+        initial_suffixes_size += sequence.get_sequence_length();
+    }
+    vector<Suffix> initial_suffixes(initial_suffixes_size);
 
     /* slide k-mers for every sequence and bucket them */
     for (size_t i = start; i < stop; ++i) {
