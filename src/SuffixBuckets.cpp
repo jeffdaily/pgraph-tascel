@@ -89,7 +89,8 @@ ostream& operator<<(ostream &os, const Suffix &suffix)
 
 SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
                              const Parameters &param,
-                             MPI_Comm comm)
+                             MPI_Comm comm,
+                             bool dumb_split)
     :   sequences(sequences)
     ,   param(param)
     ,   suffixes(NULL)
@@ -98,6 +99,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     ,   buckets_size(0)
     ,   first_bucket(0)
     ,   last_bucket(0)
+    ,   dumb_split(dumb_split)
 {
     size_t n_suffixes = 0;
     size_t n_buckets = 0;
@@ -185,19 +187,15 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     }
     initial_suffixes.resize(suffix_index);
 
-#if 0
-    /* repartition buckets onto owning processes */
-    for (size_t i=0; i<n_buckets; ++i) {
-        bucket_size[i] = buckets[i].size;
-    }
-#endif
     mpix_allreduce(bucket_size, MPI_SUM, comm);
-    size_t count=0;
-    for (size_t i=0; i<n_buckets; ++i) {
-        count += bucket_size[i];
-    }
 #if DEBUG
-    mpix_print_sync("count", count, comm);
+    {
+        size_t count=0;
+        for (size_t i=0; i<n_buckets; ++i) {
+            count += bucket_size[i];
+        }
+        mpix_print_sync("count", count, comm);
+    }
 #endif
     //assert(count == n_suffixes); may not be true if a seq is < window size
 
@@ -205,42 +203,55 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     mpix_print_sync("suffix_index", suffix_index, comm);
 #endif
 
-#if 0
-    size_t event_split = n_suffixes / comm_size;
-    vector<size_t> owner_last_index(comm_size, 0);
-    size_t rank = 0;
-    count = 0;
-    for (size_t i=0; i<n_buckets; ++i) {
-        count += bucket_size[i];
-        if (count > event_split) {
-            count = 0;
-            owner_last_index[rank++] = i+1; /* exclusive */
-            if (rank == comm_size-1) {
-                owner_last_index[rank] = n_buckets;
-                break;
+    n_seq = sequences->get_global_count() / comm_size;
+    remainder = sequences->get_global_count() % comm_size;
+    start = n_seq * comm_rank;
+    stop = n_seq * (comm_rank+1);
+    if (comm_rank < remainder) {
+        start += comm_rank;
+        stop += comm_rank+1;
+    }
+    else {
+        start += remainder;
+        stop += remainder;
+    }
+    if (dumb_split) {
+        size_t even_split = n_buckets / comm_size;
+        size_t remainder = n_buckets % comm_size;
+        size_t start = even_split * comm_rank;
+        size_t stop = even_split * (comm_rank+1);
+        if (comm_rank < remainder) {
+            start += comm_rank;
+            stop += comm_rank+1;
+        }
+        else {
+            start += remainder;
+            stop += remainder;
+        }
+        for (size_t i=start; i<stop; ++i) {
+            bucket_owner[i] = comm_rank;
+        }
+        mpix_allreduce(bucket_owner, MPI_SUM, comm);
+    }
+    else {
+        size_t even_split = n_suffixes / comm_size;
+        size_t rank = 0;
+        size_t count = 0;
+        for (size_t i=0; i<n_buckets; ++i) {
+            count += bucket_size[i];
+            if (count > even_split) {
+                count = 0;
+                ++rank;
+                if (rank >= comm_size) {
+                    rank = comm_size-1;
+                }
+                if (rank == comm_rank) {
+                    first_bucket = i;
+                }
             }
+            bucket_owner[i] = rank;
         }
     }
-    mpix_print_sync("owner_last_index", vec_to_string(owner_last_index), comm);
-#else
-    size_t even_split = n_suffixes / comm_size;
-    size_t rank = 0;
-    count = 0;
-    for (size_t i=0; i<n_buckets; ++i) {
-        count += bucket_size[i];
-        if (count > even_split) {
-            count = 0;
-            ++rank;
-            if (rank >= comm_size) {
-                rank = comm_size-1;
-            }
-            if (rank == comm_rank) {
-                first_bucket = i;
-            }
-        }
-        bucket_owner[i] = rank;
-    }
-#endif
 
     vector<int> amount_to_send(comm_size, 0);
     vector<int> amount_to_recv(comm_size, 0);

@@ -86,7 +86,8 @@ class SuffixBuckets
          */
         SuffixBuckets(SequenceDatabase *sequences,
                       const Parameters &param,
-                      MPI_Comm comm);
+                      MPI_Comm comm,
+                      bool dumb_split=false);
 
         /**
          * Free memory associated with suffixes and buckets.
@@ -114,6 +115,7 @@ class SuffixBuckets
         std::vector<Suffix*> bucket_address;
         size_t bucket_size_total;
         PthreadMutex mutex;
+        bool dumb_split;
 };
 
 }; /* namespace pgraph */

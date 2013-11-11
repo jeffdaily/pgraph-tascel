@@ -360,6 +360,10 @@ int main(int argc, char **argv)
     unsigned long max_tasks_per_worker = ntasks / global_num_workers;
     max_tasks_per_worker += ntasks % global_num_workers;
     max_tasks_per_worker *= 10;
+    unsigned long GB = 1073741824;
+    unsigned long GB_2 = 536870912;
+    unsigned long GB_4 = 268435456;
+    max_tasks_per_worker = std::min(max_tasks_per_worker, GB_4/sizeof(task_description));
     if (0 == trank(0)) {
         printf("selectivity=%lf\n", selectivity);
         printf("nalignments=%lu\n", nalignments);
@@ -378,7 +382,11 @@ int main(int argc, char **argv)
     time_t t1 = 0;                  /* start timer */
     time_t t2 = 0;                  /* stop timer */
     (void) time(&t1);
+#if defined(DUMB)
+    suffix_buckets = new SuffixBuckets(sequences, parameters, comm, true);
+#else
     suffix_buckets = new SuffixBuckets(sequences, parameters, comm);
+#endif
     (void) time(&t2);
     if (0 == trank(0)) {
         printf("Bucketing finished in <%lld> secs\n", (long long)(t2-t1));

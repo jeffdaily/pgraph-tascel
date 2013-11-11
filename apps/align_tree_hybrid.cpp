@@ -473,6 +473,10 @@ int main(int argc, char **argv)
     unsigned long max_tasks_per_worker = ntasks / global_num_workers;
     max_tasks_per_worker += ntasks % global_num_workers;
     max_tasks_per_worker *= 10;
+    unsigned long GB = 1073741824;
+    unsigned long GB_2 = 536870912;
+    unsigned long GB_4 = 268435456;
+    max_tasks_per_worker = std::min(max_tasks_per_worker, GB_4/sizeof(task_desc_hybrid));
     if (0 == trank(0)) {
         printf("selectivity=%lf\n", selectivity);
         printf("nalignments=%lu\n", nalignments);
@@ -495,7 +499,11 @@ int main(int argc, char **argv)
 
     /* the tascel part */
     (void) time(&t1);
+#if defined(DUMB)
+    suffix_buckets = new SuffixBuckets(sequences, parameters, comm, true);
+#else
     suffix_buckets = new SuffixBuckets(sequences, parameters, comm);
+#endif
     (void) time(&t2);
     if (0 == trank(0)) {
         printf("Bucketing finished in <%lld> secs\n", (long long)(t2-t1));
@@ -512,11 +520,53 @@ int main(int argc, char **argv)
             .maxTasks(max_tasks_per_worker);
         utc = new UniformTaskCollSplitHybrid(props, worker);
     }
+    if (0 == trank(0)) {
+        printf("created UTCs\n");
+    }
 
     size_t even_split = suffix_buckets->bucket_size_total / NUM_WORKERS;
     size_t work = 0;
     int worker = 0;
-    double poptimer = MPI_Wtime();
+#if defined(SORT_BUCKETS)
+    /* distribute buckets among workers based on suffix counts */
+    /* prepare buckets for sorting */
+    vector<pair<size_t,size_t> > *the_work = new vector<pair<size_t,size_t> >[NUM_WORKERS];
+    for (size_t i=suffix_buckets->first_bucket;
+            i < suffix_buckets->buckets_size; ++i) {
+        if (suffix_buckets->bucket_owner[i] == rank) {
+            if (NULL != suffix_buckets->buckets[i].suffixes) {
+                the_work[worker].push_back(make_pair(suffix_buckets->buckets[i].size,i));
+                work += suffix_buckets->buckets[i].size;
+                if (work >= even_split) {
+                    work = 0;
+                    ++worker;
+                    if (worker >= NUM_WORKERS) {
+                        worker = NUM_WORKERS-1;
+                    }
+                }
+            }
+        }
+        else {
+            break;
+        }
+    }
+    /* we sort the buckets in order to process largest trees first */
+    /* add smallest tasks first since work queue is FILO */
+    for (worker = 0; worker < NUM_WORKERS; ++worker) {
+        std::sort(the_work[worker].begin(), the_work[worker].end());
+        for (vector<pair<size_t,size_t> >::iterator it=the_work[worker].begin();
+                it != the_work[worker].end(); ++it) {
+            task_desc_hybrid desc;
+            desc.id1 = it->second;
+            desc.id2 = it->second;
+#if DEBUG
+            cout << trank(worker) << " added " << desc.id1 << endl;
+#endif
+            utcs[worker]->addTask(&desc, sizeof(task_desc_hybrid));
+        }
+    }
+    delete [] the_work;
+#else
     for (size_t i=suffix_buckets->first_bucket;
             i < suffix_buckets->buckets_size; ++i) {
         if (suffix_buckets->bucket_owner[i] == rank) {
@@ -542,6 +592,7 @@ int main(int argc, char **argv)
             break;
         }
     }
+#endif
 
     amBarrier();
 
