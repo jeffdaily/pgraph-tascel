@@ -703,7 +703,7 @@ int main(int argc, char **argv)
     delete [] rstats;
     rstats=NULL;
 
-    StealingStats stt[NUM_WORKERS];
+    StealingStats *stt = new StealingStats[NUM_WORKERS];
     for(int i=0; i<NUM_WORKERS; i++) {
       stt[i] = utcs[i]->getStats();
     }
@@ -726,6 +726,7 @@ int main(int argc, char **argv)
     }
     delete [] rstt;
     rstt=NULL;
+    delete [] stt;
 
     amBarrier();
     MPI_Barrier(comm);
