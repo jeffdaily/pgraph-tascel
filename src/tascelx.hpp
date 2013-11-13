@@ -18,6 +18,12 @@
 #include <tascel/UniformTaskCollSplitHybrid.h>
 #endif
 
+#if defined(__xlc__) || defined(__xlC__) || defined(__IBMC__) || defined(__IBMCPP__)
+#define MFENCE __asm__ __volatile__  ("sync" ::: "memory" );
+#else
+#define MFENCE asm("mfence");
+#endif
+
 using namespace tascel;
 /* For now, the pgraph namespace is only used in pthread_fixes.h header.
  * Once we properly namespace all of pgraph, this #if can be removed. */

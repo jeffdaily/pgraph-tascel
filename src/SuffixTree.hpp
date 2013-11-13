@@ -96,6 +96,10 @@ class SuffixTree
 
         double get_suffix_max_length() const { return suffix_max_length; }
 
+    protected:
+        template <class Callback>
+        void procLeaf_cb(Suffix **lset, SequenceDatabase *seqs, int nSeqs, Parameters param, Callback callback);
+
     private:
         void create();
 
@@ -212,8 +216,7 @@ is_candidate(SequenceDatabase *seqs, size_t nSeqs,
 
 
 template <class Callback>
-static inline void
-procLeaf_cb(Suffix **lset, SequenceDatabase *seqs, int nSeqs, Parameters param, Callback callback)
+void procLeaf_cb(Suffix **lset, SequenceDatabase *seqs, int nSeqs, Parameters param, Callback callback)
 {
     size_t i;
     size_t j;

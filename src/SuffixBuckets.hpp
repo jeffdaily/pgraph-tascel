@@ -112,7 +112,7 @@ class SuffixBuckets
         std::vector<size_t> bucket_size;
         std::vector<size_t> bucket_owner;
         std::vector<size_t> bucket_offset;
-        std::vector<Suffix*> bucket_address;
+        Suffix **bucket_address;
         size_t bucket_size_total;
         PthreadMutex mutex;
         bool dumb_split;
