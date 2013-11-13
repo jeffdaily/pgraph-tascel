@@ -191,8 +191,7 @@ static void alignment_task(
         unsigned long s2Len = (*sequences)[seq_id[1]].get_sequence_length();
         stats[thd].work += s1Len * s2Len;
         ++stats[thd].align_counts;
-#if defined(NOALIGN)
-#else
+#if !defined(NOALIGN)
 #if USE_SSW
         sequences->align_ssw(seq_id[0], seq_id[1], result.score, result.matches, result.length, open, gap, thd);
 #else
@@ -385,7 +384,9 @@ int main(int argc, char **argv)
     utcs = new UniformTaskCollSplitHybrid*[NUM_WORKERS];
     stats = new AlignStats[NUM_WORKERS];
     treestats = new TreeStats[NUM_WORKERS];
+#if !defined(NOALIGN)
     edge_results = new vector<EdgeResult>[NUM_WORKERS];
+#endif
 #if defined(GLOBAL_DUPLICATES)
     pairs = new set<pair<size_t,size_t> >[NUM_WORKERS];
 #endif
@@ -469,20 +470,21 @@ int main(int argc, char **argv)
     unsigned long nalignments = (long)(0.5+selectivity*nCk);
     unsigned long ntasks = nalignments;
     unsigned long global_num_workers = nprocs*NUM_WORKERS;
-    unsigned long tasks_per_worker = ntasks / global_num_workers;
     unsigned long max_tasks_per_worker = ntasks / global_num_workers;
+#if 0
     max_tasks_per_worker += ntasks % global_num_workers;
     max_tasks_per_worker *= 10;
     unsigned long GB = 1073741824;
     unsigned long GB_2 = 536870912;
     unsigned long GB_4 = 268435456;
     max_tasks_per_worker = std::min(max_tasks_per_worker, GB_4/sizeof(task_desc_hybrid));
+#endif
+    max_tasks_per_worker = max_tasks_per_worker * 0.001; /* approx. selectivity */
     if (0 == trank(0)) {
         printf("selectivity=%lf\n", selectivity);
         printf("nalignments=%lu\n", nalignments);
         printf("ntasks=%lu\n", ntasks);
         printf("global_num_workers=%lu\n", global_num_workers);
-        printf("tasks_per_worker=%lu\n", tasks_per_worker);
         printf("max_tasks_per_worker=%lu\n", max_tasks_per_worker);
     }
     if (0 == trank(0)) {
@@ -510,7 +512,9 @@ int main(int argc, char **argv)
     }
     for (int worker=0; worker<NUM_WORKERS; ++worker)
     {
-        edge_results[worker].reserve(tasks_per_worker);
+#if !defined(NOALIGN)
+        edge_results[worker].reserve(max_tasks_per_worker);
+#endif
         UniformTaskCollSplitHybrid*& utc = utcs[worker];
         TslFuncRegTbl *frt = new TslFuncRegTbl();
         TslFunc tf = frt->add(hybrid_task);
@@ -726,25 +730,27 @@ int main(int argc, char **argv)
     amBarrier();
     MPI_Barrier(comm);
 
-#if OUTPUT_EDGES
+#if OUTPUT_EDGES && !defined(NOALIGN)
     ofstream edge_out(get_edges_filename(rank).c_str());
 #endif
     /* clean up */
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
         delete utcs[worker];
-#if OUTPUT_EDGES
+#if OUTPUT_EDGES && !defined(NOALIGN)
         for (size_t i=0,limit=edge_results[worker].size(); i<limit; ++i) {
             edge_out << edge_results[worker][i] << endl;
         }
 #endif
     }
-#if OUTPUT_EDGES
+#if OUTPUT_EDGES && !defined(NOALIGN)
     edge_out.close();
 #endif
 
     delete suffix_buckets;
     delete [] utcs;
+#if !defined(NOALIGN)
     delete [] edge_results;
+#endif
 #if defined(GLOBAL_DUPLICATES)
     delete [] pairs;
 #endif

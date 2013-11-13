@@ -445,16 +445,17 @@ int main(int argc, char **argv)
     unsigned long nalignments = (long)(0.5+selectivity*nCk);
     unsigned long ntasks = nalignments;
     unsigned long global_num_workers = nprocs*NUM_WORKERS;
-    unsigned long tasks_per_worker = ntasks / global_num_workers;
     unsigned long max_tasks_per_worker = ntasks / global_num_workers;
+#if 0
     max_tasks_per_worker += ntasks % global_num_workers;
     max_tasks_per_worker *= 10;
+#endif
+    max_tasks_per_worker = max_tasks_per_worker * 0.001;
     if (0 == trank(0)) {
         printf("selectivity=%lf\n", selectivity);
         printf("nalignments=%lu\n", nalignments);
         printf("ntasks=%lu\n", ntasks);
         printf("global_num_workers=%lu\n", global_num_workers);
-        printf("tasks_per_worker=%lu\n", tasks_per_worker);
         printf("max_tasks_per_worker=%lu\n", max_tasks_per_worker);
     }
     if (0 == trank(0)) {
@@ -478,7 +479,7 @@ int main(int argc, char **argv)
     }
     for (int worker=0; worker<NUM_WORKERS; ++worker)
     {
-        edge_results[worker].reserve(tasks_per_worker);
+        edge_results[worker].reserve(max_tasks_per_worker);
         UniformTaskCollSplitHybrid*& utc = utcs[worker];
         TslFuncRegTbl *frt = new TslFuncRegTbl();
         TslFunc tf = frt->add(alignment_task);

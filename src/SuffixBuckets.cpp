@@ -228,6 +228,12 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
             start += remainder;
             stop += remainder;
         }
+        mpix_print_sync("n_buckets", n_buckets, comm);
+        mpix_print_sync("comm_size", comm_size, comm);
+        mpix_print_sync("even_split", even_split, comm);
+        mpix_print_sync("remainder", remainder, comm);
+        mpix_print_sync("start", start, comm);
+        mpix_print_sync("stop", stop, comm);
         for (size_t i=start; i<stop; ++i) {
             bucket_owner[i] = comm_rank;
         }
