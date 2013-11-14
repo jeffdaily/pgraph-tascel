@@ -48,6 +48,8 @@ public:
     int window_size;    /**< slide window size */
     int open;           /**< open penalty for affine gap alignment */
     int gap;            /**< gap extension penalty for affine gap alignment */
+    size_t mem_worker;  /**< memory budget per worker task pool */
+    size_t mem_sequences;/**< memory budget for sequence database */
 };
 
 }; /* namespace pgraph */

@@ -238,6 +238,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
             bucket_owner[i] = comm_rank;
         }
         mpix_allreduce(bucket_owner, MPI_SUM, comm);
+        first_bucket = start;
     }
     else {
         size_t even_split = n_suffixes / comm_size;
@@ -277,6 +278,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     for (int i=0; i<comm_size; ++i) {
         total_amount_to_recv += amount_to_recv[i];
     }
+    mpix_print_sync("total_amount_to_recv", total_amount_to_recv, comm);
 
     /* We are preparing for the all to all, so we sort the suffixes. Yes, this
      * invalidates any of their 'next' pointers but these will be rebuilt after
@@ -333,62 +335,64 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     assert(MPI_SUCCESS == ierr);
     //mpix_print_sync("suffixes", arr_to_string(suffixes, total_amount_to_recv), comm);
 
+    if (total_amount_to_recv > 0) {
 #if USE_ARMCI
-    std::sort(suffixes,
-              suffixes+total_amount_to_recv,
-              SuffixBucketIndexCompare);
-    /* The suffixes contains sorted suffixes based on the buckets they belong
-     * to. That means we can simply update the 'next' links! */
-    size_t last_id = sequences->get_global_count();
-    bucket_size_total = 0;
-    for (size_t i=0; i<total_amount_to_recv-1; ++i) {
-        assert(suffixes[i].sid < last_id);
-        assert(suffixes[i].bid < n_buckets);
-        assert(suffixes[i].bid <= suffixes[i+1].bid);
-        assert(suffixes[i].next == NULL);
-        if (suffixes[i].bid == suffixes[i+1].bid) {
-            suffixes[i].next = &suffixes[i+1];
+        std::sort(suffixes,
+                suffixes+total_amount_to_recv,
+                SuffixBucketIndexCompare);
+        /* The suffixes contains sorted suffixes based on the buckets they belong
+         * to. That means we can simply update the 'next' links! */
+        size_t last_id = sequences->get_global_count();
+        bucket_size_total = 0;
+        for (size_t i=0; i<total_amount_to_recv-1; ++i) {
+            assert(suffixes[i].sid < last_id);
+            assert(suffixes[i].bid < n_buckets);
+            assert(suffixes[i].bid <= suffixes[i+1].bid);
+            assert(suffixes[i].next == NULL);
+            if (suffixes[i].bid == suffixes[i+1].bid) {
+                suffixes[i].next = &suffixes[i+1];
+            }
+            else {
+                suffixes[i].next = NULL;
+            }
+            if (buckets[suffixes[i].bid].suffixes == NULL) {
+                buckets[suffixes[i].bid].suffixes = &suffixes[i];
+                bucket_offset[suffixes[i].bid] = i;
+            }
+            buckets[suffixes[i].bid].size++;
+            ++bucket_size_total;
         }
-        else {
+        /* last iteration */
+        {
+            size_t i=total_amount_to_recv-1;
+            assert(suffixes[i].sid < last_id);
+            assert(suffixes[i].bid < n_buckets);
+            assert(suffixes[i].next == NULL);
             suffixes[i].next = NULL;
+            if (buckets[suffixes[i].bid].suffixes == NULL) {
+                buckets[suffixes[i].bid].suffixes = &suffixes[i];
+                bucket_offset[suffixes[i].bid] = i;
+            }
+            buckets[suffixes[i].bid].size++;
+            ++bucket_size_total;
         }
-        if (buckets[suffixes[i].bid].suffixes == NULL) {
-            buckets[suffixes[i].bid].suffixes = &suffixes[i];
-            bucket_offset[suffixes[i].bid] = i;
-        }
-        buckets[suffixes[i].bid].size++;
-        ++bucket_size_total;
-    }
-    /* last iteration */
-    {
-        size_t i=total_amount_to_recv-1;
-        assert(suffixes[i].sid < last_id);
-        assert(suffixes[i].bid < n_buckets);
-        assert(suffixes[i].next == NULL);
-        suffixes[i].next = NULL;
-        if (buckets[suffixes[i].bid].suffixes == NULL) {
-            buckets[suffixes[i].bid].suffixes = &suffixes[i];
-            bucket_offset[suffixes[i].bid] = i;
-        }
-        buckets[suffixes[i].bid].size++;
-        ++bucket_size_total;
-    }
-    mpix_allreduce(bucket_offset, MPI_SUM, comm);
+        mpix_allreduce(bucket_offset, MPI_SUM, comm);
 #else
-    /* The suffixes contains sorted suffixes based on the buckets they belong
-     * to. That means we can simply update the 'next' links! */
-    size_t last_id = sequences->get_global_count();
-    bucket_size_total = 0;
-    for (size_t i=0; i<total_amount_to_recv; ++i) {
-        assert(suffixes[i].sid < last_id);
-        assert(suffixes[i].bid < n_buckets);
-        assert(suffixes[i].next == NULL);
-        suffixes[i].next = buckets[suffixes[i].bid].suffixes;
-        buckets[suffixes[i].bid].suffixes = &suffixes[i];
-        buckets[suffixes[i].bid].size++;
-        ++bucket_size_total;
-    }
+        /* The suffixes contains sorted suffixes based on the buckets they belong
+         * to. That means we can simply update the 'next' links! */
+        size_t last_id = sequences->get_global_count();
+        bucket_size_total = 0;
+        for (size_t i=0; i<total_amount_to_recv; ++i) {
+            assert(suffixes[i].sid < last_id);
+            assert(suffixes[i].bid < n_buckets);
+            assert(suffixes[i].next == NULL);
+            suffixes[i].next = buckets[suffixes[i].bid].suffixes;
+            buckets[suffixes[i].bid].suffixes = &suffixes[i];
+            buckets[suffixes[i].bid].size++;
+            ++bucket_size_total;
+        }
 #endif
+    }
 
     suffixes_size = n_suffixes;
     buckets_size = n_buckets;

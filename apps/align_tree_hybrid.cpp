@@ -471,15 +471,16 @@ int main(int argc, char **argv)
     unsigned long ntasks = nalignments;
     unsigned long global_num_workers = nprocs*NUM_WORKERS;
     unsigned long max_tasks_per_worker = ntasks / global_num_workers;
-#if 0
+#if 1
     max_tasks_per_worker += ntasks % global_num_workers;
     max_tasks_per_worker *= 10;
     unsigned long GB = 1073741824;
     unsigned long GB_2 = 536870912;
     unsigned long GB_4 = 268435456;
-    max_tasks_per_worker = std::min(max_tasks_per_worker, GB_4/sizeof(task_desc_hybrid));
-#endif
+    max_tasks_per_worker = std::min(max_tasks_per_worker, GB_2/sizeof(task_desc_hybrid));
+#else
     max_tasks_per_worker = max_tasks_per_worker * 0.001; /* approx. selectivity */
+#endif
     if (0 == trank(0)) {
         printf("selectivity=%lf\n", selectivity);
         printf("nalignments=%lu\n", nalignments);
