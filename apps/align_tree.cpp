@@ -209,7 +209,6 @@ static void alignment_task(
                 AOL, SIM, OS,
                 sscore, max_len);
 
-#if OUTPUT_EDGES
         if (is_edge_answer || ALL_RESULTS)
         {
 #if DEBUG
@@ -242,7 +241,6 @@ static void alignment_task(
                 ++stats[thd].edge_counts;
             }
         }
-#endif
 #endif
         t = MPI_Wtime() - t;
         stats[thd].align_times_tot += t;

@@ -210,7 +210,6 @@ static void alignment_task(
                 sscore, max_len);
         ++stats[thd].align_counts;
 
-#if OUTPUT_EDGES
         if (is_edge_answer || ALL_RESULTS)
         {
 #if DEBUG
@@ -243,7 +242,6 @@ static void alignment_task(
                 ++stats[thd].edge_counts;
             }
         }
-#endif
         t = MPI_Wtime() - t;
         stats[thd].align_times_tot += t;
         stats[thd].calc_min(t);
