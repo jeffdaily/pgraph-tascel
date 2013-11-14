@@ -213,18 +213,6 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     mpix_print_sync("suffix_index", suffix_index, comm);
 #endif
 
-    n_seq = sequences->get_global_count() / comm_size;
-    remainder = sequences->get_global_count() % comm_size;
-    start = n_seq * comm_rank;
-    stop = n_seq * (comm_rank+1);
-    if (comm_rank < remainder) {
-        start += comm_rank;
-        stop += comm_rank+1;
-    }
-    else {
-        start += remainder;
-        stop += remainder;
-    }
     if (dumb_split) {
         size_t even_split = n_buckets / comm_size;
         size_t remainder = n_buckets % comm_size;
