@@ -505,16 +505,17 @@ int main(int argc, char **argv)
             .taskSize(sizeof(task_desc_align))
             .maxTasks(max_tasks_per_worker)
             .taskSize2(sizeof(task_desc_tree))
-            .maxTasks2(long(pow(26.0,parameters.window_size))/(nprocs/2)); // TODO too small?
+            .maxTasks2(long(pow(26.0,parameters.window_size))); // TODO too small?
         utc = new UniformTaskCollSplitHybrid(props, worker);
     }
 
     size_t even_split = suffix_buckets->bucket_size_total / NUM_WORKERS;
     int worker = 0;
     double poptimer = MPI_Wtime();
-    for (size_t i=suffix_buckets->first_bucket;
-            i < suffix_buckets->buckets_size; ++i) {
-        if (suffix_buckets->bucket_owner[i] == rank) {
+    for (size_t j=0,limit=suffix_buckets->my_buckets.size(); j<limit; ++j) {
+        size_t i = suffix_buckets->my_buckets[j];
+        assert(suffix_buckets->bucket_owner[i] == rank);
+        {
             if (NULL != suffix_buckets->buckets[i].suffixes) {
                 task_desc_tree desc;
                 desc.id1 = i;
@@ -533,9 +534,6 @@ int main(int argc, char **argv)
                     }
                 }
             }
-        }
-        else {
-            break;
         }
     }
     treestats[worker].times = MPI_Wtime() - poptimer;

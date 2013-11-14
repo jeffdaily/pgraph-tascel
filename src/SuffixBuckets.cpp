@@ -74,6 +74,19 @@ static inline size_t entry_index(const char *kmer, int k)
 }
 
 
+struct SuffixBucketIndexFunctor {
+    SuffixBucketIndexFunctor(vector<size_t> *bucket_owner)
+        :   bucket_owner(bucket_owner)
+    { }
+
+    bool operator()(const Suffix &i, const Suffix &j) {
+        return (*bucket_owner)[i.bid] < (*bucket_owner)[j.bid];
+    }
+
+    vector<size_t> *bucket_owner;
+};
+
+
 static bool SuffixBucketIndexCompare(const Suffix &i, const Suffix &j)
 {
     return i.bid < j.bid;
@@ -92,7 +105,7 @@ ostream& operator<<(ostream &os, const Suffix &suffix)
 SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
                              const Parameters &param,
                              MPI_Comm comm,
-                             bool dumb_split)
+                             const SplitEnum &split_type)
     :   comm_rank(-1)
     ,   comm_size(-1)
     ,   sequences(sequences)
@@ -101,15 +114,14 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     ,   suffixes_size(0)
     ,   buckets(NULL)
     ,   buckets_size(0)
-    ,   first_bucket(0)
-    ,   last_bucket(0)
+    ,   my_buckets()
     ,   bucket_size()
     ,   bucket_owner()
     ,   bucket_offset()
     ,   bucket_address(NULL)
     ,   bucket_size_total(0)
     ,   mutex()
-    ,   dumb_split(dumb_split)
+    ,   split_type(split_type)
 {
     size_t n_suffixes = 0;
     size_t n_buckets = 0;
@@ -131,6 +143,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     bucket_size.assign(n_buckets, size_t(0));
     bucket_owner.assign(n_buckets, size_t(0));
     bucket_offset.assign(n_buckets, size_t(0));
+    vector<pair<size_t,size_t> > bucket_sorted_map(n_buckets);
 
     /* allocate suffixes */
     n_suffixes = sequences->get_global_size()
@@ -213,7 +226,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     mpix_print_sync("suffix_index", suffix_index, comm);
 #endif
 
-    if (dumb_split) {
+    if (split_type == SPLIT_DUMB) {
         size_t even_split = n_buckets / comm_size;
         size_t remainder = n_buckets % comm_size;
         size_t start = even_split * comm_rank;
@@ -236,9 +249,8 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
             bucket_owner[i] = comm_rank;
         }
         mpix_allreduce(bucket_owner, MPI_SUM, comm);
-        first_bucket = start;
     }
-    else {
+    else if (split_type == SPLIT_SUFFIXES) {
         size_t even_split = n_suffixes / comm_size;
         size_t rank = 0;
         size_t count = 0;
@@ -250,13 +262,36 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
                 if (rank >= comm_size) {
                     rank = comm_size-1;
                 }
-                if (rank == comm_rank) {
-                    first_bucket = i;
-                }
             }
             bucket_owner[i] = rank;
         }
     }
+    else if (split_type == SPLIT_SORTED) {
+        for (size_t i=0; i<n_buckets; ++i) {
+            bucket_sorted_map[i].first = bucket_size[i];
+            bucket_sorted_map[i].second = i;
+        }
+        std::sort(bucket_sorted_map.begin(), bucket_sorted_map.end());
+        int rank = 0;
+        for (size_t i=0; i<n_buckets; ++i) {
+            bucket_owner[bucket_sorted_map[i].second] = rank;
+            rank = (rank + 1) % comm_size;
+        }
+    }
+    else {
+        assert(0);
+    }
+#if DEBUG
+    mpix_print_zero("bucket_owner", vec_to_string(bucket_owner), comm);
+#endif
+    for (size_t i=0; i<n_buckets; ++i) {
+        if (bucket_owner[i] == comm_rank) {
+            my_buckets.push_back(i);
+        }
+    }
+#if DEBUG
+    mpix_print_sync("my_buckets", vec_to_string(my_buckets), comm);
+#endif
 
     vector<int> amount_to_send(comm_size, 0);
     vector<int> amount_to_recv(comm_size, 0);
@@ -283,7 +318,9 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
      * the all to all. */
     std::sort(initial_suffixes.begin(),
               initial_suffixes.end(),
-              SuffixBucketIndexCompare);
+              //SuffixBucketIndexCompare
+              SuffixBucketIndexFunctor(&bucket_owner)
+    );
 #if USE_ARMCI
     bucket_address = new Suffix*[comm_size];
     (void)ARMCI_Malloc((void**)bucket_address,
@@ -332,8 +369,6 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
             &recv_displacements[0], SuffixType, comm);
     assert(MPI_SUCCESS == ierr);
     //mpix_print_sync("suffixes", arr_to_string(suffixes, total_amount_to_recv), comm);
-
-    mpix_print_sync("received suffixes\n", comm);
 
 #if USE_ARMCI
     if (total_amount_to_recv > 0) {
@@ -398,40 +433,8 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
 
     suffixes_size = n_suffixes;
     buckets_size = n_buckets;
-    mpix_print_sync("suffixes_size", suffixes_size, comm);
-    mpix_print_sync("buckets_size", buckets_size, comm);
-
-#if 0
-    bool found_start = false;
-    bool found_stop = false;
-    for (size_t i=0; i<buckets_size; ++i) {
-        if (found_start && found_stop) {
-            assert(bucket_owner[i] != comm_rank);
-        }
-        else if (found_start) {
-            if (bucket_owner[i] != comm_rank) {
-                found_stop = true;
-                last_bucket = i-1;
-            }
-        }
-        else if (found_stop) {
-            assert(0);
-        }
-        else {
-            if (bucket_owner[i] == comm_rank) {
-                found_start = true;
-                first_bucket = i;
-            }
-        }
-    }
-    if (found_start && !found_stop) {
-        last_bucket = buckets_size-1;
-    }
-#endif
 
 #if 1
-    mpix_print_sync("first_bucket", first_bucket, comm);
-    mpix_print_sync("last_bucket", last_bucket, comm);
     mpix_print_sync("bucket_size_total", bucket_size_total, comm);
 #endif
 }

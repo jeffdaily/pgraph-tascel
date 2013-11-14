@@ -511,7 +511,7 @@ int main(int argc, char **argv)
     /* the tascel part */
     (void) time(&t1);
 #if defined(DUMB)
-    suffix_buckets = new SuffixBuckets(sequences, parameters, comm, true);
+    suffix_buckets = new SuffixBuckets(sequences, parameters, comm, SPLIT_DUMB);
 #else
     suffix_buckets = new SuffixBuckets(sequences, parameters, comm);
 #endif
@@ -544,9 +544,10 @@ int main(int argc, char **argv)
     /* distribute buckets among workers based on suffix counts */
     /* prepare buckets for sorting */
     vector<pair<size_t,size_t> > *the_work = new vector<pair<size_t,size_t> >[NUM_WORKERS];
-    for (size_t i=suffix_buckets->first_bucket;
-            i < suffix_buckets->buckets_size; ++i) {
-        if (suffix_buckets->bucket_owner[i] == rank) {
+    for (size_t j=0,limit=suffix_buckets->my_buckets.size(); j<limit; ++j) {
+        size_t i = suffix_buckets->my_buckets[j];
+        assert(suffix_buckets->bucket_owner[i] == rank);
+        {
             if (NULL != suffix_buckets->buckets[i].suffixes) {
                 the_work[worker].push_back(make_pair(suffix_buckets->buckets[i].size,i));
                 work += suffix_buckets->buckets[i].size;
@@ -558,9 +559,6 @@ int main(int argc, char **argv)
                     }
                 }
             }
-        }
-        else {
-            break;
         }
     }
     /* we sort the buckets in order to process largest trees first */
@@ -580,9 +578,10 @@ int main(int argc, char **argv)
     }
     delete [] the_work;
 #else
-    for (size_t i=suffix_buckets->first_bucket;
-            i < suffix_buckets->buckets_size; ++i) {
-        if (suffix_buckets->bucket_owner[i] == rank) {
+    for (size_t j=0,limit=suffix_buckets->my_buckets.size(); j<limit; ++j) {
+        size_t i = suffix_buckets->my_buckets[j];
+        assert(suffix_buckets->bucket_owner[i] == rank);
+        {
             if (NULL != suffix_buckets->buckets[i].suffixes) {
                 task_desc_hybrid desc;
                 desc.id1 = i;
@@ -600,9 +599,6 @@ int main(int argc, char **argv)
                     }
                 }
             }
-        }
-        else {
-            break;
         }
     }
 #endif

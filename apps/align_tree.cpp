@@ -389,7 +389,7 @@ int main(int argc, char **argv)
     time_t t2 = 0;                  /* stop timer */
     (void) time(&t1);
 #if defined(DUMB)
-    suffix_buckets = new SuffixBuckets(sequences, parameters, comm, true);
+    suffix_buckets = new SuffixBuckets(sequences, parameters, comm, SPLIT_DUMB);
 #else
     suffix_buckets = new SuffixBuckets(sequences, parameters, comm);
 #endif
@@ -429,10 +429,10 @@ int main(int argc, char **argv)
     int worker = 0;
     double poptimer = MPI_Wtime();
     size_t tasks = 0;
-    //for (size_t i = 0; i < suffix_buckets->buckets_size; ++i) {
-    for (size_t i = suffix_buckets->first_bucket;
-            i < suffix_buckets->buckets_size; ++i) {
-        if (suffix_buckets->bucket_owner[i] == rank) {
+    for (size_t j=0,limit=suffix_buckets->my_buckets.size(); j<limit; ++j) {
+        size_t i = suffix_buckets->my_buckets[j];
+        assert(suffix_buckets->bucket_owner[i] == rank);
+        {
 #if 0
             if (0 == trank(0)) { 
                 printf("owns bucket %zu/%zu\n", i, suffix_buckets->buckets_size);
@@ -500,14 +500,6 @@ int main(int argc, char **argv)
                     }
                 }
             }
-        }
-        else {
-#if 0
-            if (0 == trank(0)) { 
-                printf("ignr bucket %zu/%zu\n", i, suffix_buckets->buckets_size);
-            }
-#endif
-            break;
         }
     }
 #if 0

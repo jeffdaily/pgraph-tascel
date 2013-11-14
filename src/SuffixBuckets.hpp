@@ -72,6 +72,7 @@ class Bucket
         size_t size;        /**< number of suffixes */
 };
 
+enum SplitEnum {SPLIT_DUMB=0, SPLIT_SUFFIXES=1, SPLIT_SORTED=2};
 
 class SuffixBuckets
 {
@@ -87,7 +88,7 @@ class SuffixBuckets
         SuffixBuckets(SequenceDatabase *sequences,
                       const Parameters &param,
                       MPI_Comm comm,
-                      bool dumb_split=false);
+                      const SplitEnum &split_type=SPLIT_SORTED);
 
         /**
          * Free memory associated with suffixes and buckets.
@@ -107,15 +108,18 @@ class SuffixBuckets
         size_t suffixes_size;   /**< size of suffixes array */
         Bucket *buckets;        /**< array of all suffix buckets */
         size_t buckets_size;    /**< size of buckets array */
-        size_t first_bucket;
-        size_t last_bucket;
+        std::vector<size_t> my_buckets;
         std::vector<size_t> bucket_size;
         std::vector<size_t> bucket_owner;
         std::vector<size_t> bucket_offset;
         Suffix **bucket_address;
         size_t bucket_size_total;
         PthreadMutex mutex;
-        bool dumb_split;
+        SplitEnum split_type;
+
+        bool operator()(const Suffix &i, const Suffix &j) {
+            return bucket_owner[i.bid] < bucket_owner[j.bid];
+        }
 };
 
 }; /* namespace pgraph */
