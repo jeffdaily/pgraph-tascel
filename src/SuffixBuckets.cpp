@@ -333,8 +333,10 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     assert(MPI_SUCCESS == ierr);
     //mpix_print_sync("suffixes", arr_to_string(suffixes, total_amount_to_recv), comm);
 
-    if (total_amount_to_recv > 0) {
+    mpix_print_sync("received suffixes\n", comm);
+
 #if USE_ARMCI
+    if (total_amount_to_recv > 0) {
         std::sort(suffixes,
                 suffixes+total_amount_to_recv,
                 SuffixBucketIndexCompare);
@@ -342,7 +344,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
          * to. That means we can simply update the 'next' links! */
         size_t last_id = sequences->get_global_count();
         bucket_size_total = 0;
-        for (size_t i=0; i<total_amount_to_recv-1; ++i) {
+        for (size_t i=0,limit=total_amount_to_recv-1; i<limit; ++i) {
             assert(suffixes[i].sid < last_id);
             assert(suffixes[i].bid < n_buckets);
             assert(suffixes[i].bid <= suffixes[i+1].bid);
@@ -374,8 +376,10 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
             buckets[suffixes[i].bid].size++;
             ++bucket_size_total;
         }
-        mpix_allreduce(bucket_offset, MPI_SUM, comm);
+    }
+    mpix_allreduce(bucket_offset, MPI_SUM, comm);
 #else
+    if (total_amount_to_recv > 0) {
         /* The suffixes contains sorted suffixes based on the buckets they belong
          * to. That means we can simply update the 'next' links! */
         size_t last_id = sequences->get_global_count();
@@ -389,11 +393,13 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
             buckets[suffixes[i].bid].size++;
             ++bucket_size_total;
         }
-#endif
     }
+#endif
 
     suffixes_size = n_suffixes;
     buckets_size = n_buckets;
+    mpix_print_sync("suffixes_size", suffixes_size, comm);
+    mpix_print_sync("buckets_size", buckets_size, comm);
 
 #if 0
     bool found_start = false;
