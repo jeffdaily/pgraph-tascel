@@ -439,9 +439,6 @@ int main(int argc, char **argv)
     }
 
     double selectivity = 1.0;
-    if (all_argv.size() == 3) {
-      selectivity  = fabs(min(1.0,atof(all_argv[2].c_str())));
-    }
     unsigned long nalignments = (long)(0.5+selectivity*nCk);
     unsigned long ntasks = nalignments;
     unsigned long global_num_workers = nprocs*NUM_WORKERS;
@@ -494,7 +491,7 @@ int main(int argc, char **argv)
             .taskSize(sizeof(task_desc_align))
             .maxTasks(max_tasks_per_worker)
             .taskSize2(sizeof(task_desc_tree))
-            .maxTasks2(long(pow(26.0,parameters.window_size))); // TODO too big
+            .maxTasks2(long(pow(26.0,parameters.window_size))/2); // TODO too big
         utc = new UniformTaskCollSplitHybrid(props, worker);
     }
 
