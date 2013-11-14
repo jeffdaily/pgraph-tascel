@@ -86,7 +86,9 @@ UniformTaskCollSplitHybrid** utcs = 0;
 AlignStats *stats = 0;
 TreeStats *treestats = 0;
 SequenceDatabase *sequences = 0;
+#if OUTPUT_EDGES && !defined(NOALIGN)
 vector<EdgeResult> *edge_results = 0;
+#endif
 Parameters parameters;
 SuffixBuckets *suffix_buckets = NULL;
 
@@ -215,6 +217,7 @@ static void alignment_task(
                 << result.length << ")"
                 << ": edge? " << is_edge_answer << endl;
 #endif
+#if OUTPUT_EDGES
             edge_results[thd].push_back(EdgeResult(
                         seq_id[0], seq_id[1],
 #if 0
@@ -230,6 +233,7 @@ static void alignment_task(
                         ,is_edge_answer
 #endif
                         ));
+#endif
             if (is_edge_answer) {
                 ++stats[thd].edge_counts;
             }
@@ -384,7 +388,7 @@ int main(int argc, char **argv)
     utcs = new UniformTaskCollSplitHybrid*[NUM_WORKERS];
     stats = new AlignStats[NUM_WORKERS];
     treestats = new TreeStats[NUM_WORKERS];
-#if !defined(NOALIGN)
+#if OUTPUT_EDGES && !defined(NOALIGN)
     edge_results = new vector<EdgeResult>[NUM_WORKERS];
 #endif
 #if defined(GLOBAL_DUPLICATES)
@@ -510,7 +514,7 @@ int main(int argc, char **argv)
     }
     for (int worker=0; worker<NUM_WORKERS; ++worker)
     {
-#if !defined(NOALIGN)
+#if OUTPUT_EDGES && !defined(NOALIGN)
         edge_results[worker].reserve(max_tasks_per_worker);
 #endif
         UniformTaskCollSplitHybrid*& utc = utcs[worker];
@@ -747,7 +751,7 @@ int main(int argc, char **argv)
 
     delete suffix_buckets;
     delete [] utcs;
-#if !defined(NOALIGN)
+#if OUTPUT_EDGES && !defined(NOALIGN)
     delete [] edge_results;
 #endif
 #if defined(GLOBAL_DUPLICATES)
