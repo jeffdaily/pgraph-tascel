@@ -17,6 +17,9 @@
 #include <cstring>
 #include <ctime>
 
+#include <time.h>
+#include <sys/time.h>
+
 #define USE_SET 1
 #if USE_SET
 #include <set>
@@ -39,8 +42,11 @@ using std::endl;
 #include "csequence.h"
 #include "stree.hpp"
 
+#ifdef __MACH__
+#include <mach/clock.h>
+#include <mach/mach.h>
+#endif
 
-#include <time.h>
 
 using namespace pgraph;
 
@@ -50,10 +56,21 @@ static inline size_t zpower(size_t base, size_t n);
 
 static inline double wtime() {
     struct timespec ts;
+#ifdef __MACH__ // OS X does not have clock_gettime, use clock_get_time
+    clock_serv_t cclock;
+    mach_timespec_t mts;
+    host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
+    clock_get_time(cclock, &mts);
+    mach_port_deallocate(mach_task_self(), cclock);
+    ts.tv_sec = mts.tv_sec;
+    ts.tv_nsec = mts.tv_nsec;
+#else
     int retval = clock_gettime(CLOCK_REALTIME, &ts);
     assert(0 == retval);
+#endif
     return double(ts.tv_sec) + double(ts.tv_nsec) / 1000000000.0;
 }
+
 
 int main(int argc, char *argv[])
 {

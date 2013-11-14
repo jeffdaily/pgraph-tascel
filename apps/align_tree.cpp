@@ -221,6 +221,7 @@ static void alignment_task(
                 << result.length << ")"
                 << ": edge? " << is_edge_answer << endl;
 #endif
+#if OUTPUT_EDGES
             edge_results[thd].push_back(EdgeResult(
                         seq_id[0], seq_id[1],
 #if 0
@@ -236,6 +237,7 @@ static void alignment_task(
                         ,is_edge_answer
 #endif
                         ));
+#endif
             if (is_edge_answer) {
                 ++stats[thd].edge_counts;
             }
