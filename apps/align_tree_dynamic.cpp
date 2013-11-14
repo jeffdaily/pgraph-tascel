@@ -86,7 +86,9 @@ UniformTaskCollSplitHybrid** utcs = 0;
 AlignStats *stats = 0;
 TreeStats *treestats = 0;
 SequenceDatabase *sequences = 0;
+#if OUTPUT_EDGES
 vector<EdgeResult> *edge_results = 0;
+#endif
 Parameters parameters;
 SuffixBuckets *suffix_buckets = NULL;
 
@@ -208,6 +210,7 @@ static void alignment_task(
                 sscore, max_len);
         ++stats[thd].align_counts;
 
+#if OUTPUT_EDGES
         if (is_edge_answer || ALL_RESULTS)
         {
 #if DEBUG
@@ -238,6 +241,7 @@ static void alignment_task(
                 ++stats[thd].edge_counts;
             }
         }
+#endif
         t = MPI_Wtime() - t;
         stats[thd].align_times_tot += t;
         stats[thd].calc_min(t);
@@ -357,11 +361,14 @@ int main(int argc, char **argv)
     MPI_CHECK(MPI_Comm_size(comm, &nprocs));
 
     /* initialize tascel */
+    double totaltime = MPI_Wtime();
     TascelConfig::initialize(NUM_WORKERS_DEFAULT, comm);
     utcs = new UniformTaskCollSplitHybrid*[NUM_WORKERS];
     stats = new AlignStats[NUM_WORKERS];
     treestats = new TreeStats[NUM_WORKERS];
+#if OUTPUT_EDGES
     edge_results = new vector<EdgeResult>[NUM_WORKERS];
+#endif
 #if defined(GLOBAL_DUPLICATES)
     pairs = new set<pair<size_t,size_t> >[NUM_WORKERS];
 #endif
@@ -428,8 +435,14 @@ int main(int argc, char **argv)
         parameters.parse(all_argv[3].c_str(), comm);
     }
 
+#if 0
     sequences = new SequenceDatabaseArmci(all_argv[1],
             parse_memory_budget(all_argv[2].c_str()), comm, NUM_WORKERS, DOLLAR);
+#else
+#define GB (1073741824U)
+    sequences = new SequenceDatabaseArmci(all_argv[1],
+            GB, comm, NUM_WORKERS, DOLLAR);
+#endif
 
     /* how many combinations of sequences are there? */
     nCk = binomial_coefficient(sequences->get_global_count(), 2);
@@ -443,13 +456,12 @@ int main(int argc, char **argv)
     unsigned long ntasks = nalignments;
     unsigned long global_num_workers = nprocs*NUM_WORKERS;
     unsigned long max_tasks_per_worker = ntasks / global_num_workers;
-#if 1
     max_tasks_per_worker += ntasks % global_num_workers;
     max_tasks_per_worker *= 10;
-    unsigned long GB = 1073741824;
-    unsigned long GB_2 = 536870912;
-    unsigned long GB_4 = 268435456;
-    max_tasks_per_worker = std::min(max_tasks_per_worker, GB_2/sizeof(task_desc_align));
+#if 1
+    unsigned long GB_2 = 536870912U;
+    unsigned long GB_4 = 268435456U;
+    max_tasks_per_worker = std::min(max_tasks_per_worker, GB_4/sizeof(task_desc_align));
 #else
     max_tasks_per_worker = max_tasks_per_worker * 0.001; /* approx. selectivity */
 #endif
@@ -481,7 +493,9 @@ int main(int argc, char **argv)
     }
     for (int worker=0; worker<NUM_WORKERS; ++worker)
     {
+#if OUTPUT_EDGES
         edge_results[worker].reserve(max_tasks_per_worker);
+#endif
         UniformTaskCollSplitHybrid*& utc = utcs[worker];
         TslFuncRegTbl *frt = new TslFuncRegTbl();
         TslFunc tf = frt->add(alignment_task);
@@ -491,7 +505,7 @@ int main(int argc, char **argv)
             .taskSize(sizeof(task_desc_align))
             .maxTasks(max_tasks_per_worker)
             .taskSize2(sizeof(task_desc_tree))
-            .maxTasks2(long(pow(26.0,parameters.window_size))/2); // TODO too big
+            .maxTasks2(long(pow(26.0,parameters.window_size))/(nprocs/2)); // TODO too small?
         utc = new UniformTaskCollSplitHybrid(props, worker);
     }
 
@@ -677,12 +691,18 @@ int main(int argc, char **argv)
 
     delete suffix_buckets;
     delete [] utcs;
+#if OUTPUT_EDGES
     delete [] edge_results;
+#endif
 #if defined(GLOBAL_DUPLICATES)
     delete [] pairs;
 #endif
     delete sequences;
 
+    totaltime = MPI_Wtime() - totaltime;
+    if (0 == trank(0)) {
+        cout << "totaltime = " << totaltime << endl;
+    }
     TascelConfig::finalize();
     MPI_Comm_free(&comm);
     MPI_Finalize();
