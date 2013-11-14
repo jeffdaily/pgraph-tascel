@@ -212,57 +212,6 @@ is_candidate(SequenceDatabase *seqs, size_t nSeqs,
 
 
 template <class Callback>
-static inline void
-procLeaf_cb(Suffix **lset, SequenceDatabase *seqs, int nSeqs, Parameters param, Callback callback)
-{
-    size_t i;
-    size_t j;
-    Suffix *p = NULL;
-    Suffix *q = NULL;
-    int cutOff;
-
-    cutOff = param.AOL * param.SIM;
-
-    for (i = 0; i < SIGMA; i++) {
-        if (lset[i]) {
-            if (i == BEGIN - 'A') { /* inter cross */
-                for (p = lset[i]; p != NULL; p = p->next) {
-                    for (q = p->next; q != NULL; q = q->next) {
-                        if (TRUE == is_candidate(seqs, nSeqs, p, q, param)) {
-                            if (p->sid > q->sid) {
-                                callback(make_pair(q->sid, p->sid));
-                            }
-                            else {
-                                callback(make_pair(p->sid, q->sid));
-                            }
-                        }
-                    }
-                }
-            }
-
-            /* intra cross */
-            for (j = i + 1; j < SIGMA; j++) {
-                if (lset[j]) {
-                    for (p = lset[i]; p != NULL; p = p->next) {
-                        for (q = lset[j]; q != NULL; q = q->next) {
-                            if (TRUE == is_candidate(seqs, nSeqs, p, q, param)) {
-                                if (p->sid > q->sid) {
-                                    callback(make_pair(q->sid, p->sid));
-                                }
-                                else {
-                                    callback(make_pair(p->sid, q->sid));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-template <class Callback>
 void SuffixTree::generate_pairs_cb(Callback callback)
 {
     SuffixTreeNode *stNodes = NULL;
@@ -308,7 +257,52 @@ void SuffixTree::generate_pairs_cb(Callback callback)
 
         if (stnode->depth >= EM - 1) {
             if (stnode->rLeaf == sIndex) { /* leaf node */
-                procLeaf_cb(stnode->lset, sequences, nSeqs, param, callback);
+                Suffix **lset = stnode->lset;
+                SequenceDatabase *seqs = sequences;
+                size_t i;
+                size_t j;
+                Suffix *p = NULL;
+                Suffix *q = NULL;
+                int cutOff;
+
+                cutOff = param.AOL * param.SIM;
+
+                for (i = 0; i < SIGMA; i++) {
+                    if (lset[i]) {
+                        if (i == BEGIN - 'A') { /* inter cross */
+                            for (p = lset[i]; p != NULL; p = p->next) {
+                                for (q = p->next; q != NULL; q = q->next) {
+                                    if (TRUE == is_candidate(seqs, nSeqs, p, q, param)) {
+                                        if (p->sid > q->sid) {
+                                            callback(make_pair(q->sid, p->sid));
+                                        }
+                                        else {
+                                            callback(make_pair(p->sid, q->sid));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        /* intra cross */
+                        for (j = i + 1; j < SIGMA; j++) {
+                            if (lset[j]) {
+                                for (p = lset[i]; p != NULL; p = p->next) {
+                                    for (q = lset[j]; q != NULL; q = q->next) {
+                                        if (TRUE == is_candidate(seqs, nSeqs, p, q, param)) {
+                                            if (p->sid > q->sid) {
+                                                callback(make_pair(q->sid, p->sid));
+                                            }
+                                            else {
+                                                callback(make_pair(p->sid, q->sid));
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
             else {                       /* internal node */
                 eIndex = stnode->rLeaf;

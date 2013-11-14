@@ -284,6 +284,7 @@ build_tree_recursive(
         st_nodes[j].rLeaf = rLeaf;
         return st_nodes[j].rLeaf;
     }
+    assert(0);
 }
 
 

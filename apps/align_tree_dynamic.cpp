@@ -537,7 +537,7 @@ int main(int argc, char **argv)
     pthread_barrier_init(&workersEnd, 0, NUM_WORKERS);
     pthread_barrier_init(&serverStart, 0, NUM_SERVERS + 1);
     pthread_barrier_init(&serverEnd, 0, NUM_SERVERS + 1);
-    asm("mfence");
+    MFENCE
     for (int i = 1; i < NUM_WORKERS; ++i) {
         worker_thread_args *args = new worker_thread_args(
                 threadRanks[i], utcs[i], &workersStart, &workersEnd);;
@@ -567,7 +567,7 @@ int main(int argc, char **argv)
     amBarrierThd();
 
     serverEnabled = false;
-    asm("mfence");
+    MFENCE
     pthread_barrier_wait(&serverEnd);
 
     amBarrier();
@@ -634,7 +634,7 @@ int main(int argc, char **argv)
     delete [] rstats;
     rstats=NULL;
 
-    StealingStats stt[NUM_WORKERS];
+    StealingStats *stt = new StealingStats[NUM_WORKERS];
     for(int i=0; i<NUM_WORKERS; i++) {
       stt[i] = utcs[i]->getStats();
     }
@@ -657,6 +657,7 @@ int main(int argc, char **argv)
     }
     delete [] rstt;
     rstt=NULL;
+    delete [] stt;
 
     amBarrier();
     MPI_Barrier(comm);

@@ -16,6 +16,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <iostream>
+#include <vector>
 
 #include <tascel.h>
 
@@ -35,6 +36,7 @@ extern "C" {
 
 using tascel::LockGuard;
 using tascel::PthreadMutex;
+using std::vector;
 
 namespace pgraph {
 
@@ -91,7 +93,9 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
                              const Parameters &param,
                              MPI_Comm comm,
                              bool dumb_split)
-    :   sequences(sequences)
+    :   comm_rank(-1)
+    ,   comm_size(-1)
+    ,   sequences(sequences)
     ,   param(param)
     ,   suffixes(NULL)
     ,   suffixes_size(0)
@@ -99,6 +103,12 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     ,   buckets_size(0)
     ,   first_bucket(0)
     ,   last_bucket(0)
+    ,   bucket_size()
+    ,   bucket_owner()
+    ,   bucket_offset()
+    ,   bucket_address(NULL)
+    ,   bucket_size_total(0)
+    ,   mutex()
     ,   dumb_split(dumb_split)
 {
     size_t n_suffixes = 0;
@@ -287,8 +297,8 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
               initial_suffixes.end(),
               SuffixBucketIndexCompare);
 #if USE_ARMCI
-    bucket_address.assign(comm_size, NULL);
-    (void)ARMCI_Malloc((void**)&bucket_address[0],
+    bucket_address = new Suffix*[comm_size];
+    (void)ARMCI_Malloc((void**)bucket_address,
             total_amount_to_recv*sizeof(Suffix));
     suffixes = bucket_address[comm_rank];
 #else
@@ -314,7 +324,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
         mpix_get_mpi_datatype(initial_suffixes[0].sid),
         mpix_get_mpi_datatype(initial_suffixes[0].pid),
         mpix_get_mpi_datatype(initial_suffixes[0].bid),
-        MPI_AINT
+        MPI_UNSIGNED_LONG
     };
     int blocklen[4] = {1,1,1,1};
     MPI_Aint disp[4];
