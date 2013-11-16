@@ -163,6 +163,8 @@ int main(int argc, char *argv[])
     cout << ",";
     cout << "time_process";
     cout << endl;
+    double total_time_build = 0;
+    double total_time_process = 0;
     for (d = 0; d < (long)suffix_buckets->buckets_size; ++d) {
         if (NULL != suffix_buckets->buckets[d].suffixes) {
             double btimer = wtime();
@@ -191,11 +193,15 @@ int main(int argc, char *argv[])
             cout << endl;
             free_tree(tree);
             count += 1;
+            total_time_build += btimer;
+            total_time_process += ptimer;
         }
     }
     (void) time(&t2);
     printf("%zu non-empty trees constructed and processed in <%lld> secs\n",
             count, (long long)(t2-t1));
+    cout << "total time build  " << total_time_build << endl;
+    cout << "total time process" << total_time_process << endl;
 #if USE_SET
     printf("%zu/%lu pairs generated\n", pairs.size(), ntasks);
     {
@@ -226,12 +232,14 @@ int main(int argc, char *argv[])
         (void) time(&t2);
         printf("pairs analyzed in <%lld> secs\n", (long long)(t2-t1));
         printf("work_total=%lu\n", work_total);
+#if PRINT_HISTO
         printf("histogram\n");
         printf("%lu", histo[0]);
         for (i=1; i<histo_size; ++i) {
             printf(",%lu", histo[i]);
         }
         printf("\n");
+#endif
         delete [] histo;
     }
     {
@@ -262,6 +270,7 @@ int main(int argc, char *argv[])
         (void) time(&t2);
         printf("filter analyzed in <%lld> secs\n", (long long)(t2-t1));
         printf("work_total=%lu\n", work_total);
+#if PRINT_HISTO
         printf("histogram\n");
         printf("%lu", histo[0]);
         for (i=1; i<histo_size; ++i) {
@@ -269,6 +278,7 @@ int main(int argc, char *argv[])
         }
         printf("\n");
         delete [] histo;
+#endif
     }
 #else
     /* generate statistics on how much was saved by filtering */
@@ -327,12 +337,14 @@ int main(int argc, char *argv[])
     printf(" work_no=%zu\n", work_no);
     printf("work_yes=%zu\n", work_yes);
     printf("work saved is %f%%\n", 100.0*double(work_no)/double(work_no+work_yes));
+#if PRINT_HISTO
     printf("histogram\n");
     printf("%lu", histo[0]);
     for (i=1; i<histo_size; ++i) {
         printf(",%lu", histo[i]);
     }
     printf("\n");
+#endif
 
     /* now use a simple length-based cutoff filter */
     printf("using a simple length-based cutoff filter\n");
@@ -373,12 +385,14 @@ int main(int argc, char *argv[])
     printf(" work_no=%zu\n", work_no);
     printf("work_yes=%zu\n", work_yes);
     printf("work saved is %f%%\n", 100.0*double(work_no)/double(work_no+work_yes));
+#if PRINT_HISTO
     printf("histogram\n");
     printf("%lu", histo[0]);
     for (i=1; i<histo_size; ++i) {
         printf(",%lu", histo[i]);
     }
     printf("\n");
+#endif
 
     delete [] dup;
 #endif
