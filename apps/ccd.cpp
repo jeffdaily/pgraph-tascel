@@ -22,10 +22,8 @@
 
 #define USE_SET 1
 #if USE_SET
-#include <set>
 #include <vector>
 #include <utility>
-using std::set;
 using std::vector;
 using std::make_pair;
 using std::pair;
@@ -49,6 +47,7 @@ using std::endl;
 
 
 using namespace pgraph;
+
 
 static void parse_command_line(int argc, char **argv,
         char *sequence_file, char *config_file, size_t *n_sequences);
@@ -88,7 +87,7 @@ int main(int argc, char *argv[])
     ssize_t d = 0;                  /* signed for loop index */
     size_t n_triangular = 0;        /* number of possible pairs */
 #if USE_SET
-    set<pair<unsigned int,unsigned int> > pairs;
+    pset_t pairs;
 #else
     int *dup = NULL;                /* track duplicate pairs */
 #endif
@@ -168,8 +167,13 @@ int main(int argc, char *argv[])
     for (d = 0; d < (long)suffix_buckets->buckets_size; ++d) {
         if (NULL != suffix_buckets->buckets[d].suffixes) {
             double btimer = wtime();
+#if ENABLE_SSET
+            stree_t *tree = build_tree(
+                    sequences, &(suffix_buckets->buckets[d]), param, false);
+#else
             stree_t *tree = build_tree(
                     sequences, &(suffix_buckets->buckets[d]), param);
+#endif
             btimer = wtime() - btimer;
             double ptimer = wtime();
 #if USE_SET
@@ -200,13 +204,13 @@ int main(int argc, char *argv[])
     (void) time(&t2);
     printf("%zu non-empty trees constructed and processed in <%lld> secs\n",
             count, (long long)(t2-t1));
-    cout << "total time build  " << total_time_build << endl;
-    cout << "total time process" << total_time_process << endl;
+    cout << "total time build   " << total_time_build << endl;
+    cout << "total time process " << total_time_process << endl;
 #if USE_SET
     printf("%zu/%lu pairs generated\n", pairs.size(), ntasks);
     {
         /* generate statistics on how much was saved by filtering */
-        set<pair<unsigned int,unsigned int> >::iterator it;
+        pset_t::iterator it;
         vector<pair<unsigned int,unsigned int> > pairs_vec(pairs.begin(), pairs.end());
         unsigned long work_total = 0;
         unsigned long histo_width = 10000;
@@ -277,8 +281,8 @@ int main(int argc, char *argv[])
             printf(",%lu", histo[i]);
         }
         printf("\n");
-        delete [] histo;
 #endif
+        delete [] histo;
     }
 #else
     /* generate statistics on how much was saved by filtering */

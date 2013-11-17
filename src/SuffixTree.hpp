@@ -339,7 +339,7 @@ void SuffixTree::generate_pairs_cb(Callback callback)
                 /* merge the lsets of subtree */
                 for (m = 0; m < SIGMA; m++) {
                     p = NULL;
-                    for (j = sIndex + 1; j <= eIndex; j++) {
+                    for (j = sIndex + 1; j <= eIndex; j = stNodes[j].rLeaf + 1) {
                         if ((q = stNodes[j].lset[m])) {
 
                             /* empty the subtree's ptrs array */

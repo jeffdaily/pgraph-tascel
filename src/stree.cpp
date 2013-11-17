@@ -16,7 +16,6 @@
 
 #include <algorithm>
 #include <map>
-#include <set>
 #include <utility>
 #include <vector>
 
@@ -30,7 +29,6 @@
 using std::make_pair;
 using std::map;
 using std::pair;
-using std::set;
 
 #define STATIC static inline
 
@@ -129,6 +127,38 @@ compute_lset(suffix_t *suffixes, sequence_t *seqs, suffix_t **lset)
 }
 
 
+#if ENABLE_SSET
+/**
+ * compute lset according to the left character of pid to
+ * ensure the left maximality. Mark the special case of
+ * whole sequence. Use BEGIN='O' as the special character.
+ *
+ * @param suffixes -
+ * @param seqs - all seqs info
+ * @param lset -
+ */
+STATIC void
+compute_lset(suffix_t *suffixes, sequence_t *seqs, sset_t *sset)
+{
+    suffix_t *p = NULL;
+    suffix_t *q = NULL;
+    int lIndex;
+
+    for (p = suffixes; p != NULL; p = q) {
+        q = p->next;
+        if (p->pid == 0) {
+            lIndex = BEGIN - 'A';
+            sset[lIndex].insert(p->sid);
+        }
+        else {
+            lIndex = seqs[p->sid].str[p->pid - 1] - 'A';
+            sset[lIndex].insert(p->sid);
+        }
+    }
+}
+#endif
+
+
 /**
  * find the next different position of suffixes.
  * NOTE: if all suffixes end at '$', then report it as
@@ -182,11 +212,19 @@ nextDiffPos(sequence_t *seqs, suffix_t *suffixes, int depth, int window_size)
 /**
  * TODO
  */
+#if ENABLE_SSET
+STATIC size_t
+build_tree_recursive(
+    sequence_t *sequences, size_t n_sequences,
+    suffix_t *suffixes, int depth, int window_size,
+    stnode_t *st_nodes, size_t *st_index, bool lset_set)
+#else
 STATIC size_t
 build_tree_recursive(
     sequence_t *sequences, size_t n_sequences,
     suffix_t *suffixes, int depth, int window_size,
     stnode_t *st_nodes, size_t *st_index)
+#endif
 {
     int diffPos;
     size_t i;
@@ -211,7 +249,16 @@ build_tree_recursive(
         st_nodes[*st_index].depth = (seq->size - 1) - suffixes[0].pid;
         st_nodes[*st_index].rLeaf = *st_index; /* point to itself */
 
+#if ENABLE_SSET
+        if (lset_set) {
+            compute_lset(suffixes, sequences, st_nodes[*st_index].sset);
+        }
+        else {
+            compute_lset(suffixes, sequences, st_nodes[*st_index].lset);
+        }
+#else
         compute_lset(suffixes, sequences, st_nodes[*st_index].lset);
+#endif
 
         return (*st_index)++;
     }
@@ -266,13 +313,28 @@ build_tree_recursive(
                         (sequences[heads[i]->sid].size - 1 - heads[i]->pid);
                     st_nodes[*st_index].rLeaf = *st_index;
 
+#if ENABLE_SSET
+                    if (lset_set) {
+                        compute_lset(heads[i], sequences, st_nodes[*st_index].sset);
+                    }
+                    else {
+                        compute_lset(heads[i], sequences, st_nodes[*st_index].lset);
+                    }
+#else
                     compute_lset(heads[i], sequences, st_nodes[*st_index].lset);
+#endif
                     rLeaf = (*st_index)++;
                 }
                 else {
+#if ENABLE_SSET
+                    rLeaf = build_tree_recursive(
+                            sequences, n_sequences, heads[i], diffPos,
+                            window_size, st_nodes, st_index, lset_set);
+#else
                     rLeaf = build_tree_recursive(
                             sequences, n_sequences, heads[i], diffPos,
                             window_size, st_nodes, st_index);
+#endif
                 }
 
                 /* put it back into NULL */
@@ -288,8 +350,13 @@ build_tree_recursive(
 }
 
 
+#if ENABLE_SSET
+stree_t* build_tree(
+        sequences_t *sequences, bucket_t *bucket, param_t param, bool lset_set)
+#else
 stree_t* build_tree(
         sequences_t *sequences, bucket_t *bucket, param_t param)
+#endif
 {
     stree_t *tree = NULL;
     size_t n_nodes = 0;
@@ -301,6 +368,10 @@ stree_t* build_tree(
         perror("build_tree: malloc tree");
         exit(EXIT_FAILURE);
     }
+
+#if ENABLE_SSET
+    tree->lset_set = lset_set;
+#endif
 
     /* allocate tree nodes */
     n_nodes = 2 * bucket->size;
@@ -329,11 +400,31 @@ stree_t* build_tree(
         tree->lset_array[i] = NULL;
     }
 
+#if ENABLE_SSET
+    if (lset_set) {
+        /* allocate sset pointer memory for tree nodes */
+        tree->sset_array = new sset_t[SIGMA * n_nodes];
+        if (NULL == tree->sset_array) {
+            perror("build_tree: malloc sset array");
+            exit(EXIT_FAILURE);
+        }
+        /* initialize sset pointer memory */
+        for (i = 0; i < SIGMA * n_nodes; ++i) {
+            tree->sset_array[i].clear();
+        }
+    }
+#endif
+
     /* initialize tree nodes */
     for (i = 0; i < n_nodes; ++i) {
         tree->nodes[i].depth = 0;
         tree->nodes[i].rLeaf = 0;
         tree->nodes[i].lset = &(tree->lset_array[i*SIGMA]);
+#if ENABLE_SSET
+        if (lset_set) {
+            tree->nodes[i].sset = &(tree->sset_array[i*SIGMA]);
+        }
+#endif
     }
 
     /* get suffix and sequence statistics */
@@ -348,10 +439,17 @@ stree_t* build_tree(
         }
     }
 
+#if ENABLE_SSET
+    (void) build_tree_recursive(
+            sequences->seq, sequences->size,
+            bucket->suffixes, param.window_size - 1, param.window_size,
+            tree->nodes, &(tree->size), lset_set);
+#else
     (void) build_tree_recursive(
             sequences->seq, sequences->size,
             bucket->suffixes, param.window_size - 1, param.window_size,
             tree->nodes, &(tree->size));
+#endif
 
     /* get tree node statistics */
     for (i = 0; i < tree->size; ++i) {
@@ -373,29 +471,30 @@ void free_tree(stree_t *tree)
     assert(NULL != tree);
     delete [] tree->nodes;
     delete [] tree->lset_array;
+#if ENABLE_SSET
+    if (tree->lset_set) {
+        delete [] tree->sset_array;
+    }
+#endif
     delete tree;
 }
 
 
 STATIC int
 is_candidate(sequence_t *seqs, size_t nSeqs,
-             suffix_t *p, suffix_t *q, param_t param, int *dup)
+             size_t f1, size_t f2, param_t param, int *dup)
 {
     size_t s1Len = 0;
     size_t s2Len = 0;
-    int f1 = 0;
-    int f2 = 0;
     int cutOff = param.AOL * param.SIM;
     cell_t result;
     size_t index = 0;
 
-    f1 = p->sid;
-    f2 = q->sid;
-    assert(size_t(f1) < nSeqs);
-    assert(size_t(f2) < nSeqs);
+    assert(f1 < nSeqs);
+    assert(f2 < nSeqs);
 
     if (f1 > f2) {
-        int swap = f1;
+        size_t swap = f1;
         f1 = f2;
         f2 = swap;
     }
@@ -448,24 +547,20 @@ is_candidate(sequence_t *seqs, size_t nSeqs,
 
 STATIC int
 is_candidate(sequence_t *seqs, size_t nSeqs,
-             suffix_t *p, suffix_t *q, param_t param, 
-             set<pair<unsigned int,unsigned int> > &dup)
+             size_t f1, size_t f2, param_t param, 
+             pset_t &dup)
 {
     size_t s1Len = 0;
     size_t s2Len = 0;
-    int f1 = 0;
-    int f2 = 0;
     int cutOff = param.AOL * param.SIM;
     cell_t result;
     size_t index = 0;
 
-    f1 = p->sid;
-    f2 = q->sid;
-    assert(size_t(f1) < nSeqs);
-    assert(size_t(f2) < nSeqs);
+    assert(f1 < nSeqs);
+    assert(f2 < nSeqs);
 
     if (f1 > f2) {
-        int swap = f1;
+        size_t swap = f1;
         f1 = f2;
         f2 = swap;
     }
@@ -565,7 +660,7 @@ procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, param_t param, int *dup)
             if (i == BEGIN - 'A') { /* inter cross */
                 for (p = lset[i]; p != NULL; p = p->next) {
                     for (q = p->next; q != NULL; q = q->next) {
-                        if (TRUE == is_candidate(seqs, nSeqs, p, q, param, dup)) {
+                        if (TRUE == is_candidate(seqs, nSeqs, p->sid, q->sid, param, dup)) {
 #if PRINT_EDGES
                             if (p->sid > q->sid) {
                                 printf("edge\t%zu\t%zu\n", q->sid, p->sid);
@@ -584,7 +679,7 @@ procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, param_t param, int *dup)
                 if (lset[j]) {
                     for (p = lset[i]; p != NULL; p = p->next) {
                         for (q = lset[j]; q != NULL; q = q->next) {
-                            if (TRUE == is_candidate(seqs, nSeqs, p, q, param, dup)) {
+                            if (TRUE == is_candidate(seqs, nSeqs, p->sid, q->sid, param, dup)) {
 #if PRINT_EDGES
                                 if (p->sid > q->sid) {
                                     printf("edge\t%zu\t%zu\n", q->sid, p->sid);
@@ -603,8 +698,69 @@ procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, param_t param, int *dup)
 }
 
 
+#if ENABLE_SSET
 STATIC void
-procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, param_t param, set<pair<unsigned int,unsigned int> > &dup)
+procLeaf(sset_t *lset, sequence_t *seqs, int nSeqs, param_t param, int *dup)
+{
+    size_t i;
+    size_t j;
+    suffix_t *p = NULL;
+    suffix_t *q = NULL;
+    int cutOff;
+
+    cutOff = param.AOL * param.SIM;
+
+    for (i = 0; i < SIGMA; i++) {
+        if (!lset[i].empty()) {
+            if (i == BEGIN - 'A') { /* inter cross */
+                for (sset_t::iterator p = lset[i].begin();
+                        p != lset[i].end(); ++p) {
+                    for (sset_t::iterator q = p;
+                            q != lset[i].end(); ++q) {
+                        if (q == p) ++q;
+                        if (TRUE == is_candidate(seqs, nSeqs, *p, *q, param, dup)) {
+#if PRINT_EDGES
+                            if (*p > *q) {
+                                printf("edge\t%zu\t%zu\n", *q, *p);
+                            }
+                            else {
+                                printf("edge\t%zu\t%zu\n", *p, *q);
+                            }
+#endif
+                        }
+                    }
+                }
+            }
+
+            /* intra cross */
+            for (j = i + 1; j < SIGMA; j++) {
+                if (!lset[j].empty()) {
+                    for (sset_t::iterator p = lset[i].begin();
+                            p != lset[i].end(); ++p) {
+                        for (sset_t::iterator q = lset[j].begin();
+                                q != lset[j].end(); ++q) {
+                            if (TRUE == is_candidate(seqs, nSeqs, *p, *q, param, dup)) {
+#if PRINT_EDGES
+                                if (*p > *q) {
+                                    printf("edge\t%zu\t%zu\n", *q, *p);
+                                }
+                                else {
+                                    printf("edge\t%zu\t%zu\n", *p, *q);
+                                }
+#endif
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+#endif
+
+
+STATIC void
+procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, param_t param, pset_t &dup)
 {
     size_t i;
     size_t j;
@@ -619,7 +775,7 @@ procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, param_t param, set<pair<u
             if (i == BEGIN - 'A') { /* inter cross */
                 for (p = lset[i]; p != NULL; p = p->next) {
                     for (q = p->next; q != NULL; q = q->next) {
-                        if (TRUE == is_candidate(seqs, nSeqs, p, q, param, dup)) {
+                        if (TRUE == is_candidate(seqs, nSeqs, p->sid, q->sid, param, dup)) {
                             if (p->sid > q->sid) {
                                 dup.insert(make_pair(q->sid,p->sid));
                             }
@@ -636,7 +792,7 @@ procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, param_t param, set<pair<u
                 if (lset[j]) {
                     for (p = lset[i]; p != NULL; p = p->next) {
                         for (q = lset[j]; q != NULL; q = q->next) {
-                            if (TRUE == is_candidate(seqs, nSeqs, p, q, param, dup)) {
+                            if (TRUE == is_candidate(seqs, nSeqs, p->sid, q->sid, param, dup)) {
                                 if (p->sid > q->sid) {
                                     dup.insert(make_pair(q->sid,p->sid));
                                 }
@@ -653,9 +809,64 @@ procLeaf(suffix_t **lset, sequence_t *seqs, int nSeqs, param_t param, set<pair<u
 }
 
 
+#if ENABLE_SSET
+STATIC void
+procLeaf(sset_t *lset, sequence_t *seqs, int nSeqs, param_t param, pset_t &dup)
+{
+    size_t i;
+    size_t j;
+    suffix_t *p = NULL;
+    suffix_t *q = NULL;
+    int cutOff;
+
+    cutOff = param.AOL * param.SIM;
+
+    for (i = 0; i < SIGMA; i++) {
+        if (!lset[i].empty()) {
+            if (i == BEGIN - 'A') { /* inter cross */
+                for (sset_t::iterator p = lset[i].begin();
+                        p != lset[i].end(); ++p) {
+                    for (sset_t::iterator q = lset[i].begin();
+                            q != lset[i].end(); ++q) {
+                        if (TRUE == is_candidate(seqs, nSeqs, *p, *q, param, dup)) {
+                            if (*p > *q) {
+                                dup.insert(make_pair(*q,*p));
+                            }
+                            else {
+                                dup.insert(make_pair(*p,*q));
+                            }
+                        }
+                    }
+                }
+            }
+
+            /* intra cross */
+            for (j = i + 1; j < SIGMA; j++) {
+                if (!lset[j].empty()) {
+                    for (sset_t::iterator p = lset[i].begin();
+                            p != lset[i].end(); ++p) {
+                        for (sset_t::iterator q = lset[j].begin();
+                                q != lset[j].end(); ++q) {
+                            if (TRUE == is_candidate(seqs, nSeqs, *p, *q, param, dup)) {
+                                if (*p > *q) {
+                                    dup.insert(make_pair(*q,*p));
+                                }
+                                else {
+                                    dup.insert(make_pair(*p,*q));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+#endif
+
 
 STATIC void
-procNode(stnode_t *stNodes, int sIndex, int eIndex, suffix_t **lset, sequence_t *seqs, int nSeqs, param_t param, set<pair<unsigned int,unsigned int> > &dup)
+procNode(stnode_t *stNodes, int sIndex, int eIndex, suffix_t **lset, sequence_t *seqs, int nSeqs, param_t param, int *dup)
 {
     size_t m;
     size_t n;
@@ -675,7 +886,53 @@ procNode(stnode_t *stNodes, int sIndex, int eIndex, suffix_t **lset, sequence_t 
                                 for (p = stNodes[m].lset[s]; p != NULL; p = p->next) {
                                     for (q = stNodes[n].lset[t]; q != NULL; q = q->next) {
                                         if (TRUE == is_candidate(
-                                                    seqs, nSeqs, p, q,
+                                                    seqs, nSeqs, p->sid, q->sid,
+                                                    param, dup)) {
+#if PRINT_EDGES
+                                            if (p->sid > q->sid) {
+                                                printf("edge\t%zu\t%zu\n",
+                                                        q->sid, p->sid);
+                                            }
+                                            else {
+                                                printf("edge\t%zu\t%zu\n",
+                                                        p->sid, q->sid);
+                                            }
+#endif
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+STATIC void
+procNode(stnode_t *stNodes, int sIndex, int eIndex, suffix_t **lset, sequence_t *seqs, int nSeqs, param_t param, pset_t &dup)
+{
+    size_t m;
+    size_t n;
+    size_t s;
+    size_t t;
+    suffix_t *p = NULL;
+    suffix_t *q = NULL;
+
+    /* pairs generation loop for internal node */
+    for (m = sIndex + 1; m < eIndex; m = stNodes[m].rLeaf+1) {
+        for (n = stNodes[m].rLeaf+1; n <= eIndex; n = stNodes[n].rLeaf+1) {
+            for (s = 0; s < SIGMA; s++) {
+                if (stNodes[m].lset[s]) {
+                    for (t = 0; t < SIGMA; t++) {
+                        if (stNodes[n].lset[t]) {
+                            if (s != t || s == (BEGIN - 'A')) {
+                                for (p = stNodes[m].lset[s]; p != NULL; p = p->next) {
+                                    for (q = stNodes[n].lset[t]; q != NULL; q = q->next) {
+                                        if (TRUE == is_candidate(
+                                                    seqs, nSeqs, p->sid, q->sid,
                                                     param, dup)) {
                                             if (p->sid > q->sid) {
                                                 dup.insert(make_pair(q->sid,p->sid));
@@ -696,6 +953,98 @@ procNode(stnode_t *stNodes, int sIndex, int eIndex, suffix_t **lset, sequence_t 
 }
 
 
+#if ENABLE_SSET
+STATIC void
+procNode(stnode_t *stNodes, int sIndex, int eIndex, sset_t *lset, sequence_t *seqs, int nSeqs, param_t param, int *dup)
+{
+    size_t m;
+    size_t n;
+    size_t s;
+    size_t t;
+    suffix_t *p = NULL;
+    suffix_t *q = NULL;
+
+    /* pairs generation loop for internal node */
+    for (m = sIndex + 1; m < eIndex; m = stNodes[m].rLeaf+1) {
+        for (n = stNodes[m].rLeaf+1; n <= eIndex; n = stNodes[n].rLeaf+1) {
+            for (s = 0; s < SIGMA; s++) {
+                if (!stNodes[m].sset[s].empty()) {
+                    for (t = 0; t < SIGMA; t++) {
+                        if (!stNodes[n].sset[t].empty()) {
+                            if (s != t || s == (BEGIN - 'A')) {
+                                for (sset_t::iterator p = stNodes[m].sset[s].begin(); p != stNodes[m].sset[s].end(); ++p) {
+                                    for (sset_t::iterator q = stNodes[n].sset[t].begin(); q != stNodes[n].sset[t].end(); ++q) {
+                                        if (TRUE == is_candidate(
+                                                    seqs, nSeqs, *p, *q,
+                                                    param, dup)) {
+#if PRINT_EDGES
+                                            if (*p > *q) {
+                                                printf("edge\t%zu\t%zu\n",
+                                                        *q, *p);
+                                            }
+                                            else {
+                                                printf("edge\t%zu\t%zu\n",
+                                                        *p, *q);
+                                            }
+#endif
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+#endif
+
+
+#if ENABLE_SSET
+STATIC void
+procNode(stnode_t *stNodes, int sIndex, int eIndex, sset_t *lset, sequence_t *seqs, int nSeqs, param_t param, pset_t &dup)
+{
+    size_t m;
+    size_t n;
+    size_t s;
+    size_t t;
+    suffix_t *p = NULL;
+    suffix_t *q = NULL;
+
+    /* pairs generation loop for internal node */
+    for (m = sIndex + 1; m < eIndex; m = stNodes[m].rLeaf+1) {
+        for (n = stNodes[m].rLeaf+1; n <= eIndex; n = stNodes[n].rLeaf+1) {
+            for (s = 0; s < SIGMA; s++) {
+                if (!stNodes[m].sset[s].empty()) {
+                    for (t = 0; t < SIGMA; t++) {
+                        if (!stNodes[n].sset[t].empty()) {
+                            if (s != t || s == (BEGIN - 'A')) {
+                                for (sset_t::iterator p = stNodes[m].sset[s].begin(); p != stNodes[m].sset[s].end(); ++p) {
+                                    for (sset_t::iterator q = stNodes[n].sset[t].begin(); q != stNodes[n].sset[t].end(); ++q) {
+                                        if (TRUE == is_candidate(
+                                                    seqs, nSeqs, *p, *q,
+                                                    param, dup)) {
+                                            if (*p > *q) {
+                                                dup.insert(make_pair(*q,*p));
+                                            }
+                                            else {
+                                                dup.insert(make_pair(*p,*q));
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+#endif
+
+
 STATIC void
 mergeLsets(stnode_t *stNodes, int sIndex, int eIndex)
 {
@@ -707,7 +1056,7 @@ mergeLsets(stnode_t *stNodes, int sIndex, int eIndex)
     /* merge the lsets of subtree */
     for (m = 0; m < SIGMA; m++) {
         p = NULL;
-        for (j = sIndex + 1; j <= eIndex; j++) {
+        for (j = sIndex + 1; j <= eIndex; j = stNodes[j].rLeaf + 1) {
             if ((q = stNodes[j].lset[m])) {
 
                 /* empty the subtree's ptrs array */
@@ -728,6 +1077,25 @@ mergeLsets(stnode_t *stNodes, int sIndex, int eIndex)
         }
     }
 }
+
+
+#if ENABLE_SSET
+STATIC void
+mergeLsets_set(stnode_t *stNodes, int sIndex, int eIndex)
+{
+    /* merge the lsets of subtree */
+    for (size_t m = 0; m < SIGMA; m++) {
+        sset_t *lset = &stNodes[sIndex].sset[m];
+        for (int j = sIndex + 1; j <= eIndex; j = stNodes[j].rLeaf + 1) {
+            sset_t *lset_sub = &stNodes[j].sset[m];
+            if (!lset_sub->empty()) {
+                lset->insert(lset_sub->begin(), lset_sub->end());
+                lset_sub->clear();
+            }
+        }
+    }
+}
+#endif
 
 
 void generate_pairs(
@@ -784,62 +1152,10 @@ void generate_pairs(
                 eIndex = stnode->rLeaf;
 
                 /* pairs generation loop for internal node */
-                for (m = sIndex + 1; m < eIndex; m = stNodes[m].rLeaf+1) {
-                    for (n = stNodes[m].rLeaf+1; n <= eIndex; n = stNodes[n].rLeaf+1) {
-                        for (s = 0; s < SIGMA; s++) {
-                            if (stNodes[m].lset[s]) {
-                                for (t = 0; t < SIGMA; t++) {
-                                    if (stNodes[n].lset[t]) {
-                                        if (s != t || s == (BEGIN - 'A')) {
-                                            for (p = stNodes[m].lset[s]; p != NULL; p = p->next) {
-                                                for (q = stNodes[n].lset[t]; q != NULL; q = q->next) {
-                                                    if (TRUE == is_candidate(
-                                                                seqs, nSeqs, p, q,
-                                                                param, dup)) {
-#if PRINT_EDGES
-                                                        if (p->sid > q->sid) {
-                                                            printf("edge\t%zu\t%zu\n",
-                                                                    q->sid, p->sid);
-                                                        }
-                                                        else {
-                                                            printf("edge\t%zu\t%zu\n",
-                                                                    p->sid, q->sid);
-                                                        }
-#endif
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                procNode(stNodes, sIndex, eIndex, stnode->lset, seqs, nSeqs, param, dup);
 
                 /* merge the lsets of subtree */
-                for (m = 0; m < SIGMA; m++) {
-                    p = NULL;
-                    for (j = sIndex + 1; j <= eIndex; j++) {
-                        if ((q = stNodes[j].lset[m])) {
-
-                            /* empty the subtree's ptrs array */
-                            stNodes[j].lset[m] = NULL;
-                            if (p == NULL) {
-                                p = q;
-                                stNodes[sIndex].lset[m] = q;
-                            }
-                            else {
-                                p->next = q;
-                            }
-
-                            /* walk to the end */
-                            while (p->next) {
-                                p = p->next;
-                            }
-                        }
-                    }
-                }
+                mergeLsets(stNodes, sIndex, eIndex);
             }
         }
         else {
@@ -855,7 +1171,7 @@ void generate_pairs(
 
 
 void generate_pairs(
-        stree_t *tree, sequences_t *sequences, set<pair<unsigned int,unsigned int> > &dup, param_t param)
+        stree_t *tree, sequences_t *sequences, pset_t &dup, param_t param)
 {
     stnode_t *stNodes = NULL;
     int *srtIndex = NULL;
@@ -902,14 +1218,41 @@ void generate_pairs(
 
         if (stnode->depth >= EM - 1) {
             if (stnode->rLeaf == sIndex) { /* leaf node */
+#if ENABLE_SSET
+                if (tree->lset_set) {
+                    procLeaf(stnode->sset, seqs, nSeqs, param, dup);
+                }
+                else {
+                    procLeaf(stnode->lset, seqs, nSeqs, param, dup);
+                }
+#else
                 procLeaf(stnode->lset, seqs, nSeqs, param, dup);
+#endif
             }
             else {                       /* internal node */
                 eIndex = stnode->rLeaf;
                 /* pairs generation loop for internal node */
+#if ENABLE_SSET
+                if (tree->lset_set) {
+                    procNode(stNodes, sIndex, eIndex, stnode->sset, seqs, nSeqs, param, dup);
+                }
+                else {
+                    procNode(stNodes, sIndex, eIndex, stnode->lset, seqs, nSeqs, param, dup);
+                }
+#else
                 procNode(stNodes, sIndex, eIndex, stnode->lset, seqs, nSeqs, param, dup);
+#endif
                 /* merge the lsets of subtree */
+#if ENABLE_SSET
+                if (tree->lset_set) {
+                    mergeLsets_set(stNodes, sIndex, eIndex);
+                }
+                else {
+                    mergeLsets(stNodes, sIndex, eIndex);
+                }
+#else
                 mergeLsets(stNodes, sIndex, eIndex);
+#endif
             }
         }
         else {

@@ -16,6 +16,7 @@ AM_CPPFLAGS += -I$(top_srcdir)/src
 if HAVE_SSE2
 AM_CPPFLAGS += -I$(top_srcdir)/contrib/Complete-Striped-Smith-Waterman-Library/src
 endif
+AM_CPPFLAGS += -I$(top_srcdir)/contrib/boost-1.55
 
 AM_LDFLAGS += $(TASCEL_LDFLAGS)
 #AM_LDFLAGS += $(GA_LDFLAGS)

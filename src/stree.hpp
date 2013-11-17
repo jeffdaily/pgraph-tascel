@@ -13,18 +13,34 @@
 #include "bucket.hpp"
 
 #include <iostream>
-#include <set>
 #include <string>
 #include <vector>
 #include <utility>
 
+#define ENABLE_SSET 0 /* turned out to be slower... */
+#define USE_BOOST_UNORDERED_SET 0
+#if USE_BOOST_UNORDERED_SET
+#include <boost/unordered_set.hpp>
+using boost::unordered_set;
+#else
+#include <set>
+using std::set;
+#endif
+
 using std::pair;
 using std::ostream;
-using std::set;
 using std::string;
 using std::vector;
 
 namespace pgraph {
+
+#if USE_BOOST_UNORDERED_SET
+    typedef unordered_set<size_t> sset_t;
+    typedef unordered_set<pair<unsigned int,unsigned int> > pset_t;
+#else
+    typedef set<size_t> sset_t;
+    typedef set<pair<unsigned int,unsigned int> > pset_t;
+#endif
 
 /**
  * suffix tree node
@@ -35,6 +51,9 @@ typedef struct _stnode_t {
     size_t rLeaf; /**< right most leaf index */
     suffix_t **lset;  /**< subtree's nodes branched according to left
                               characters */
+#if ENABLE_SSET
+    sset_t *sset;
+#endif
 } stnode_t;
 
 typedef struct _stats_t_ {
@@ -77,6 +96,10 @@ typedef struct {
     size_t size_internal;   /**< number of internal nodes */
     size_t size_leaf;       /**< number of leaf nodes */
     suffix_t **lset_array;  /**< memory for all node's lsets (SIGMA*nnodes) */
+#if ENABLE_SSET
+    sset_t *sset_array;  /**< memory for all node's ssets (SIGMA*nnodes) */
+    bool lset_set;
+#endif
     stats_t fanout; 
     stats_t depth; 
     stats_t sequence_length; 
@@ -98,8 +121,13 @@ typedef struct {
  * @param[in] param alignment parameters
  * @return the suffix tree
  */
+#if ENABLE_SSET
+stree_t* build_tree(
+        sequences_t *sequences, bucket_t *bucket, param_t param, bool lset_set=false);
+#else
 stree_t* build_tree(
         sequences_t *sequences, bucket_t *bucket, param_t param);
+#endif
 
 
 /**
@@ -131,7 +159,7 @@ void generate_pairs(
  * @param[in] param
  */
 void generate_pairs(
-        stree_t *tree, sequences_t *sequences, set<pair<unsigned int,unsigned int> > &dup, param_t param);
+        stree_t *tree, sequences_t *sequences, pset_t &dup, param_t param);
 
 
 }; /* namespace pgraph */
