@@ -122,6 +122,62 @@ class SuffixBuckets
         }
 };
 
+
+class Bucket2
+{
+    public:
+        Bucket2()
+            :   offset(0)
+            ,   size(0)
+        { }
+
+        size_t offset;
+        size_t size;
+};
+
+
+class SuffixBuckets2
+{
+    public:
+        /**
+         * Create and separate suffixes into appropriate suffix prefix buckets.
+         * Distribut buckets evenly among available MPI ranks.
+         *
+         * @param[in] sequences to process
+         * @param[in] param configuration parameters
+         * @param[in] comm MPI communicator
+         */
+        SuffixBuckets2(SequenceDatabase *sequences,
+                      const Parameters &param,
+                      MPI_Comm comm);
+
+        /**
+         * Free memory associated with suffixes and buckets.
+         */
+        ~SuffixBuckets2();
+
+        Bucket* get(size_t bid);
+
+        void rem(size_t bid, Bucket*);
+
+        bool owns(size_t bid) const;
+
+    //private:
+        int comm_rank;
+        int comm_size;
+        size_t n_buckets;
+        SequenceDatabase *sequences;    /**< sequences to process */
+        Parameters param;               /**< configuration parameters */
+        Suffix **suffixes_remote;       /**< addresses of remote suffixes */
+        Suffix *suffixes;               /**< array of all local suffixes */
+        size_t suffixes_size;           /**< size of local suffixes array */
+        Bucket2 **buckets_remote;       /**< addresses of remote buckets */
+        Bucket2 *buckets;               /**< array of all local buckets */
+        size_t buckets_size;            /**< size of local buckets array */
+        PthreadMutex mutex;
+};
+
+
 }; /* namespace pgraph */
 
 #endif /* _PGRAPH_SUFFIXBUCKETS_H_ */

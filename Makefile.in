@@ -104,7 +104,8 @@ bin_PROGRAMS = apps/align$(EXEEXT) apps/align_counter$(EXEEXT) \
 	apps/align_tree_hybrid_callback$(EXEEXT) \
 	apps/align_tree_hybrid_callback_sorted$(EXEEXT) \
 	apps/align_tree_hybrid_callback_sorted_noalign$(EXEEXT) \
-	apps/align_tree_hybrid_callback_dup$(EXEEXT) apps/ccd$(EXEEXT) \
+	apps/align_tree_hybrid_callback_dup$(EXEEXT) \
+	apps/align_tree_hybrid2$(EXEEXT) apps/ccd$(EXEEXT) \
 	apps/ccd2$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_2)
 @HAVE_SSE2_TRUE@am__append_3 = apps/align_ssw apps/align_counter_ssw \
 @HAVE_SSE2_TRUE@	apps/align_iter_ssw apps/align_tree_ssw
@@ -320,6 +321,14 @@ apps_align_tree_hybrid_LDADD = $(LDADD)
 apps_align_tree_hybrid_DEPENDENCIES = libpgraph.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am_apps_align_tree_hybrid2_OBJECTS =  \
+	apps/align_tree_hybrid2.$(OBJEXT)
+apps_align_tree_hybrid2_OBJECTS =  \
+	$(am_apps_align_tree_hybrid2_OBJECTS)
+apps_align_tree_hybrid2_LDADD = $(LDADD)
+apps_align_tree_hybrid2_DEPENDENCIES = libpgraph.la \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_apps_align_tree_hybrid_callback_OBJECTS = apps/apps_align_tree_hybrid_callback-align_tree_hybrid.$(OBJEXT)
 apps_align_tree_hybrid_callback_OBJECTS =  \
 	$(am_apps_align_tree_hybrid_callback_OBJECTS)
@@ -533,6 +542,7 @@ SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
 	$(apps_align_tree_dynamic_callback_dup_SOURCES) \
 	$(apps_align_tree_dynamic_dup_SOURCES) \
 	$(apps_align_tree_hybrid_SOURCES) \
+	$(apps_align_tree_hybrid2_SOURCES) \
 	$(apps_align_tree_hybrid_callback_SOURCES) \
 	$(apps_align_tree_hybrid_callback_dup_SOURCES) \
 	$(apps_align_tree_hybrid_callback_sorted_SOURCES) \
@@ -565,6 +575,7 @@ DIST_SOURCES = $(am__libpgraph_la_SOURCES_DIST) $(apps_align_SOURCES) \
 	$(apps_align_tree_dynamic_callback_dup_SOURCES) \
 	$(apps_align_tree_dynamic_dup_SOURCES) \
 	$(apps_align_tree_hybrid_SOURCES) \
+	$(apps_align_tree_hybrid2_SOURCES) \
 	$(apps_align_tree_hybrid_callback_SOURCES) \
 	$(apps_align_tree_hybrid_callback_dup_SOURCES) \
 	$(apps_align_tree_hybrid_callback_sorted_SOURCES) \
@@ -820,6 +831,7 @@ apps_align_tree_hybrid_callback_SOURCES = apps/align_tree_hybrid.cpp
 apps_align_tree_hybrid_callback_sorted_SOURCES = apps/align_tree_hybrid.cpp
 apps_align_tree_hybrid_callback_sorted_noalign_SOURCES = apps/align_tree_hybrid.cpp
 apps_align_tree_hybrid_callback_dup_SOURCES = apps/align_tree_hybrid.cpp
+apps_align_tree_hybrid2_SOURCES = apps/align_tree_hybrid2.cpp
 apps_ccd_SOURCES = apps/ccd.cpp
 apps_ccd2_SOURCES = apps/ccd2.cpp
 apps_align_ssw_SOURCES = apps/align.cpp
@@ -1162,6 +1174,12 @@ apps/align_tree_hybrid.$(OBJEXT): apps/$(am__dirstamp) \
 apps/align_tree_hybrid$(EXEEXT): $(apps_align_tree_hybrid_OBJECTS) $(apps_align_tree_hybrid_DEPENDENCIES) $(EXTRA_apps_align_tree_hybrid_DEPENDENCIES) apps/$(am__dirstamp)
 	@rm -f apps/align_tree_hybrid$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_hybrid_OBJECTS) $(apps_align_tree_hybrid_LDADD) $(LIBS)
+apps/align_tree_hybrid2.$(OBJEXT): apps/$(am__dirstamp) \
+	apps/$(DEPDIR)/$(am__dirstamp)
+
+apps/align_tree_hybrid2$(EXEEXT): $(apps_align_tree_hybrid2_OBJECTS) $(apps_align_tree_hybrid2_DEPENDENCIES) $(EXTRA_apps_align_tree_hybrid2_DEPENDENCIES) apps/$(am__dirstamp)
+	@rm -f apps/align_tree_hybrid2$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_hybrid2_OBJECTS) $(apps_align_tree_hybrid2_LDADD) $(LIBS)
 apps/apps_align_tree_hybrid_callback-align_tree_hybrid.$(OBJEXT):  \
 	apps/$(am__dirstamp) apps/$(DEPDIR)/$(am__dirstamp)
 
@@ -1312,6 +1330,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_tree.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_tree_dynamic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_tree_hybrid.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_tree_hybrid2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_counter_length_filter-align_counter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_counter_ssw-align_counter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_garray-align.Po@am__quote@

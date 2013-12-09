@@ -44,10 +44,6 @@ using namespace std;
 using namespace tascel;
 using namespace pgraph;
 
-#define SEP ","
-#define ALL_RESULTS 0
-#define OUTPUT_EDGES 1
-
 
 class EdgeResult {
     public:
@@ -56,26 +52,24 @@ class EdgeResult {
         double a;
         double b;
         double c;
-        bool is_edge;
 
         EdgeResult(
                 unsigned long id1, unsigned long id2,
-                double a, double b, double c, bool is_edge=true)
+                double a, double b, double c)
             : id1(id1)
             , id2(id2)
             , a(a)
             , b(b)
             , c(c)
-            , is_edge(is_edge)
         {}
 
         friend ostream& operator << (ostream &os, const EdgeResult &edge) {
+#define SEP ","
             os << edge.id1
                 << SEP << edge.id2
                 << SEP << edge.a
                 << SEP << edge.b
                 << SEP << edge.c
-                << SEP << edge.is_edge
                 ;
             return os;
         }
@@ -87,15 +81,9 @@ UniformTaskCollSplitHybrid** utcs = 0;
 AlignStats *stats = 0;
 TreeStats *treestats = 0;
 SequenceDatabase *sequences = 0;
-#if OUTPUT_EDGES && !defined(NOALIGN)
 vector<EdgeResult> *edge_results = 0;
-#endif
 Parameters parameters;
-SuffixBuckets *suffix_buckets = NULL;
-
-#if defined(GLOBAL_DUPLICATES)
-set<pair<size_t,size_t> > *pairs = NULL;
-#endif
+SuffixBuckets2 *suffix_buckets = NULL;
 
 #if defined(THREADED)
 static pthread_t *threadHandles = 0;
@@ -112,6 +100,7 @@ static int trank(int thd)
 {
     return (theTwoSided().getProcRank().toInt() * NUM_WORKERS) + thd;
 }
+
 
 static string get_edges_filename(int rank)
 {
@@ -180,11 +169,11 @@ static void alignment_task(
     int sscore;
     size_t max_len;
 
-    int open = -10;
-    int gap = -1;
-    int AOL = 8;
-    int SIM = 4;
-    int OS = 3;
+    int open = parameters.open;
+    int gap = parameters.gap;
+    int AOL = parameters.AOL;
+    int SIM = parameters.SIM;
+    int OS = parameters.OS;
 
     seq_id[0] = desc->id1;
     seq_id[1] = desc->id2;
@@ -194,12 +183,7 @@ static void alignment_task(
         unsigned long s2Len = (*sequences)[seq_id[1]].get_sequence_length();
         stats[thd].work += s1Len * s2Len;
         ++stats[thd].align_counts;
-#if !defined(NOALIGN)
-#if USE_SSW
-        sequences->align_ssw(seq_id[0], seq_id[1], result.score, result.matches, result.length, open, gap, thd);
-#else
         sequences->align(seq_id[0], seq_id[1], result.score, result.matches, result.length, open, gap, thd);
-#endif
         is_edge_answer = sequences->is_edge(
                 seq_id[0],
                 seq_id[1],
@@ -207,80 +191,23 @@ static void alignment_task(
                 AOL, SIM, OS,
                 sscore, max_len);
 
-        if (is_edge_answer || ALL_RESULTS)
-        {
-#if DEBUG
-            cout << trank(thd)
-                << ": aligned " << seq_id[0] << " " << seq_id[1]
-                << ": (score,matches,alen)=("
-                << result.score << ","
-                << result.matches << ","
-                << result.length << ")"
-                << ": edge? " << is_edge_answer << endl;
-#endif
-#if OUTPUT_EDGES
+        if (is_edge_answer) {
             edge_results[thd].push_back(EdgeResult(
                         seq_id[0], seq_id[1],
-#if 1
                         1.0*result.length/max_len,
                         1.0*result.matches/result.length,
                         1.0*result.score/sscore
-#else
-                        result.length,
-                        result.matches,
-                        result.score
-#endif
-#if ALL_RESULTS
-                        ,is_edge_answer
-#endif
                         ));
-#endif
             if (is_edge_answer) {
                 ++stats[thd].edge_counts;
             }
         }
-#endif
         t = MPI_Wtime() - t;
         stats[thd].align_times_tot += t;
         stats[thd].calc_min(t);
         stats[thd].calc_max(t);
     }
 }
-
-
-struct Callback {
-    int worker;
-    set<pair<size_t,size_t> > local_pairs;
-
-    Callback(int worker)
-        : worker(worker)
-        , local_pairs()
-    {}
-
-    void operator()(pair<size_t,size_t> the_pair) {
-        bool proceed = false;
-#if defined(GLOBAL_DUPLICATES)
-        if (pairs[worker].count(the_pair) == 0) {
-            pairs[worker].insert(the_pair);
-            proceed = true;
-        }
-#else
-        if (local_pairs.count(the_pair) == 0) {
-            local_pairs.insert(the_pair);
-            proceed = true;
-        }
-#endif
-        if (proceed) {
-            task_desc_hybrid desc;
-            desc.id1 = the_pair.first;
-            desc.id2 = the_pair.second;
-#if DEBUG
-            cout << trank(worker) << " added " << desc.id1 << "," << desc.id2 << endl;
-#endif
-            utcs[worker]->addTask(&desc, sizeof(desc));
-        }
-    }
-};
 
 
 static void tree_task(
@@ -290,17 +217,16 @@ static void tree_task(
         vector<void *> data_bufs, int worker) {
     task_desc_hybrid *tree_desc = (task_desc_hybrid*)_bigd;
     unsigned long i = tree_desc->id1;
+#if DEBUG
+    cout << trank(worker) << " tree_task id1=" << i << endl;
+#endif
     set<pair<size_t,size_t> > local_pairs;
-    assert(i < suffix_buckets->buckets_size);
     /* suffix tree construction & processing */
-    Suffix *suffixes = suffix_buckets->get(i);
-    Bucket bucket;
-    bucket.suffixes = suffixes;
-    bucket.size = suffix_buckets->bucket_size[i];
-    if (NULL != suffixes) {
+    Bucket *bucket = suffix_buckets->get(i);
+    if (NULL != bucket->suffixes) {
         double atimer = MPI_Wtime();
         SuffixTree *tree = new SuffixTree(
-                sequences, &bucket, parameters);
+                sequences, bucket, parameters);
         treestats[worker].size_internal += tree->get_size_internal();
         treestats[worker].fanout += tree->get_avg_fanout();
         treestats[worker].avgdepth += tree->get_avg_depth();
@@ -310,32 +236,18 @@ static void tree_task(
         treestats[worker].time_build += MPI_Wtime() - atimer;
         treestats[worker].times += MPI_Wtime() - atimer;
         treestats[worker].trees += 1;
-        treestats[worker].suffixes += bucket.size;
+        treestats[worker].suffixes += bucket->size;
         atimer = MPI_Wtime();
-#if defined(CALLBACK)
-        tree->generate_pairs_cb(Callback(worker));
-#else
         tree->generate_pairs(local_pairs);
-#endif
         treestats[worker].time_process += MPI_Wtime() - atimer;
         treestats[worker].times += MPI_Wtime() - atimer;
         delete tree;
-        if (!suffix_buckets->owns(i)) {
-            delete [] suffixes;
-        }
+        suffix_buckets->rem(i, bucket);
     }
     
     task_desc_hybrid desc;
     for (set<pair<size_t,size_t> >::iterator it=local_pairs.begin();
             it!=local_pairs.end(); ++it) {
-#if defined(GLOBAL_DUPLICATES)
-        if (pairs[worker].count(*it) == 0) {
-            pairs[worker].insert(*it);
-        }
-        else {
-            continue;
-        }
-#endif
         desc.id1 = it->first;
         desc.id2 = it->second;
 #if DEBUG
@@ -390,12 +302,7 @@ int main(int argc, char **argv)
     utcs = new UniformTaskCollSplitHybrid*[NUM_WORKERS];
     stats = new AlignStats[NUM_WORKERS];
     treestats = new TreeStats[NUM_WORKERS];
-#if OUTPUT_EDGES && !defined(NOALIGN)
     edge_results = new vector<EdgeResult>[NUM_WORKERS];
-#endif
-#if defined(GLOBAL_DUPLICATES)
-    pairs = new set<pair<size_t,size_t> >[NUM_WORKERS];
-#endif
 #if defined(THREADED)
     threadHandles = new pthread_t[NUM_WORKERS + NUM_SERVERS];
     threadRanks = new unsigned[NUM_WORKERS + NUM_SERVERS];
@@ -459,15 +366,9 @@ int main(int argc, char **argv)
         parameters.parse(all_argv[3].c_str(), comm);
     }
 
-#if 0
-    sequences = new SequenceDatabaseArmci(all_argv[1],
-            parse_memory_budget(all_argv[2].c_str()), comm, NUM_WORKERS, DOLLAR);
-#else
-//#define GB (1024U*1024U*1024U)
 #define GB (1073741824U)
     sequences = new SequenceDatabaseArmci(all_argv[1],
-            GB, comm, NUM_WORKERS, DOLLAR);
-#endif
+            parse_memory_budget(all_argv[2].c_str()), comm, NUM_WORKERS, DOLLAR);
 
     /* how many combinations of sequences are there? */
     nCk = binomial_coefficient(sequences->get_global_count(), 2);
@@ -476,23 +377,20 @@ int main(int argc, char **argv)
                 sequences->get_global_count(), nCk);
     }
 
-    double selectivity = 1.0;
-    unsigned long nalignments = (long)(0.5+selectivity*nCk);
-    unsigned long ntasks = nalignments;
+    (void) time(&t1);
+    suffix_buckets = new SuffixBuckets2(sequences, parameters, comm);
+    (void) time(&t2);
+    if (0 == trank(0)) {
+        printf("Bucketing finished in <%lld> secs\n", (long long)(t2-t1));
+    }
+
+    unsigned long ntasks = nCk;
     unsigned long global_num_workers = nprocs*NUM_WORKERS;
-    unsigned long max_tasks_per_worker = ntasks / global_num_workers;
-    max_tasks_per_worker += ntasks % global_num_workers;
-    max_tasks_per_worker *= 10;
-#if 1
-    unsigned long GB_2 = 536870912U;
+    unsigned long max_tasks_per_worker = 2*(ntasks/global_num_workers + 1);
+    max_tasks_per_worker += suffix_buckets->n_buckets/global_num_workers + 1;
     unsigned long GB_4 = 268435456U;
     max_tasks_per_worker = std::min(max_tasks_per_worker, GB_4/sizeof(task_desc_hybrid));
-#else
-    max_tasks_per_worker = max_tasks_per_worker * 0.001; /* approx. selectivity */
-#endif
     if (0 == trank(0)) {
-        printf("selectivity=%lf\n", selectivity);
-        printf("nalignments=%lu\n", nalignments);
         printf("ntasks=%lu\n", ntasks);
         printf("global_num_workers=%lu\n", global_num_workers);
         printf("max_tasks_per_worker=%lu\n", max_tasks_per_worker);
@@ -510,21 +408,8 @@ int main(int argc, char **argv)
     MPI_Barrier(comm);
 
     /* the tascel part */
-    (void) time(&t1);
-#if defined(DUMB)
-    suffix_buckets = new SuffixBuckets(sequences, parameters, comm, SPLIT_DUMB);
-#else
-    suffix_buckets = new SuffixBuckets(sequences, parameters, comm);
-#endif
-    (void) time(&t2);
-    if (0 == trank(0)) {
-        printf("Bucketing finished in <%lld> secs\n", (long long)(t2-t1));
-    }
     for (int worker=0; worker<NUM_WORKERS; ++worker)
     {
-#if OUTPUT_EDGES && !defined(NOALIGN)
-        //edge_results[worker].reserve(max_tasks_per_worker);
-#endif
         UniformTaskCollSplitHybrid*& utc = utcs[worker];
         TslFuncRegTbl *frt = new TslFuncRegTbl();
         TslFunc tf = frt->add(hybrid_task);
@@ -538,70 +423,22 @@ int main(int argc, char **argv)
         printf("created UTCs\n");
     }
 
-    size_t even_split = suffix_buckets->bucket_size_total / NUM_WORKERS;
-    size_t work = 0;
     int worker = 0;
-#if defined(SORT_BUCKETS)
-    /* distribute buckets among workers based on suffix counts */
-    /* prepare buckets for sorting */
-    vector<pair<size_t,size_t> > *the_work = new vector<pair<size_t,size_t> >[NUM_WORKERS];
-    for (size_t j=0,limit=suffix_buckets->my_buckets.size(); j<limit; ++j) {
-        size_t i = suffix_buckets->my_buckets[j];
-        assert(suffix_buckets->bucket_owner[i] == rank);
-        {
-            if (NULL != suffix_buckets->buckets[i].suffixes) {
-                the_work[worker].push_back(make_pair(suffix_buckets->buckets[i].size,i));
-                work += suffix_buckets->buckets[i].size;
-                if (work >= even_split) {
-                    work = 0;
-                    ++worker;
-                    if (worker >= NUM_WORKERS) {
-                        worker = NUM_WORKERS-1;
-                    }
-                }
-            }
-        }
-    }
-    /* we sort the buckets in order to process largest trees first */
-    /* add smallest tasks first since work queue is FILO */
-    for (worker = 0; worker < NUM_WORKERS; ++worker) {
-        std::sort(the_work[worker].begin(), the_work[worker].end());
-        for (vector<pair<size_t,size_t> >::iterator it=the_work[worker].begin();
-                it != the_work[worker].end(); ++it) {
+    for (size_t j=rank; j<suffix_buckets->n_buckets; j+=nprocs) {
+        int bucket_index = j / nprocs;
+        if (suffix_buckets->buckets[bucket_index].size > 0) {
             task_desc_hybrid desc;
-            desc.id1 = it->second;
-            desc.id2 = it->second;
+            desc.id1 = j;
+            desc.id2 = j;
 #if DEBUG
             cout << trank(worker) << " added " << desc.id1 << endl;
 #endif
             utcs[worker]->addTask(&desc, sizeof(task_desc_hybrid));
+            worker = (worker + 1) % NUM_WORKERS;
         }
     }
-    delete [] the_work;
-#else
-    for (size_t j=0,limit=suffix_buckets->my_buckets.size(); j<limit; ++j) {
-        size_t i = suffix_buckets->my_buckets[j];
-        assert(suffix_buckets->bucket_owner[i] == rank);
-        {
-            if (NULL != suffix_buckets->buckets[i].suffixes) {
-                task_desc_hybrid desc;
-                desc.id1 = i;
-                desc.id2 = i;
 #if DEBUG
-                cout << trank(worker) << " added " << desc.id1 << endl;
-#endif
-                utcs[worker]->addTask(&desc, sizeof(task_desc_hybrid));
-                work += suffix_buckets->buckets[i].size;
-                if (work >= even_split) {
-                    work = 0;
-                    ++worker;
-                    if (worker >= NUM_WORKERS) {
-                        worker = NUM_WORKERS-1;
-                    }
-                }
-            }
-        }
-    }
+    cout << trank(worker) << " done adding tasks" << endl;
 #endif
 
     amBarrier();
@@ -737,30 +574,19 @@ int main(int argc, char **argv)
     amBarrier();
     MPI_Barrier(comm);
 
-#if OUTPUT_EDGES && !defined(NOALIGN)
     ofstream edge_out(get_edges_filename(rank).c_str());
-#endif
     /* clean up */
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
         delete utcs[worker];
-#if OUTPUT_EDGES && !defined(NOALIGN)
         for (size_t i=0,limit=edge_results[worker].size(); i<limit; ++i) {
             edge_out << edge_results[worker][i] << endl;
         }
-#endif
     }
-#if OUTPUT_EDGES && !defined(NOALIGN)
     edge_out.close();
-#endif
 
     delete suffix_buckets;
     delete [] utcs;
-#if OUTPUT_EDGES && !defined(NOALIGN)
     delete [] edge_results;
-#endif
-#if defined(GLOBAL_DUPLICATES)
-    delete [] pairs;
-#endif
     delete sequences;
 
     totaltime = MPI_Wtime() - totaltime;

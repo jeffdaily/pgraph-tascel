@@ -165,13 +165,6 @@ build_tree_recursive(
             heads[i] = NULL;
         }
 
-#ifdef DEBUG
-        printf("============================\n");
-        print_suffixes(suffixes);
-        printf("============================\n");
-#endif
-
-
         /* partition suffixes into SIGMA sub-buckets */
         for (p = suffixes; p != NULL; p = q) {
             q = p->next;
@@ -182,13 +175,6 @@ build_tree_recursive(
             heads[hIndex] = p;
         }
 
-#ifdef DEBUG
-        for (i = 0; i < SIGMA; i++) {
-            if (heads[i]) {
-                print_suffixes(heads[i]);
-            }
-        }
-#endif
         /* compute fanout */
         size_internal += 1.0;
         for (i = 0; i < SIGMA; i++) {

@@ -116,5 +116,8 @@ typedef int task_description;
   return 0;
 ]])], [happy=yes], [happy=no])
 AC_MSG_RESULT([$happy])
+LIBS="$ga_save_LIBS"
+LDFLAGS="$ga_save_LDFLAGS"
+CPPFLAGS="$ga_save_CPPFLAGS"
 AM_CONDITIONAL([HAVE_UTC_ITER], [test "x$happy" = xyes])
 ])dnl

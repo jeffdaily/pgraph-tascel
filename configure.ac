@@ -76,6 +76,7 @@ dnl                    [whether affinity is supported])
 
 # Checks for library functions.
 AC_SEARCH_LIBS([abs], [m])
+AC_SEARCH_LIBS([log], [m])
 
 ###############################################################################
 # C++ compiler
