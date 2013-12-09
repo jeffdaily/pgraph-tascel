@@ -27,7 +27,11 @@
 #include "tascelx.hpp"
 #include "mpix.hpp"
 #include "SequenceDatabase.hpp"
+#ifdef HAVE_ARMCI
 #include "SequenceDatabaseArmci.hpp"
+#else
+#include "SequenceDatabaseReplicated.hpp"
+#endif
 #include "SuffixBuckets.hpp"
 #include "SuffixTree.hpp"
 
@@ -88,7 +92,11 @@ int main(int argc, char *argv[])
     }
 
     (void) time(&t1);
+#ifdef HAVE_ARMCI
     sequences = new SequenceDatabaseArmci(sequence_file, budget, comm, 1, DOLLAR);
+#else
+    sequences = new SequenceDatabaseReplicated(sequence_file, budget, comm, 1, DOLLAR);
+#endif
     (void) time(&t2);
     if (0 == comm_rank) {
         printf("<%zu> amino acids (<%zu> chars) are loaded in <%lld> secs\n",

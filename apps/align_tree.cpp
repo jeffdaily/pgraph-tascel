@@ -37,7 +37,13 @@
 #include "Parameters.hpp"
 #include "tascelx.hpp"
 #include "SequenceDatabase.hpp"
+#ifdef USE_GARRAY
+#include "SequenceDatabaseGArray.hpp"
+#elif HAVE_ARMCI
 #include "SequenceDatabaseArmci.hpp"
+#else
+#include "SequenceDatabaseReplicated.hpp"
+#endif
 #include "SuffixBuckets.hpp"
 #include "SuffixTree.hpp"
 
@@ -347,8 +353,16 @@ int main(int argc, char **argv)
     }
 
     unsigned long GB = 1073741824;
+#ifdef USE_GARRAY
+    sequences = new SequenceDatabaseGArray(all_argv[1],
+            parse_memory_budget(all_argv[2].c_str()), DOLLAR);
+#elif HAVE_ARMCI
     sequences = new SequenceDatabaseArmci(all_argv[1],
-            GB, comm, NUM_WORKERS, DOLLAR);
+            parse_memory_budget(all_argv[2].c_str()), comm, NUM_WORKERS, DOLLAR);
+#else
+    sequences = new SequenceDatabaseReplicated(all_argv[1],
+            parse_memory_budget(all_argv[2].c_str()), comm, NUM_WORKERS, DOLLAR);
+#endif
 
     /* how many combinations of sequences are there? */
     nCk = binomial_coefficient(sequences->get_global_count(), 2);

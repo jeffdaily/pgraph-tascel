@@ -80,13 +80,14 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 @HAVE_SSE2_TRUE@am__append_1 = -I$(top_srcdir)/contrib/Complete-Striped-Smith-Waterman-Library/src
-@HAVE_SSE2_TRUE@am__append_2 = contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.c \
+@HAVE_ARMCI_TRUE@am__append_2 = src/SequenceDatabaseArmci.cpp \
+@HAVE_ARMCI_TRUE@	src/SequenceDatabaseArmci.hpp
+@HAVE_SSE2_TRUE@am__append_3 = contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.c \
 @HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.h \
 @HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.cpp \
 @HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h
-bin_PROGRAMS = apps/align$(EXEEXT) apps/align_counter$(EXEEXT) \
-	apps/align_counter_length_filter$(EXEEXT) \
-	apps/align_garray$(EXEEXT) apps/align_iter$(EXEEXT) \
+bin_PROGRAMS = apps/align$(EXEEXT) apps/align_garray$(EXEEXT) \
+	apps/align_iter$(EXEEXT) \
 	apps/align_iter_length_filter$(EXEEXT) \
 	apps/align_length_filter$(EXEEXT) \
 	apps/align_length_filter_noalign$(EXEEXT) \
@@ -96,26 +97,30 @@ bin_PROGRAMS = apps/align$(EXEEXT) apps/align_counter$(EXEEXT) \
 	apps/align_tree_dynamic_dup$(EXEEXT) \
 	apps/align_tree_dynamic_callback$(EXEEXT) \
 	apps/align_tree_dynamic_callback_dup$(EXEEXT) \
-	apps/align_tree_hybrid$(EXEEXT) \
-	apps/align_tree_hybrid_noalign$(EXEEXT) \
-	apps/align_tree_hybrid_sorted$(EXEEXT) \
-	apps/align_tree_hybrid_sorted_noalign$(EXEEXT) \
-	apps/align_tree_hybrid_dup$(EXEEXT) \
-	apps/align_tree_hybrid_callback$(EXEEXT) \
-	apps/align_tree_hybrid_callback_sorted$(EXEEXT) \
-	apps/align_tree_hybrid_callback_sorted_noalign$(EXEEXT) \
-	apps/align_tree_hybrid_callback_dup$(EXEEXT) \
-	apps/align_tree_hybrid2$(EXEEXT) apps/ccd$(EXEEXT) \
-	apps/ccd2$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_2)
-@HAVE_SSE2_TRUE@am__append_3 = apps/align_ssw apps/align_counter_ssw \
-@HAVE_SSE2_TRUE@	apps/align_iter_ssw apps/align_tree_ssw
-@HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@am__append_4 = apps/ssw_test
+	apps/ccd$(EXEEXT) apps/ccd2$(EXEEXT) $(am__EXEEXT_1) \
+	$(am__EXEEXT_2) $(am__EXEEXT_3) $(am__EXEEXT_4)
+@HAVE_ARMCI_TRUE@am__append_4 = apps/align_counter \
+@HAVE_ARMCI_TRUE@	apps/align_counter_length_filter \
+@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid \
+@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_noalign \
+@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_sorted \
+@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_sorted_noalign \
+@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_dup \
+@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_callback \
+@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_callback_sorted \
+@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_callback_sorted_noalign \
+@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_callback_dup \
+@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid2
+@HAVE_SSE2_TRUE@am__append_5 = apps/align_ssw apps/align_iter_ssw \
+@HAVE_SSE2_TRUE@	apps/align_tree_ssw
+@HAVE_ARMCI_TRUE@@HAVE_SSE2_TRUE@am__append_6 = apps/align_counter_ssw
+@HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@am__append_7 = apps/ssw_test
 noinst_PROGRAMS = tests/test_align$(EXEEXT) \
 	tests/test_combinations$(EXEEXT) tests/test_dynamic$(EXEEXT) \
 	tests/test_kcombo2$(EXEEXT) tests/test_read$(EXEEXT) \
 	tests/test_read_fasta$(EXEEXT) tests/test_read_serial$(EXEEXT) \
-	$(am__EXEEXT_3)
-@HAVE_SSE2_TRUE@am__append_5 = tests/test_ssw
+	$(am__EXEEXT_5)
+@HAVE_ARMCI_TRUE@@HAVE_SSE2_TRUE@am__append_8 = tests/test_ssw
 subdir = .
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) \
@@ -155,37 +160,54 @@ am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
 	src/io.hpp src/mpix.cpp src/mpix.hpp src/Parameters.cpp \
 	src/Parameters.hpp src/param.cpp src/param.hpp \
 	src/pthread_fixes.h src/Sequence.cpp src/Sequence.hpp \
-	src/SequenceDatabaseArmci.cpp src/SequenceDatabaseArmci.hpp \
+	src/SequenceDatabaseReplicated.cpp \
+	src/SequenceDatabaseReplicated.hpp \
 	src/SequenceDatabaseGArray.cpp src/SequenceDatabaseGArray.hpp \
 	src/SequenceDatabase.cpp src/SequenceDatabase.hpp \
 	src/stree.cpp src/stree.hpp src/SuffixBuckets.cpp \
 	src/SuffixBuckets.hpp src/SuffixTree.cpp src/SuffixTree.hpp \
-	src/TreeStats.hpp src/timer.h \
+	src/TreeStats.hpp src/timer.h src/SequenceDatabaseArmci.cpp \
+	src/SequenceDatabaseArmci.hpp \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.c \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.h \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.cpp \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h
 am__dirstamp = $(am__leading_dot)dirstamp
-@HAVE_SSE2_TRUE@am__objects_1 = contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.lo \
+@HAVE_ARMCI_TRUE@am__objects_1 = src/SequenceDatabaseArmci.lo
+@HAVE_SSE2_TRUE@am__objects_2 = contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.lo \
 @HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.lo
 am_libpgraph_la_OBJECTS = src/alignment.lo src/bucket.lo \
 	src/combinations.lo src/csequence.lo src/io.lo src/mpix.lo \
 	src/Parameters.lo src/param.lo src/Sequence.lo \
-	src/SequenceDatabaseArmci.lo src/SequenceDatabaseGArray.lo \
-	src/SequenceDatabase.lo src/stree.lo src/SuffixBuckets.lo \
-	src/SuffixTree.lo $(am__objects_1)
+	src/SequenceDatabaseReplicated.lo \
+	src/SequenceDatabaseGArray.lo src/SequenceDatabase.lo \
+	src/stree.lo src/SuffixBuckets.lo src/SuffixTree.lo \
+	$(am__objects_1) $(am__objects_2)
 libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
-@HAVE_SSE2_TRUE@am__EXEEXT_1 = apps/align_ssw$(EXEEXT) \
-@HAVE_SSE2_TRUE@	apps/align_counter_ssw$(EXEEXT) \
+@HAVE_ARMCI_TRUE@am__EXEEXT_1 = apps/align_counter$(EXEEXT) \
+@HAVE_ARMCI_TRUE@	apps/align_counter_length_filter$(EXEEXT) \
+@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid$(EXEEXT) \
+@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_noalign$(EXEEXT) \
+@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_sorted$(EXEEXT) \
+@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_sorted_noalign$(EXEEXT) \
+@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_dup$(EXEEXT) \
+@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_callback$(EXEEXT) \
+@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_callback_sorted$(EXEEXT) \
+@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_callback_sorted_noalign$(EXEEXT) \
+@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_callback_dup$(EXEEXT) \
+@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid2$(EXEEXT)
+@HAVE_SSE2_TRUE@am__EXEEXT_2 = apps/align_ssw$(EXEEXT) \
 @HAVE_SSE2_TRUE@	apps/align_iter_ssw$(EXEEXT) \
 @HAVE_SSE2_TRUE@	apps/align_tree_ssw$(EXEEXT)
-@HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@am__EXEEXT_2 = apps/ssw_test$(EXEEXT)
+@HAVE_ARMCI_TRUE@@HAVE_SSE2_TRUE@am__EXEEXT_3 = apps/align_counter_ssw$(EXEEXT)
+@HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@am__EXEEXT_4 = apps/ssw_test$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)"
-@HAVE_SSE2_TRUE@am__EXEEXT_3 = tests/test_ssw$(EXEEXT)
+@HAVE_ARMCI_TRUE@@HAVE_SSE2_TRUE@am__EXEEXT_5 =  \
+@HAVE_ARMCI_TRUE@@HAVE_SSE2_TRUE@	tests/test_ssw$(EXEEXT)
 PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
 am_apps_align_OBJECTS = apps/align.$(OBJEXT)
 apps_align_OBJECTS = $(am_apps_align_OBJECTS)
@@ -797,12 +819,13 @@ libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
 	src/io.hpp src/mpix.cpp src/mpix.hpp src/Parameters.cpp \
 	src/Parameters.hpp src/param.cpp src/param.hpp \
 	src/pthread_fixes.h src/Sequence.cpp src/Sequence.hpp \
-	src/SequenceDatabaseArmci.cpp src/SequenceDatabaseArmci.hpp \
+	src/SequenceDatabaseReplicated.cpp \
+	src/SequenceDatabaseReplicated.hpp \
 	src/SequenceDatabaseGArray.cpp src/SequenceDatabaseGArray.hpp \
 	src/SequenceDatabase.cpp src/SequenceDatabase.hpp \
 	src/stree.cpp src/stree.hpp src/SuffixBuckets.cpp \
 	src/SuffixBuckets.hpp src/SuffixTree.cpp src/SuffixTree.hpp \
-	src/TreeStats.hpp src/timer.h $(am__append_2)
+	src/TreeStats.hpp src/timer.h $(am__append_2) $(am__append_3)
 #if HAVE_UTC_ITER
 #noinst_PROGRAMS += sandbox/brute_force_iter
 #endif
@@ -973,7 +996,7 @@ src/mpix.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/Parameters.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/param.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/Sequence.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
-src/SequenceDatabaseArmci.lo: src/$(am__dirstamp) \
+src/SequenceDatabaseReplicated.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
 src/SequenceDatabaseGArray.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
@@ -983,6 +1006,8 @@ src/stree.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/SuffixBuckets.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
 src/SuffixTree.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/SequenceDatabaseArmci.lo: src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
 contrib/Complete-Striped-Smith-Waterman-Library/src/$(am__dirstamp):
 	@$(MKDIR_P) contrib/Complete-Striped-Smith-Waterman-Library/src
 	@: > contrib/Complete-Striped-Smith-Waterman-Library/src/$(am__dirstamp)
@@ -1365,6 +1390,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabase.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabaseArmci.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabaseGArray.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabaseReplicated.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SuffixBuckets.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SuffixTree.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/alignment.Plo@am__quote@

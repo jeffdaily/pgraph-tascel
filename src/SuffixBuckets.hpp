@@ -175,6 +175,8 @@ class SuffixBuckets2
         Bucket2 *buckets;               /**< array of all local buckets */
         size_t buckets_size;            /**< size of local buckets array */
         PthreadMutex mutex;
+        size_t count_remote_buckets;
+        size_t count_remote_suffixes;
 };
 
 

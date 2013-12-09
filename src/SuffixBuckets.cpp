@@ -26,7 +26,12 @@
 #include "SequenceDatabase.hpp"
 #include "SuffixBuckets.hpp"
 
+#if HAVE_ARMCI
 #define USE_ARMCI 1
+#else
+#define USE_ARMCI 0
+#endif
+
 #if USE_ARMCI
 /* ANL's armci does not extern "C" inside the header */
 extern "C" {
@@ -370,7 +375,6 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     assert(MPI_SUCCESS == ierr);
     //mpix_print_sync("suffixes", arr_to_string(suffixes, total_amount_to_recv), comm);
 
-#if USE_ARMCI
     if (total_amount_to_recv > 0) {
         std::sort(suffixes,
                 suffixes+total_amount_to_recv,
@@ -413,23 +417,6 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
         }
     }
     mpix_allreduce(bucket_offset, MPI_SUM, comm);
-#else
-    if (total_amount_to_recv > 0) {
-        /* The suffixes contains sorted suffixes based on the buckets they belong
-         * to. That means we can simply update the 'next' links! */
-        size_t last_id = sequences->get_global_count();
-        bucket_size_total = 0;
-        for (size_t i=0; i<total_amount_to_recv; ++i) {
-            assert(suffixes[i].sid < last_id);
-            assert(suffixes[i].bid < n_buckets);
-            assert(suffixes[i].next == NULL);
-            suffixes[i].next = buckets[suffixes[i].bid].suffixes;
-            buckets[suffixes[i].bid].suffixes = &suffixes[i];
-            buckets[suffixes[i].bid].size++;
-            ++bucket_size_total;
-        }
-    }
-#endif
 
     suffixes_size = n_suffixes;
     buckets_size = n_buckets;
@@ -444,6 +431,7 @@ SuffixBuckets::~SuffixBuckets()
 {
 #if USE_ARMCI
     ARMCI_Free(suffixes);
+    delete [] bucket_address;
 #else
     delete [] suffixes;
 #endif
@@ -489,10 +477,13 @@ Suffix* SuffixBuckets::get(size_t bid)
         return remote_suffixes;
     }
 #else
-    assert(0);
+    assert(owns(bid));
+    return buckets[bid].suffixes;
 #endif
 }
 
+
+#if USE_ARMCI
 
 struct SuffixBucket2IndexFunctor {
     SuffixBucket2IndexFunctor(size_t comm_size)
@@ -525,6 +516,8 @@ SuffixBuckets2::SuffixBuckets2(SequenceDatabase *sequences,
     ,   buckets(NULL)
     ,   buckets_size()
     ,   mutex()
+    ,   count_remote_buckets(0)
+    ,   count_remote_suffixes(0)
 {
     size_t n_suffixes = 0;
     size_t suffix_index = 0;
@@ -642,10 +635,13 @@ SuffixBuckets2::SuffixBuckets2(SequenceDatabase *sequences,
     mpix_print_sync("amount_to_recv", vec_to_string(amount_to_recv), comm);
 #endif
 
+    int total_amount_to_send = 0;
     int total_amount_to_recv = 0;
     for (int i=0; i<comm_size; ++i) {
+        total_amount_to_send += amount_to_send[i];
         total_amount_to_recv += amount_to_recv[i];
     }
+    mpix_print_sync("total_amount_to_send", total_amount_to_send, comm);
     mpix_print_sync("total_amount_to_recv", total_amount_to_recv, comm);
     suffixes_size = total_amount_to_recv;
 
@@ -702,14 +698,18 @@ SuffixBuckets2::SuffixBuckets2(SequenceDatabase *sequences,
     assert(MPI_SUCCESS == ierr);
     ierr = MPI_Type_commit(&SuffixType);
     assert(MPI_SUCCESS == ierr);
-    //mpix_print_sync("initial_suffixes", vec_to_string(initial_suffixes), comm);
+#if DEBUG
+    mpix_print_sync("initial_suffixes", vec_to_string(initial_suffixes), comm);
+#endif
     ierr = MPI_Alltoallv(
             &initial_suffixes[0], &amount_to_send[0],
             &send_displacements[0], SuffixType,
             &suffixes[0], &amount_to_recv[0],
             &recv_displacements[0], SuffixType, comm);
     assert(MPI_SUCCESS == ierr);
-    //mpix_print_sync("suffixes", arr_to_string(suffixes, total_amount_to_recv), comm);
+#if DEBUG
+    mpix_print_sync("suffixes", arr_to_string(suffixes, total_amount_to_recv), comm);
+#endif
 
     size_t bucket_size_total = 0;
     if (total_amount_to_recv > 0) {
@@ -796,6 +796,8 @@ Bucket* SuffixBuckets2::get(size_t bid)
         ARMCI_Get(&buckets_remote[owner][bucket_index],
                 remote_bucket, sizeof(Bucket2), owner);
         bucket->size = remote_bucket->size;
+        count_remote_buckets += 1;
+        count_remote_suffixes += bucket->size;
         if (bucket->size > 0) {
             /* get remote suffixes */
             Suffix *remote_suffixes =
@@ -823,11 +825,13 @@ Bucket* SuffixBuckets2::get(size_t bid)
 void SuffixBuckets2::rem(size_t bid, Bucket *bucket)
 {
     if (!owns(bid) && bucket->size > 0 && bucket->suffixes != NULL) {
+        LockGuard<PthreadMutex> guard(mutex);
         ARMCI_Free_local(bucket->suffixes);
     }
     delete bucket;
 }
 
+#endif /* USE_ARMCI */
 
 
 }; /* namespace pgraph */

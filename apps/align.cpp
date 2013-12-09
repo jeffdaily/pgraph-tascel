@@ -42,8 +42,10 @@
 #include "SequenceDatabase.hpp"
 #ifdef USE_GARRAY
 #include "SequenceDatabaseGArray.hpp"
-#else
+#elif HAVE_ARMCI
 #include "SequenceDatabaseArmci.hpp"
+#else
+#include "SequenceDatabaseReplicated.hpp"
 #endif
 
 using namespace std;
@@ -462,8 +464,11 @@ int main(int argc, char **argv)
 #ifdef USE_GARRAY
     sequences = new SequenceDatabaseGArray(all_argv[1],
             parse_memory_budget(all_argv[2].c_str()), '\0');
-#else
+#elif HAVE_ARMCI
     sequences = new SequenceDatabaseArmci(all_argv[1],
+            parse_memory_budget(all_argv[2].c_str()), comm, NUM_WORKERS, '\0');
+#else
+    sequences = new SequenceDatabaseReplicated(all_argv[1],
             parse_memory_budget(all_argv[2].c_str()), comm, NUM_WORKERS, '\0');
 #endif
 

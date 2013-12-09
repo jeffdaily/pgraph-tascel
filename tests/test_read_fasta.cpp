@@ -12,11 +12,19 @@
 #include <vector>
 
 #include <mpi.h>
+
+#if HAVE_ARMCI
+#include <mpi.h>
 extern "C" {
 #include <armci.h>
 }
+#endif
 
+#if HAVE_ARMCI
 #include "SequenceDatabaseArmci.hpp"
+#else
+#include "SequenceDatabaseReplicated.hpp"
+#endif
 #include "mpix.hpp"
 #include "csequence.h"
 
@@ -95,7 +103,11 @@ int main(int argc, char **argv)
     }
 
     {
+#if HAVE_ARMCI
         SequenceDatabaseArmci sd(argv[1], budget, MPI_COMM_WORLD);
+#else
+        SequenceDatabaseReplicated sd(argv[1], budget, MPI_COMM_WORLD);
+#endif
         sequences_t *sequences = pg_load_fasta(argv[1], '$');
 
         for (size_t i=0; i<sd.get_global_count(); ++i) {
@@ -112,7 +124,11 @@ int main(int argc, char **argv)
             assert(str1==str2);
         }
 
+#if HAVE_ARMCI
         ARMCI_Barrier();
+#else
+        MPI_Barrier(MPI_COMM_WORLD);
+#endif
         pg_free_sequences(sequences);
     }
 

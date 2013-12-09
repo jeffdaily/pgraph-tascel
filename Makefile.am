@@ -63,8 +63,8 @@ libpgraph_la_SOURCES += src/param.hpp
 libpgraph_la_SOURCES += src/pthread_fixes.h
 libpgraph_la_SOURCES += src/Sequence.cpp
 libpgraph_la_SOURCES += src/Sequence.hpp
-libpgraph_la_SOURCES += src/SequenceDatabaseArmci.cpp
-libpgraph_la_SOURCES += src/SequenceDatabaseArmci.hpp
+libpgraph_la_SOURCES += src/SequenceDatabaseReplicated.cpp
+libpgraph_la_SOURCES += src/SequenceDatabaseReplicated.hpp
 libpgraph_la_SOURCES += src/SequenceDatabaseGArray.cpp
 libpgraph_la_SOURCES += src/SequenceDatabaseGArray.hpp
 libpgraph_la_SOURCES += src/SequenceDatabase.cpp
@@ -77,6 +77,10 @@ libpgraph_la_SOURCES += src/SuffixTree.cpp
 libpgraph_la_SOURCES += src/SuffixTree.hpp
 libpgraph_la_SOURCES += src/TreeStats.hpp
 libpgraph_la_SOURCES += src/timer.h
+if HAVE_ARMCI
+libpgraph_la_SOURCES += src/SequenceDatabaseArmci.cpp
+libpgraph_la_SOURCES += src/SequenceDatabaseArmci.hpp
+endif
 if HAVE_SSE2
 libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.c
 libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.h
@@ -86,8 +90,6 @@ endif
 
 bin_PROGRAMS =
 bin_PROGRAMS += apps/align
-bin_PROGRAMS += apps/align_counter
-bin_PROGRAMS += apps/align_counter_length_filter
 bin_PROGRAMS += apps/align_garray
 bin_PROGRAMS += apps/align_iter
 bin_PROGRAMS += apps/align_iter_length_filter
@@ -101,6 +103,11 @@ bin_PROGRAMS += apps/align_tree_dynamic
 bin_PROGRAMS += apps/align_tree_dynamic_dup
 bin_PROGRAMS += apps/align_tree_dynamic_callback
 bin_PROGRAMS += apps/align_tree_dynamic_callback_dup
+bin_PROGRAMS += apps/ccd
+bin_PROGRAMS += apps/ccd2
+if HAVE_ARMCI
+bin_PROGRAMS += apps/align_counter
+bin_PROGRAMS += apps/align_counter_length_filter
 bin_PROGRAMS += apps/align_tree_hybrid
 bin_PROGRAMS += apps/align_tree_hybrid_noalign
 bin_PROGRAMS += apps/align_tree_hybrid_sorted
@@ -111,13 +118,14 @@ bin_PROGRAMS += apps/align_tree_hybrid_callback_sorted
 bin_PROGRAMS += apps/align_tree_hybrid_callback_sorted_noalign
 bin_PROGRAMS += apps/align_tree_hybrid_callback_dup
 bin_PROGRAMS += apps/align_tree_hybrid2
-bin_PROGRAMS += apps/ccd
-bin_PROGRAMS += apps/ccd2
+endif
 if HAVE_SSE2
 bin_PROGRAMS += apps/align_ssw
-bin_PROGRAMS += apps/align_counter_ssw
 bin_PROGRAMS += apps/align_iter_ssw
 bin_PROGRAMS += apps/align_tree_ssw
+if HAVE_ARMCI
+bin_PROGRAMS += apps/align_counter_ssw
+endif
 if HAVE_ZLIB
 bin_PROGRAMS += apps/ssw_test
 endif
@@ -151,7 +159,9 @@ noinst_PROGRAMS += tests/test_read
 noinst_PROGRAMS += tests/test_read_fasta
 noinst_PROGRAMS += tests/test_read_serial
 if HAVE_SSE2
+if HAVE_ARMCI
 noinst_PROGRAMS += tests/test_ssw
+endif
 endif
 #if HAVE_UTC_ITER
 #noinst_PROGRAMS += sandbox/brute_force_iter

@@ -149,6 +149,7 @@ int main(int argc, char *argv[])
     printf("n_suffixes=%zu\n", suffix_buckets->suffixes_size);
     (void) time(&t1);
     size_t count = 0;
+#if TREESTATS
     cout << "tree" << ",";
     stats_t::print_header(cout, "fanout");
     cout << ",";
@@ -162,6 +163,7 @@ int main(int argc, char *argv[])
     cout << ",";
     cout << "time_process";
     cout << endl;
+#endif
     double total_time_build = 0;
     double total_time_process = 0;
     for (d = 0; d < (long)suffix_buckets->buckets_size; ++d) {
@@ -182,6 +184,7 @@ int main(int argc, char *argv[])
             generate_pairs(tree, sequences, dup, param);
 #endif
             ptimer = wtime() - ptimer;
+#if TREESTATS
             cout << d << ",";
             stats_t::print(cout, tree->fanout);
             cout << ",";
@@ -195,6 +198,7 @@ int main(int argc, char *argv[])
             cout << ",";
             cout << ptimer;
             cout << endl;
+#endif
             free_tree(tree);
             count += 1;
             total_time_build += btimer;

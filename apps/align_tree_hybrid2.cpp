@@ -489,12 +489,35 @@ int main(int argc, char **argv)
     MPI_Barrier(comm);
 
 #if 1
+    size_t *gremote_buckets = new size_t[nprocs];
+    MPI_Gather(&suffix_buckets->count_remote_buckets, sizeof(size_t), MPI_CHAR,
+            gremote_buckets, sizeof(size_t), MPI_CHAR, 0, comm);
+    cout << setw(4) << right << "pid " << "remote-buckets" << endl;
+    if (0 == rank) {
+        for(int i=0; i<nprocs; i++) {
+            cout << std::setw(4) << right << i << " " << gremote_buckets[i] << endl;
+        }
+    }
+    delete [] gremote_buckets;
+    size_t *gremote_suffixes = new size_t[nprocs];
+    MPI_Gather(&suffix_buckets->count_remote_suffixes, sizeof(size_t), MPI_CHAR,
+            gremote_suffixes, sizeof(size_t), MPI_CHAR, 0, comm);
+    cout << setw(4) << right << "pid " << "remote-suffixes" << endl;
+    if (0 == rank) {
+        for(int i=0; i<nprocs; i++) {
+            cout << std::setw(4) << right << i << " " << gremote_suffixes[i] << endl;
+        }
+    }
+    delete [] gremote_suffixes;
+#endif
+
+#if 1
     TreeStats * gtreestats = new TreeStats[NUM_WORKERS*nprocs];
     MPI_Gather(treestats, sizeof(TreeStats)*NUM_WORKERS, MPI_CHAR, 
 	       gtreestats, sizeof(TreeStats)*NUM_WORKERS, MPI_CHAR, 
 	       0, comm);
 
-    /* synchronously print alignment stats all from process 0 */
+    /* synchronously print tree stats all from process 0 */
     if (0 == rank) {
         TreeStats totals;
         TreeStats mins = gtreestats[0];
