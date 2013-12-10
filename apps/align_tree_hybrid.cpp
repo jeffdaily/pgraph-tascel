@@ -75,7 +75,9 @@ class EdgeResult {
                 << SEP << edge.a
                 << SEP << edge.b
                 << SEP << edge.c
+#if ALL_RESULTS
                 << SEP << edge.is_edge
+#endif
                 ;
             return os;
         }

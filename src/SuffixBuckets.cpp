@@ -72,7 +72,16 @@ static inline size_t entry_index(const char *kmer, int k)
     size_t value = 0;
 
     for (i = 0; i < k; ++i) {
-        value = value * SIGMA + (kmer[i] - 'A');
+        const char tmp = kmer[i] - 'A';
+        if (tmp < 0) {
+            printf("kmer[%d]=(%c) - 'A' < 0\n", i, kmer[i]);
+        }
+        if (tmp >= SIGMA) {
+            printf("kmer[%d]=(%c) >= SIGMA=(%u)\n", i, kmer[i], SIGMA);
+        }
+        assert(tmp >= 0);
+        assert(tmp < SIGMA);
+        value = value * SIGMA + tmp;
     }
 
     return value;
@@ -173,7 +182,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     if (stop > sequences->get_global_count()) {
         stop = sequences->get_global_count();
     }
-#if DEBUG
+#if DEBUG || 1
     mpix_print_sync("n_seq", n_seq, comm);
     mpix_print_sync("remainder", remainder, comm);
     mpix_print_sync("start", start, comm);
@@ -202,6 +211,14 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
         for (size_t j = 0; j <= stop_index; ++j) {
             size_t bucket_index = entry_index(
                     sequence_data + j, param.window_size);
+            if (bucket_index >= n_buckets) {
+                printf("[%d] bucket_index >= n_buckets (%zu >= %zu)\n",
+                        comm_rank, bucket_index, n_buckets);
+                printf("[%d] j=%zu stop_index=%zu k=%d data='%s' len=%zu\n",
+                        comm_rank, j, stop_index, param.window_size,
+                        std::string(sequence_data,sequence_length).c_str(),
+                        sequence_length);
+            }
             assert(bucket_index < n_buckets);
             /* prefixed in the suffix list for the given bucket */
             initial_suffixes[suffix_index].sid = i;

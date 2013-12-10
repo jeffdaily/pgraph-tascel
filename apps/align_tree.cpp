@@ -54,6 +54,7 @@ using namespace pgraph;
 #define SEP ","
 #define ALL_RESULTS 0
 #define DEBUG 0
+#define OUTPUT_EDGES 1
 
 
 class EdgeResult {
@@ -82,7 +83,9 @@ class EdgeResult {
                 << SEP << edge.a
                 << SEP << edge.b
                 << SEP << edge.c
+#if ALL_RESULTS
                 << SEP << edge.is_edge
+#endif
                 ;
             return os;
         }
@@ -229,9 +232,9 @@ static void alignment_task(
 #if OUTPUT_EDGES
             edge_results[thd].push_back(EdgeResult(
                         seq_id[0], seq_id[1],
-#if 0
-                        1.0*result.alen/max_len,
-                        1.0*result.ndig/result.alen,
+#if 1
+                        1.0*result.length/max_len,
+                        1.0*result.matches/result.length,
                         1.0*result.score/sscore
 #else
                         result.length,
@@ -392,6 +395,15 @@ int main(int argc, char **argv)
         printf("global_num_workers=%lu\n", global_num_workers);
         printf("max_tasks_per_worker=%lu\n", max_tasks_per_worker);
     }
+    if (0 == trank(0)) {
+        printf("----------------------------------------------\n");
+        printf("%-20s: %d\n", "slide size", parameters.window_size);
+        printf("%-20s: %d\n", "exactMatch len", parameters.exact_match_len);
+        printf("%-20s: %d\n", "AlignOverLongerSeq", parameters.AOL);
+        printf("%-20s: %d\n", "MatchSimilarity", parameters.SIM);
+        printf("%-20s: %d\n", "OptimalScoreOverSelfScore", parameters.OS);
+        printf("----------------------------------------------\n");
+    }
     MPI_Barrier(comm);
 
     /* the tascel part */
@@ -410,19 +422,12 @@ int main(int argc, char **argv)
     (void) time(&t2);
     if (0 == trank(0)) {
         printf("Bucketing finished in <%lld> secs\n", (long long)(t2-t1));
-        printf("----------------------------------------------\n");
-        printf("%-20s: %d\n", "slide size", parameters.window_size);
-        printf("%-20s: %d\n", "exactMatch len", parameters.exact_match_len);
-        printf("%-20s: %d\n", "AlignOverLongerSeq", parameters.AOL);
-        printf("%-20s: %d\n", "MatchSimilarity", parameters.SIM);
-        printf("%-20s: %d\n", "OptimalScoreOverSelfScore", parameters.OS);
-        printf("----------------------------------------------\n");
     }
 
     for (int worker=0; worker<NUM_WORKERS; ++worker)
     {
 #if OUTPUT_EDGES && !defined(NOALIGN)
-        edge_results[worker].reserve(max_tasks_per_worker);
+        //edge_results[worker].reserve(max_tasks_per_worker);
 #endif
         UniformTaskCollSplitHybrid*& utc = utcs[worker];
         TslFuncRegTbl *frt = new TslFuncRegTbl();
