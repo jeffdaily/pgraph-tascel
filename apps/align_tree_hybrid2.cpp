@@ -37,8 +37,11 @@
 #include "tascelx.hpp"
 #include "SequenceDatabase.hpp"
 #include "SequenceDatabaseArmci.hpp"
+#include "SequenceDatabaseReplicated.hpp"
 #include "SuffixBuckets.hpp"
 #include "SuffixTree.hpp"
+
+#define DEBUG 0
 
 using namespace std;
 using namespace tascel;
@@ -367,8 +370,13 @@ int main(int argc, char **argv)
     }
 
 #define GB (1073741824U)
+#if 1
     sequences = new SequenceDatabaseArmci(all_argv[1],
             parse_memory_budget(all_argv[2].c_str()), comm, NUM_WORKERS, DOLLAR);
+#else
+    sequences = new SequenceDatabaseReplicated(all_argv[1],
+            parse_memory_budget(all_argv[2].c_str()), comm, NUM_WORKERS, DOLLAR);
+#endif
 
     /* how many combinations of sequences are there? */
     nCk = binomial_coefficient(sequences->get_global_count(), 2);
@@ -379,9 +387,11 @@ int main(int argc, char **argv)
 
     (void) time(&t1);
     suffix_buckets = new SuffixBuckets2(sequences, parameters, comm);
+    mpix_print_sync("after SuffixBuckets2 ctor", comm);
     (void) time(&t2);
     if (0 == trank(0)) {
         printf("Bucketing finished in <%lld> secs\n", (long long)(t2-t1));
+        fflush(stdout);
     }
 
     unsigned long ntasks = nCk;
@@ -389,11 +399,15 @@ int main(int argc, char **argv)
     unsigned long max_tasks_per_worker = 2*(ntasks/global_num_workers + 1);
     max_tasks_per_worker += suffix_buckets->n_buckets/global_num_workers + 1;
     unsigned long GB_4 = 268435456U;
-    max_tasks_per_worker = std::min(max_tasks_per_worker, GB_4/sizeof(task_desc_hybrid));
+    unsigned long GB_2 = 536870912U;
+    //max_tasks_per_worker = std::min(max_tasks_per_worker, GB_4/sizeof(task_desc_hybrid));
+    max_tasks_per_worker = GB/sizeof(task_desc_hybrid);
     if (0 == trank(0)) {
         printf("ntasks=%lu\n", ntasks);
         printf("global_num_workers=%lu\n", global_num_workers);
         printf("max_tasks_per_worker=%lu\n", max_tasks_per_worker);
+        printf("                GB_2=%lu\n", GB_2);
+        fflush(stdout);
     }
     if (0 == trank(0)) {
         printf("----------------------------------------------\n");
@@ -403,6 +417,7 @@ int main(int argc, char **argv)
         printf("%-20s: %d\n", "MatchSimilarity", parameters.SIM);
         printf("%-20s: %d\n", "OptimalScoreOverSelfScore", parameters.OS);
         printf("----------------------------------------------\n");
+        fflush(stdout);
     }
 
     MPI_Barrier(comm);
@@ -421,6 +436,7 @@ int main(int argc, char **argv)
     }
     if (0 == trank(0)) {
         printf("created UTCs\n");
+        fflush(stdout);
     }
 
     int worker = 0;
@@ -437,8 +453,8 @@ int main(int argc, char **argv)
             worker = (worker + 1) % NUM_WORKERS;
         }
     }
-#if DEBUG
-    cout << trank(worker) << " done adding tasks" << endl;
+#if DEBUG || 1
+    mpix_print_sync("done adding tasks", rank, comm);
 #endif
 
     amBarrier();
@@ -492,8 +508,8 @@ int main(int argc, char **argv)
     size_t *gremote_buckets = new size_t[nprocs];
     MPI_Gather(&suffix_buckets->count_remote_buckets, sizeof(size_t), MPI_CHAR,
             gremote_buckets, sizeof(size_t), MPI_CHAR, 0, comm);
-    cout << setw(4) << right << "pid " << "remote-buckets" << endl;
     if (0 == rank) {
+        cout << setw(4) << right << "pid " << "remote-buckets" << endl;
         for(int i=0; i<nprocs; i++) {
             cout << std::setw(4) << right << i << " " << gremote_buckets[i] << endl;
         }
@@ -502,8 +518,8 @@ int main(int argc, char **argv)
     size_t *gremote_suffixes = new size_t[nprocs];
     MPI_Gather(&suffix_buckets->count_remote_suffixes, sizeof(size_t), MPI_CHAR,
             gremote_suffixes, sizeof(size_t), MPI_CHAR, 0, comm);
-    cout << setw(4) << right << "pid " << "remote-suffixes" << endl;
     if (0 == rank) {
+        cout << setw(4) << right << "pid " << "remote-suffixes" << endl;
         for(int i=0; i<nprocs; i++) {
             cout << std::setw(4) << right << i << " " << gremote_suffixes[i] << endl;
         }

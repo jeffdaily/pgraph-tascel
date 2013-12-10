@@ -209,11 +209,15 @@ void SequenceDatabaseArmci::read_and_parse_fasta()
         comm_rank = comm_orig_rank;
         comm_size = comm_orig_size;
         armci_group = armci_group_orig;
+#if 0
         ierr = MPI_File_open(MPI_COMM_SELF,
                 const_cast<char *>(file_name.c_str()),
                 MPI_MODE_RDONLY, MPI_INFO_NULL, &in);
         MPI_CHECK_IERR(ierr, comm_orig_rank, comm_orig);
         read_and_parse_fasta_himem(in, file_size);
+#else
+        read_and_parse_fasta_himem(MPI_FILE_NULL, file_size);
+#endif
     }
     else {
         MPI_Offset ranks_per_domain = 0;
@@ -409,20 +413,27 @@ void SequenceDatabaseArmci::read_and_parse_fasta_himem(MPI_File in,
 {
     int ierr = 0;
     size_t new_size = 0;
+    MPI_Offset file_size_verify;
 
     /* read directly into a local buffer; don't use ARMCI */
     local_data = new char[file_size+2]; /* +2 for last delim and null */
     local_data[file_size] = delimiter;
     local_data[file_size+1] = '\0';
 
-    /* everyone reads in their part */
-    ierr = MPI_File_read_at_all(in, 0, local_data, file_size,
-            MPI_CHAR, MPI_STATUS_IGNORE);
-    MPI_CHECK_IERR(ierr, comm_rank, comm);
+    if (in == MPI_FILE_NULL) {
+        mpix_read_file_bcast(file_name, local_data, file_size_verify);
+        assert(file_size == file_size_verify);
+    }
+    else {
+        /* everyone reads in their part */
+        ierr = MPI_File_read_at_all(in, 0, local_data, file_size,
+                MPI_CHAR, MPI_STATUS_IGNORE);
+        MPI_CHECK_IERR(ierr, comm_rank, comm);
 
-    /* everyone can close the file now */
-    ierr = MPI_File_close(&in);
-    MPI_CHECK_IERR(ierr, comm_rank, comm);
+        /* everyone can close the file now */
+        ierr = MPI_File_close(&in);
+        MPI_CHECK_IERR(ierr, comm_rank, comm);
+    }
 
     /* pack and index the fasta buffer */
     pack_and_index_fasta(local_data, file_size, delimiter, 0, new_size);

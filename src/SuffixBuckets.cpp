@@ -440,6 +440,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
 
 #if 1
     mpix_print_sync("bucket_size_total", bucket_size_total, comm);
+    mpix_print_sync("wtf", comm);
 #endif
 }
 
@@ -516,7 +517,7 @@ struct SuffixBucket2IndexFunctor {
     size_t comm_size;
 };
 
-#define DEBUG 1
+#define DEBUG 0
 
 SuffixBuckets2::SuffixBuckets2(SequenceDatabase *sequences,
                              const Parameters &param,
@@ -582,7 +583,7 @@ SuffixBuckets2::SuffixBuckets2(SequenceDatabase *sequences,
     if (stop > sequences->get_global_count()) {
         stop = sequences->get_global_count();
     }
-#if DEBUG
+#if DEBUG || 1
     mpix_print_sync("n_seq", n_seq, comm);
     mpix_print_sync("remainder", remainder, comm);
     mpix_print_sync("start", start, comm);
@@ -623,7 +624,7 @@ SuffixBuckets2::SuffixBuckets2(SequenceDatabase *sequences,
     }
     initial_suffixes.resize(suffix_index);
 
-#if DEBUG
+#if DEBUG || 1
     mpix_print_sync("suffix_index", suffix_index, comm);
 #endif
 
@@ -635,7 +636,7 @@ SuffixBuckets2::SuffixBuckets2(SequenceDatabase *sequences,
         size_t owner = initial_suffixes[i].bid % comm_size;
         amount_to_send[owner] += 1;
     }
-#if DEBUG
+#if DEBUG || 1
     size_t desitinations = 0;
     for (size_t i=0; i<comm_size; ++i) {
         if (amount_to_send[i] > 0) {

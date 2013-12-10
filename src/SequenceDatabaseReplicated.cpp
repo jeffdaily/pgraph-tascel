@@ -189,15 +189,18 @@ void SequenceDatabaseReplicated::read_and_parse_fasta_himem(MPI_File in,
     local_data = new char[file_size+2]; /* +2 for last delim and null */
     local_data[file_size] = delimiter;
     local_data[file_size+1] = '\0';
+    mpix_print_zero("allocated file buffer", comm_orig);
 
     /* everyone reads in their part */
     ierr = MPI_File_read_at_all(in, 0, local_data, file_size,
             MPI_CHAR, MPI_STATUS_IGNORE);
     MPI_CHECK_IERR(ierr, comm_rank, comm);
+    mpix_print_zero("read file", comm_orig);
 
     /* everyone can close the file now */
     ierr = MPI_File_close(&in);
     MPI_CHECK_IERR(ierr, comm_rank, comm);
+    mpix_print_zero("closed file", comm_orig);
 
     /* pack and index the fasta buffer */
     pack_and_index_fasta(local_data, file_size, delimiter, 0, new_size);
@@ -205,6 +208,7 @@ void SequenceDatabaseReplicated::read_and_parse_fasta_himem(MPI_File in,
     local_data[new_size+1] = '\0';
     assert(!local_cache.empty());
     assert(local_cache.size() > 0);
+    mpix_print_zero("packed and indexed file", comm_orig);
 }
 
 

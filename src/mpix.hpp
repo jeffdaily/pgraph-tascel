@@ -263,20 +263,23 @@ void mpix_print_sync(const string &name, const T &what, MPI_Comm comm=MPI_COMM_W
     int rank;
     int size;
     T what_copy = what;
-    T *all_what = NULL;
 
     MPI_CHECK(MPI_Comm_rank(comm, &rank));
     MPI_CHECK(MPI_Comm_size(comm, &size));
 
-    all_what = new T[size];
-    MPI_CHECK(MPI_Gather(&what_copy, sizeof(T), MPI_CHAR, all_what, sizeof(T),
-                         MPI_CHAR, 0, comm));
     if (0 == rank) {
+        T *all_what = new T[size];
+        MPI_CHECK(MPI_Gather(&what_copy, sizeof(T), MPI_CHAR, all_what,
+                    sizeof(T), MPI_CHAR, 0, comm));
         for (int i = 0; i < size; ++i) {
             cout << "[" << i << "] " << name << "=" << all_what[i] << endl;
         }
+        delete [] all_what;
     }
-    delete [] all_what;
+    else {
+        MPI_CHECK(MPI_Gather(&what_copy, sizeof(T), MPI_CHAR, NULL,
+                    sizeof(T), MPI_CHAR, 0, comm));
+    }
     MPI_Barrier(comm);
 }
 
