@@ -36,72 +36,28 @@
 #include "mpix.hpp"
 #include "tascelx.hpp"
 #include "SequenceDatabase.hpp"
-#ifdef USE_GARRAY
-#include "SequenceDatabaseGArray.hpp"
-#elif HAVE_ARMCI
 #include "SequenceDatabaseArmci.hpp"
-#else
 #include "SequenceDatabaseReplicated.hpp"
-#endif
 #include "SuffixBuckets.hpp"
 #include "SuffixTree.hpp"
+
+#define DEBUG 1
+#define USE_CALLBACK 1
 
 using namespace std;
 using namespace tascel;
 using namespace pgraph;
 
-#define SEP ","
-#define ALL_RESULTS 1
-
-
-class EdgeResult {
-    public:
-        unsigned long id1;
-        unsigned long id2;
-        double a;
-        double b;
-        double c;
-        bool is_edge;
-
-        EdgeResult(
-                unsigned long id1, unsigned long id2,
-                double a, double b, double c, bool is_edge=true)
-            : id1(id1)
-            , id2(id2)
-            , a(a)
-            , b(b)
-            , c(c)
-            , is_edge(is_edge)
-        {}
-
-        friend ostream& operator << (ostream &os, const EdgeResult &edge) {
-            os << edge.id1
-                << SEP << edge.id2
-                << SEP << edge.a
-                << SEP << edge.b
-                << SEP << edge.c
-                << SEP << edge.is_edge
-                ;
-            return os;
-        }
-};
 
 int rank = 0;
 int nprocs = 0;
 UniformTaskCollSplitHybrid** utcs = 0;
-AlignStats *stats = 0;
 TreeStats *treestats = 0;
 SequenceDatabase *sequences = 0;
-#if OUTPUT_EDGES
-vector<EdgeResult> *edge_results = 0;
-#endif
+vector<pair<size_t,size_t> > *pair_results = 0;
+double *timeout = 0;
 Parameters parameters;
-SuffixBuckets *suffix_buckets = NULL;
-
-#if defined(GLOBAL_DUPLICATES)
-set<pair<size_t,size_t> > *pairs = NULL;
-#endif
-
+SuffixBuckets2 *suffix_buckets = NULL;
 #if defined(THREADED)
 static pthread_t *threadHandles = 0;
 static unsigned *threadRanks = 0;
@@ -111,6 +67,9 @@ pthread_barrier_t workersStart, workersEnd;
 pthread_barrier_t serverStart, serverEnd;
 volatile bool serverEnabled = true;
 #endif
+long ntasks = 0;
+long **counter = NULL;
+PthreadMutex mutex;
 
 
 static int trank(int thd)
@@ -118,22 +77,17 @@ static int trank(int thd)
     return (theTwoSided().getProcRank().toInt() * NUM_WORKERS) + thd;
 }
 
-static string get_edges_filename(int rank)
+
+static string get_pairs_filename(int rank)
 {
     ostringstream str;
-    str << "edges." << rank << ".txt";
+    str << "pairs." << rank << ".txt";
     return str.str();
 }
 
 
 typedef struct {
-    unsigned long id1;
-    unsigned long id2;
-} task_desc_align;
-
-
-typedef struct {
-    unsigned long id1;
+    unsigned long id;
 } task_desc_tree;
 
 
@@ -177,120 +131,60 @@ static size_t parse_memory_budget(const string& value)
 }
 
 
-static void alignment_task(
-        UniformTaskCollection *utc,
-        void *_bigd, int bigd_len,
-        void *pldata, int pldata_len,
-        vector<void *> data_bufs, int thd) {
-    task_desc_align *desc = (task_desc_align*)_bigd;
-    unsigned long seq_id[2];
-    cell_t result;
-    bool is_edge_answer = false;
-    double t = 0;
-    int sscore;
-    size_t max_len;
-
-    int open = -10;
-    int gap = -1;
-    int AOL = 8;
-    int SIM = 4;
-    int OS = 3;
-
-    seq_id[0] = desc->id1;
-    seq_id[1] = desc->id2;
-    {
-        t = MPI_Wtime();
-        unsigned long s1Len = (*sequences)[seq_id[0]].get_sequence_length();
-        unsigned long s2Len = (*sequences)[seq_id[1]].get_sequence_length();
-        stats[thd].work += s1Len * s2Len;
-#if USE_SSW
-        sequences->align_ssw(seq_id[0], seq_id[1], result.score, result.matches, result.length, open, gap, thd);
-#else
-        sequences->align(seq_id[0], seq_id[1], result.score, result.matches, result.length, open, gap, thd);
-#endif
-        is_edge_answer = sequences->is_edge(
-                seq_id[0],
-                seq_id[1],
-                result.score, result.matches, result.length,
-                AOL, SIM, OS,
-                sscore, max_len);
-        ++stats[thd].align_counts;
-
-        if (is_edge_answer || ALL_RESULTS)
-        {
-#if DEBUG
-            cout << trank(thd)
-                << ": aligned " << seq_id[0] << " " << seq_id[1]
-                << ": (score,matches,alen)=("
-                << result.score << ","
-                << result.matches << ","
-                << result.length << ")"
-                << ": edge? " << is_edge_answer << endl;
-#endif
-#if OUTPUT_EDGES
-            edge_results[thd].push_back(EdgeResult(
-                        seq_id[0], seq_id[1],
 #if 0
-                        1.0*result.length/max_len,
-                        1.0*result.matches/result.length,
-                        1.0*result.score/sscore
-#else
-                        result.length,
-                        result.matches,
-                        result.score
-#endif
-#if ALL_RESULTS
-                        ,is_edge_answer
-#endif
-                        ));
-#endif
-            if (is_edge_answer) {
-                ++stats[thd].edge_counts;
-            }
-        }
-        t = MPI_Wtime() - t;
-        stats[thd].align_times_tot += t;
-        stats[thd].calc_min(t);
-        stats[thd].calc_max(t);
+static size_t powz(size_t base, size_t n)
+{
+    size_t p = 1;
+
+    for(/*empty*/; n > 0; --n) {
+        assert(p < SIZE_MAX/base);
+        p *= base;
     }
+
+    return p;
 }
 
 
+static string entry_string(size_t index, size_t k)
+{
+    string retval = "";
+    for (unsigned long i = k-1; i >= 0; --i) {
+        size_t tmp = powz(SIGMA,i);
+        size_t quo = index / tmp;
+        size_t rem = index % tmp;
+        assert(quo < SIGMA);
+        retval += char('A'+char(quo));
+    }
+    return retval;
+}
+#endif
+
+
+#define CALLBACK_PAIRS 0
 struct Callback {
     int worker;
-    set<pair<size_t,size_t> > local_pairs;
+    vector<pair<size_t,size_t> > pairs;
 
     Callback(int worker)
         : worker(worker)
-        , local_pairs()
+        , pairs()
     {}
 
     bool operator()(pair<size_t,size_t> the_pair) {
-        bool proceed = false;
-#if defined(GLOBAL_DUPLICATES)
-        if (pairs[worker].count(the_pair) == 0) {
-            pairs[worker].insert(the_pair);
-            proceed = true;
-        }
+        bool retval = false;
+        double time = MPI_Wtime();
+#if CALLBACK_PAIRS
+        pairs.push_back(the_pair);
 #else
-        if (local_pairs.count(the_pair) == 0) {
-            local_pairs.insert(the_pair);
-            proceed = true;
-        }
+        pair_results[worker].push_back(the_pair);
 #endif
-        if (proceed) {
-            task_desc_align desc;
-            desc.id1 = the_pair.first;
-            desc.id2 = the_pair.second;
-#if DEBUG
-            cout << trank(worker) << " added " << desc.id1 << "," << desc.id2 << endl;
-#endif
-            utcs[worker]->addTask(&desc, sizeof(desc));
+        if (time - timeout[worker] > 30.0) { /* seconds */
+            retval = true;
         }
-
-        return false; /* don't abort tree processing */
+        return retval;
     }
 };
+
 
 
 static void tree_task(
@@ -299,14 +193,19 @@ static void tree_task(
         void *pldata, int pldata_len,
         vector<void *> data_bufs, int worker) {
     task_desc_tree *tree_desc = (task_desc_tree*)_bigd;
-    unsigned long i = tree_desc->id1;
+    unsigned long i = tree_desc->id;
+#if DEBUG && 0
+    cout << trank(worker) << " tree_task id=" << i << endl;
+#endif
+#if USE_SET
     set<pair<size_t,size_t> > local_pairs;
-    assert(i < suffix_buckets->buckets_size);
+#endif
     /* suffix tree construction & processing */
-    if (NULL != suffix_buckets->buckets[i].suffixes) {
+    Bucket *bucket = suffix_buckets->get(i);
+    if (NULL != bucket->suffixes) {
         double atimer = MPI_Wtime();
         SuffixTree *tree = new SuffixTree(
-                sequences, &(suffix_buckets->buckets[i]), parameters);
+                sequences, bucket, parameters);
         treestats[worker].size_internal += tree->get_size_internal();
         treestats[worker].fanout += tree->get_avg_fanout();
         treestats[worker].avgdepth += tree->get_avg_depth();
@@ -314,34 +213,60 @@ static void tree_task(
         treestats[worker].suffix_avg_length += tree->get_suffix_avg_length();
         treestats[worker].suffix_max_length += tree->get_suffix_max_length();
         treestats[worker].time_build += MPI_Wtime() - atimer;
+        treestats[worker].times += MPI_Wtime() - atimer;
+        treestats[worker].trees += 1;
+        treestats[worker].suffixes += bucket->size;
         atimer = MPI_Wtime();
-#if defined(CALLBACK)
-        tree->generate_pairs_cb(Callback(worker));
-#else
+#if USE_SET
         tree->generate_pairs(local_pairs);
+#elif USE_CALLBACK
+        timeout[worker] = MPI_Wtime();
+        Callback callback(worker);
+        bool ret = tree->generate_pairs_cb(callback);
+        if (ret) {
+            cout << trank(worker)
+                << " tree_task id=" << i
+                //<< " st=" << entry_string(i,parameters.window_size)
+                << " aborted" << endl;
+        }
+#if CALLBACK_PAIRS
+        else {
+            pair_results[worker].insert(pair_results[worker].end(),
+                    callback.pairs.begin(), callback.pairs.end());
+        }
+#endif
+#else
+        tree->generate_pairs(pair_results[worker]);
 #endif
         treestats[worker].time_process += MPI_Wtime() - atimer;
+        treestats[worker].times += MPI_Wtime() - atimer;
         delete tree;
+        suffix_buckets->rem(i, bucket);
     }
     
-    task_desc_align desc;
-    for (set<pair<size_t,size_t> >::iterator it=local_pairs.begin();
-            it!=local_pairs.end(); ++it) {
-#if defined(GLOBAL_DUPLICATES)
-        if (pairs[worker].count(*it) == 0) {
-            pairs[worker].insert(*it);
-        }
-        else {
-            continue;
-        }
+#if 0
+    pair_results[worker].insert(pair_results[worker].end(),
+            local_pairs.begin(), local_pairs.end());
 #endif
-        desc.id1 = it->first;
-        desc.id2 = it->second;
-#if DEBUG
-        cout << trank(worker) << " added " << desc.id1 << "," << desc.id2 << endl;
-#endif
-        utcs[worker]->addTask(&desc, sizeof(desc));
+
+#if ARMCI_COUNTER
+    long count;
+    {
+        LockGuard<PthreadMutex> guard(mutex);
+        (void)ARMCI_Rmw(ARMCI_FETCH_AND_ADD_LONG, &count, counter[0], 1, 0);
     }
+
+    if (0 == trank(worker)) {
+        cout << count << "/" << ntasks << endl;
+    }
+#endif
+}
+
+
+ostream& operator << (ostream &os, const pair<size_t,size_t> &p)
+{
+    os << p.first << "," << p.second;
+    return os;
 }
 
 
@@ -352,6 +277,8 @@ int main(int argc, char **argv)
     unsigned long nCk;
     time_t t1 = 0;                  /* start timer */
     time_t t2 = 0;                  /* stop timer */
+
+    try {
 
     /* initialize MPI */
 #if defined(THREADED)
@@ -372,14 +299,9 @@ int main(int argc, char **argv)
     double totaltime = MPI_Wtime();
     TascelConfig::initialize(NUM_WORKERS_DEFAULT, comm);
     utcs = new UniformTaskCollSplitHybrid*[NUM_WORKERS];
-    stats = new AlignStats[NUM_WORKERS];
     treestats = new TreeStats[NUM_WORKERS];
-#if OUTPUT_EDGES
-    edge_results = new vector<EdgeResult>[NUM_WORKERS];
-#endif
-#if defined(GLOBAL_DUPLICATES)
-    pairs = new set<pair<size_t,size_t> >[NUM_WORKERS];
-#endif
+    pair_results = new vector<pair<size_t,size_t> >[NUM_WORKERS];
+    timeout = new double[NUM_WORKERS];
 #if defined(THREADED)
     threadHandles = new pthread_t[NUM_WORKERS + NUM_SERVERS];
     threadRanks = new unsigned[NUM_WORKERS + NUM_SERVERS];
@@ -409,7 +331,7 @@ int main(int argc, char **argv)
         }
     }
 
-#if DEBUG
+#if DEBUG && 0
     /* print the command line arguments */
     for (int i=0; i<nprocs; ++i) {
         if (i == rank) {
@@ -443,11 +365,13 @@ int main(int argc, char **argv)
         parameters.parse(all_argv[3].c_str(), comm);
     }
 
+    char hostname[256];
+    int hostname_retval = gethostname(hostname, 256);
+    assert(0 == hostname_retval);
+    mpix_print_sync("hostname", string(hostname), comm);
+
 #define GB (1073741824U)
-#ifdef USE_GARRAY
-    sequences = new SequenceDatabaseGArray(all_argv[1],
-            parse_memory_budget(all_argv[2].c_str()), DOLLAR);
-#elif HAVE_ARMCI
+#if 1
     sequences = new SequenceDatabaseArmci(all_argv[1],
             parse_memory_budget(all_argv[2].c_str()), comm, NUM_WORKERS, DOLLAR);
 #else
@@ -455,33 +379,29 @@ int main(int argc, char **argv)
             parse_memory_budget(all_argv[2].c_str()), comm, NUM_WORKERS, DOLLAR);
 #endif
 
-    /* how many combinations of sequences are there? */
-    nCk = binomial_coefficient(sequences->get_global_count(), 2);
+    (void) time(&t1);
+    suffix_buckets = new SuffixBuckets2(sequences, parameters, comm);
+    mpix_print_sync("after SuffixBuckets2 ctor", comm);
+    (void) time(&t2);
     if (0 == trank(0)) {
-        printf("brute force %lu C 2 has %lu combinations\n",
-                sequences->get_global_count(), nCk);
+        printf("Bucketing finished in <%lld> secs\n", (long long)(t2-t1));
+        fflush(stdout);
     }
 
-    double selectivity = 1.0;
-    unsigned long nalignments = (long)(0.5+selectivity*nCk);
-    unsigned long ntasks = nalignments;
     unsigned long global_num_workers = nprocs*NUM_WORKERS;
-    unsigned long max_tasks_per_worker = ntasks / global_num_workers;
-    max_tasks_per_worker += ntasks % global_num_workers;
-    max_tasks_per_worker *= 10;
-#if 1
-    unsigned long GB_2 = 536870912U;
+    unsigned long max_tasks_per_worker = suffix_buckets->n_buckets/global_num_workers + 1;
+    unsigned long max_tasks_per_worker_orig = max_tasks_per_worker;
     unsigned long GB_4 = 268435456U;
-    max_tasks_per_worker = std::min(max_tasks_per_worker, GB_4/sizeof(task_desc_align));
-#else
-    max_tasks_per_worker = max_tasks_per_worker * 0.001; /* approx. selectivity */
-#endif
+    unsigned long GB_2 = 536870912U;
+    //max_tasks_per_worker = std::min(max_tasks_per_worker, GB_4/sizeof(task_desc_tree));
+    max_tasks_per_worker = GB/sizeof(task_desc_tree);
     if (0 == trank(0)) {
-        printf("selectivity=%lf\n", selectivity);
-        printf("nalignments=%lu\n", nalignments);
-        printf("ntasks=%lu\n", ntasks);
+        printf("ntasks=%lu\n", suffix_buckets->n_buckets);
         printf("global_num_workers=%lu\n", global_num_workers);
-        printf("max_tasks_per_worker=%lu\n", max_tasks_per_worker);
+        printf("     max_tasks_per_worker=%lu\n", max_tasks_per_worker);
+        printf("max_tasks_per_worker_orig=%lu\n", max_tasks_per_worker_orig);
+        printf("                     GB_2=%lu\n", GB_2);
+        fflush(stdout);
     }
     if (0 == trank(0)) {
         printf("----------------------------------------------\n");
@@ -491,63 +411,82 @@ int main(int argc, char **argv)
         printf("%-20s: %d\n", "MatchSimilarity", parameters.SIM);
         printf("%-20s: %d\n", "OptimalScoreOverSelfScore", parameters.OS);
         printf("----------------------------------------------\n");
+        fflush(stdout);
     }
 
     MPI_Barrier(comm);
 
     /* the tascel part */
-    (void) time(&t1);
-    suffix_buckets = new SuffixBuckets(sequences, parameters, comm);
-    (void) time(&t2);
-    if (0 == trank(0)) {
-        printf("Bucketing finished in <%lld> secs\n", (long long)(t2-t1));
-    }
     for (int worker=0; worker<NUM_WORKERS; ++worker)
     {
-#if OUTPUT_EDGES
-        edge_results[worker].reserve(max_tasks_per_worker);
-#endif
         UniformTaskCollSplitHybrid*& utc = utcs[worker];
         TslFuncRegTbl *frt = new TslFuncRegTbl();
-        TslFunc tf = frt->add(alignment_task);
-        TslFunc tf2 = frt->add(tree_task);
+        TslFunc tf = frt->add(tree_task);
         TaskCollProps props;
-        props.functions(tf, frt, tf2)
-            .taskSize(sizeof(task_desc_align))
-            .maxTasks(max_tasks_per_worker)
-            .taskSize2(sizeof(task_desc_tree))
-            .maxTasks2(long(pow(26.0,parameters.window_size))); // TODO too small?
+        props.functions(tf, frt)
+            .taskSize(sizeof(task_desc_tree))
+            .maxTasks(max_tasks_per_worker);
         utc = new UniformTaskCollSplitHybrid(props, worker);
     }
 
-    size_t even_split = suffix_buckets->bucket_size_total / NUM_WORKERS;
+    MPI_Barrier(comm);
+
+    if (0 == trank(0)) {
+        printf("created UTCs\n");
+        fflush(stdout);
+    }
+
     int worker = 0;
-    double poptimer = MPI_Wtime();
-    for (size_t j=0,limit=suffix_buckets->my_buckets.size(); j<limit; ++j) {
-        size_t i = suffix_buckets->my_buckets[j];
-        assert(suffix_buckets->bucket_owner[i] == rank);
-        {
-            if (NULL != suffix_buckets->buckets[i].suffixes) {
-                task_desc_tree desc;
-                desc.id1 = i;
-#if DEBUG
-                cout << trank(worker) << " added " << desc.id1 << endl;
+    int task_count = 0;
+    for (size_t j=rank; j<suffix_buckets->n_buckets; j+=nprocs) {
+        int bucket_index = j / nprocs;
+        if (suffix_buckets->buckets[bucket_index].size > 0) {
+            task_desc_tree desc;
+            desc.id = j;
+#if DEBUG && 0
+            cout << trank(worker) << " added " << desc.id << endl;
 #endif
-                utcs[worker]->addTask2(&desc, sizeof(task_desc_tree));
-                treestats[worker].trees += 1;
-                treestats[worker].suffixes += suffix_buckets->buckets[i].size;
-                if (treestats[worker].suffixes >= even_split) {
-                    treestats[worker].times = MPI_Wtime() - poptimer;
-                    poptimer = MPI_Wtime();
-                    ++worker;
-                    if (worker >= NUM_WORKERS) {
-                        worker = NUM_WORKERS-1;
-                    }
-                }
-            }
+            utcs[worker]->addTask(&desc, sizeof(task_desc_tree));
+            worker = (worker + 1) % NUM_WORKERS;
+            task_count += 1;
         }
     }
-    treestats[worker].times = MPI_Wtime() - poptimer;
+
+    MPI_Barrier(comm);
+
+    mpix_print_sync("done adding tasks", rank, comm);
+    int *gtask_counts = new int[nprocs];
+    MPI_Gather(&task_count, 1, MPI_INT, gtask_counts, 1, MPI_INT, 0, comm);
+    if (0 == rank) {
+        cout << setw(4) << right << "pid " << "task-counts" << endl;
+        for(int i=0; i<nprocs; i++) {
+            ntasks += gtask_counts[i];
+            cout << std::setw(4) << right << i << " " << gtask_counts[i] << endl;
+        }
+    }
+    delete [] gtask_counts;
+
+    /* this could slow things down but we need some way of debugging
+     * global progress ... */
+#if ARMCI_COUNTER
+    long bytes = 0;
+    int retval = 0;
+    counter = new long*[nprocs];
+    bytes = (0 == rank) ? sizeof(long) : 0;
+    retval = ARMCI_Malloc((void**)counter, bytes);
+    assert(0 == retval);
+    ARMCI_Barrier();
+    if (0 == rank) {
+        counter[0][0] = 0; /* init counter */
+    }
+    ARMCI_Barrier();
+#endif
+
+    MPI_Barrier(comm);
+
+    amBarrier();
+
+    MPI_Barrier(comm);
 
     amBarrier();
 
@@ -597,12 +536,35 @@ int main(int argc, char **argv)
     MPI_Barrier(comm);
 
 #if 1
+    size_t *gremote_buckets = new size_t[nprocs];
+    MPI_Gather(&suffix_buckets->count_remote_buckets, sizeof(size_t), MPI_CHAR,
+            gremote_buckets, sizeof(size_t), MPI_CHAR, 0, comm);
+    if (0 == rank) {
+        cout << setw(4) << right << "pid " << "remote-buckets" << endl;
+        for(int i=0; i<nprocs; i++) {
+            cout << std::setw(4) << right << i << " " << gremote_buckets[i] << endl;
+        }
+    }
+    delete [] gremote_buckets;
+    size_t *gremote_suffixes = new size_t[nprocs];
+    MPI_Gather(&suffix_buckets->count_remote_suffixes, sizeof(size_t), MPI_CHAR,
+            gremote_suffixes, sizeof(size_t), MPI_CHAR, 0, comm);
+    if (0 == rank) {
+        cout << setw(4) << right << "pid " << "remote-suffixes" << endl;
+        for(int i=0; i<nprocs; i++) {
+            cout << std::setw(4) << right << i << " " << gremote_suffixes[i] << endl;
+        }
+    }
+    delete [] gremote_suffixes;
+#endif
+
+#if 1
     TreeStats * gtreestats = new TreeStats[NUM_WORKERS*nprocs];
     MPI_Gather(treestats, sizeof(TreeStats)*NUM_WORKERS, MPI_CHAR, 
 	       gtreestats, sizeof(TreeStats)*NUM_WORKERS, MPI_CHAR, 
 	       0, comm);
 
-    /* synchronously print alignment stats all from process 0 */
+    /* synchronously print tree stats all from process 0 */
     if (0 == rank) {
         TreeStats totals;
         TreeStats mins = gtreestats[0];
@@ -626,34 +588,6 @@ int main(int argc, char **argv)
     gtreestats=NULL;
 #endif
 
-    AlignStats * rstats = new AlignStats[NUM_WORKERS*nprocs];
-    MPI_Gather(stats, sizeof(AlignStats)*NUM_WORKERS, MPI_CHAR, 
-	       rstats, sizeof(AlignStats)*NUM_WORKERS, MPI_CHAR, 
-	       0, comm);
-
-    /* synchronously print alignment stats all from process 0 */
-    if (0 == rank) {
-        AlignStats totals;
-        AlignStats mins;
-        AlignStats maxs;
-        cout << setw(4) << right << "pid" << rstats[0].getHeader() << endl;
-        for(int i=0; i<nprocs*NUM_WORKERS; i++) {
-            totals += rstats[i];
-            mins < rstats[i];
-            maxs > rstats[i];
-            cout << std::setw(4) << right << i << " " << rstats[i] << endl;
-        }
-        cout << "==============================================" << endl;
-        cout << setw(4) << right << "TOT " << totals << endl;
-        cout << setw(4) << right << "MIN " << mins << endl;
-        cout << setw(4) << right << "MAX " << maxs << endl;
-        cout << setw(4) << right << "AVG " << (totals/(nprocs*NUM_WORKERS)) << endl;
-        cout << setw(4) << right << "STD " << (totals.stddev(nprocs*NUM_WORKERS, rstats)) << endl;
-        cout << "==============================================" << endl;
-    }
-    delete [] rstats;
-    rstats=NULL;
-
     StealingStats *stt = new StealingStats[NUM_WORKERS];
     for(int i=0; i<NUM_WORKERS; i++) {
       stt[i] = utcs[i]->getStats();
@@ -666,14 +600,14 @@ int main(int argc, char **argv)
 
     /* synchronously print stealing stats all from process 0 */
     if (0 == rank) {
-      StealingStats tstt;
-      cout<<" pid "<<rstt[0].formatString()<<endl;      
-      for(int i=0; i<nprocs*NUM_WORKERS; i++) {
-	tstt += rstt[i];
-	cout<<std::setw(4)<<std::right<<i<<" "<<rstt[i]<<endl;
-      }
-      cout<<"=============================================="<<endl;
-      cout<<"TOT "<<tstt<<endl;
+        StealingStats tstt;
+        cout<<" pid "<<rstt[0].formatString()<<endl;      
+        for(int i=0; i<nprocs*NUM_WORKERS; i++) {
+            tstt += rstt[i];
+            cout<<std::setw(4)<<std::right<<i<<" "<<rstt[i]<<endl;
+        }
+        cout<<"=============================================="<<endl;
+        cout<<"TOT "<<tstt<<endl;
     }
     delete [] rstt;
     rstt=NULL;
@@ -682,31 +616,35 @@ int main(int argc, char **argv)
     amBarrier();
     MPI_Barrier(comm);
 
-#if OUTPUT_EDGES
-    ofstream edge_out(get_edges_filename(rank).c_str());
-#endif
+    double write_time = MPI_Wtime();
+    ofstream pair_out(get_pairs_filename(rank).c_str());
     /* clean up */
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
         delete utcs[worker];
-#if OUTPUT_EDGES
-        for (size_t i=0,limit=edge_results[worker].size(); i<limit; ++i) {
-            edge_out << edge_results[worker][i] << endl;
+#if SORT_THEM || 1
+        sort( pair_results[worker].begin(), pair_results[worker].end() );
+        pair_results[worker].erase( unique( pair_results[worker].begin(), pair_results[worker].end() ), pair_results[worker].end() );
+#endif
+        for (size_t i=0,limit=pair_results[worker].size(); i<limit; ++i) {
+            pair_out << pair_results[worker][i] << endl;
         }
-#endif
     }
-#if OUTPUT_EDGES
-    edge_out.close();
-#endif
+    pair_out.close();
+    amBarrier();
+    MPI_Barrier(comm);
+    write_time = MPI_Wtime() - write_time;
+    if (0 == trank(0)) {
+        cout << "write time = " << write_time << endl;
+    }
 
     delete suffix_buckets;
     delete [] utcs;
-#if OUTPUT_EDGES
-    delete [] edge_results;
-#endif
-#if defined(GLOBAL_DUPLICATES)
-    delete [] pairs;
-#endif
+    delete [] pair_results;
     delete sequences;
+#if ARMCI_COUNTER
+    retval = ARMCI_Free(counter[nprocs]);
+    delete [] counter;
+#endif
 
     totaltime = MPI_Wtime() - totaltime;
     if (0 == trank(0)) {
@@ -715,6 +653,17 @@ int main(int argc, char **argv)
     TascelConfig::finalize();
     MPI_Comm_free(&comm);
     MPI_Finalize();
+
+    } catch (const std::exception& ex) {
+        cout << rank << "\tstd::exception\t" << ex.what() << endl;
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    } catch (const std::string& ex) {
+        cout << rank << "\tstring exception\t" << ex << endl;
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    } catch (...) {
+        cout << rank << "\tunknown exception\t" << endl;
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
 
     return 0;
 }

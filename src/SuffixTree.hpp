@@ -12,10 +12,12 @@
 
 #include <cstddef>
 #include <set>
+#include <vector>
 #include <utility>
 
 using std::pair;
 using std::set;
+using std::vector;
 using std::size_t;
 
 namespace pgraph {
@@ -81,8 +83,15 @@ class SuffixTree
          *
          * @param[out] pairs
          */
+        void generate_pairs(vector<pair<size_t,size_t> > &pairs);
+
+        /**
+         * Generate promising pairs for alignment.
+         *
+         * @param[out] pairs
+         */
         template <class Callback>
-        void generate_pairs_cb(Callback callback);
+        bool generate_pairs_cb(Callback callback);
 
         double get_size_internal() const { return size_internal; }
 
@@ -212,7 +221,7 @@ is_candidate(SequenceDatabase *seqs, size_t nSeqs,
 
 
 template <class Callback>
-void SuffixTree::generate_pairs_cb(Callback callback)
+bool SuffixTree::generate_pairs_cb(Callback callback)
 {
     SuffixTreeNode *stNodes = NULL;
     int *srtIndex = NULL;
@@ -255,6 +264,7 @@ void SuffixTree::generate_pairs_cb(Callback callback)
         printf("stNode->depth=%d, stnode->rLeaf=%ld, sIndex=%ld\n", stnode->depth, stnode->rLeaf, sIndex);
 #endif
 
+        bool retval = false;
         if (stnode->depth >= EM - 1) {
             if (stnode->rLeaf == sIndex) { /* leaf node */
                 Suffix **lset = stnode->lset;
@@ -274,11 +284,12 @@ void SuffixTree::generate_pairs_cb(Callback callback)
                                 for (q = p->next; q != NULL; q = q->next) {
                                     if (TRUE == is_candidate(seqs, nSeqs, p, q, param)) {
                                         if (p->sid > q->sid) {
-                                            callback(make_pair(q->sid, p->sid));
+                                            retval = callback(make_pair(q->sid, p->sid));
                                         }
                                         else {
-                                            callback(make_pair(p->sid, q->sid));
+                                            retval = callback(make_pair(p->sid, q->sid));
                                         }
+                                        if (retval) return true;
                                     }
                                 }
                             }
@@ -291,11 +302,12 @@ void SuffixTree::generate_pairs_cb(Callback callback)
                                     for (q = lset[j]; q != NULL; q = q->next) {
                                         if (TRUE == is_candidate(seqs, nSeqs, p, q, param)) {
                                             if (p->sid > q->sid) {
-                                                callback(make_pair(q->sid, p->sid));
+                                                retval = callback(make_pair(q->sid, p->sid));
                                             }
                                             else {
-                                                callback(make_pair(p->sid, q->sid));
+                                                retval = callback(make_pair(p->sid, q->sid));
                                             }
+                                            if (retval) return true;
                                         }
                                     }
                                 }
@@ -320,11 +332,12 @@ void SuffixTree::generate_pairs_cb(Callback callback)
                                                     if (TRUE == is_candidate(
                                                                 sequences, nSeqs, p, q, param)) {
                                                         if (p->sid > q->sid) {
-                                                            callback(make_pair(q->sid, p->sid));
+                                                            retval = callback(make_pair(q->sid, p->sid));
                                                         }
                                                         else {
-                                                            callback(make_pair(p->sid, q->sid));
+                                                            retval = callback(make_pair(p->sid, q->sid));
                                                         }
+                                                        if (retval) return true;
                                                     }
                                                 }
                                             }
@@ -370,6 +383,8 @@ void SuffixTree::generate_pairs_cb(Callback callback)
 
     /* free */
     delete [] srtIndex;
+
+    return false;
 }
 
 

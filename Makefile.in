@@ -91,14 +91,16 @@ bin_PROGRAMS = apps/align$(EXEEXT) apps/align_garray$(EXEEXT) \
 	apps/align_iter_length_filter$(EXEEXT) \
 	apps/align_length_filter$(EXEEXT) \
 	apps/align_length_filter_noalign$(EXEEXT) \
-	apps/align_tree$(EXEEXT) apps/align_tree_noalign$(EXEEXT) \
+	apps/align_pairs$(EXEEXT) apps/align_tree$(EXEEXT) \
+	apps/align_tree_noalign$(EXEEXT) \
 	apps/align_tree_dumb_noalign$(EXEEXT) \
 	apps/align_tree_dup$(EXEEXT) apps/align_tree_dynamic$(EXEEXT) \
 	apps/align_tree_dynamic_dup$(EXEEXT) \
 	apps/align_tree_dynamic_callback$(EXEEXT) \
 	apps/align_tree_dynamic_callback_dup$(EXEEXT) \
-	apps/ccd$(EXEEXT) apps/ccd2$(EXEEXT) $(am__EXEEXT_1) \
-	$(am__EXEEXT_2) $(am__EXEEXT_3) $(am__EXEEXT_4)
+	apps/ccd$(EXEEXT) apps/ccd2$(EXEEXT) apps/pairs$(EXEEXT) \
+	$(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+	$(am__EXEEXT_4)
 @HAVE_ARMCI_TRUE@am__append_4 = apps/align_counter \
 @HAVE_ARMCI_TRUE@	apps/align_counter_length_filter \
 @HAVE_ARMCI_TRUE@	apps/align_tree_hybrid \
@@ -280,6 +282,12 @@ apps_align_length_filter_noalign_LDADD = $(LDADD)
 apps_align_length_filter_noalign_DEPENDENCIES = libpgraph.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am_apps_align_pairs_OBJECTS = apps/align_pairs.$(OBJEXT)
+apps_align_pairs_OBJECTS = $(am_apps_align_pairs_OBJECTS)
+apps_align_pairs_LDADD = $(LDADD)
+apps_align_pairs_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_apps_align_ssw_OBJECTS = apps/apps_align_ssw-align.$(OBJEXT)
 apps_align_ssw_OBJECTS = $(am_apps_align_ssw_OBJECTS)
 apps_align_ssw_LDADD = $(LDADD)
@@ -435,6 +443,12 @@ apps_ccd2_LDADD = $(LDADD)
 apps_ccd2_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
+am_apps_pairs_OBJECTS = apps/pairs.$(OBJEXT)
+apps_pairs_OBJECTS = $(am_apps_pairs_OBJECTS)
+apps_pairs_LDADD = $(LDADD)
+apps_pairs_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_apps_ssw_test_OBJECTS = contrib/Complete-Striped-Smith-Waterman-Library/src/main.$(OBJEXT)
 apps_ssw_test_OBJECTS = $(am_apps_ssw_test_OBJECTS)
 am__DEPENDENCIES_2 = libpgraph.la $(am__DEPENDENCIES_1) \
@@ -556,7 +570,8 @@ SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
 	$(apps_align_iter_ssw_SOURCES) \
 	$(apps_align_length_filter_SOURCES) \
 	$(apps_align_length_filter_noalign_SOURCES) \
-	$(apps_align_ssw_SOURCES) $(apps_align_tree_SOURCES) \
+	$(apps_align_pairs_SOURCES) $(apps_align_ssw_SOURCES) \
+	$(apps_align_tree_SOURCES) \
 	$(apps_align_tree_dumb_noalign_SOURCES) \
 	$(apps_align_tree_dup_SOURCES) \
 	$(apps_align_tree_dynamic_SOURCES) \
@@ -575,8 +590,9 @@ SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
 	$(apps_align_tree_hybrid_sorted_noalign_SOURCES) \
 	$(apps_align_tree_noalign_SOURCES) \
 	$(apps_align_tree_ssw_SOURCES) $(apps_ccd_SOURCES) \
-	$(apps_ccd2_SOURCES) $(apps_ssw_test_SOURCES) \
-	$(tests_test_align_SOURCES) $(tests_test_combinations_SOURCES) \
+	$(apps_ccd2_SOURCES) $(apps_pairs_SOURCES) \
+	$(apps_ssw_test_SOURCES) $(tests_test_align_SOURCES) \
+	$(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_kcombo2_SOURCES) \
 	$(tests_test_read_SOURCES) $(tests_test_read_fasta_SOURCES) \
 	$(tests_test_read_serial_SOURCES) $(tests_test_ssw_SOURCES)
@@ -589,7 +605,8 @@ DIST_SOURCES = $(am__libpgraph_la_SOURCES_DIST) $(apps_align_SOURCES) \
 	$(apps_align_iter_ssw_SOURCES) \
 	$(apps_align_length_filter_SOURCES) \
 	$(apps_align_length_filter_noalign_SOURCES) \
-	$(apps_align_ssw_SOURCES) $(apps_align_tree_SOURCES) \
+	$(apps_align_pairs_SOURCES) $(apps_align_ssw_SOURCES) \
+	$(apps_align_tree_SOURCES) \
 	$(apps_align_tree_dumb_noalign_SOURCES) \
 	$(apps_align_tree_dup_SOURCES) \
 	$(apps_align_tree_dynamic_SOURCES) \
@@ -608,8 +625,9 @@ DIST_SOURCES = $(am__libpgraph_la_SOURCES_DIST) $(apps_align_SOURCES) \
 	$(apps_align_tree_hybrid_sorted_noalign_SOURCES) \
 	$(apps_align_tree_noalign_SOURCES) \
 	$(apps_align_tree_ssw_SOURCES) $(apps_ccd_SOURCES) \
-	$(apps_ccd2_SOURCES) $(apps_ssw_test_SOURCES) \
-	$(tests_test_align_SOURCES) $(tests_test_combinations_SOURCES) \
+	$(apps_ccd2_SOURCES) $(apps_pairs_SOURCES) \
+	$(apps_ssw_test_SOURCES) $(tests_test_align_SOURCES) \
+	$(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_kcombo2_SOURCES) \
 	$(tests_test_read_SOURCES) $(tests_test_read_fasta_SOURCES) \
 	$(tests_test_read_serial_SOURCES) $(tests_test_ssw_SOURCES)
@@ -837,6 +855,7 @@ apps_align_iter_SOURCES = apps/align.cpp
 apps_align_iter_length_filter_SOURCES = apps/align.cpp
 apps_align_length_filter_SOURCES = apps/align.cpp
 apps_align_length_filter_noalign_SOURCES = apps/align.cpp
+apps_align_pairs_SOURCES = apps/align_pairs.cpp
 apps_align_tree_SOURCES = apps/align_tree.cpp
 apps_align_tree_noalign_SOURCES = apps/align_tree.cpp
 apps_align_tree_dumb_noalign_SOURCES = apps/align_tree.cpp
@@ -857,6 +876,7 @@ apps_align_tree_hybrid_callback_dup_SOURCES = apps/align_tree_hybrid.cpp
 apps_align_tree_hybrid2_SOURCES = apps/align_tree_hybrid2.cpp
 apps_ccd_SOURCES = apps/ccd.cpp
 apps_ccd2_SOURCES = apps/ccd2.cpp
+apps_pairs_SOURCES = apps/pairs.cpp
 apps_align_ssw_SOURCES = apps/align.cpp
 apps_align_counter_ssw_SOURCES = apps/align_counter.cpp
 apps_align_iter_ssw_SOURCES = apps/align.cpp
@@ -1145,6 +1165,12 @@ apps/apps_align_length_filter_noalign-align.$(OBJEXT):  \
 apps/align_length_filter_noalign$(EXEEXT): $(apps_align_length_filter_noalign_OBJECTS) $(apps_align_length_filter_noalign_DEPENDENCIES) $(EXTRA_apps_align_length_filter_noalign_DEPENDENCIES) apps/$(am__dirstamp)
 	@rm -f apps/align_length_filter_noalign$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_length_filter_noalign_OBJECTS) $(apps_align_length_filter_noalign_LDADD) $(LIBS)
+apps/align_pairs.$(OBJEXT): apps/$(am__dirstamp) \
+	apps/$(DEPDIR)/$(am__dirstamp)
+
+apps/align_pairs$(EXEEXT): $(apps_align_pairs_OBJECTS) $(apps_align_pairs_DEPENDENCIES) $(EXTRA_apps_align_pairs_DEPENDENCIES) apps/$(am__dirstamp)
+	@rm -f apps/align_pairs$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_pairs_OBJECTS) $(apps_align_pairs_LDADD) $(LIBS)
 apps/apps_align_ssw-align.$(OBJEXT): apps/$(am__dirstamp) \
 	apps/$(DEPDIR)/$(am__dirstamp)
 
@@ -1277,6 +1303,12 @@ apps/ccd2.$(OBJEXT): apps/$(am__dirstamp) \
 apps/ccd2$(EXEEXT): $(apps_ccd2_OBJECTS) $(apps_ccd2_DEPENDENCIES) $(EXTRA_apps_ccd2_DEPENDENCIES) apps/$(am__dirstamp)
 	@rm -f apps/ccd2$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(apps_ccd2_OBJECTS) $(apps_ccd2_LDADD) $(LIBS)
+apps/pairs.$(OBJEXT): apps/$(am__dirstamp) \
+	apps/$(DEPDIR)/$(am__dirstamp)
+
+apps/pairs$(EXEEXT): $(apps_pairs_OBJECTS) $(apps_pairs_DEPENDENCIES) $(EXTRA_apps_pairs_DEPENDENCIES) apps/$(am__dirstamp)
+	@rm -f apps/pairs$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(apps_pairs_OBJECTS) $(apps_pairs_LDADD) $(LIBS)
 contrib/Complete-Striped-Smith-Waterman-Library/src/main.$(OBJEXT): contrib/Complete-Striped-Smith-Waterman-Library/src/$(am__dirstamp) \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/$(am__dirstamp)
 
@@ -1352,6 +1384,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_counter.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_pairs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_tree.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_tree_dynamic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_tree_hybrid.Po@am__quote@
@@ -1382,6 +1415,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_tree_ssw-align_tree.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/ccd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/ccd2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/pairs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/ssw.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/ssw_cpp.Plo@am__quote@

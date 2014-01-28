@@ -359,6 +359,56 @@ procLeaf(Suffix **lset, SequenceDatabase *seqs, int nSeqs, Parameters param, set
 }
 
 
+static inline void
+procLeaf(Suffix **lset, SequenceDatabase *seqs, int nSeqs, Parameters param, vector<pair<size_t,size_t> > &pairs)
+{
+    size_t i;
+    size_t j;
+    Suffix *p = NULL;
+    Suffix *q = NULL;
+    int cutOff;
+
+    cutOff = param.AOL * param.SIM;
+
+    for (i = 0; i < SIGMA; i++) {
+        if (lset[i]) {
+            if (i == BEGIN - 'A') { /* inter cross */
+                for (p = lset[i]; p != NULL; p = p->next) {
+                    for (q = p->next; q != NULL; q = q->next) {
+                        if (TRUE == is_candidate(seqs, nSeqs, p, q, param)) {
+                            if (p->sid > q->sid) {
+                                pairs.push_back(make_pair(q->sid, p->sid));
+                            }
+                            else {
+                                pairs.push_back(make_pair(p->sid, q->sid));
+                            }
+                        }
+                    }
+                }
+            }
+
+            /* intra cross */
+            for (j = i + 1; j < SIGMA; j++) {
+                if (lset[j]) {
+                    for (p = lset[i]; p != NULL; p = p->next) {
+                        for (q = lset[j]; q != NULL; q = q->next) {
+                            if (TRUE == is_candidate(seqs, nSeqs, p, q, param)) {
+                                if (p->sid > q->sid) {
+                                    pairs.push_back(make_pair(q->sid, p->sid));
+                                }
+                                else {
+                                    pairs.push_back(make_pair(p->sid, q->sid));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 
 void SuffixTree::generate_pairs(set<pair<size_t,size_t> > &pairs)
 {
@@ -427,6 +477,122 @@ void SuffixTree::generate_pairs(set<pair<size_t,size_t> > &pairs)
                                                         }
                                                         else {
                                                             pairs.insert(make_pair(p->sid, q->sid));
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                /* merge the lsets of subtree */
+                for (m = 0; m < SIGMA; m++) {
+                    p = NULL;
+                    for (j = sIndex + 1; j <= eIndex; j = stNodes[j].rLeaf + 1) {
+                        if ((q = stNodes[j].lset[m])) {
+
+                            /* empty the subtree's ptrs array */
+                            stNodes[j].lset[m] = NULL;
+                            if (p == NULL) {
+                                p = q;
+                                stNodes[sIndex].lset[m] = q;
+                            }
+                            else {
+                                p->next = q;
+                            }
+
+                            /* walk to the end */
+                            while (p->next) {
+                                p = p->next;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        else {
+            /* stnodes are sorted, so later part
+             * will not satisfy EM cutoff */
+            break;
+        }
+    }
+
+    /* free */
+    delete [] srtIndex;
+}
+
+
+void SuffixTree::generate_pairs(vector<pair<size_t,size_t> > &pairs)
+{
+    SuffixTreeNode *stNodes = NULL;
+    int *srtIndex = NULL;
+    size_t nStNodes = 0;
+    int nSeqs = 0;
+    int maxSeqLen = 0;
+    size_t i = 0;
+    int j = 0;
+    SuffixTreeNode *stnode = NULL;
+    int sIndex;
+    int eIndex;
+    size_t m;
+    size_t n;
+    size_t s;
+    size_t t;
+    Suffix *p = NULL;
+    Suffix *q = NULL;
+    int EM;
+    int cutOff; /* cut off value of filter 1 */
+
+    srtIndex = new int[this->size];
+    count_sort(this->nodes, srtIndex, this->size, sequences->get_max_length());
+    stNodes = this->nodes;
+    nStNodes = this->size;
+    nSeqs = sequences->get_global_count();
+    maxSeqLen = sequences->get_max_length();
+
+    /* only two rows are allocated */
+    assert(NROW == 2);
+
+    EM = param.exact_match_len;
+    cutOff = param.AOL * param.SIM;
+
+    /* srtIndex maintain an order of NON-increasing depth of stNodes[] */
+    for (i = 0; i < nStNodes; i++) {
+        sIndex = srtIndex[i];
+        stnode = &stNodes[sIndex];
+
+#ifdef DEBUG
+        printf("stNode->depth=%d, stnode->rLeaf=%ld, sIndex=%ld\n", stnode->depth, stnode->rLeaf, sIndex);
+#endif
+
+        if (stnode->depth >= EM - 1) {
+            if (stnode->rLeaf == sIndex) { /* leaf node */
+                procLeaf(stnode->lset, sequences, nSeqs, param, pairs);
+            }
+            else {                       /* internal node */
+                eIndex = stnode->rLeaf;
+
+                /* pairs generation loop for internal node */
+                for (m = sIndex + 1; m < eIndex; m = stNodes[m].rLeaf+1) {
+                    for (n = stNodes[m].rLeaf+1; n <= eIndex; n = stNodes[n].rLeaf+1) {
+                        for (s = 0; s < SIGMA; s++) {
+                            if (stNodes[m].lset[s]) {
+                                for (t = 0; t < SIGMA; t++) {
+                                    if (stNodes[n].lset[t]) {
+                                        if (s != t || s == (BEGIN - 'A')) {
+                                            for (p = stNodes[m].lset[s]; p != NULL; p = p->next) {
+                                                for (q = stNodes[n].lset[t]; q != NULL; q = q->next) {
+                                                    if (TRUE == is_candidate(
+                                                                sequences, nSeqs, p, q, param)) {
+                                                        if (p->sid > q->sid) {
+                                                            pairs.push_back(make_pair(q->sid, p->sid));
+                                                        }
+                                                        else {
+                                                            pairs.push_back(make_pair(p->sid, q->sid));
                                                         }
                                                     }
                                                 }

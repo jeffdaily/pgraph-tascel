@@ -259,7 +259,7 @@ struct Callback {
         , local_pairs()
     {}
 
-    void operator()(pair<size_t,size_t> the_pair) {
+    bool operator()(pair<size_t,size_t> the_pair) {
         bool proceed = false;
 #if defined(GLOBAL_DUPLICATES)
         if (pairs[worker].count(the_pair) == 0) {
@@ -281,6 +281,8 @@ struct Callback {
 #endif
             utcs[worker]->addTask(&desc, sizeof(desc));
         }
+
+        return false; /* don't abort tree processing */
     }
 };
 
