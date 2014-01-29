@@ -123,6 +123,7 @@ noinst_PROGRAMS = tests/test_align$(EXEEXT) \
 	tests/test_read_fasta$(EXEEXT) tests/test_read_serial$(EXEEXT) \
 	$(am__EXEEXT_5)
 @HAVE_ARMCI_TRUE@@HAVE_SSE2_TRUE@am__append_8 = tests/test_ssw
+check_PROGRAMS = tests/test_mpi$(EXEEXT)
 subdir = .
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) \
@@ -151,6 +152,20 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
+ARFLAGS = cru
+AM_V_AR = $(am__v_AR_@AM_V@)
+am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
+am__v_AR_0 = @echo "  AR      " $@;
+am__v_AR_1 = 
+libgtest_a_AR = $(AR) $(ARFLAGS)
+libgtest_a_LIBADD =
+am__dirstamp = $(am__leading_dot)dirstamp
+am_libgtest_a_OBJECTS = contrib/gtest-1.7.0/src/gtest-all.$(OBJEXT)
+libgtest_a_OBJECTS = $(am_libgtest_a_OBJECTS)
+libpgtest_a_AR = $(AR) $(ARFLAGS)
+libpgtest_a_LIBADD =
+am_libpgtest_a_OBJECTS = tests/StreamPrettyPrinter.$(OBJEXT)
+libpgtest_a_OBJECTS = $(am_libpgtest_a_OBJECTS)
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libpgraph_la_LIBADD =
 am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
@@ -174,7 +189,6 @@ am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.h \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.cpp \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h
-am__dirstamp = $(am__leading_dot)dirstamp
 @HAVE_ARMCI_TRUE@am__objects_1 = src/SequenceDatabaseArmci.lo
 @HAVE_SSE2_TRUE@am__objects_2 = contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.lo \
 @HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.lo
@@ -485,6 +499,10 @@ tests_test_kcombo2_LDADD = $(LDADD)
 tests_test_kcombo2_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
+am_tests_test_mpi_OBJECTS = tests/test_mpi.$(OBJEXT)
+tests_test_mpi_OBJECTS = $(am_tests_test_mpi_OBJECTS)
+tests_test_mpi_DEPENDENCIES = $(am__DEPENDENCIES_2) libpgtest.a \
+	libgtest.a $(am__DEPENDENCIES_1)
 am_tests_test_read_OBJECTS = tests/test_read.$(OBJEXT)
 tests_test_read_OBJECTS = $(am_tests_test_read_OBJECTS)
 tests_test_read_LDADD = $(LDADD)
@@ -561,7 +579,8 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
+SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
+	$(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
 	$(apps_align_counter_SOURCES) \
 	$(apps_align_counter_length_filter_SOURCES) \
 	$(apps_align_counter_ssw_SOURCES) $(apps_align_garray_SOURCES) \
@@ -594,9 +613,11 @@ SOURCES = $(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
 	$(apps_ssw_test_SOURCES) $(tests_test_align_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_kcombo2_SOURCES) \
-	$(tests_test_read_SOURCES) $(tests_test_read_fasta_SOURCES) \
+	$(tests_test_mpi_SOURCES) $(tests_test_read_SOURCES) \
+	$(tests_test_read_fasta_SOURCES) \
 	$(tests_test_read_serial_SOURCES) $(tests_test_ssw_SOURCES)
-DIST_SOURCES = $(am__libpgraph_la_SOURCES_DIST) $(apps_align_SOURCES) \
+DIST_SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
+	$(am__libpgraph_la_SOURCES_DIST) $(apps_align_SOURCES) \
 	$(apps_align_counter_SOURCES) \
 	$(apps_align_counter_length_filter_SOURCES) \
 	$(apps_align_counter_ssw_SOURCES) $(apps_align_garray_SOURCES) \
@@ -629,7 +650,8 @@ DIST_SOURCES = $(am__libpgraph_la_SOURCES_DIST) $(apps_align_SOURCES) \
 	$(apps_ssw_test_SOURCES) $(tests_test_align_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_kcombo2_SOURCES) \
-	$(tests_test_read_SOURCES) $(tests_test_read_fasta_SOURCES) \
+	$(tests_test_mpi_SOURCES) $(tests_test_read_SOURCES) \
+	$(tests_test_read_fasta_SOURCES) \
 	$(tests_test_read_serial_SOURCES) $(tests_test_ssw_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
@@ -814,12 +836,13 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I m4
 AM_CFLAGS = 
-# this flag is supported by g++ and icpc
-AM_CXXFLAGS = -Wno-deprecated
+AM_CXXFLAGS = 
 #AM_CPPFLAGS += $(GA_CPPFLAGS)
 AM_CPPFLAGS = $(TASCEL_CPPFLAGS) $(ARMCI_CPPFLAGS) $(PT_MPI_CPPFLAGS) \
 	$(GMP_CPPFLAGS) -I$(top_srcdir)/src $(am__append_1) \
-	-I$(top_srcdir)/contrib/boost-1.55
+	-I$(top_srcdir)/contrib/boost-1.55 \
+	-I$(top_srcdir)/contrib/gtest-1.7.0 \
+	-I$(top_srcdir)/contrib/gtest-1.7.0/include
 #AM_LDFLAGS += $(GA_LDFLAGS)
 AM_LDFLAGS = $(TASCEL_LDFLAGS) $(ARMCI_LDFLAGS) $(PT_MPI_LDFLAGS) \
 	$(GMP_LDFLAGS)
@@ -936,11 +959,25 @@ tests_test_read_SOURCES = tests/test_read.cpp
 tests_test_read_fasta_SOURCES = tests/test_read_fasta.cpp
 tests_test_read_serial_SOURCES = tests/test_read_serial.cpp
 tests_test_ssw_SOURCES = tests/test_ssw.cpp
+#
+#sandbox_brute_force_costs_CPPFLAGS         = $(AM_CPPFLAGS) -DDUMP_COSTS=1
+#sandbox_brute_force_multiple_CPPFLAGS      = $(AM_CPPFLAGS) -DMULTIPLE_PAIRS_PER_TASK=1
+#sandbox_brute_force_rr_CPPFLAGS            = $(AM_CPPFLAGS) -DROUND_ROBIN_SEQUENCE_PAIRS=1
+#sandbox_brute_force_rr_sorted_CPPFLAGS     = $(AM_CPPFLAGS) -DROUND_ROBIN_SEQUENCE_PAIRS=1 -DSORT_TASKS_LOCALLY=1
+#sandbox_brute_force_rr_sorted_seq_CPPFLAGS = $(AM_CPPFLAGS) -DROUND_ROBIN_SEQUENCE_PAIRS=1 -DSORT_SEQUENCES=1
+#sandbox_brute_force_sorted_CPPFLAGS        = $(AM_CPPFLAGS) -DSORT_TASKS_LOCALLY=1
+#sandbox_brute_force_sorted_seq_CPPFLAGS    = $(AM_CPPFLAGS) -DSORT_SEQUENCES=1
+check_LIBRARIES = libgtest.a libpgtest.a
+libgtest_a_SOURCES = contrib/gtest-1.7.0/src/gtest-all.cc
+libpgtest_a_SOURCES = tests/StreamPrettyPrinter.cpp \
+	tests/StreamPrettyPrinter.hpp
+tests_test_mpi_SOURCES = tests/test_mpi.cpp
+tests_test_mpi_LDADD = $(LDADD) libpgtest.a libgtest.a $(LIBS)
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .cpp .lo .o .obj
+.SUFFIXES: .c .cc .cpp .lo .o .obj
 am--refresh: Makefile
 	@:
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
@@ -990,6 +1027,36 @@ $(srcdir)/config.h.in:  $(am__configure_deps)
 
 distclean-hdr:
 	-rm -f config.h stamp-h1
+
+clean-checkLIBRARIES:
+	-test -z "$(check_LIBRARIES)" || rm -f $(check_LIBRARIES)
+contrib/gtest-1.7.0/src/$(am__dirstamp):
+	@$(MKDIR_P) contrib/gtest-1.7.0/src
+	@: > contrib/gtest-1.7.0/src/$(am__dirstamp)
+contrib/gtest-1.7.0/src/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) contrib/gtest-1.7.0/src/$(DEPDIR)
+	@: > contrib/gtest-1.7.0/src/$(DEPDIR)/$(am__dirstamp)
+contrib/gtest-1.7.0/src/gtest-all.$(OBJEXT):  \
+	contrib/gtest-1.7.0/src/$(am__dirstamp) \
+	contrib/gtest-1.7.0/src/$(DEPDIR)/$(am__dirstamp)
+
+libgtest.a: $(libgtest_a_OBJECTS) $(libgtest_a_DEPENDENCIES) $(EXTRA_libgtest_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libgtest.a
+	$(AM_V_AR)$(libgtest_a_AR) libgtest.a $(libgtest_a_OBJECTS) $(libgtest_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libgtest.a
+tests/$(am__dirstamp):
+	@$(MKDIR_P) tests
+	@: > tests/$(am__dirstamp)
+tests/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) tests/$(DEPDIR)
+	@: > tests/$(DEPDIR)/$(am__dirstamp)
+tests/StreamPrettyPrinter.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+
+libpgtest.a: $(libpgtest_a_OBJECTS) $(libpgtest_a_DEPENDENCIES) $(EXTRA_libpgtest_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libpgtest.a
+	$(AM_V_AR)$(libpgtest_a_AR) libpgtest.a $(libpgtest_a_OBJECTS) $(libpgtest_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libpgtest.a
 
 clean-noinstLTLIBRARIES:
 	-test -z "$(noinst_LTLIBRARIES)" || rm -f $(noinst_LTLIBRARIES)
@@ -1084,6 +1151,15 @@ uninstall-binPROGRAMS:
 
 clean-binPROGRAMS:
 	@list='$(bin_PROGRAMS)'; test -n "$$list" || exit 0; \
+	echo " rm -f" $$list; \
+	rm -f $$list || exit $$?; \
+	test -n "$(EXEEXT)" || exit 0; \
+	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
+	echo " rm -f" $$list; \
+	rm -f $$list
+
+clean-checkPROGRAMS:
+	@list='$(check_PROGRAMS)'; test -n "$$list" || exit 0; \
 	echo " rm -f" $$list; \
 	rm -f $$list || exit $$?; \
 	test -n "$(EXEEXT)" || exit 0; \
@@ -1315,12 +1391,6 @@ contrib/Complete-Striped-Smith-Waterman-Library/src/main.$(OBJEXT): contrib/Comp
 apps/ssw_test$(EXEEXT): $(apps_ssw_test_OBJECTS) $(apps_ssw_test_DEPENDENCIES) $(EXTRA_apps_ssw_test_DEPENDENCIES) apps/$(am__dirstamp)
 	@rm -f apps/ssw_test$(EXEEXT)
 	$(AM_V_CCLD)$(apps_ssw_test_LINK) $(apps_ssw_test_OBJECTS) $(apps_ssw_test_LDADD) $(LIBS)
-tests/$(am__dirstamp):
-	@$(MKDIR_P) tests
-	@: > tests/$(am__dirstamp)
-tests/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) tests/$(DEPDIR)
-	@: > tests/$(DEPDIR)/$(am__dirstamp)
 tests/test_align.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 
@@ -1345,6 +1415,12 @@ tests/test_kcombo2.$(OBJEXT): tests/$(am__dirstamp) \
 tests/test_kcombo2$(EXEEXT): $(tests_test_kcombo2_OBJECTS) $(tests_test_kcombo2_DEPENDENCIES) $(EXTRA_tests_test_kcombo2_DEPENDENCIES) tests/$(am__dirstamp)
 	@rm -f tests/test_kcombo2$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_kcombo2_OBJECTS) $(tests_test_kcombo2_LDADD) $(LIBS)
+tests/test_mpi.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+
+tests/test_mpi$(EXEEXT): $(tests_test_mpi_OBJECTS) $(tests_test_mpi_DEPENDENCIES) $(EXTRA_tests_test_mpi_DEPENDENCIES) tests/$(am__dirstamp)
+	@rm -f tests/test_mpi$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_mpi_OBJECTS) $(tests_test_mpi_LDADD) $(LIBS)
 tests/test_read.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 
@@ -1375,6 +1451,7 @@ mostlyclean-compile:
 	-rm -f apps/*.$(OBJEXT)
 	-rm -f contrib/Complete-Striped-Smith-Waterman-Library/src/*.$(OBJEXT)
 	-rm -f contrib/Complete-Striped-Smith-Waterman-Library/src/*.lo
+	-rm -f contrib/gtest-1.7.0/src/*.$(OBJEXT)
 	-rm -f src/*.$(OBJEXT)
 	-rm -f src/*.lo
 	-rm -f tests/*.$(OBJEXT)
@@ -1419,6 +1496,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/ssw.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/ssw_cpp.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/gtest-1.7.0/src/$(DEPDIR)/gtest-all.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Parameters.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Sequence.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabase.Plo@am__quote@
@@ -1435,10 +1513,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/mpix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/param.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/stree.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/StreamPrettyPrinter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_combinations.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_dynamic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_kcombo2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_mpi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_read.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_read_fasta.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_read_serial.Po@am__quote@
@@ -1468,7 +1548,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
 
-.cpp.o:
+.cc.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
 @am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
@@ -1476,7 +1556,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ $<
 
-.cpp.obj:
+.cc.obj:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
 @am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
@@ -1484,7 +1564,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-.cpp.lo:
+.cc.lo:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
 @am__fastdepCXX_TRUE@	$(LTCXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
 @am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
@@ -1828,6 +1908,30 @@ apps/apps_align_tree_ssw-align_tree.obj: apps/align_tree.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_ssw_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_ssw-align_tree.obj `if test -f 'apps/align_tree.cpp'; then $(CYGPATH_W) 'apps/align_tree.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree.cpp'; fi`
 
+.cpp.o:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ $<
+
+.cpp.obj:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+.cpp.lo:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
+@am__fastdepCXX_TRUE@	$(LTCXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LTCXXCOMPILE) -c -o $@ $<
+
 mostlyclean-libtool:
 	-rm -f *.lo
 
@@ -2057,6 +2161,7 @@ distcleancheck: distclean
 	       $(distcleancheck_listfiles) ; \
 	       exit 1; } >&2
 check-am: all-am
+	$(MAKE) $(AM_MAKEFLAGS) $(check_LIBRARIES) $(check_PROGRAMS)
 check: check-am
 all-am: Makefile $(LTLIBRARIES) $(PROGRAMS) config.h
 installdirs:
@@ -2093,6 +2198,8 @@ distclean-generic:
 	-rm -f apps/$(am__dirstamp)
 	-rm -f contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/$(am__dirstamp)
 	-rm -f contrib/Complete-Striped-Smith-Waterman-Library/src/$(am__dirstamp)
+	-rm -f contrib/gtest-1.7.0/src/$(DEPDIR)/$(am__dirstamp)
+	-rm -f contrib/gtest-1.7.0/src/$(am__dirstamp)
 	-rm -f src/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/$(am__dirstamp)
 	-rm -f tests/$(DEPDIR)/$(am__dirstamp)
@@ -2103,12 +2210,13 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-binPROGRAMS clean-generic clean-libtool \
-	clean-noinstLTLIBRARIES clean-noinstPROGRAMS mostlyclean-am
+clean-am: clean-binPROGRAMS clean-checkLIBRARIES clean-checkPROGRAMS \
+	clean-generic clean-libtool clean-noinstLTLIBRARIES \
+	clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf apps/$(DEPDIR) contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf apps/$(DEPDIR) contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR) contrib/gtest-1.7.0/src/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -2156,7 +2264,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf apps/$(DEPDIR) contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf apps/$(DEPDIR) contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR) contrib/gtest-1.7.0/src/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
@@ -2175,10 +2283,11 @@ ps-am:
 
 uninstall-am: uninstall-binPROGRAMS
 
-.MAKE: all install-am install-strip
+.MAKE: all check-am install-am install-strip
 
 .PHONY: CTAGS GTAGS TAGS all all-am am--refresh check check-am clean \
-	clean-binPROGRAMS clean-cscope clean-generic clean-libtool \
+	clean-binPROGRAMS clean-checkLIBRARIES clean-checkPROGRAMS \
+	clean-cscope clean-generic clean-libtool \
 	clean-noinstLTLIBRARIES clean-noinstPROGRAMS cscope \
 	cscopelist-am ctags ctags-am dist dist-all dist-bzip2 \
 	dist-gzip dist-lzip dist-shar dist-tarZ dist-xz dist-zip \
@@ -2195,14 +2304,6 @@ uninstall-am: uninstall-binPROGRAMS
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags tags-am uninstall uninstall-am uninstall-binPROGRAMS
 
-#
-#sandbox_brute_force_costs_CPPFLAGS         = $(AM_CPPFLAGS) -DDUMP_COSTS=1
-#sandbox_brute_force_multiple_CPPFLAGS      = $(AM_CPPFLAGS) -DMULTIPLE_PAIRS_PER_TASK=1
-#sandbox_brute_force_rr_CPPFLAGS            = $(AM_CPPFLAGS) -DROUND_ROBIN_SEQUENCE_PAIRS=1
-#sandbox_brute_force_rr_sorted_CPPFLAGS     = $(AM_CPPFLAGS) -DROUND_ROBIN_SEQUENCE_PAIRS=1 -DSORT_TASKS_LOCALLY=1
-#sandbox_brute_force_rr_sorted_seq_CPPFLAGS = $(AM_CPPFLAGS) -DROUND_ROBIN_SEQUENCE_PAIRS=1 -DSORT_SEQUENCES=1
-#sandbox_brute_force_sorted_CPPFLAGS        = $(AM_CPPFLAGS) -DSORT_TASKS_LOCALLY=1
-#sandbox_brute_force_sorted_seq_CPPFLAGS    = $(AM_CPPFLAGS) -DSORT_SEQUENCES=1
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

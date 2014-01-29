@@ -1,8 +1,7 @@
 ACLOCAL_AMFLAGS = -I m4
 
 AM_CFLAGS =
-# this flag is supported by g++ and icpc
-AM_CXXFLAGS = -Wno-deprecated
+AM_CXXFLAGS =
 AM_CPPFLAGS =
 AM_LDFLAGS =
 LDADD =
@@ -17,6 +16,8 @@ if HAVE_SSE2
 AM_CPPFLAGS += -I$(top_srcdir)/contrib/Complete-Striped-Smith-Waterman-Library/src
 endif
 AM_CPPFLAGS += -I$(top_srcdir)/contrib/boost-1.55
+AM_CPPFLAGS += -I$(top_srcdir)/contrib/gtest-1.7.0
+AM_CPPFLAGS += -I$(top_srcdir)/contrib/gtest-1.7.0/include
 
 AM_LDFLAGS += $(TASCEL_LDFLAGS)
 #AM_LDFLAGS += $(GA_LDFLAGS)
@@ -270,3 +271,19 @@ tests_test_ssw_SOURCES                     = tests/test_ssw.cpp
 #sandbox_brute_force_rr_sorted_seq_CPPFLAGS = $(AM_CPPFLAGS) -DROUND_ROBIN_SEQUENCE_PAIRS=1 -DSORT_SEQUENCES=1
 #sandbox_brute_force_sorted_CPPFLAGS        = $(AM_CPPFLAGS) -DSORT_TASKS_LOCALLY=1
 #sandbox_brute_force_sorted_seq_CPPFLAGS    = $(AM_CPPFLAGS) -DSORT_SEQUENCES=1
+
+check_LIBRARIES =
+check_LIBRARIES += libgtest.a
+libgtest_a_SOURCES = contrib/gtest-1.7.0/src/gtest-all.cc
+
+check_LIBRARIES += libpgtest.a
+libpgtest_a_SOURCES =
+libpgtest_a_SOURCES += tests/StreamPrettyPrinter.cpp
+libpgtest_a_SOURCES += tests/StreamPrettyPrinter.hpp
+
+check_PROGRAMS =
+check_PROGRAMS += tests/test_mpi
+
+tests_test_mpi_SOURCES = tests/test_mpi.cpp
+
+tests_test_mpi_LDADD = $(LDADD) libpgtest.a libgtest.a $(LIBS)
