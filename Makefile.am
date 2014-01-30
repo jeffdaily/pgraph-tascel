@@ -278,6 +278,8 @@ libgtest_a_SOURCES = contrib/gtest-1.7.0/src/gtest-all.cc
 
 check_LIBRARIES += libpgtest.a
 libpgtest_a_SOURCES =
+libpgtest_a_SOURCES += tests/MpiEnvironment.cpp
+libpgtest_a_SOURCES += tests/MpiEnvironment.hpp
 libpgtest_a_SOURCES += tests/StreamPrettyPrinter.cpp
 libpgtest_a_SOURCES += tests/StreamPrettyPrinter.hpp
 

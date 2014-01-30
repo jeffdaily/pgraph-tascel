@@ -5557,6 +5557,66 @@ _ACEOF
 esac
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for C global variable containing the name of the program" >&5
+$as_echo_n "checking for C global variable containing the name of the program... " >&6; }
+if ${pt_cv_progname+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+     pt_cv_progname=none
+     for name in __progname program_invocation_short_name __progname_full program_invocation_name
+     do
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <stdio.h>
+#include <errno.h>
+extern const char * $name;
+int
+main ()
+{
+printf("%s\n", $name);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  pt_cv_progname=$name
+             break
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+     done
+     ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $pt_cv_progname" >&5
+$as_echo "$pt_cv_progname" >&6; }
+if test x$pt_cv_progname != xnone; then :
+  val=1
+else
+  val=0
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_PROGNAME $val
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define PROGNAME $pt_cv_progname
+_ACEOF
+
+
+
 ac_fn_c_check_type "$LINENO" "pthread_barrier_t" "ac_cv_type_pthread_barrier_t" "#include <pthread.h>
 "
 if test "x$ac_cv_type_pthread_barrier_t" = xyes; then :
@@ -5577,6 +5637,17 @@ else
 fi
 
 
+
+for ac_func in readlink
+do :
+  ac_fn_c_check_func "$LINENO" "readlink" "ac_cv_func_readlink"
+if test "x$ac_cv_func_readlink" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_READLINK 1
+_ACEOF
+
+fi
+done
 
 for ac_func in sched_setaffinity
 do :

@@ -2,13 +2,17 @@
 #define _PGRAPH_STREAMPRETTYPRINTER_H_
 
 #include <fstream>
-#include <iostream>
 #include <string>
 
 #include "gtest/gtest.h"
 
-using namespace std;
-using namespace testing;
+using ::std::ostream;
+using ::std::string;
+using ::testing::TestCase;
+using ::testing::TestEventListener;
+using ::testing::TestInfo;
+using ::testing::TestPartResult;
+using ::testing::UnitTest;
 
 // This class implements the TestEventListener interface.
 //

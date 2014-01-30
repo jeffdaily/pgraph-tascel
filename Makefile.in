@@ -142,8 +142,9 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ga_arg_parse.m4 \
 	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
 	$(top_srcdir)/m4/lt~obsolete.m4 \
 	$(top_srcdir)/m4/pt_mpi_unwrap.m4 $(top_srcdir)/m4/pt_mpicc.m4 \
-	$(top_srcdir)/m4/pt_mpicxx.m4 $(top_srcdir)/m4/pt_with_mpi.m4 \
-	$(top_srcdir)/m4/tascel.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/pt_mpicxx.m4 $(top_srcdir)/m4/pt_progname.m4 \
+	$(top_srcdir)/m4/pt_with_mpi.m4 $(top_srcdir)/m4/tascel.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
@@ -164,7 +165,8 @@ am_libgtest_a_OBJECTS = contrib/gtest-1.7.0/src/gtest-all.$(OBJEXT)
 libgtest_a_OBJECTS = $(am_libgtest_a_OBJECTS)
 libpgtest_a_AR = $(AR) $(ARFLAGS)
 libpgtest_a_LIBADD =
-am_libpgtest_a_OBJECTS = tests/StreamPrettyPrinter.$(OBJEXT)
+am_libpgtest_a_OBJECTS = tests/MpiEnvironment.$(OBJEXT) \
+	tests/StreamPrettyPrinter.$(OBJEXT)
 libpgtest_a_OBJECTS = $(am_libpgtest_a_OBJECTS)
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libpgraph_la_LIBADD =
@@ -969,7 +971,8 @@ tests_test_ssw_SOURCES = tests/test_ssw.cpp
 #sandbox_brute_force_sorted_seq_CPPFLAGS    = $(AM_CPPFLAGS) -DSORT_SEQUENCES=1
 check_LIBRARIES = libgtest.a libpgtest.a
 libgtest_a_SOURCES = contrib/gtest-1.7.0/src/gtest-all.cc
-libpgtest_a_SOURCES = tests/StreamPrettyPrinter.cpp \
+libpgtest_a_SOURCES = tests/MpiEnvironment.cpp \
+	tests/MpiEnvironment.hpp tests/StreamPrettyPrinter.cpp \
 	tests/StreamPrettyPrinter.hpp
 tests_test_mpi_SOURCES = tests/test_mpi.cpp
 tests_test_mpi_LDADD = $(LDADD) libpgtest.a libgtest.a $(LIBS)
@@ -1050,6 +1053,8 @@ tests/$(am__dirstamp):
 tests/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) tests/$(DEPDIR)
 	@: > tests/$(DEPDIR)/$(am__dirstamp)
+tests/MpiEnvironment.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
 tests/StreamPrettyPrinter.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 
@@ -1513,6 +1518,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/mpix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/param.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/stree.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/MpiEnvironment.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/StreamPrettyPrinter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_combinations.Po@am__quote@

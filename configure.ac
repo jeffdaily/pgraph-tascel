@@ -57,6 +57,8 @@ AC_TYPE_INT16_T
 AC_TYPE_INT32_T
 AC_TYPE_INT64_T
 
+PT_PROGNAME
+
 AC_CHECK_TYPES([pthread_barrier_t], [], [], [[#include <pthread.h>]])
 AM_CONDITIONAL([HAVE_PTHREAD_BARRIER_T],
                [test "x$ac_cv_type_pthread_barrier_t" = xyes])
@@ -64,6 +66,7 @@ AH_BOTTOM([#if !HAVE_PTHREAD_BARRIER_T
 #include "pthread_fixes.h"
 #endif])
 
+AC_CHECK_FUNCS([readlink])
 AC_CHECK_FUNCS([sched_setaffinity])
 AC_CHECK_FUNCS([pthread_setaffinity_np])
 AS_CASE([$ac_cv_func_sched_setaffinity:$ac_cv_func_pthread_setaffinity_np],

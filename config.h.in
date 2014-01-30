@@ -21,6 +21,9 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
+/* define to 1 if the C compiler has a program name global varaible */
+#undef HAVE_PROGNAME
+
 /* Define to 1 if the system has the type `pthread_barrier_t'. */
 #undef HAVE_PTHREAD_BARRIER_T
 
@@ -29,6 +32,9 @@
 
 /* Define to 1 if you have the `pthread_setaffinity_np' function. */
 #undef HAVE_PTHREAD_SETAFFINITY_NP
+
+/* Define to 1 if you have the `readlink' function. */
+#undef HAVE_READLINK
 
 /* Define to 1 if you have the <sched.h> header file. */
 #undef HAVE_SCHED_H
@@ -84,6 +90,9 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
+
+/* define to the name of the program name global variable */
+#undef PROGNAME
 
 /* whether affinity is supported */
 #undef SET_AFFINITY
