@@ -46,6 +46,8 @@ libpgraph_la_SOURCES += src/blosum/blosum62.h
 libpgraph_la_SOURCES += src/blosum/blosum75.h
 libpgraph_la_SOURCES += src/blosum/blosum80.h
 libpgraph_la_SOURCES += src/blosum/blosum90.h
+libpgraph_la_SOURCES += src/Bootstrap.cpp
+libpgraph_la_SOURCES += src/Bootstrap.hpp
 libpgraph_la_SOURCES += src/bucket.cpp
 libpgraph_la_SOURCES += src/bucket.hpp
 libpgraph_la_SOURCES += src/combinations.c
@@ -161,6 +163,7 @@ noinst_PROGRAMS += tests/test_kcombo2
 noinst_PROGRAMS += tests/test_read
 noinst_PROGRAMS += tests/test_read_fasta
 noinst_PROGRAMS += tests/test_read_serial
+noinst_PROGRAMS += tests/test_stl_container_performance
 if HAVE_SSE2
 if HAVE_ARMCI
 noinst_PROGRAMS += tests/test_ssw
@@ -262,6 +265,7 @@ tests_test_kcombo2_SOURCES                 = tests/test_kcombo2.cpp
 tests_test_read_SOURCES                    = tests/test_read.cpp
 tests_test_read_fasta_SOURCES              = tests/test_read_fasta.cpp
 tests_test_read_serial_SOURCES             = tests/test_read_serial.cpp
+tests_test_stl_container_performance_SOURCES = tests/test_stl_container_performance.cpp
 tests_test_ssw_SOURCES                     = tests/test_ssw.cpp
 #
 #sandbox_brute_force_costs_CPPFLAGS         = $(AM_CPPFLAGS) -DDUMP_COSTS=1

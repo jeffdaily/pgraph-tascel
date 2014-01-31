@@ -9,7 +9,7 @@
 #include <mpi.h>
 #include <tascel.h>
 #include <tascel/UniformTaskCollection.h>
-#include <tascel/UniformTaskCollSplitHybrid.h>
+#include <tascel/UniformTaskCollectionSplit.h>
 #include <tascel/tmpi.h>
 
 #include <algorithm>
@@ -31,6 +31,7 @@
 #include "TreeStats.hpp"
 #include "constants.h"
 #include "combinations.h"
+#include "EdgeResult.hpp"
 #include "alignment.hpp"
 #include "mpix.hpp"
 #include "tascelx.hpp"
@@ -53,41 +54,7 @@ using namespace pgraph;
 #define ALL_RESULTS 1
 
 
-class EdgeResult {
-    public:
-        unsigned long id1;
-        unsigned long id2;
-        double a;
-        double b;
-        double c;
-        bool is_edge;
-
-        EdgeResult(
-                unsigned long id1, unsigned long id2,
-                double a, double b, double c, bool is_edge=true)
-            : id1(id1)
-            , id2(id2)
-            , a(a)
-            , b(b)
-            , c(c)
-            , is_edge(is_edge)
-        {}
-
-        friend ostream& operator << (ostream &os, const EdgeResult &edge) {
-            os << edge.id1
-                << SEP << edge.id2
-                << SEP << edge.a
-                << SEP << edge.b
-                << SEP << edge.c
-                << SEP << edge.is_edge
-                ;
-            return os;
-        }
-};
-
-int rank = 0;
-int nprocs = 0;
-UniformTaskCollSplitHybrid** utcs = 0;
+UniformTaskCollectionSplit** utcs = 0;
 AlignStats *stats = 0;
 TreeStats *treestats = 0;
 SequenceDatabase *sequences = 0;
@@ -99,16 +66,6 @@ SuffixBuckets *suffix_buckets = NULL;
 
 #if defined(GLOBAL_DUPLICATES)
 set<pair<size_t,size_t> > *pairs = NULL;
-#endif
-
-#if defined(THREADED)
-static pthread_t *threadHandles = 0;
-static unsigned *threadRanks = 0;
-// Synchronization for worker threads
-pthread_barrier_t workersStart, workersEnd;
-// Synchronization for server thread
-pthread_barrier_t serverStart, serverEnd;
-volatile bool serverEnabled = true;
 #endif
 
 
@@ -352,25 +309,12 @@ int main(int argc, char **argv)
     time_t t1 = 0;                  /* start timer */
     time_t t2 = 0;                  /* stop timer */
 
-    /* initialize MPI */
-#if defined(THREADED)
-    {
-        int provided;
-        MPI_CHECK(TMPI_Init_thread(&argc, &argv,
-                    MPI_THREAD_MULTIPLE, &provided));
-        assert(provided == MPI_THREAD_MULTIPLE);
-    }
-#else
-    MPI_CHECK(TMPI_Init(&argc, &argv));
-#endif
-    MPI_CHECK(MPI_Comm_dup(MPI_COMM_WORLD, &comm));
-    MPI_CHECK(MPI_Comm_rank(comm, &rank));
-    MPI_CHECK(MPI_Comm_size(comm, &nprocs));
+    pgraph::initialize(&argc, &argv);
 
     /* initialize tascel */
     double totaltime = MPI_Wtime();
     TascelConfig::initialize(NUM_WORKERS_DEFAULT, comm);
-    utcs = new UniformTaskCollSplitHybrid*[NUM_WORKERS];
+    utcs = new UniformTaskCollectionSplit*[NUM_WORKERS];
     stats = new AlignStats[NUM_WORKERS];
     treestats = new TreeStats[NUM_WORKERS];
 #if OUTPUT_EDGES
@@ -378,13 +322,6 @@ int main(int argc, char **argv)
 #endif
 #if defined(GLOBAL_DUPLICATES)
     pairs = new set<pair<size_t,size_t> >[NUM_WORKERS];
-#endif
-#if defined(THREADED)
-    threadHandles = new pthread_t[NUM_WORKERS + NUM_SERVERS];
-    threadRanks = new unsigned[NUM_WORKERS + NUM_SERVERS];
-    for (int worker=0; worker<NUM_WORKERS; ++worker) {
-        threadRanks[worker] = worker;
-    }
 #endif
 
     /* MPI standard does not guarantee all procs receive argc and argv */
@@ -434,8 +371,7 @@ int main(int argc, char **argv)
             }
             printf("usage: align sequence_file memory_budget param\n");
         }
-        MPI_Comm_free(&comm);
-        MPI_Finalize();
+        pgraph::finalize();
         return 1;
     }
     else if (all_argv.size() >= 4) {
@@ -506,7 +442,7 @@ int main(int argc, char **argv)
 #if OUTPUT_EDGES
         edge_results[worker].reserve(max_tasks_per_worker);
 #endif
-        UniformTaskCollSplitHybrid*& utc = utcs[worker];
+        UniformTaskCollectionSplit*& utc = utcs[worker];
         TslFuncRegTbl *frt = new TslFuncRegTbl();
         TslFunc tf = frt->add(alignment_task);
         TslFunc tf2 = frt->add(tree_task);
@@ -516,7 +452,7 @@ int main(int argc, char **argv)
             .maxTasks(max_tasks_per_worker)
             .taskSize2(sizeof(task_desc_tree))
             .maxTasks2(long(pow(26.0,parameters.window_size))); // TODO too small?
-        utc = new UniformTaskCollSplitHybrid(props, worker);
+        utc = new UniformTaskCollectionSplit(props, worker);
     }
 
     size_t even_split = suffix_buckets->bucket_size_total / NUM_WORKERS;
@@ -550,47 +486,17 @@ int main(int argc, char **argv)
 
     amBarrier();
 
-#if defined(THREADED)
-    set_affinity(0);
-    pthread_barrier_init(&workersStart, 0, NUM_WORKERS);
-    pthread_barrier_init(&workersEnd, 0, NUM_WORKERS);
-    pthread_barrier_init(&serverStart, 0, NUM_SERVERS + 1);
-    pthread_barrier_init(&serverEnd, 0, NUM_SERVERS + 1);
-    MFENCE
-    for (int i = 1; i < NUM_WORKERS; ++i) {
-        worker_thread_args *args = new worker_thread_args(
-                threadRanks[i], utcs[i], &workersStart, &workersEnd);;
-        pthread_create(&threadHandles[i], NULL, worker_thread, args);
-    }
-    {
-        server_thread_args *args = new server_thread_args(
-                &serverEnabled, &serverStart, &serverEnd);
-        pthread_create(&threadHandles[NUM_WORKERS], NULL,
-           server_thread, args);
-    }
-    serverEnabled = true;
-    pthread_barrier_wait(&serverStart);
-    MPI_Barrier(comm);
-    pthread_barrier_wait(&workersStart);
-#endif
+    allocate_threads();
+    initialize_threads(utcs);
 
     double mytimer = MPI_Wtime();
-    utcs[0]->process(0);
+    utcs[0]->process();
     mytimer = MPI_Wtime() - mytimer;
     if (0 == trank(0)) {
         cout << "mytimer=" << mytimer << endl;
     }
 
-#if defined(THREADED)
-    pthread_barrier_wait(&workersEnd);
-    amBarrierThd();
-
-    serverEnabled = false;
-    MFENCE
-    pthread_barrier_wait(&serverEnd);
-
-    amBarrier();
-#endif
+    finalize_threads();
 
     amBarrier();
     MPI_Barrier(comm);
@@ -712,8 +618,7 @@ int main(int argc, char **argv)
         cout << "totaltime = " << totaltime << endl;
     }
     TascelConfig::finalize();
-    MPI_Comm_free(&comm);
-    MPI_Finalize();
+    pgraph::finalize();
 
     return 0;
 }

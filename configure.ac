@@ -102,6 +102,8 @@ GA_CHECK_PACKAGE([zlib], [zlib.h], [z], [gzread])
 # Checks for header files.
 
 # Checks for typedefs, structures, and compiler characteristics.
+AX_CXX_COMPILE_STDCXX_11([],[optional])
+PT_CXX_UNORDERED_SET
 
 # Checks for library functions.
 

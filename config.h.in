@@ -3,6 +3,15 @@
 /* set to 1 if we have the indicated package */
 #undef HAVE_ARMCI
 
+/* define if the compiler supports basic C++11 syntax */
+#undef HAVE_CXX11
+
+/* Define if tr1/unordered_set is present. */
+#undef HAVE_CXX_TR1_UNORDERED_SET
+
+/* Define if unordered_set is present. */
+#undef HAVE_CXX_UNORDERED_SET
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 

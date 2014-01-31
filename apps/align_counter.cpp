@@ -35,8 +35,10 @@ extern "C" {
 
 #include "alignment.hpp"
 #include "AlignStats.hpp"
+#include "Bootstrap.hpp"
 #include "combinations.h"
 #include "constants.h"
+#include "EdgeResult.hpp"
 #include "mpix.hpp"
 #include "Parameters.hpp"
 
@@ -68,39 +70,6 @@ static void _index_fasta(const char *buffer, size_t size,
         char delimiter, vector<sequence_t> &sequences, size_t &max_seq_size);
 #endif
 static size_t parse_memory_budget(const string& value);
-
-
-class EdgeResult {
-    public:
-        unsigned long id1;
-        unsigned long id2;
-        double a;
-        double b;
-        double c;
-        bool is_edge;
-
-        EdgeResult(
-                unsigned long id1, unsigned long id2,
-                double a, double b, double c, bool is_edge=true)
-            : id1(id1)
-            , id2(id2)
-            , a(a)
-            , b(b)
-            , c(c)
-            , is_edge(is_edge)
-        {}
-
-        friend ostream& operator << (ostream &os, const EdgeResult &edge) {
-            os << edge.id1
-                << SEP << edge.id2
-                << SEP << edge.a
-                << SEP << edge.b
-                << SEP << edge.c
-                << SEP << edge.is_edge
-                ;
-            return os;
-        }
-};
 
 
 int main(int argc, char **argv)
@@ -223,8 +192,7 @@ int main(int argc, char **argv)
             }
             printf("usage: align sequence_file memory_budget\n");
         }
-        MPI_Comm_free(&comm_world);
-        MPI_Finalize();
+        pgraph::finalize();
         return 1;
     }
     else if (all_argv.size() >= 4) {
@@ -580,8 +548,7 @@ int main(int argc, char **argv)
     }
     MPI_Comm_free(&comm_node);
 #endif
-    MPI_Comm_free(&comm_world);
-    MPI_Finalize();
+    pgraph::finalize();
 
     return 0;
 }

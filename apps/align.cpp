@@ -12,7 +12,7 @@
 #ifdef USE_ITER
 #include <tascel/UniformTaskCollIter.h>
 #else
-#include <tascel/UniformTaskCollSplitHybrid.h>
+#include <tascel/UniformTaskCollectionSplit.h>
 #endif
 
 #include <algorithm>
@@ -29,12 +29,13 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <strstream>
 #include <vector>
 
 #include "AlignStats.hpp"
+#include "Bootstrap.hpp"
 #include "constants.h"
 #include "combinations.h"
+#include "EdgeResult.hpp"
 #include "alignment.hpp"
 #include "mpix.hpp"
 #include "Parameters.hpp"
@@ -47,98 +48,23 @@
 #else
 #include "SequenceDatabaseReplicated.hpp"
 #endif
+#define printf(...) fprintf(stdout, __VA_ARGS__); fflush(stdout);
 
 using namespace std;
 using namespace tascel;
 using namespace pgraph;
 
-#define SEP ","
 #define ALL_RESULTS 1
 
-
-//#define PAUSE_ON_ERROR
-#ifdef PAUSE_ON_ERROR
-static void (*SigSegvOrig)(int) = NULL;
-
-static void SigSegvHandler(int sig)
-{
-    fprintf(stderr,"(%d): Segmentation Violation ... pausing\n",
-            getpid() );
-    pause();
-    if (SigSegvOrig == SIG_DFL) {
-        signal(sig, SIG_DFL);
-    }
-    else if (SigSegvOrig == SIG_IGN) {
-    }
-    else {
-        SigSegvOrig(sig);
-    }
-}
-
-static void TrapSigSegv()
-{
-    if ((SigSegvOrig=signal(SIGSEGV, SigSegvHandler)) == SIG_ERR) {
-        fprintf(stderr, "TrapSigSegv: error from signal setting SIGSEGV");
-        exit(EXIT_FAILURE);
-    }
-}
-#endif
-
-
-class EdgeResult {
-    public:
-        unsigned long id1;
-        unsigned long id2;
-        double a;
-        double b;
-        double c;
-        bool is_edge;
-
-        EdgeResult(
-                unsigned long id1, unsigned long id2,
-                double a, double b, double c, bool is_edge=true)
-            : id1(id1)
-            , id2(id2)
-            , a(a)
-            , b(b)
-            , c(c)
-            , is_edge(is_edge)
-        {}
-
-        friend ostream& operator << (ostream &os, const EdgeResult &edge) {
-            os << edge.id1
-                << SEP << edge.id2
-                << SEP << edge.a
-                << SEP << edge.b
-                << SEP << edge.c
-                << SEP << edge.is_edge
-                ;
-            return os;
-        }
-};
-
-int rank = 0;
-int nprocs = 0;
 #ifdef USE_ITER
 UniformTaskCollIter** utcs = 0;
 #else
-UniformTaskCollSplitHybrid** utcs = 0;
+UniformTaskCollectionSplit** utcs = 0;
 #endif
 AlignStats *stats = 0;
 SequenceDatabase *sequences = 0;
 vector<EdgeResult> *edge_results = 0;
 Parameters parameters;
-
-#if defined(THREADED)
-static pthread_t *threadHandles = 0;
-static unsigned *threadRanks = 0;
-// Synchronization for worker threads
-pthread_barrier_t workersStart, workersEnd;
-// Synchronization for server thread
-pthread_barrier_t serverStart, serverEnd;
-volatile bool serverEnabled = true;
-#endif
-
 
 static int trank(int thd)
 {
@@ -357,63 +283,38 @@ unsigned long populate_tasks(
 
 int main(int argc, char **argv)
 {
-    MPI_Comm comm = MPI_COMM_NULL;
     vector<string> all_argv;
     unsigned long nCk;
 
-#ifdef PAUSE_ON_ERROR
-    TrapSigSegv();
-#endif
-
-    /* initialize MPI */
-#if defined(THREADED)
-    {
-        int provided;
-        MPI_CHECK(MPI_Init_thread(&argc, &argv,
-                    MPI_THREAD_MULTIPLE, &provided));
-        assert(provided == MPI_THREAD_MULTIPLE);
-    }
-#else
-    MPI_CHECK(MPI_Init(&argc, &argv));
-#endif
-    MPI_CHECK(MPI_Comm_dup(MPI_COMM_WORLD, &comm));
-    MPI_CHECK(MPI_Comm_rank(comm, &rank));
-    MPI_CHECK(MPI_Comm_size(comm, &nprocs));
+    pgraph::initialize(&argc, &argv);
 
     /* initialize tascel */
-    TascelConfig::initialize(NUM_WORKERS_DEFAULT, comm);
+    TascelConfig::initialize(NUM_WORKERS_DEFAULT, pgraph::comm);
 #ifdef USE_ITER
     utcs = new UniformTaskCollIter*[NUM_WORKERS];
 #else
-    utcs = new UniformTaskCollSplitHybrid*[NUM_WORKERS];
+    utcs = new UniformTaskCollectionSplit*[NUM_WORKERS];
 #endif
     stats = new AlignStats[NUM_WORKERS];
     edge_results = new vector<EdgeResult>[NUM_WORKERS];
-#if defined(THREADED)
-    threadHandles = new pthread_t[NUM_WORKERS + NUM_SERVERS];
-    threadRanks = new unsigned[NUM_WORKERS + NUM_SERVERS];
-    for (int worker=0; worker<NUM_WORKERS; ++worker) {
-        threadRanks[worker] = worker;
-    }
-#endif
 
     /* MPI standard does not guarantee all procs receive argc and argv */
     if (0 == rank) {
-        MPI_CHECK(MPI_Bcast(&argc, 1, MPI_INT, 0, comm));
+        MPI_CHECK(MPI_Bcast(&argc, 1, MPI_INT, 0, pgraph::comm));
         for (int i=0; i<argc; ++i) {
             int length = strlen(argv[i])+1;
-            MPI_CHECK(MPI_Bcast(&length, 1, MPI_INT, 0, comm));
-            MPI_CHECK(MPI_Bcast(argv[i], length, MPI_CHAR, 0, comm));
+            MPI_CHECK(MPI_Bcast(&length, 1, MPI_INT, 0, pgraph::comm));
+            MPI_CHECK(MPI_Bcast(argv[i], length, MPI_CHAR, 0, pgraph::comm));
             all_argv.push_back(argv[i]);
         }
     } else {
         int all_argc;
-        MPI_CHECK(MPI_Bcast(&all_argc, 1, MPI_INT, 0, comm));
+        MPI_CHECK(MPI_Bcast(&all_argc, 1, MPI_INT, 0, pgraph::comm));
         for (int i=0; i<all_argc; ++i) {
             int length;
             char buffer[ARG_LEN_MAX];
-            MPI_CHECK(MPI_Bcast(&length, 1, MPI_INT, 0, comm));
-            MPI_CHECK(MPI_Bcast(buffer, length, MPI_CHAR, 0, comm));
+            MPI_CHECK(MPI_Bcast(&length, 1, MPI_INT, 0, pgraph::comm));
+            MPI_CHECK(MPI_Bcast(buffer, length, MPI_CHAR, 0, pgraph::comm));
             all_argv.push_back(buffer);
         }
     }
@@ -426,7 +327,7 @@ int main(int argc, char **argv)
                 printf("[%d] argv[%zd]=%s\n", rank, j, all_argv[j].c_str());
             }
         }
-        MPI_Barrier(comm);
+        MPI_Barrier(pgraph::comm);
     }
 #endif
 
@@ -444,12 +345,11 @@ int main(int argc, char **argv)
             }
             printf("usage: align sequence_file memory_budget\n");
         }
-        MPI_Comm_free(&comm);
-        MPI_Finalize();
+        pgraph::finalize();
         return 1;
     }
     else if (all_argv.size() >= 4) {
-        parameters.parse(all_argv[3].c_str(), comm);
+        parameters.parse(all_argv[3].c_str(), pgraph::comm);
     }
     if (0 == trank(0)) {
         printf("----------------------------------------------\n");
@@ -466,10 +366,10 @@ int main(int argc, char **argv)
             parse_memory_budget(all_argv[2].c_str()), '\0');
 #elif HAVE_ARMCI
     sequences = new SequenceDatabaseArmci(all_argv[1],
-            parse_memory_budget(all_argv[2].c_str()), comm, NUM_WORKERS, '\0');
+            parse_memory_budget(all_argv[2].c_str()), pgraph::comm, NUM_WORKERS, '\0');
 #else
     sequences = new SequenceDatabaseReplicated(all_argv[1],
-            parse_memory_budget(all_argv[2].c_str()), comm, NUM_WORKERS, '\0');
+            parse_memory_budget(all_argv[2].c_str()), pgraph::comm, NUM_WORKERS, '\0');
 #endif
 
     /* how many combinations of sequences are there? */
@@ -498,7 +398,7 @@ int main(int argc, char **argv)
         printf("tasks_per_worker=%lu\n", tasks_per_worker);
         printf("max_tasks_per_worker=%lu\n", max_tasks_per_worker);
     }
-    MPI_Barrier(comm);
+    MPI_Barrier(pgraph::comm);
 
     /* the tascel part */
 #ifdef USE_ITER
@@ -512,7 +412,7 @@ int main(int argc, char **argv)
 #ifdef USE_ITER
         UniformTaskCollIter*& utc = utcs[worker];
 #else
-        UniformTaskCollSplitHybrid*& utc = utcs[worker];
+        UniformTaskCollectionSplit*& utc = utcs[worker];
 #endif
         TslFuncRegTbl *frt = new TslFuncRegTbl();
         TslFunc tf = frt->add(alignment_task);
@@ -538,7 +438,7 @@ int main(int argc, char **argv)
         //    utc = new UniformTaskCollIter(props, createTaskFn, 0, -1, worker);
         //}
 #else
-        utc = new UniformTaskCollSplitHybrid(props, worker);
+        utc = new UniformTaskCollectionSplit(props, worker);
         /* add some tasks */
         populate_times[worker] = MPI_Wtime();
         count[worker] = populate_tasks(ntasks, tasks_per_worker, worker);
@@ -548,7 +448,7 @@ int main(int argc, char **argv)
 #if DEBUG
     double *g_populate_times = new double[nprocs*NUM_WORKERS];
     MPI_CHECK(MPI_Gather(populate_times, NUM_WORKERS, MPI_DOUBLE,
-                g_populate_times, NUM_WORKERS, MPI_DOUBLE, 0, comm));
+                g_populate_times, NUM_WORKERS, MPI_DOUBLE, 0, pgraph::comm));
     if (0 == rank) {
         double tally = 0;
         cout << " pid populate_time" << endl;
@@ -565,7 +465,7 @@ int main(int argc, char **argv)
 #if DEBUG
     unsigned long *task_counts = new unsigned long[nprocs*NUM_WORKERS];
     MPI_CHECK(MPI_Gather(count, NUM_WORKERS, MPI_UNSIGNED_LONG,
-                task_counts, NUM_WORKERS, MPI_UNSIGNED_LONG, 0, comm));
+                task_counts, NUM_WORKERS, MPI_UNSIGNED_LONG, 0, pgraph::comm));
     if (0 == rank) {
         unsigned long tally = 0;
         cout << " pid        ntasks" << endl;
@@ -585,55 +485,25 @@ int main(int argc, char **argv)
 
     amBarrier();
 
-#if defined(THREADED)
-    set_affinity(0);
-    pthread_barrier_init(&workersStart, 0, NUM_WORKERS);
-    pthread_barrier_init(&workersEnd, 0, NUM_WORKERS);
-    pthread_barrier_init(&serverStart, 0, NUM_SERVERS + 1);
-    pthread_barrier_init(&serverEnd, 0, NUM_SERVERS + 1);
-    MFENCE
-    for (int i = 1; i < NUM_WORKERS; ++i) {
-        worker_thread_args *args = new worker_thread_args(
-                threadRanks[i], utcs[i], &workersStart, &workersEnd);;
-        pthread_create(&threadHandles[i], NULL, worker_thread, args);
-    }
-    {
-        server_thread_args *args = new server_thread_args(
-                &serverEnabled, &serverStart, &serverEnd);
-        pthread_create(&threadHandles[NUM_WORKERS], NULL,
-           server_thread, args);
-    }
-    serverEnabled = true;
-    pthread_barrier_wait(&serverStart);
-    MPI_Barrier(comm);
-    pthread_barrier_wait(&workersStart);
-#endif
+    allocate_threads();
+    initialize_threads(utcs);
 
     double mytimer = MPI_Wtime();
-    utcs[0]->process(0);
+    utcs[0]->process();
     mytimer = MPI_Wtime() - mytimer;
     if (0 == trank(0)) {
         cout << "mytimer=" << mytimer << endl;
     }
 
-#if defined(THREADED)
-    pthread_barrier_wait(&workersEnd);
-    amBarrierThd();
-
-    serverEnabled = false;
-    MFENCE
-    pthread_barrier_wait(&serverEnd);
+    finalize_threads();
 
     amBarrier();
-#endif
-
-    amBarrier();
-    MPI_Barrier(comm);
+    MPI_Barrier(pgraph::comm);
 
     AlignStats * rstats = new AlignStats[NUM_WORKERS*nprocs];
     MPI_Gather(stats, sizeof(AlignStats)*NUM_WORKERS, MPI_CHAR, 
 	       rstats, sizeof(AlignStats)*NUM_WORKERS, MPI_CHAR, 
-	       0, comm);
+	       0, pgraph::comm);
 
     /* synchronously print alignment stats all from process 0 */
     if (0 == rank) {
@@ -658,7 +528,7 @@ int main(int argc, char **argv)
     StealingStats * rstt = new StealingStats[NUM_WORKERS*nprocs];
     MPI_Gather(stt, sizeof(StealingStats)*NUM_WORKERS, MPI_CHAR, 
             rstt, sizeof(StealingStats)*NUM_WORKERS, MPI_CHAR, 
-            0, comm);
+            0, pgraph::comm);
 
     /* synchronously print stealing stats all from process 0 */
     if (0 == rank) {
@@ -676,7 +546,7 @@ int main(int argc, char **argv)
     delete [] stt;
 
     amBarrier();
-    MPI_Barrier(comm);
+    MPI_Barrier(pgraph::comm);
 
 #if OUTPUT_EDGES
     ofstream edge_out(get_edges_filename(rank).c_str());
@@ -699,8 +569,7 @@ int main(int argc, char **argv)
     delete sequences;
 
     TascelConfig::finalize();
-    MPI_Comm_free(&comm);
-    MPI_Finalize();
+    pgraph::finalize();
 
     return 0;
 }
