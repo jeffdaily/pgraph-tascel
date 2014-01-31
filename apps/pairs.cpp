@@ -25,7 +25,6 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <strstream>
 #include <vector>
 
 #include "AlignStats.hpp"

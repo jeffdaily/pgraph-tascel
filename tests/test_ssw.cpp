@@ -30,7 +30,6 @@ extern "C" {
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <strstream>
 #include <vector>
 
 #include "alignment.hpp"
