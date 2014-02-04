@@ -10,7 +10,11 @@
 #ifndef _PGRAPH_PARAMETERS_H_
 #define _PGRAPH_PARAMETERS_H_
 
+#include <iostream>
+
 #include <mpi.h>
+
+using std::ostream;
 
 namespace pgraph {
 
@@ -41,6 +45,13 @@ public:
      */
     void parse(const char *parameters_file, MPI_Comm comm);
 
+    /**
+     * Parses the given YAML parameters file.
+     *
+     * @param[in] parameters_file the parameters file
+     */
+    void parse_yaml(const char *parameters_file, MPI_Comm comm);
+
     int AOL;            /**< AlignOverLongerSeq */
     int SIM;            /**< MatchSimilarity */
     int OS;             /**< OptimalScoreOverSelfScore */
@@ -51,6 +62,8 @@ public:
     size_t mem_worker;  /**< memory budget per worker task pool */
     size_t mem_sequences;/**< memory budget for sequence database */
 };
+
+ostream& operator<< (ostream &os, const Parameters &p);
 
 }; /* namespace pgraph */
 

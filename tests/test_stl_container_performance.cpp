@@ -12,6 +12,8 @@
 #include <utility>
 #include <vector>
 
+#include <boost/unordered_set.hpp>
+
 #if HAVE_CXX_UNORDERED_SET
 #include <unordered_set>
 using std::unordered_set;
@@ -264,4 +266,20 @@ int main(int argc, char **argv)
             store.insert(generator.getNext());
     }
 #endif
+
+    {
+        StackPrinter __stack_printer__("unordered set");
+        string* ptr = 0x00000000;
+        boost::unordered_set<void*> store;
+        for (size_t i = 0; i < store_size; ++i)
+            store.insert(ptr++);
+    }
+
+    {
+        StackPrinter __stack_printer__("unordered set of random pairs");
+        generator.reset();
+        boost::unordered_set<MyType> store;
+        for (size_t i = 0; i < store_size; ++i)
+            store.insert(generator.getNext());
+    }
 }

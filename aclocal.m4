@@ -1026,7 +1026,6 @@ AC_SUBST([am__tar])
 AC_SUBST([am__untar])
 ]) # _AM_PROG_TAR
 
-m4_include([m4/ax_cxx_compile_stdcxx_11.m4])
 m4_include([m4/ga_arg_parse.m4])
 m4_include([m4/ga_check_package.m4])
 m4_include([m4/libtool.m4])

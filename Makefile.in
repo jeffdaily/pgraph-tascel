@@ -92,8 +92,9 @@ bin_PROGRAMS = apps/align$(EXEEXT) apps/align_garray$(EXEEXT) \
 @HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@am__append_7 = apps/ssw_test
 noinst_PROGRAMS = tests/test_align$(EXEEXT) \
 	tests/test_combinations$(EXEEXT) tests/test_dynamic$(EXEEXT) \
-	tests/test_kcombo2$(EXEEXT) tests/test_read$(EXEEXT) \
-	tests/test_read_fasta$(EXEEXT) tests/test_read_serial$(EXEEXT) \
+	tests/test_kcombo2$(EXEEXT) tests/test_parser$(EXEEXT) \
+	tests/test_read$(EXEEXT) tests/test_read_fasta$(EXEEXT) \
+	tests/test_read_serial$(EXEEXT) \
 	tests/test_stl_container_performance$(EXEEXT) $(am__EXEEXT_5)
 @HAVE_ARMCI_TRUE@@HAVE_SSE2_TRUE@am__append_8 = tests/test_ssw
 check_PROGRAMS = tests/test_mpi$(EXEEXT)
@@ -104,8 +105,7 @@ DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	build-aux/config.sub build-aux/depcomp build-aux/install-sh \
 	build-aux/ltmain.sh build-aux/missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/ax_cxx_compile_stdcxx_11.m4 \
-	$(top_srcdir)/m4/ga_arg_parse.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ga_arg_parse.m4 \
 	$(top_srcdir)/m4/ga_check_package.m4 \
 	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
 	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
@@ -163,7 +163,96 @@ am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.c \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.h \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.cpp \
-	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h
+	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/anchor.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/binary.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/contrib/anchordict.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/contrib/graphbuilder.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/dll.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/emitfromevents.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/emitterdef.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/emitter.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/emittermanip.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/eventhandler.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/exceptions.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/mark.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/convert.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/bool_type.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/impl.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/iterator_fwd.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/iterator.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/memory.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/node_data.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/node.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/node_iterator.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/node_ref.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/emit.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/impl.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/iterator.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/node.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/parse.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/ptr.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/type.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/noncopyable.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/null.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/ostream_wrapper.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/parser.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/stlemitter.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/traits.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/yaml.h \
+	contrib/yaml-cpp-0.5.1/src/binary.cpp \
+	contrib/yaml-cpp-0.5.1/src/collectionstack.h \
+	contrib/yaml-cpp-0.5.1/src/contrib/graphbuilderadapter.cpp \
+	contrib/yaml-cpp-0.5.1/src/contrib/graphbuilderadapter.h \
+	contrib/yaml-cpp-0.5.1/src/contrib/graphbuilder.cpp \
+	contrib/yaml-cpp-0.5.1/src/convert.cpp \
+	contrib/yaml-cpp-0.5.1/src/directives.cpp \
+	contrib/yaml-cpp-0.5.1/src/directives.h \
+	contrib/yaml-cpp-0.5.1/src/emit.cpp \
+	contrib/yaml-cpp-0.5.1/src/emitfromevents.cpp \
+	contrib/yaml-cpp-0.5.1/src/emitter.cpp \
+	contrib/yaml-cpp-0.5.1/src/emitterstate.cpp \
+	contrib/yaml-cpp-0.5.1/src/emitterstate.h \
+	contrib/yaml-cpp-0.5.1/src/emitterutils.cpp \
+	contrib/yaml-cpp-0.5.1/src/emitterutils.h \
+	contrib/yaml-cpp-0.5.1/src/exp.cpp \
+	contrib/yaml-cpp-0.5.1/src/exp.h \
+	contrib/yaml-cpp-0.5.1/src/indentation.h \
+	contrib/yaml-cpp-0.5.1/src/memory.cpp \
+	contrib/yaml-cpp-0.5.1/src/nodebuilder.cpp \
+	contrib/yaml-cpp-0.5.1/src/nodebuilder.h \
+	contrib/yaml-cpp-0.5.1/src/node.cpp \
+	contrib/yaml-cpp-0.5.1/src/node_data.cpp \
+	contrib/yaml-cpp-0.5.1/src/nodeevents.cpp \
+	contrib/yaml-cpp-0.5.1/src/nodeevents.h \
+	contrib/yaml-cpp-0.5.1/src/null.cpp \
+	contrib/yaml-cpp-0.5.1/src/ostream_wrapper.cpp \
+	contrib/yaml-cpp-0.5.1/src/parse.cpp \
+	contrib/yaml-cpp-0.5.1/src/parser.cpp \
+	contrib/yaml-cpp-0.5.1/src/ptr_stack.h \
+	contrib/yaml-cpp-0.5.1/src/ptr_vector.h \
+	contrib/yaml-cpp-0.5.1/src/regex.cpp \
+	contrib/yaml-cpp-0.5.1/src/regex.h \
+	contrib/yaml-cpp-0.5.1/src/regeximpl.h \
+	contrib/yaml-cpp-0.5.1/src/scanner.cpp \
+	contrib/yaml-cpp-0.5.1/src/scanner.h \
+	contrib/yaml-cpp-0.5.1/src/scanscalar.cpp \
+	contrib/yaml-cpp-0.5.1/src/scanscalar.h \
+	contrib/yaml-cpp-0.5.1/src/scantag.cpp \
+	contrib/yaml-cpp-0.5.1/src/scantag.h \
+	contrib/yaml-cpp-0.5.1/src/scantoken.cpp \
+	contrib/yaml-cpp-0.5.1/src/setting.h \
+	contrib/yaml-cpp-0.5.1/src/simplekey.cpp \
+	contrib/yaml-cpp-0.5.1/src/singledocparser.cpp \
+	contrib/yaml-cpp-0.5.1/src/singledocparser.h \
+	contrib/yaml-cpp-0.5.1/src/streamcharsource.h \
+	contrib/yaml-cpp-0.5.1/src/stream.cpp \
+	contrib/yaml-cpp-0.5.1/src/stream.h \
+	contrib/yaml-cpp-0.5.1/src/stringsource.h \
+	contrib/yaml-cpp-0.5.1/src/tag.cpp \
+	contrib/yaml-cpp-0.5.1/src/tag.h \
+	contrib/yaml-cpp-0.5.1/src/token.h
 @HAVE_ARMCI_TRUE@am__objects_1 = src/SequenceDatabaseArmci.lo
 @HAVE_SSE2_TRUE@am__objects_2 = contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.lo \
 @HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.lo
@@ -173,7 +262,36 @@ am_libpgraph_la_OBJECTS = src/alignment.lo src/Bootstrap.lo \
 	src/SequenceDatabaseReplicated.lo \
 	src/SequenceDatabaseGArray.lo src/SequenceDatabase.lo \
 	src/stree.lo src/SuffixBuckets.lo src/SuffixTree.lo \
-	$(am__objects_1) $(am__objects_2)
+	$(am__objects_1) $(am__objects_2) \
+	contrib/yaml-cpp-0.5.1/src/binary.lo \
+	contrib/yaml-cpp-0.5.1/src/contrib/graphbuilderadapter.lo \
+	contrib/yaml-cpp-0.5.1/src/contrib/graphbuilder.lo \
+	contrib/yaml-cpp-0.5.1/src/convert.lo \
+	contrib/yaml-cpp-0.5.1/src/directives.lo \
+	contrib/yaml-cpp-0.5.1/src/emit.lo \
+	contrib/yaml-cpp-0.5.1/src/emitfromevents.lo \
+	contrib/yaml-cpp-0.5.1/src/emitter.lo \
+	contrib/yaml-cpp-0.5.1/src/emitterstate.lo \
+	contrib/yaml-cpp-0.5.1/src/emitterutils.lo \
+	contrib/yaml-cpp-0.5.1/src/exp.lo \
+	contrib/yaml-cpp-0.5.1/src/memory.lo \
+	contrib/yaml-cpp-0.5.1/src/nodebuilder.lo \
+	contrib/yaml-cpp-0.5.1/src/node.lo \
+	contrib/yaml-cpp-0.5.1/src/node_data.lo \
+	contrib/yaml-cpp-0.5.1/src/nodeevents.lo \
+	contrib/yaml-cpp-0.5.1/src/null.lo \
+	contrib/yaml-cpp-0.5.1/src/ostream_wrapper.lo \
+	contrib/yaml-cpp-0.5.1/src/parse.lo \
+	contrib/yaml-cpp-0.5.1/src/parser.lo \
+	contrib/yaml-cpp-0.5.1/src/regex.lo \
+	contrib/yaml-cpp-0.5.1/src/scanner.lo \
+	contrib/yaml-cpp-0.5.1/src/scanscalar.lo \
+	contrib/yaml-cpp-0.5.1/src/scantag.lo \
+	contrib/yaml-cpp-0.5.1/src/scantoken.lo \
+	contrib/yaml-cpp-0.5.1/src/simplekey.lo \
+	contrib/yaml-cpp-0.5.1/src/singledocparser.lo \
+	contrib/yaml-cpp-0.5.1/src/stream.lo \
+	contrib/yaml-cpp-0.5.1/src/tag.lo
 libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -477,6 +595,12 @@ am_tests_test_mpi_OBJECTS = tests/test_mpi.$(OBJEXT)
 tests_test_mpi_OBJECTS = $(am_tests_test_mpi_OBJECTS)
 tests_test_mpi_DEPENDENCIES = $(am__DEPENDENCIES_2) libpgtest.a \
 	libgtest.a $(am__DEPENDENCIES_1)
+am_tests_test_parser_OBJECTS = tests/test_parser.$(OBJEXT)
+tests_test_parser_OBJECTS = $(am_tests_test_parser_OBJECTS)
+tests_test_parser_LDADD = $(LDADD)
+tests_test_parser_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_tests_test_read_OBJECTS = tests/test_read.$(OBJEXT)
 tests_test_read_OBJECTS = $(am_tests_test_read_OBJECTS)
 tests_test_read_LDADD = $(LDADD)
@@ -582,8 +706,8 @@ SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
 	$(apps_ssw_test_SOURCES) $(tests_test_align_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_kcombo2_SOURCES) \
-	$(tests_test_mpi_SOURCES) $(tests_test_read_SOURCES) \
-	$(tests_test_read_fasta_SOURCES) \
+	$(tests_test_mpi_SOURCES) $(tests_test_parser_SOURCES) \
+	$(tests_test_read_SOURCES) $(tests_test_read_fasta_SOURCES) \
 	$(tests_test_read_serial_SOURCES) $(tests_test_ssw_SOURCES) \
 	$(tests_test_stl_container_performance_SOURCES)
 DIST_SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
@@ -620,8 +744,8 @@ DIST_SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
 	$(apps_ssw_test_SOURCES) $(tests_test_align_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_kcombo2_SOURCES) \
-	$(tests_test_mpi_SOURCES) $(tests_test_read_SOURCES) \
-	$(tests_test_read_fasta_SOURCES) \
+	$(tests_test_mpi_SOURCES) $(tests_test_parser_SOURCES) \
+	$(tests_test_read_SOURCES) $(tests_test_read_fasta_SOURCES) \
 	$(tests_test_read_serial_SOURCES) $(tests_test_ssw_SOURCES) \
 	$(tests_test_stl_container_performance_SOURCES)
 am__can_run_installinfo = \
@@ -682,7 +806,6 @@ GMP_CPPFLAGS = @GMP_CPPFLAGS@
 GMP_LDFLAGS = @GMP_LDFLAGS@
 GMP_LIBS = @GMP_LIBS@
 GREP = @GREP@
-HAVE_CXX11 = @HAVE_CXX11@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -790,9 +913,10 @@ AM_CXXFLAGS =
 #AM_CPPFLAGS += $(GA_CPPFLAGS)
 AM_CPPFLAGS = $(TASCEL_CPPFLAGS) $(ARMCI_CPPFLAGS) $(PT_MPI_CPPFLAGS) \
 	$(GMP_CPPFLAGS) -I$(top_srcdir)/src $(am__append_1) \
-	-I$(top_srcdir)/contrib/boost-1.55 \
+	-I$(top_srcdir)/contrib/boost_1_55_0 \
 	-I$(top_srcdir)/contrib/gtest-1.7.0 \
-	-I$(top_srcdir)/contrib/gtest-1.7.0/include
+	-I$(top_srcdir)/contrib/gtest-1.7.0/include \
+	-I$(top_srcdir)/contrib/yaml-cpp-0.5.1/include
 #AM_LDFLAGS += $(GA_LDFLAGS)
 AM_LDFLAGS = $(TASCEL_LDFLAGS) $(ARMCI_LDFLAGS) $(PT_MPI_LDFLAGS) \
 	$(GMP_LDFLAGS)
@@ -817,7 +941,96 @@ libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
 	src/SequenceDatabase.cpp src/SequenceDatabase.hpp \
 	src/stree.cpp src/stree.hpp src/SuffixBuckets.cpp \
 	src/SuffixBuckets.hpp src/SuffixTree.cpp src/SuffixTree.hpp \
-	src/TreeStats.hpp src/timer.h $(am__append_2) $(am__append_3)
+	src/TreeStats.hpp src/timer.h $(am__append_2) $(am__append_3) \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/anchor.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/binary.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/contrib/anchordict.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/contrib/graphbuilder.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/dll.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/emitfromevents.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/emitterdef.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/emitter.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/emittermanip.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/eventhandler.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/exceptions.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/mark.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/convert.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/bool_type.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/impl.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/iterator_fwd.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/iterator.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/memory.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/node_data.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/node.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/node_iterator.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/node_ref.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/emit.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/impl.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/iterator.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/node.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/parse.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/ptr.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/type.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/noncopyable.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/null.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/ostream_wrapper.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/parser.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/stlemitter.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/traits.h \
+	contrib/yaml-cpp-0.5.1/include/yaml-cpp/yaml.h \
+	contrib/yaml-cpp-0.5.1/src/binary.cpp \
+	contrib/yaml-cpp-0.5.1/src/collectionstack.h \
+	contrib/yaml-cpp-0.5.1/src/contrib/graphbuilderadapter.cpp \
+	contrib/yaml-cpp-0.5.1/src/contrib/graphbuilderadapter.h \
+	contrib/yaml-cpp-0.5.1/src/contrib/graphbuilder.cpp \
+	contrib/yaml-cpp-0.5.1/src/convert.cpp \
+	contrib/yaml-cpp-0.5.1/src/directives.cpp \
+	contrib/yaml-cpp-0.5.1/src/directives.h \
+	contrib/yaml-cpp-0.5.1/src/emit.cpp \
+	contrib/yaml-cpp-0.5.1/src/emitfromevents.cpp \
+	contrib/yaml-cpp-0.5.1/src/emitter.cpp \
+	contrib/yaml-cpp-0.5.1/src/emitterstate.cpp \
+	contrib/yaml-cpp-0.5.1/src/emitterstate.h \
+	contrib/yaml-cpp-0.5.1/src/emitterutils.cpp \
+	contrib/yaml-cpp-0.5.1/src/emitterutils.h \
+	contrib/yaml-cpp-0.5.1/src/exp.cpp \
+	contrib/yaml-cpp-0.5.1/src/exp.h \
+	contrib/yaml-cpp-0.5.1/src/indentation.h \
+	contrib/yaml-cpp-0.5.1/src/memory.cpp \
+	contrib/yaml-cpp-0.5.1/src/nodebuilder.cpp \
+	contrib/yaml-cpp-0.5.1/src/nodebuilder.h \
+	contrib/yaml-cpp-0.5.1/src/node.cpp \
+	contrib/yaml-cpp-0.5.1/src/node_data.cpp \
+	contrib/yaml-cpp-0.5.1/src/nodeevents.cpp \
+	contrib/yaml-cpp-0.5.1/src/nodeevents.h \
+	contrib/yaml-cpp-0.5.1/src/null.cpp \
+	contrib/yaml-cpp-0.5.1/src/ostream_wrapper.cpp \
+	contrib/yaml-cpp-0.5.1/src/parse.cpp \
+	contrib/yaml-cpp-0.5.1/src/parser.cpp \
+	contrib/yaml-cpp-0.5.1/src/ptr_stack.h \
+	contrib/yaml-cpp-0.5.1/src/ptr_vector.h \
+	contrib/yaml-cpp-0.5.1/src/regex.cpp \
+	contrib/yaml-cpp-0.5.1/src/regex.h \
+	contrib/yaml-cpp-0.5.1/src/regeximpl.h \
+	contrib/yaml-cpp-0.5.1/src/scanner.cpp \
+	contrib/yaml-cpp-0.5.1/src/scanner.h \
+	contrib/yaml-cpp-0.5.1/src/scanscalar.cpp \
+	contrib/yaml-cpp-0.5.1/src/scanscalar.h \
+	contrib/yaml-cpp-0.5.1/src/scantag.cpp \
+	contrib/yaml-cpp-0.5.1/src/scantag.h \
+	contrib/yaml-cpp-0.5.1/src/scantoken.cpp \
+	contrib/yaml-cpp-0.5.1/src/setting.h \
+	contrib/yaml-cpp-0.5.1/src/simplekey.cpp \
+	contrib/yaml-cpp-0.5.1/src/singledocparser.cpp \
+	contrib/yaml-cpp-0.5.1/src/singledocparser.h \
+	contrib/yaml-cpp-0.5.1/src/streamcharsource.h \
+	contrib/yaml-cpp-0.5.1/src/stream.cpp \
+	contrib/yaml-cpp-0.5.1/src/stream.h \
+	contrib/yaml-cpp-0.5.1/src/stringsource.h \
+	contrib/yaml-cpp-0.5.1/src/tag.cpp \
+	contrib/yaml-cpp-0.5.1/src/tag.h \
+	contrib/yaml-cpp-0.5.1/src/token.h
 #if HAVE_UTC_ITER
 #noinst_PROGRAMS += sandbox/brute_force_iter
 #endif
@@ -906,6 +1119,7 @@ tests_test_align_SOURCES = tests/test_align.cpp
 tests_test_combinations_SOURCES = tests/test_combinations.cpp
 tests_test_dynamic_SOURCES = tests/test_dynamic.cpp
 tests_test_kcombo2_SOURCES = tests/test_kcombo2.cpp
+tests_test_parser_SOURCES = tests/test_parser.cpp
 tests_test_read_SOURCES = tests/test_read.cpp
 tests_test_read_fasta_SOURCES = tests/test_read_fasta.cpp
 tests_test_read_serial_SOURCES = tests/test_read_serial.cpp
@@ -1057,6 +1271,105 @@ contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.lo: contrib/Complete-Str
 	contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/$(am__dirstamp)
 contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.lo: contrib/Complete-Striped-Smith-Waterman-Library/src/$(am__dirstamp) \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/$(am__dirstamp):
+	@$(MKDIR_P) contrib/yaml-cpp-0.5.1/src
+	@: > contrib/yaml-cpp-0.5.1/src/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) contrib/yaml-cpp-0.5.1/src/$(DEPDIR)
+	@: > contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/binary.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/contrib/$(am__dirstamp):
+	@$(MKDIR_P) contrib/yaml-cpp-0.5.1/src/contrib
+	@: > contrib/yaml-cpp-0.5.1/src/contrib/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR)
+	@: > contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/contrib/graphbuilderadapter.lo:  \
+	contrib/yaml-cpp-0.5.1/src/contrib/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/contrib/graphbuilder.lo:  \
+	contrib/yaml-cpp-0.5.1/src/contrib/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/convert.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/directives.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/emit.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/emitfromevents.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/emitter.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/emitterstate.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/emitterutils.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/exp.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/memory.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/nodebuilder.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/node.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/node_data.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/nodeevents.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/null.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/ostream_wrapper.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/parse.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/parser.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/regex.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/scanner.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/scanscalar.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/scantag.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/scantoken.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/simplekey.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/singledocparser.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/stream.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+contrib/yaml-cpp-0.5.1/src/tag.lo:  \
+	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
+	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
 libpgraph.la: $(libpgraph_la_OBJECTS) $(libpgraph_la_DEPENDENCIES) $(EXTRA_libpgraph_la_DEPENDENCIES) 
 	$(AM_V_CXXLD)$(CXXLINK)  $(libpgraph_la_OBJECTS) $(libpgraph_la_LIBADD) $(LIBS)
 install-binPROGRAMS: $(bin_PROGRAMS)
@@ -1329,6 +1642,11 @@ tests/test_mpi.$(OBJEXT): tests/$(am__dirstamp) \
 tests/test_mpi$(EXEEXT): $(tests_test_mpi_OBJECTS) $(tests_test_mpi_DEPENDENCIES) $(EXTRA_tests_test_mpi_DEPENDENCIES) tests/$(am__dirstamp)
 	@rm -f tests/test_mpi$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_mpi_OBJECTS) $(tests_test_mpi_LDADD) $(LIBS)
+tests/test_parser.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+tests/test_parser$(EXEEXT): $(tests_test_parser_OBJECTS) $(tests_test_parser_DEPENDENCIES) $(EXTRA_tests_test_parser_DEPENDENCIES) tests/$(am__dirstamp)
+	@rm -f tests/test_parser$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_parser_OBJECTS) $(tests_test_parser_LDADD) $(LIBS)
 tests/test_read.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 tests/test_read$(EXEEXT): $(tests_test_read_OBJECTS) $(tests_test_read_DEPENDENCIES) $(EXTRA_tests_test_read_DEPENDENCIES) tests/$(am__dirstamp)
@@ -1397,6 +1715,64 @@ mostlyclean-compile:
 	-rm -f contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.$(OBJEXT)
 	-rm -f contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.lo
 	-rm -f contrib/gtest-1.7.0/src/gtest-all.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/binary.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/binary.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/contrib/graphbuilder.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/contrib/graphbuilder.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/contrib/graphbuilderadapter.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/contrib/graphbuilderadapter.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/convert.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/convert.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/directives.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/directives.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/emit.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/emit.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/emitfromevents.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/emitfromevents.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/emitter.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/emitter.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/emitterstate.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/emitterstate.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/emitterutils.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/emitterutils.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/exp.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/exp.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/memory.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/memory.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/node.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/node.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/node_data.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/node_data.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/nodebuilder.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/nodebuilder.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/nodeevents.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/nodeevents.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/null.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/null.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/ostream_wrapper.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/ostream_wrapper.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/parse.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/parse.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/parser.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/parser.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/regex.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/regex.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/scanner.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/scanner.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/scanscalar.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/scanscalar.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/scantag.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/scantag.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/scantoken.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/scantoken.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/simplekey.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/simplekey.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/singledocparser.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/singledocparser.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/stream.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/stream.lo
+	-rm -f contrib/yaml-cpp-0.5.1/src/tag.$(OBJEXT)
+	-rm -f contrib/yaml-cpp-0.5.1/src/tag.lo
 	-rm -f src/Bootstrap.$(OBJEXT)
 	-rm -f src/Bootstrap.lo
 	-rm -f src/Parameters.$(OBJEXT)
@@ -1438,6 +1814,7 @@ mostlyclean-compile:
 	-rm -f tests/test_dynamic.$(OBJEXT)
 	-rm -f tests/test_kcombo2.$(OBJEXT)
 	-rm -f tests/test_mpi.$(OBJEXT)
+	-rm -f tests/test_parser.$(OBJEXT)
 	-rm -f tests/test_read.$(OBJEXT)
 	-rm -f tests/test_read_fasta.$(OBJEXT)
 	-rm -f tests/test_read_serial.$(OBJEXT)
@@ -1485,6 +1862,35 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/ssw.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/ssw_cpp.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/gtest-1.7.0/src/$(DEPDIR)/gtest-all.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/binary.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/convert.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/directives.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/emit.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/emitfromevents.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/emitter.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/emitterstate.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/emitterutils.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/exp.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/memory.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/node.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/node_data.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/nodebuilder.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/nodeevents.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/null.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/ostream_wrapper.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/parse.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/parser.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/regex.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/scanner.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/scanscalar.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/scantag.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/scantoken.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/simplekey.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/singledocparser.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/stream.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/tag.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR)/graphbuilder.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR)/graphbuilderadapter.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Bootstrap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Parameters.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Sequence.Plo@am__quote@
@@ -1509,6 +1915,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_dynamic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_kcombo2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_mpi.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_read.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_read_fasta.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_read_serial.Po@am__quote@
@@ -1930,6 +2337,8 @@ clean-libtool:
 	-rm -rf .libs _libs
 	-rm -rf apps/.libs apps/_libs
 	-rm -rf contrib/Complete-Striped-Smith-Waterman-Library/src/.libs contrib/Complete-Striped-Smith-Waterman-Library/src/_libs
+	-rm -rf contrib/yaml-cpp-0.5.1/src/.libs contrib/yaml-cpp-0.5.1/src/_libs
+	-rm -rf contrib/yaml-cpp-0.5.1/src/contrib/.libs contrib/yaml-cpp-0.5.1/src/contrib/_libs
 	-rm -rf src/.libs src/_libs
 	-rm -rf tests/.libs tests/_libs
 
@@ -2190,6 +2599,10 @@ distclean-generic:
 	-rm -f contrib/Complete-Striped-Smith-Waterman-Library/src/$(am__dirstamp)
 	-rm -f contrib/gtest-1.7.0/src/$(DEPDIR)/$(am__dirstamp)
 	-rm -f contrib/gtest-1.7.0/src/$(am__dirstamp)
+	-rm -f contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
+	-rm -f contrib/yaml-cpp-0.5.1/src/$(am__dirstamp)
+	-rm -f contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR)/$(am__dirstamp)
+	-rm -f contrib/yaml-cpp-0.5.1/src/contrib/$(am__dirstamp)
 	-rm -f src/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/$(am__dirstamp)
 	-rm -f tests/$(DEPDIR)/$(am__dirstamp)
@@ -2206,7 +2619,7 @@ clean-am: clean-binPROGRAMS clean-checkLIBRARIES clean-checkPROGRAMS \
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf apps/$(DEPDIR) contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR) contrib/gtest-1.7.0/src/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf apps/$(DEPDIR) contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR) contrib/gtest-1.7.0/src/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -2254,7 +2667,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf apps/$(DEPDIR) contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR) contrib/gtest-1.7.0/src/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf apps/$(DEPDIR) contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR) contrib/gtest-1.7.0/src/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

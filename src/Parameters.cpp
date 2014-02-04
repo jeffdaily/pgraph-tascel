@@ -15,6 +15,8 @@
 #include <sstream>
 #include <string>
 
+#include <yaml-cpp/yaml.h>
+
 #include "Parameters.hpp"
 #include "mpix.hpp"
 
@@ -166,6 +168,48 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
     }
 
     mpix_bcast(this, 0, comm);
+}
+
+
+void Parameters::parse_yaml(const char *parameters_file, MPI_Comm comm)
+{
+    int comm_rank = 0;  /* rank 0 will open the file */
+    int status = 0;     /* for MPI routine return codes */
+
+    status = MPI_Comm_rank(comm, &comm_rank);
+    MPI_CHECK_IERR(status, comm_rank, comm);
+
+    if (0 == comm_rank) {
+        const YAML::Node config = YAML::LoadFile(parameters_file);
+        AOL = config["AlignOverLongerSeq"].as<int>(8);
+        SIM = config["MatchSimilarity"].as<int>(4);
+        OS = config["OptimalScoreOverSelfScore"].as<int>(3);
+        exact_match_len = config["ExactMatchLen"].as<int>(8);
+        window_size = config["SlideWindowSize"].as<int>(3);
+        open = config["Open"].as<int>(-10);
+        gap = config["Gap"].as<int>(-1);
+        mem_worker = config["MemoryWorker"].as<size_t>(512U*MB);
+        mem_sequences = config["MemorySequences"].as<size_t>(2U*GB);
+    }
+
+    //mpix_bcast(*this, 0, comm);
+    status = MPI_Bcast(this, int(sizeof(Parameters)), MPI_CHAR, 0, comm);
+    MPI_CHECK_IERR(status, comm_rank, comm);
+}
+
+ostream& operator<< (ostream &os, const Parameters &p)
+{
+    os << "AlignOverLongerSeq: " << p.AOL << endl;
+    os << "MatchSimilarity: " << p.SIM << endl;
+    os << "OptimalScoreOverSelfScore: " << p.OS << endl;
+    os << "ExactMatchLen: " << p.exact_match_len << endl;
+    os << "SlideWindowSize: " << p.window_size << endl;
+    os << "Open: " << p.open << endl;
+    os << "Gap: " << p.gap << endl;
+    os << "MemoryWorker: " << p.mem_worker << endl;
+    os << "MemorySequences: " << p.mem_sequences << endl;
+
+    return os;
 }
 
 }; /* namespace pgraph */
