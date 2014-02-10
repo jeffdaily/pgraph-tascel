@@ -99,7 +99,11 @@ class SuffixBuckets
 
         bool owns(size_t bid) const;
 
+    protected:
+        bool filter_out(const char *kmer, int k);
+
     //private:
+    public:
         int comm_rank;
         int comm_size;
         SequenceDatabase *sequences;    /**< sequences to process */
@@ -162,7 +166,11 @@ class SuffixBuckets2
 
         bool owns(size_t bid) const;
 
+    protected:
+        bool filter_out(const char *kmer, int k);
+
     //private:
+    public:
         int comm_rank;
         int comm_size;
         size_t n_buckets;

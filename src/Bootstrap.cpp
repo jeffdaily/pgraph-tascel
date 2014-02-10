@@ -7,6 +7,7 @@
 #include "Bootstrap.hpp"
 #include "mpix.hpp"
 
+#define PAUSE_ON_ERROR 1
 #ifdef PAUSE_ON_ERROR
 #include "SigSegvHandler.hpp"
 #endif

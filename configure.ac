@@ -44,6 +44,7 @@ AS_IF([test x$with_mpi_wrappers = xyes],
 AC_CHECK_HEADERS([emmintrin.h])
 AC_CHECK_HEADERS([limits.h])
 AC_CHECK_HEADERS([pthread.h])
+AC_CHECK_HEADERS([regex.h])
 AC_CHECK_HEADERS([sched.h])
 AC_CHECK_HEADERS([stdlib.h])
 

@@ -11,10 +11,14 @@
 #define _PGRAPH_PARAMETERS_H_
 
 #include <iostream>
+#include <string>
+#include <vector>
 
 #include <mpi.h>
 
 using std::ostream;
+using std::string;
+using std::vector;
 
 namespace pgraph {
 
@@ -61,6 +65,7 @@ public:
     int gap;            /**< gap extension penalty for affine gap alignment */
     size_t mem_worker;  /**< memory budget per worker task pool */
     size_t mem_sequences;/**< memory budget for sequence database */
+    vector<string> prefix_filter;   /**< buckets to skip */
 };
 
 ostream& operator<< (ostream &os, const Parameters &p);

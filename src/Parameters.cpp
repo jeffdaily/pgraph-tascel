@@ -78,6 +78,20 @@ static size_t parse_memory_budget(const string& value)
 }
 
 
+static bool ends_with(string const &fullString, string const &ending)
+{
+    if (fullString.length() >= ending.length()) {
+        return (0 == fullString.compare(
+                    fullString.length() - ending.length(),
+                    ending.length(),
+                    ending));
+    } else {
+        return false;
+    }
+}
+
+
+
 Parameters::Parameters()
     : AOL(8)
     , SIM(4)
@@ -115,6 +129,12 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
     map<string,int*> kv_int;
     map<string,string> kv_str;
     map<string,size_t*> kv_zu;
+
+    if (ends_with(parameters_file, ".yaml")) {
+        cout << "PARSING YAML FILE" << endl;
+        parse_yaml(parameters_file, comm);
+        return;
+    }
 
     status = MPI_Comm_rank(comm, &comm_rank);
     MPI_CHECK_IERR(status, comm_rank, comm);
@@ -190,6 +210,16 @@ void Parameters::parse_yaml(const char *parameters_file, MPI_Comm comm)
         gap = config["Gap"].as<int>(-1);
         mem_worker = config["MemoryWorker"].as<size_t>(512U*MB);
         mem_sequences = config["MemorySequences"].as<size_t>(2U*GB);
+        const YAML::Node filter_node = config["SkipPrefixes"];
+        for (size_t i=0; i<filter_node.size(); ++i) {
+            string filter = filter_node[i].as<string>();
+            if (filter.size() != window_size) {
+                cerr << "skip prefix length must match slide window size" << endl;
+                cerr << "'" << filter << "' len=" << filter.size() << " SlideWindowSize=" << window_size << endl;
+                MPI_Abort(comm, -1);
+            }
+            prefix_filter.push_back(filter);
+        }
     }
 
     //mpix_bcast(*this, 0, comm);
@@ -208,6 +238,10 @@ ostream& operator<< (ostream &os, const Parameters &p)
     os << "Gap: " << p.gap << endl;
     os << "MemoryWorker: " << p.mem_worker << endl;
     os << "MemorySequences: " << p.mem_sequences << endl;
+    os << "SkipPrefixes:" << endl;
+    for (size_t i=0; i<p.prefix_filter.size(); ++i) {
+        os << "  - " << p.prefix_filter[i] << endl;
+    }
 
     return os;
 }

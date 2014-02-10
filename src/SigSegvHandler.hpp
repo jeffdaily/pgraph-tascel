@@ -1,6 +1,8 @@
 #ifndef _PGRAPH_SIGSEGV_HANDLER_
 #define _PGRAPH_SIGSEGV_HANDLER_
 
+#include <csignal>
+
 static void (*SigSegvOrig)(int) = NULL;
 
 static void SigSegvHandler(int sig)
@@ -9,7 +11,7 @@ static void SigSegvHandler(int sig)
             getpid() );
     pause();
     if (SigSegvOrig == SIG_DFL) {
-        signal(sig, SIG_DFL);
+        ::std::signal(sig, SIG_DFL);
     }
     else if (SigSegvOrig == SIG_IGN) {
     }
@@ -20,7 +22,7 @@ static void SigSegvHandler(int sig)
 
 static void TrapSigSegv()
 {
-    if ((SigSegvOrig=signal(SIGSEGV, SigSegvHandler)) == SIG_ERR) {
+    if ((SigSegvOrig=::std::signal(SIGSEGV, SigSegvHandler)) == SIG_ERR) {
         fprintf(stderr, "TrapSigSegv: error from signal setting SIGSEGV");
         exit(EXIT_FAILURE);
     }

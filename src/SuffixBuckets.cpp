@@ -11,6 +11,9 @@
 
 #include <mpi.h>
 
+#include <sys/types.h>
+#include <regex.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
@@ -85,6 +88,30 @@ static inline size_t entry_index(const char *kmer, int k)
     }
 
     return value;
+}
+
+
+/**
+ * Compare kmer against user-supplied prefix filters.
+ */
+bool SuffixBuckets::filter_out(const char *kmer, int k)
+{
+    bool result = false;
+    string str(kmer, k);
+
+    for (size_t i=0; i<param.prefix_filter.size(); ++i) {
+        regex_t preq;
+        int retval = 0;
+        
+        retval = regcomp(&preq, param.prefix_filter[i].c_str(), REG_NOSUB);
+        assert(0 == retval);
+
+        retval = regexec(&preq, str.c_str(), 0, NULL, 0);
+        result = result || (0 == retval);
+        if (result) break;
+    }
+
+    return result;
 }
 
 
@@ -209,25 +236,30 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
         if (sequence_length <= param.window_size) continue;
 
         for (size_t j = 0; j <= stop_index; ++j) {
-            size_t bucket_index = entry_index(
-                    sequence_data + j, param.window_size);
-            if (bucket_index >= n_buckets) {
-                printf("[%d] bucket_index >= n_buckets (%zu >= %zu)\n",
-                        comm_rank, bucket_index, n_buckets);
-                printf("[%d] j=%zu stop_index=%zu k=%d data='%s' len=%zu\n",
-                        comm_rank, j, stop_index, param.window_size,
-                        std::string(sequence_data,sequence_length).c_str(),
-                        sequence_length);
+            if (filter_out(sequence_data + j, param.window_size)) {
+                printf("[%d] filtered out '%s'\n",
+                        comm_rank, string(sequence_data+j,param.window_size).c_str());
+            } else {
+                size_t bucket_index = entry_index(
+                        sequence_data + j, param.window_size);
+                if (bucket_index >= n_buckets) {
+                    printf("[%d] bucket_index >= n_buckets (%zu >= %zu)\n",
+                            comm_rank, bucket_index, n_buckets);
+                    printf("[%d] j=%zu stop_index=%zu k=%d data='%s' len=%zu\n",
+                            comm_rank, j, stop_index, param.window_size,
+                            std::string(sequence_data,sequence_length).c_str(),
+                            sequence_length);
+                }
+                assert(bucket_index < n_buckets);
+                /* prefixed in the suffix list for the given bucket */
+                initial_suffixes[suffix_index].sid = i;
+                initial_suffixes[suffix_index].pid = j;
+                initial_suffixes[suffix_index].bid = bucket_index;
+                initial_suffixes[suffix_index].next = NULL;
+                bucket_size[bucket_index]++;
+                buckets[bucket_index].size++;
+                suffix_index++;
             }
-            assert(bucket_index < n_buckets);
-            /* prefixed in the suffix list for the given bucket */
-            initial_suffixes[suffix_index].sid = i;
-            initial_suffixes[suffix_index].pid = j;
-            initial_suffixes[suffix_index].bid = bucket_index;
-            initial_suffixes[suffix_index].next = NULL;
-            bucket_size[bucket_index]++;
-            buckets[bucket_index].size++;
-            suffix_index++;
         }
     }
     initial_suffixes.resize(suffix_index);
@@ -611,15 +643,20 @@ SuffixBuckets2::SuffixBuckets2(SequenceDatabase *sequences,
         if (sequence_length <= param.window_size) continue;
 
         for (size_t j = 0; j <= stop_index; ++j) {
-            size_t bucket_index = entry_index(
-                    sequence_data + j, param.window_size);
-            assert(bucket_index < n_buckets);
-            /* prefixed in the suffix list for the given bucket */
-            initial_suffixes[suffix_index].sid = i;
-            initial_suffixes[suffix_index].pid = j;
-            initial_suffixes[suffix_index].bid = bucket_index;
-            initial_suffixes[suffix_index].next = NULL;
-            suffix_index++;
+            if (filter_out(sequence_data + j, param.window_size)) {
+                printf("[%d] filtered out '%s'\n",
+                        comm_rank, string(sequence_data+j,param.window_size).c_str());
+            } else {
+                size_t bucket_index = entry_index(
+                        sequence_data + j, param.window_size);
+                assert(bucket_index < n_buckets);
+                /* prefixed in the suffix list for the given bucket */
+                initial_suffixes[suffix_index].sid = i;
+                initial_suffixes[suffix_index].pid = j;
+                initial_suffixes[suffix_index].bid = bucket_index;
+                initial_suffixes[suffix_index].next = NULL;
+                suffix_index++;
+            }
         }
     }
     initial_suffixes.resize(suffix_index);
@@ -848,6 +885,31 @@ void SuffixBuckets2::rem(size_t bid, Bucket *bucket)
     }
     delete bucket;
 }
+
+
+/**
+ * Compare kmer against user-supplied prefix filters.
+ */
+bool SuffixBuckets2::filter_out(const char *kmer, int k)
+{
+    bool result = false;
+    string str(kmer, k);
+
+    for (size_t i=0; i<param.prefix_filter.size(); ++i) {
+        regex_t preq;
+        int retval = 0;
+        
+        retval = regcomp(&preq, param.prefix_filter[i].c_str(), REG_NOSUB);
+        assert(0 == retval);
+
+        retval = regexec(&preq, str.c_str(), 0, NULL, 0);
+        result = result || (0 == retval);
+        if (result) break;
+    }
+
+    return result;
+}
+
 
 #endif /* USE_ARMCI */
 
