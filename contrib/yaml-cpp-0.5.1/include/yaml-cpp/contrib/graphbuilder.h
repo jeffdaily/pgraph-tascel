@@ -19,6 +19,10 @@ namespace YAML
   class GraphBuilderInterface
   {
   public:
+    GraphBuilderInterface() {}
+
+    virtual ~GraphBuilderInterface() {}
+
     // Create and return a new node with a null value.
     virtual void *NewNull(const Mark& mark, void *pParentNode) = 0;
     
@@ -71,6 +75,8 @@ namespace YAML
       pNode = pMap;
       pNode = pSeq;
     }
+
+    ~GraphBuilder() {}
     
     GraphBuilderInterface& AsBuilderInterface() {return *this;}
     

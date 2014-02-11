@@ -15,6 +15,10 @@
 #include <vector>
 #include <utility>
 
+#include "Parameters.hpp"
+#include "SequenceDatabase.hpp"
+#include "SuffixBuckets.hpp"
+
 using std::pair;
 using std::set;
 using std::vector;
@@ -22,19 +26,13 @@ using std::size_t;
 
 namespace pgraph {
 
-#include "Parameters.hpp"
-
-class Bucket;
-class SequenceDatabase;
-class Suffix;
-
 /**
  * suffix tree node
  */
 class SuffixTreeNode
 {
     public:
-        int depth;      /**< depth since the root, not including initial size k */
+        size_t depth;   /**< depth since the root, not including initial size k */
         size_t rLeaf;   /**< right most leaf index */
         Suffix **lset;  /**< subtree's nodes branched according to left */
 };
@@ -131,13 +129,13 @@ class SuffixTree
  * @param maxSeqLen -
  * -----------------------------------------------------------*/
 static inline void
-count_sort(SuffixTreeNode *stNodes, int *srtIndex, size_t nStNodes, size_t maxSeqLen)
+count_sort(SuffixTreeNode *stNodes, size_t *srtIndex, size_t nStNodes, size_t maxSeqLen)
 {
     size_t i;
-    int *cnt = NULL;
-    int depth;
+    size_t *cnt = NULL;
+    size_t depth;
 
-    cnt = new int[maxSeqLen];
+    cnt = new size_t[maxSeqLen];
     if (NULL == cnt) {
         perror("count_sort: malloc cnt");
         exit(EXIT_FAILURE);
@@ -151,7 +149,7 @@ count_sort(SuffixTreeNode *stNodes, int *srtIndex, size_t nStNodes, size_t maxSe
     /* fill in counters */
     for (i = 0; i < nStNodes; i++) {
         depth = stNodes[i].depth; /* depth starts from 0 */
-        assert(depth < maxSeqLen);
+        assert(((unsigned)depth) < maxSeqLen);
         cnt[depth]++;
     }
 
@@ -159,12 +157,13 @@ count_sort(SuffixTreeNode *stNodes, int *srtIndex, size_t nStNodes, size_t maxSe
     for (i = maxSeqLen - 2; i > 0; i--) {
         cnt[i] += cnt[i + 1];
     }
-    cnt[0] += cnt[1];
+    cnt[0] += cnt[1]; /* because var i was unsigned */
 
     /* store the sorted index into srtIndex */
     for (i = 0; i < nStNodes; i++) {
         depth = stNodes[i].depth;
         srtIndex[cnt[depth] - 1] = i;
+        assert(cnt[depth] >= 1);
         cnt[depth]--;
     }
 
@@ -177,8 +176,8 @@ is_candidate(SequenceDatabase *seqs, size_t nSeqs,
 {
     size_t s1Len = 0;
     size_t s2Len = 0;
-    int f1 = 0;
-    int f2 = 0;
+    size_t f1 = 0;
+    size_t f2 = 0;
     int cutOff = param.AOL * param.SIM;
     char result = FALSE;
 
@@ -192,7 +191,7 @@ is_candidate(SequenceDatabase *seqs, size_t nSeqs,
     }
     else {
         if (f1 > f2) {
-            int swap = f1;
+            size_t swap = f1;
             f1 = f2;
             f2 = swap;
         }
@@ -224,7 +223,7 @@ template <class Callback>
 bool SuffixTree::generate_pairs_cb(Callback callback)
 {
     SuffixTreeNode *stNodes = NULL;
-    int *srtIndex = NULL;
+    size_t *srtIndex = NULL;
     size_t nStNodes = 0;
     int nSeqs = 0;
     int maxSeqLen = 0;
@@ -242,7 +241,7 @@ bool SuffixTree::generate_pairs_cb(Callback callback)
     int EM;
     int cutOff; /* cut off value of filter 1 */
 
-    srtIndex = new int[this->size];
+    srtIndex = new size_t[this->size];
     count_sort(this->nodes, srtIndex, this->size, sequences->get_max_length());
     stNodes = this->nodes;
     nStNodes = this->size;

@@ -378,7 +378,7 @@ bool Aligner::ReBuild(
 
 bool Aligner::ReBuild(
     const int8_t* score_matrix,
-    const int&    score_matrix_size,
+    const int&    /*score_matrix_size*/,
     const int8_t* translation_matrix,
     const int&    translation_matrix_size) {
 

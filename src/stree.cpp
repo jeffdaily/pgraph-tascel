@@ -174,7 +174,7 @@ compute_lset(suffix_t *suffixes, sequence_t *seqs, sset_t *sset)
  * @param[in] window_size - slide window size for bucketing
  * ---------------------------------------------------*/
 STATIC int
-nextDiffPos(sequence_t *seqs, suffix_t *suffixes, int depth, int window_size)
+nextDiffPos(sequence_t *seqs, suffix_t *suffixes, int depth)
 {
     int i;
     suffix_t *p = NULL;
@@ -236,7 +236,7 @@ build_tree_recursive(
     sequence_t *seq = NULL;
     size_t rLeaf = SIZE_MAX;
 
-    diffPos = nextDiffPos(sequences, suffixes, depth, window_size);
+    diffPos = nextDiffPos(sequences, suffixes, depth);
     if (diffPos == ERROR) { /* can never happen */
         fprintf(stderr, "wrong when exploring diff chars!");
         exit(EXIT_FAILURE);
@@ -548,13 +548,11 @@ is_candidate(sequence_t *seqs, size_t nSeqs,
 STATIC int
 is_candidate(sequence_t *seqs, size_t nSeqs,
              size_t f1, size_t f2, param_t param, 
-             pset_t &dup)
+             pset_t& /*dup*/)
 {
     size_t s1Len = 0;
     size_t s2Len = 0;
     int cutOff = param.AOL * param.SIM;
-    cell_t result;
-    size_t index = 0;
 
     assert(f1 < nSeqs);
     assert(f2 < nSeqs);
@@ -866,7 +864,7 @@ procLeaf(sset_t *lset, sequence_t *seqs, int nSeqs, param_t param, pset_t &dup)
 
 
 STATIC void
-procNode(stnode_t *stNodes, int sIndex, int eIndex, suffix_t **lset, sequence_t *seqs, int nSeqs, param_t param, int *dup)
+procNode(stnode_t *stNodes, int sIndex, int eIndex, suffix_t** /*lset*/, sequence_t *seqs, int nSeqs, param_t param, int *dup)
 {
     size_t m;
     size_t n;
@@ -912,7 +910,7 @@ procNode(stnode_t *stNodes, int sIndex, int eIndex, suffix_t **lset, sequence_t 
 
 
 STATIC void
-procNode(stnode_t *stNodes, int sIndex, int eIndex, suffix_t **lset, sequence_t *seqs, int nSeqs, param_t param, pset_t &dup)
+procNode(stnode_t *stNodes, int sIndex, int eIndex, suffix_t** /*lset*/, sequence_t *seqs, int nSeqs, param_t param, pset_t &dup)
 {
     size_t m;
     size_t n;
@@ -1108,16 +1106,9 @@ void generate_pairs(
     int nSeqs = 0;
     int maxSeqLen = 0;
     size_t i = 0;
-    int j = 0;
     stnode_t *stnode = NULL;
     int sIndex;
     int eIndex;
-    size_t m;
-    size_t n;
-    size_t s;
-    size_t t;
-    suffix_t *p = NULL;
-    suffix_t *q = NULL;
     int EM;
     int cutOff; /* cut off value of filter 1 */
 
@@ -1180,16 +1171,9 @@ void generate_pairs(
     int nSeqs = 0;
     int maxSeqLen = 0;
     size_t i = 0;
-    int j = 0;
     stnode_t *stnode = NULL;
     int sIndex;
     int eIndex;
-    size_t m;
-    size_t n;
-    size_t s;
-    size_t t;
-    suffix_t *p = NULL;
-    suffix_t *q = NULL;
     int EM;
     int cutOff; /* cut off value of filter 1 */
 

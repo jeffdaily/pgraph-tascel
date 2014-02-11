@@ -43,7 +43,7 @@ class Suffix
         Suffix(size_t suffix_id, size_t offset, size_t bucket_id, Suffix *next=NULL)
             :   sid(suffix_id)
             ,   pid(offset)
-            ,   bid(0)
+            ,   bid(bucket_id)
             ,   next(next)
         { }
 
@@ -104,8 +104,8 @@ class SuffixBuckets
 
     //private:
     public:
-        int comm_rank;
-        int comm_size;
+        size_t comm_rank;
+        size_t comm_size;
         SequenceDatabase *sequences;    /**< sequences to process */
         Parameters param;       /**< configuration parameters */
         Suffix *suffixes;       /**< array of all suffixes */
@@ -171,8 +171,8 @@ class SuffixBuckets2
 
     //private:
     public:
-        int comm_rank;
-        int comm_size;
+        size_t comm_rank;
+        size_t comm_size;
         size_t n_buckets;
         SequenceDatabase *sequences;    /**< sequences to process */
         Parameters param;               /**< configuration parameters */

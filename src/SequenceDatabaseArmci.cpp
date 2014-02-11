@@ -734,7 +734,7 @@ void SequenceDatabaseArmci::align_ssw(size_t i,
                                       int &alen,
                                       int open,
                                       int gap,
-                                      int tid)
+                                      int /*tid*/)
 {
     Sequence &s1 = get_sequence(i);
     Sequence &s2 = get_sequence(j);
@@ -830,7 +830,6 @@ void SequenceDatabaseArmci::exchange_local_cache()
         const char *data = NULL;
         size_t data_size = 0;
 
-        assert(it->first >= 0);
         assert(it->first < global_count);
 
         it->second->get_data(data, data_size);

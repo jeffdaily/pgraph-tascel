@@ -32,10 +32,8 @@ using std::vector;
 
 void mpix_bcast(string &object, int root, MPI_Comm comm)
 {
-    int rank = 0;
+    int rank = mpix_rank(comm);
     int size = 0;
-
-    MPI_CHECK(MPI_Comm_rank(comm, &rank));
 
     if (rank == root) {
         size = int(object.size());
@@ -55,13 +53,29 @@ void mpix_bcast(string &object, int root, MPI_Comm comm)
 }
 
 
+void mpix_bcast(vector<string> &object, int root, MPI_Comm comm)
+{
+    int rank = mpix_rank(comm);
+    int size = 0;
+
+    size = object.size();
+    mpix_bcast(size, root, comm);
+
+    if (rank != root) {
+        object.resize(size);
+    }
+
+    for (vector<string>::iterator it=object.begin(); it!=object.end(); ++it) {
+        mpix_bcast(*it, root, comm);
+    }
+}
+
+
 /* MPI standard does not guarantee all procs receive argc and argv */
 void mpix_bcast_argv(
         int argc, char **argv, vector<string> &all_argv, MPI_Comm comm)
 {
-    int rank;
-
-    MPI_CHECK(MPI_Comm_rank(comm, &rank));
+    int rank = mpix_rank(comm);;
 
     if (0 == rank) {
         MPI_CHECK(MPI_Bcast(&argc, 1, MPI_INT, 0, comm));
@@ -89,11 +103,8 @@ void mpix_bcast_argv(
 void mpix_print_sync(
         const string &name, const vector<string> &what, MPI_Comm comm)
 {
-    int rank;
-    int size;
-
-    MPI_CHECK(MPI_Comm_rank(comm, &rank));
-    MPI_CHECK(MPI_Comm_size(comm, &size));
+    int rank = mpix_rank(comm);
+    int size = mpix_size(comm);
 
     for (int i = 0; i < size; ++i) {
         if (i == rank) {
@@ -111,11 +122,8 @@ void mpix_print_sync(
 
 void mpix_print_sync(const string &name, const string &what, MPI_Comm comm)
 {
-    int rank;
-    int size;
-
-    MPI_CHECK(MPI_Comm_rank(comm, &rank));
-    MPI_CHECK(MPI_Comm_size(comm, &size));
+    int rank = mpix_rank(comm);
+    int size = mpix_size(comm);
 
     for (int i = 0; i < size; ++i) {
         if (i == rank) {
@@ -128,11 +136,8 @@ void mpix_print_sync(const string &name, const string &what, MPI_Comm comm)
 
 void mpix_print_sync(const string &what, MPI_Comm comm)
 {
-    int rank;
-    int size;
-
-    MPI_CHECK(MPI_Comm_rank(comm, &rank));
-    MPI_CHECK(MPI_Comm_size(comm, &size));
+    int rank = mpix_rank(comm);
+    int size = mpix_size(comm);
 
     for (int i = 0; i < size; ++i) {
         if (i == rank) {
@@ -146,9 +151,7 @@ void mpix_print_sync(const string &what, MPI_Comm comm)
 void mpix_print_zero(
     const string &name, const vector<string> &what, MPI_Comm comm)
 {
-    int rank;
-
-    MPI_CHECK(MPI_Comm_rank(comm, &rank));
+    int rank = mpix_rank(comm);
 
     if (0 == rank) {
         size_t j;
@@ -162,9 +165,7 @@ void mpix_print_zero(
 
 void mpix_print_zero(const string &name, const string &what, MPI_Comm comm)
 {
-    int rank;
-
-    MPI_CHECK(MPI_Comm_rank(comm, &rank));
+    int rank = mpix_rank(comm);
 
     if (0 == rank) {
         cout << "[" << rank << "] " << name << "=" << what << endl;
@@ -175,9 +176,7 @@ void mpix_print_zero(const string &name, const string &what, MPI_Comm comm)
 
 void mpix_print_zero(const string &what, MPI_Comm comm)
 {
-    int rank;
-
-    MPI_CHECK(MPI_Comm_rank(comm, &rank));
+    int rank = mpix_rank(comm);
 
     if (0 == rank) {
         cout << "[" << rank << "] " << what << endl;
@@ -199,11 +198,7 @@ void mpix_print_zero(const string &what, MPI_Comm comm)
 MPI_Offset mpix_get_file_size(const string &file_name, MPI_Comm comm)
 {
     MPI_Offset file_size = 0;
-    int rank = 0;
-    int size = 0;
-
-    MPI_CHECK(MPI_Comm_rank(comm, &rank));
-    MPI_CHECK(MPI_Comm_size(comm, &size));
+    int rank = mpix_rank(comm);
 
     /* process 0 stats the file to determine its size */
     if (0 == rank) {
@@ -269,13 +264,9 @@ void mpix_read_file_mpiio(
     const string &file_name, char *&file_buffer,
     MPI_Offset &file_size, long chunk_size, MPI_Comm comm)
 {
-    int rank;
-    int size;
+    int rank = mpix_rank(comm);
     MPI_Status status;
     MPI_File fh;
-
-    MPI_CHECK(MPI_Comm_rank(comm, &rank));
-    MPI_CHECK(MPI_Comm_size(comm, &size));
 
     /* allocate a buffer for the file, of the entire size */
     file_size = mpix_get_file_size(file_name, comm);
@@ -340,11 +331,7 @@ void mpix_read_file_bcast(
     const string &file_name, char *&file_buffer,
     MPI_Offset &file_size, long chunk_size, MPI_Comm comm)
 {
-    int rank;
-    int size;
-
-    MPI_CHECK(MPI_Comm_rank(comm, &rank));
-    MPI_CHECK(MPI_Comm_size(comm, &size));
+    int rank = mpix_rank(comm);
 
     /* allocate a buffer for the file, of the entire size */
     file_size = mpix_get_file_size(file_name, comm);

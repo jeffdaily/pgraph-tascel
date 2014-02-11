@@ -579,8 +579,9 @@ Sequence &SequenceDatabaseGArray::operator[](size_t i)
 }
 
 
-void SequenceDatabaseGArray::set_num_threads(size_t num)
+void SequenceDatabaseGArray::set_num_threads(size_t /*num*/)
 {
+    assert(0);
 }
 
 
@@ -646,8 +647,15 @@ void SequenceDatabaseGArray::align(size_t i, size_t j, int &score, int &ndig, in
 }
 
 
-void SequenceDatabaseGArray::align_ssw(size_t i, size_t j, int &score, int &ndig, int &align, int open, int gap, int tid)
+void SequenceDatabaseGArray::align_ssw(
+#if 0
+        size_t i, size_t j, int &score, int &ndig, int &align, int open, int gap, int tid
+#else
+        size_t, size_t, int&, int&, int&, int, int, int
+#endif
+        )
 {
+    assert(0);
 }
 
 

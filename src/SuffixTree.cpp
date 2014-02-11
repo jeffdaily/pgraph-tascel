@@ -76,7 +76,7 @@ compute_lset(Suffix *suffixes, SequenceDatabase *seqs, Suffix **lset)
  * @param[in] window_size - slide window size for bucketing
  * ---------------------------------------------------*/
 static inline int
-nextDiffPos(SequenceDatabase *seqs, Suffix *suffixes, int depth, int window_size)
+nextDiffPos(SequenceDatabase *seqs, Suffix *suffixes, int depth)
 {
     int i;
     Suffix *p = NULL;
@@ -133,7 +133,7 @@ build_tree_recursive(
     int hIndex;
     size_t rLeaf = SIZE_MAX;
 
-    diffPos = nextDiffPos(sequences, suffixes, depth, window_size);
+    diffPos = nextDiffPos(sequences, suffixes, depth);
     if (diffPos == ERROR) { /* can never happen */
         fprintf(stderr, "wrong when exploring diff chars!");
         exit(EXIT_FAILURE);
@@ -413,34 +413,32 @@ procLeaf(Suffix **lset, SequenceDatabase *seqs, int nSeqs, Parameters param, vec
 void SuffixTree::generate_pairs(set<pair<size_t,size_t> > &pairs)
 {
     SuffixTreeNode *stNodes = NULL;
-    int *srtIndex = NULL;
+    size_t *srtIndex = NULL;
     size_t nStNodes = 0;
     int nSeqs = 0;
     int maxSeqLen = 0;
     size_t i = 0;
-    int j = 0;
+    size_t j = 0;
     SuffixTreeNode *stnode = NULL;
-    int sIndex;
-    int eIndex;
+    size_t sIndex;
+    size_t eIndex;
     size_t m;
     size_t n;
     size_t s;
     size_t t;
     Suffix *p = NULL;
     Suffix *q = NULL;
-    int EM;
+    size_t EM;
     int cutOff; /* cut off value of filter 1 */
 
-    srtIndex = new int[this->size];
+    srtIndex = new size_t[this->size];
     count_sort(this->nodes, srtIndex, this->size, sequences->get_max_length());
     stNodes = this->nodes;
     nStNodes = this->size;
     nSeqs = sequences->get_global_count();
     maxSeqLen = sequences->get_max_length();
 
-    /* only two rows are allocated */
-    assert(NROW == 2);
-
+    assert(param.exact_match_len >= 1);
     EM = param.exact_match_len;
     cutOff = param.AOL * param.SIM;
 
@@ -529,34 +527,32 @@ void SuffixTree::generate_pairs(set<pair<size_t,size_t> > &pairs)
 void SuffixTree::generate_pairs(vector<pair<size_t,size_t> > &pairs)
 {
     SuffixTreeNode *stNodes = NULL;
-    int *srtIndex = NULL;
+    size_t *srtIndex = NULL;
     size_t nStNodes = 0;
     int nSeqs = 0;
     int maxSeqLen = 0;
     size_t i = 0;
-    int j = 0;
+    size_t j = 0;
     SuffixTreeNode *stnode = NULL;
-    int sIndex;
-    int eIndex;
+    size_t sIndex;
+    size_t eIndex;
     size_t m;
     size_t n;
     size_t s;
     size_t t;
     Suffix *p = NULL;
     Suffix *q = NULL;
-    int EM;
+    size_t EM;
     int cutOff; /* cut off value of filter 1 */
 
-    srtIndex = new int[this->size];
+    srtIndex = new size_t[this->size];
     count_sort(this->nodes, srtIndex, this->size, sequences->get_max_length());
     stNodes = this->nodes;
     nStNodes = this->size;
     nSeqs = sequences->get_global_count();
     maxSeqLen = sequences->get_max_length();
 
-    /* only two rows are allocated */
-    assert(NROW == 2);
-
+    assert(param.exact_match_len >= 1);
     EM = param.exact_match_len;
     cutOff = param.AOL * param.SIM;
 

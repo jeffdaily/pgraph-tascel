@@ -444,7 +444,7 @@ void SequenceDatabaseReplicated::align_ssw(size_t i,
                                       int &alen,
                                       int open,
                                       int gap,
-                                      int tid)
+                                      int /*tid*/)
 {
     Sequence &s1 = get_sequence(i);
     Sequence &s2 = get_sequence(j);

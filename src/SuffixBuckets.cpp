@@ -76,14 +76,15 @@ static inline size_t entry_index(const char *kmer, int k)
 
     for (i = 0; i < k; ++i) {
         const char tmp = kmer[i] - 'A';
+        const char sigma = SIGMA;
         if (tmp < 0) {
             printf("kmer[%d]=(%c) - 'A' < 0\n", i, kmer[i]);
         }
-        if (tmp >= SIGMA) {
+        if (tmp >= sigma) {
             printf("kmer[%d]=(%c) >= SIGMA=(%u)\n", i, kmer[i], SIGMA);
         }
         assert(tmp >= 0);
-        assert(tmp < SIGMA);
+        assert(tmp < sigma);
         value = value * SIGMA + tmp;
     }
 
@@ -147,8 +148,8 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
                              const Parameters &param,
                              MPI_Comm comm,
                              const SplitEnum &split_type)
-    :   comm_rank(-1)
-    ,   comm_size(-1)
+    :   comm_rank(0)
+    ,   comm_size(0)
     ,   sequences(sequences)
     ,   param(param)
     ,   suffixes(NULL)
@@ -172,11 +173,16 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     size_t start = 0;
     size_t stop = 0;
     int ierr = 0;
+    int itmp = -1;
 
-    ierr = MPI_Comm_rank(comm, &comm_rank);
+    ierr = MPI_Comm_rank(comm, &itmp);
     assert(MPI_SUCCESS == ierr);
-    ierr = MPI_Comm_size(comm, &comm_size);
+    assert(itmp >= 0);
+    comm_rank = itmp;
+    ierr = MPI_Comm_size(comm, &itmp);
     assert(MPI_SUCCESS == ierr);
+    assert(itmp > 0);
+    comm_size = itmp;
 
     /* allocate buckets */
     n_buckets = powz(SIGMA, param.window_size);
@@ -233,19 +239,19 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
         sequence.get_sequence(sequence_data, sequence_length);
         stop_index = sequence_length - param.window_size - 1;
 
-        if (sequence_length <= param.window_size) continue;
+        if (sequence_length <= ((unsigned)param.window_size)) continue;
 
         for (size_t j = 0; j <= stop_index; ++j) {
             if (filter_out(sequence_data + j, param.window_size)) {
-                printf("[%d] filtered out '%s'\n",
+                printf("[%zu] filtered out '%s'\n",
                         comm_rank, string(sequence_data+j,param.window_size).c_str());
             } else {
                 size_t bucket_index = entry_index(
                         sequence_data + j, param.window_size);
                 if (bucket_index >= n_buckets) {
-                    printf("[%d] bucket_index >= n_buckets (%zu >= %zu)\n",
+                    printf("[%zu] bucket_index >= n_buckets (%zu >= %zu)\n",
                             comm_rank, bucket_index, n_buckets);
-                    printf("[%d] j=%zu stop_index=%zu k=%d data='%s' len=%zu\n",
+                    printf("[%zu] j=%zu stop_index=%zu k=%d data='%s' len=%zu\n",
                             comm_rank, j, stop_index, param.window_size,
                             std::string(sequence_data,sequence_length).c_str(),
                             sequence_length);
@@ -362,7 +368,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
 #endif
 
     int total_amount_to_recv = 0;
-    for (int i=0; i<comm_size; ++i) {
+    for (size_t i=0; i<comm_size; ++i) {
         total_amount_to_recv += amount_to_recv[i];
     }
     mpix_print_sync("total_amount_to_recv", total_amount_to_recv, comm);
@@ -507,7 +513,7 @@ Suffix* SuffixBuckets::get(size_t bid)
     size_t size = bucket_size[bid];
     size_t owner = bucket_owner[bid];
     size_t offset = bucket_offset[bid];
-    void *address = bucket_address[owner];
+    //void *address = bucket_address[owner];
 
     if (owner == comm_rank) {
         /* already owned, just return it */
@@ -554,8 +560,8 @@ struct SuffixBucket2IndexFunctor {
 SuffixBuckets2::SuffixBuckets2(SequenceDatabase *sequences,
                              const Parameters &param,
                              MPI_Comm comm)
-    :   comm_rank(-1)
-    ,   comm_size(-1)
+    :   comm_rank(0)
+    ,   comm_size(0)
     ,   n_buckets(0)
     ,   sequences(sequences)
     ,   param(param)
@@ -576,13 +582,18 @@ SuffixBuckets2::SuffixBuckets2(SequenceDatabase *sequences,
     size_t start = 0;
     size_t stop = 0;
     int ierr = 0;
+    int itmp = -1;
 
     assert(USE_ARMCI);
 
-    ierr = MPI_Comm_rank(comm, &comm_rank);
+    ierr = MPI_Comm_rank(comm, &itmp);
     assert(MPI_SUCCESS == ierr);
-    ierr = MPI_Comm_size(comm, &comm_size);
+    assert(itmp >= 0);
+    comm_rank = itmp;
+    ierr = MPI_Comm_size(comm, &itmp);
     assert(MPI_SUCCESS == ierr);
+    assert(itmp > 0);
+    comm_size = itmp;
 
     /* allocate buckets */
     n_buckets = powz(SIGMA, param.window_size);
@@ -640,11 +651,11 @@ SuffixBuckets2::SuffixBuckets2(SequenceDatabase *sequences,
         sequence.get_sequence(sequence_data, sequence_length);
         stop_index = sequence_length - param.window_size - 1;
 
-        if (sequence_length <= param.window_size) continue;
+        if (sequence_length <= ((unsigned)param.window_size)) continue;
 
         for (size_t j = 0; j <= stop_index; ++j) {
             if (filter_out(sequence_data + j, param.window_size)) {
-                printf("[%d] filtered out '%s'\n",
+                printf("[%zu] filtered out '%s'\n",
                         comm_rank, string(sequence_data+j,param.window_size).c_str());
             } else {
                 size_t bucket_index = entry_index(
@@ -692,7 +703,7 @@ SuffixBuckets2::SuffixBuckets2(SequenceDatabase *sequences,
 
     int total_amount_to_send = 0;
     int total_amount_to_recv = 0;
-    for (int i=0; i<comm_size; ++i) {
+    for (size_t i=0; i<comm_size; ++i) {
         total_amount_to_send += amount_to_send[i];
         total_amount_to_recv += amount_to_recv[i];
     }

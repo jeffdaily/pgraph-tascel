@@ -160,7 +160,22 @@ mpix_get_mpi_datatype(const void *&x)
 }
 #endif
 
+inline int mpix_rank(MPI_Comm comm = MPI_COMM_WORLD)
+{
+    int rank = 0;
+    MPI_CHECK_C(MPI_Comm_rank(comm, &rank));
+    return rank;
+}
+
+inline int mpix_size(MPI_Comm comm = MPI_COMM_WORLD)
+{
+    int size = 0;
+    MPI_CHECK_C(MPI_Comm_size(comm, &size));
+    return size;
+}
+
 void mpix_bcast(string &object, int root = 0, MPI_Comm comm = MPI_COMM_WORLD);
+void mpix_bcast(vector<string> &object, int root = 0, MPI_Comm comm = MPI_COMM_WORLD);
 
 template <class T>
 void mpix_bcast(T &object, int root = 0, MPI_Comm comm = MPI_COMM_WORLD)
@@ -180,12 +195,10 @@ void mpix_bcast(vector<T> &object, int root = 0, MPI_Comm comm = MPI_COMM_WORLD)
 {
     typedef typename vector<T>::size_type size_type;
 
-    int rank = 0;
+    int rank = mpix_rank(comm);
     size_type size = 0;
     MPI_Datatype datatype_size = MPI_DATATYPE_NULL;
     MPI_Datatype datatype_obj  = MPI_DATATYPE_NULL;
-
-    MPI_CHECK(MPI_Comm_rank(comm, &rank));
 
     size = object.size();
     datatype_size = mpix_get_mpi_datatype(size);
@@ -203,10 +216,9 @@ void mpix_bcast(vector<T> &object, int root = 0, MPI_Comm comm = MPI_COMM_WORLD)
 template <class T>
 void mpix_reduce(T &object, MPI_Op op, int root = 0, MPI_Comm comm = MPI_COMM_WORLD)
 {
-    int rank = 0;
+    int rank = mpix_rank(comm);
     MPI_Datatype datatype = mpix_get_mpi_datatype(object);
 
-    MPI_CHECK(MPI_Comm_rank(comm, &rank));
     if (root == rank) {
         MPI_CHECK_C(MPI_Reduce(MPI_IN_PLACE, &object, 1, datatype, op, root, comm));
     }
@@ -241,11 +253,10 @@ void mpix_allreduce(T *object, size_t size, MPI_Op op, MPI_Comm comm = MPI_COMM_
 template <class T>
 void mpix_alltoall(vector<T> &sendbuf, vector<T> &recvbuf, MPI_Comm comm = MPI_COMM_WORLD)
 {
-    int size = 0;
+    int size = mpix_size(comm);
     int count = 0;
     MPI_Datatype datatype = mpix_get_mpi_datatype(sendbuf[0]);
 
-    MPI_CHECK_C(MPI_Comm_size(comm, &size));
     assert(sendbuf.size() % size == 0);
     count = sendbuf.size() / size;
     MPI_CHECK_C(MPI_Alltoall(&sendbuf[0], count, datatype,
@@ -260,12 +271,9 @@ void mpix_print_sync(const string &what, MPI_Comm comm=MPI_COMM_WORLD);
 template <class T>
 void mpix_print_sync(const string &name, const T &what, MPI_Comm comm=MPI_COMM_WORLD)
 {
-    int rank;
-    int size;
+    int rank = mpix_rank(comm);
+    int size = mpix_size(comm);
     T what_copy = what;
-
-    MPI_CHECK(MPI_Comm_rank(comm, &rank));
-    MPI_CHECK(MPI_Comm_size(comm, &size));
 
     if (0 == rank) {
         T *all_what = new T[size];
@@ -292,10 +300,8 @@ void mpix_print_zero(const string &what, MPI_Comm comm=MPI_COMM_WORLD);
 template <class T>
 void mpix_print_zero(const string &name, const T &what, MPI_Comm comm=MPI_COMM_WORLD)
 {
-    int rank;
+    int rank = mpix_rank(comm);
     T what_copy = what;
-
-    MPI_CHECK(MPI_Comm_rank(comm, &rank));
 
     if (0 == rank) {
         cout << name << "=" << what_copy << endl;

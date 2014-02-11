@@ -128,7 +128,7 @@ int self_score(const char * const restrict seq, size_t len, match_t callback)
 }
 
 
-int self_score(const char * const restrict seq, size_t len, int match)
+int self_score(const char * const restrict /*seq*/, size_t len, int match)
 {
     return match * len;
 }
