@@ -57,29 +57,6 @@ using namespace pgraph;
 #define ALL_RESULTS 1
 
 #ifdef USE_ITER
-UniformTaskCollIter** utcs = 0;
-#else
-UniformTaskCollectionSplit** utcs = 0;
-#endif
-AlignStats *stats = 0;
-SequenceDatabase *sequences = 0;
-vector<EdgeResult> *edge_results = 0;
-Parameters parameters;
-
-static int trank(int thd)
-{
-    return (theTwoSided().getProcRank().toInt() * NUM_WORKERS) + thd;
-}
-
-static string get_edges_filename(int rank)
-{
-    ostringstream str;
-    str << "edges." << rank << ".txt";
-    return str.str();
-}
-
-
-#ifdef USE_ITER
 typedef struct {
     unsigned long id;
 } task_description;
@@ -95,55 +72,37 @@ typedef struct {
 #endif
 
 
+typedef struct {
+    AlignStats *stats;
+    SequenceDatabase *sequences;
+    vector<EdgeResult> *edge_results;
+    Parameters *parameters;
+} local_data_t;
 
 
-
-static size_t parse_memory_budget(const string& value)
+static int trank(int thd)
 {
-    long budget = 0;
-    char budget_multiplier = 0;
-    istringstream iss(value);
+    return (theTwoSided().getProcRank().toInt() * NUM_WORKERS) + thd;
+}
 
-    if (isdigit(*value.rbegin())) {
-        iss >> budget;
-    }
-    else {
-        iss >> budget >> budget_multiplier;
-    }
 
-    if (budget <= 0) {
-        cerr << "memory budget must be positive real number" << endl;
-        assert(budget > 0);
-    }
-
-    if (budget_multiplier == 'b' || budget_multiplier == 'B') {
-        budget *= 1; /* byte */
-    }
-    else if (budget_multiplier == 'k' || budget_multiplier == 'K') {
-        budget *= 1024; /* kilobyte */
-    }
-    else if (budget_multiplier == 'm' || budget_multiplier == 'M') {
-        budget *= 1048576; /* megabyte */
-    }
-    else if (budget_multiplier == 'g' || budget_multiplier == 'G') {
-        budget *= 1073741824; /* gigabyte */
-    }
-    else if (budget_multiplier != 0) {
-        cerr << "unrecognized size multiplier" << endl;
-        assert(0);
-    }
-
-    assert(budget > 0);
-    return size_t(budget);
+static string get_edges_filename(int rank)
+{
+    ostringstream str;
+    str << "edges." << rank << ".txt";
+    return str.str();
 }
 
 
 static void alignment_task(
-        UniformTaskCollection *utc,
-        void *_bigd, int bigd_len,
-        void *pldata, int pldata_len,
-        vector<void *> data_bufs, int thd) {
-    task_description *desc = (task_description*)_bigd;
+        UniformTaskCollection * /*utc*/,
+        void *bigd, int /*bigd_len*/,
+        void *pldata, int /*pldata_len*/,
+        vector<void *> /*data_bufs*/,
+        int thd)
+{
+    task_description *desc = (task_description*)bigd;
+    local_data_t *local_data = (local_data_t*)pldata;
     unsigned long seq_id[2];
     cell_t result;
     bool is_edge_answer = false;
@@ -152,11 +111,16 @@ static void alignment_task(
     int sscore;
     size_t max_len;
 
-    int open = -10;
-    int gap = -1;
-    int AOL = 8;
-    int SIM = 4;
-    int OS = 3;
+    AlignStats *stats = local_data->stats;
+    SequenceDatabase *sequences = local_data->sequences;
+    vector<EdgeResult> *edge_results = local_data->edge_results;
+    Parameters *parameters = local_data->parameters;
+
+    int open = parameters->open;
+    int gap = parameters->gap;
+    int AOL = parameters->AOL;
+    int SIM = parameters->SIM;
+    int OS = parameters->OS;
 
     tt = MPI_Wtime();
 
@@ -240,20 +204,31 @@ static void alignment_task(
 }
 
 
-#ifdef USE_ITER
-#else
 unsigned long populate_tasks(
+        UniformTaskCollection **utcs, const TaskCollProps &props,
         unsigned long ntasks, unsigned long tasks_per_worker, int worker)
 {
-    task_description desc;
     int wrank = trank(worker);
-    unsigned long count = 0;
-    unsigned long i;
     unsigned long lower_limit = wrank*tasks_per_worker;
     unsigned long upper_limit = lower_limit + tasks_per_worker;
     unsigned long remainder = ntasks % (nprocs*NUM_WORKERS);
 
+    /* if I'm the last worker, add the remainder of the tasks */
+    if (wrank == nprocs*NUM_WORKERS-1) {
+        upper_limit += remainder;
+    }
+
+#ifdef USE_ITER
+    --upper_limit;
+    utcs[worker] = new UniformTaskCollIter(props, createTaskFn, lower_limit, upper_limit, worker);
+    return upper_limit-lower_limit;
+#else
+    task_description desc;
+    unsigned long count = 0;
+    unsigned long i;
     unsigned long seq_id[2];
+    utcs[worker] = new UniformTaskCollectionSplit(props, worker);
+
     k_combination(lower_limit, 2, seq_id);
     for (i=lower_limit; i<upper_limit; ++i) {
         desc.id1 = seq_id[0];
@@ -263,61 +238,43 @@ unsigned long populate_tasks(
 #endif
         next_combination(2, seq_id);
         utcs[worker]->addTask(&desc, sizeof(desc));
-        count++;
-    }
-    /* if I'm the last worker, add the remainder of the tasks */
-    if (wrank == nprocs*NUM_WORKERS-1) {
-        for (/*ignore*/; i<upper_limit+remainder; ++i) {
-            count++;
-            desc.id1 = seq_id[0];
-            desc.id2 = seq_id[1];
-            next_combination(2, seq_id);
-            utcs[worker]->addTask(&desc, sizeof(desc));
-        }
+        ++count;
     }
 
     return count;
-}
 #endif
+}
 
 
 int main(int argc, char **argv)
 {
     vector<string> all_argv;
-    unsigned long nCk;
+    unsigned long nCk = 0;
+    UniformTaskCollection **utcs = NULL;
+    AlignStats *stats = NULL;
+    SequenceDatabase *sequences = NULL;
+    vector<EdgeResult> *edge_results = NULL;
+    Parameters *parameters = NULL;
+    local_data_t *local_data = NULL;
 
     pgraph::initialize(&argc, &argv);
 
     /* initialize tascel */
     TascelConfig::initialize(NUM_WORKERS_DEFAULT, pgraph::comm);
-#ifdef USE_ITER
-    utcs = new UniformTaskCollIter*[NUM_WORKERS];
-#else
-    utcs = new UniformTaskCollectionSplit*[NUM_WORKERS];
-#endif
+
+    /* initialize global data */
+    utcs = new UniformTaskCollection*[NUM_WORKERS];
     stats = new AlignStats[NUM_WORKERS];
     edge_results = new vector<EdgeResult>[NUM_WORKERS];
+    parameters = new Parameters;
+    local_data = new local_data_t;
+    local_data->stats = stats;
+    local_data->edge_results = edge_results;
+    local_data->parameters = parameters;
+
 
     /* MPI standard does not guarantee all procs receive argc and argv */
-    if (0 == rank) {
-        MPI_CHECK(MPI_Bcast(&argc, 1, MPI_INT, 0, pgraph::comm));
-        for (int i=0; i<argc; ++i) {
-            int length = strlen(argv[i])+1;
-            MPI_CHECK(MPI_Bcast(&length, 1, MPI_INT, 0, pgraph::comm));
-            MPI_CHECK(MPI_Bcast(argv[i], length, MPI_CHAR, 0, pgraph::comm));
-            all_argv.push_back(argv[i]);
-        }
-    } else {
-        int all_argc;
-        MPI_CHECK(MPI_Bcast(&all_argc, 1, MPI_INT, 0, pgraph::comm));
-        for (int i=0; i<all_argc; ++i) {
-            int length;
-            char buffer[ARG_LEN_MAX];
-            MPI_CHECK(MPI_Bcast(&length, 1, MPI_INT, 0, pgraph::comm));
-            MPI_CHECK(MPI_Bcast(buffer, length, MPI_CHAR, 0, pgraph::comm));
-            all_argv.push_back(buffer);
-        }
-    }
+    mpix_bcast_argv(argc, argv, all_argv, pgraph::comm);
 
 #if DEBUG
     /* print the command line arguments */
@@ -332,45 +289,48 @@ int main(int argc, char **argv)
 #endif
 
     /* sanity check that we got the correct number of arguments */
-    if (all_argv.size() <= 2 || all_argv.size() >= 5) {
+    if (all_argv.size() <= 2 || all_argv.size() >= 4) {
         if (0 == rank) {
             if (all_argv.size() <= 1) {
                 printf("missing input file\n");
             }
-            else if (all_argv.size() <= 2) {
-                printf("missing memory budget\n");
-            }
-            else if (all_argv.size() >= 5) {
+            else if (all_argv.size() >= 4) {
                 printf("too many arguments\n");
             }
-            printf("usage: align sequence_file memory_budget\n");
+            printf("usage: align sequence_file <config_file>\n");
         }
         pgraph::finalize();
         return 1;
     }
-    else if (all_argv.size() >= 4) {
-        parameters.parse(all_argv[3].c_str(), pgraph::comm);
+    else if (all_argv.size() >= 3) {
+        parameters->parse(all_argv[2].c_str(), pgraph::comm);
     }
     if (0 == trank(0)) {
         printf("----------------------------------------------\n");
-        printf("%-20s: %d\n", "slide size", parameters.window_size);
-        printf("%-20s: %d\n", "exactMatch len", parameters.exact_match_len);
-        printf("%-20s: %d\n", "AlignOverLongerSeq", parameters.AOL);
-        printf("%-20s: %d\n", "MatchSimilarity", parameters.SIM);
-        printf("%-20s: %d\n", "OptimalScoreOverSelfScore", parameters.OS);
+        printf("%-20s: %d\n", "slide size", parameters->window_size);
+        printf("%-20s: %d\n", "exactMatch len", parameters->exact_match_len);
+        printf("%-20s: %d\n", "AlignOverLongerSeq", parameters->AOL);
+        printf("%-20s: %d\n", "MatchSimilarity", parameters->SIM);
+        printf("%-20s: %d\n", "OptimalScoreOverSelfScore", parameters->OS);
+        printf("%-20s: %d\n", "gap open", parameters->open);
+        printf("%-20s: %d\n", "gap extend", parameters->gap);
+        printf("%-20s: %zu\n", "mem worker", parameters->mem_worker);
+        printf("%-20s: %zu\n", "mem sequences", parameters->mem_sequences);
         printf("----------------------------------------------\n");
     }
 
 #ifdef USE_GARRAY
     sequences = new SequenceDatabaseGArray(all_argv[1],
-            parse_memory_budget(all_argv[2].c_str()), '\0');
+            parameters->mem_sequences, '\0');
 #elif HAVE_ARMCI
     sequences = new SequenceDatabaseArmci(all_argv[1],
-            parse_memory_budget(all_argv[2].c_str()), pgraph::comm, NUM_WORKERS, '\0');
+            parameters->mem_sequences, pgraph::comm, NUM_WORKERS, '\0');
 #else
     sequences = new SequenceDatabaseReplicated(all_argv[1],
-            parse_memory_budget(all_argv[2].c_str()), pgraph::comm, NUM_WORKERS, '\0');
+            parameters->mem_sequences, pgraph::comm, NUM_WORKERS, '\0');
 #endif
+
+    local_data->sequences = sequences;
 
     /* how many combinations of sequences are there? */
     nCk = binomial_coefficient(sequences->get_global_count(), 2);
@@ -379,11 +339,7 @@ int main(int argc, char **argv)
                 sequences->get_global_count(), nCk);
     }
 
-    double selectivity = 1.0;
-    if (all_argv.size() == 3) {
-      selectivity  = fabs(min(1.0,atof(all_argv[2].c_str())));
-    }
-    unsigned long nalignments = (long)(0.5+selectivity*nCk);
+    unsigned long nalignments = nCk;
     unsigned long ntasks = nalignments;
     unsigned long global_num_workers = nprocs*NUM_WORKERS;
     unsigned long tasks_per_worker = ntasks / global_num_workers;
@@ -391,7 +347,6 @@ int main(int argc, char **argv)
     max_tasks_per_worker += ntasks % global_num_workers;
     max_tasks_per_worker *= 10;
     if (0 == trank(0)) {
-        printf("selectivity=%lf\n", selectivity);
         printf("nalignments=%lu\n", nalignments);
         printf("ntasks=%lu\n", ntasks);
         printf("global_num_workers=%lu\n", global_num_workers);
@@ -401,49 +356,21 @@ int main(int argc, char **argv)
     MPI_Barrier(pgraph::comm);
 
     /* the tascel part */
-#ifdef USE_ITER
-#else
     double populate_times[NUM_WORKERS];
     unsigned long count[NUM_WORKERS];
-#endif
     for (int worker=0; worker<NUM_WORKERS; ++worker)
     {
-        edge_results[worker].reserve(tasks_per_worker);
-#ifdef USE_ITER
-        UniformTaskCollIter*& utc = utcs[worker];
-#else
-        UniformTaskCollectionSplit*& utc = utcs[worker];
-#endif
         TslFuncRegTbl *frt = new TslFuncRegTbl();
         TslFunc tf = frt->add(alignment_task);
         TaskCollProps props;
+
         props.functions(tf, frt)
             .taskSize(sizeof(task_description))
-            .maxTasks(max_tasks_per_worker);
-#ifdef USE_ITER
-        int wrank = trank(worker);
-        unsigned long lower_limit = wrank*tasks_per_worker;
-        unsigned long upper_limit = lower_limit + tasks_per_worker;
-        unsigned long remainder = ntasks % (nprocs*NUM_WORKERS);
-        /* if I'm the last worker, add the remainder of the tasks */
-        if (wrank == nprocs*NUM_WORKERS-1) {
-            upper_limit += remainder;
-        }
-        --upper_limit;
-        utc = new UniformTaskCollIter(props, createTaskFn, lower_limit, upper_limit, worker);
-        //if (trank(worker) == 0) {
-        //    utc = new UniformTaskCollIter(props, createTaskFn, 0, ntasks-1, worker);
-        //}
-        //else {
-        //    utc = new UniformTaskCollIter(props, createTaskFn, 0, -1, worker);
-        //}
-#else
-        utc = new UniformTaskCollectionSplit(props, worker);
-        /* add some tasks */
+            .maxTasks(max_tasks_per_worker)
+            .localData(local_data, sizeof(void*));
         populate_times[worker] = MPI_Wtime();
-        count[worker] = populate_tasks(ntasks, tasks_per_worker, worker);
+        count[worker] = populate_tasks(utcs, props, ntasks, tasks_per_worker, worker);
         populate_times[worker] = MPI_Wtime() - populate_times[worker];
-#endif
     }
 #if DEBUG
     double *g_populate_times = new double[nprocs*NUM_WORKERS];
@@ -485,8 +412,10 @@ int main(int argc, char **argv)
 
     amBarrier();
 
+#if THREADED
     allocate_threads();
     initialize_threads(utcs);
+#endif
 
     double mytimer = MPI_Wtime();
     utcs[0]->process();
@@ -495,7 +424,9 @@ int main(int argc, char **argv)
         cout << "mytimer=" << mytimer << endl;
     }
 
+#if THREADED
     finalize_threads();
+#endif
 
     amBarrier();
     MPI_Barrier(pgraph::comm);
@@ -518,7 +449,6 @@ int main(int argc, char **argv)
     }
     delete [] rstats;
     rstats=NULL;
-    delete [] stats;
 
     StealingStats *stt = new StealingStats[NUM_WORKERS];
     for(int i=0; i<NUM_WORKERS; i++) {
@@ -565,8 +495,11 @@ int main(int argc, char **argv)
 #endif
 
     delete [] utcs;
+    delete [] stats;
     delete [] edge_results;
+    delete parameters;
     delete sequences;
+    delete local_data;
 
     TascelConfig::finalize();
     pgraph::finalize();

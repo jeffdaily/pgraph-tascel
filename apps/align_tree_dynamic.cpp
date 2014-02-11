@@ -54,7 +54,7 @@ using namespace pgraph;
 #define ALL_RESULTS 1
 
 
-UniformTaskCollectionSplit** utcs = 0;
+UniformTaskCollection** utcs = 0;
 AlignStats *stats = 0;
 TreeStats *treestats = 0;
 SequenceDatabase *sequences = 0;
@@ -314,7 +314,7 @@ int main(int argc, char **argv)
     /* initialize tascel */
     double totaltime = MPI_Wtime();
     TascelConfig::initialize(NUM_WORKERS_DEFAULT, comm);
-    utcs = new UniformTaskCollectionSplit*[NUM_WORKERS];
+    utcs = new UniformTaskCollection*[NUM_WORKERS];
     stats = new AlignStats[NUM_WORKERS];
     treestats = new TreeStats[NUM_WORKERS];
 #if OUTPUT_EDGES
@@ -442,7 +442,6 @@ int main(int argc, char **argv)
 #if OUTPUT_EDGES
         edge_results[worker].reserve(max_tasks_per_worker);
 #endif
-        UniformTaskCollectionSplit*& utc = utcs[worker];
         TslFuncRegTbl *frt = new TslFuncRegTbl();
         TslFunc tf = frt->add(alignment_task);
         TslFunc tf2 = frt->add(tree_task);
@@ -452,7 +451,7 @@ int main(int argc, char **argv)
             .maxTasks(max_tasks_per_worker)
             .taskSize2(sizeof(task_desc_tree))
             .maxTasks2(long(pow(26.0,parameters.window_size))); // TODO too small?
-        utc = new UniformTaskCollectionSplit(props, worker);
+        utcs[worker] = new UniformTaskCollectionSplit(props, worker);
     }
 
     size_t even_split = suffix_buckets->bucket_size_total / NUM_WORKERS;

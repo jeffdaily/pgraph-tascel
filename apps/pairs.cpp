@@ -49,7 +49,7 @@ using namespace tascel;
 using namespace pgraph;
 
 
-UniformTaskCollectionSplit** utcs = 0;
+UniformTaskCollection** utcs = 0;
 TreeStats *treestats = 0;
 SequenceDatabase *sequences = 0;
 vector<pair<size_t,size_t> > *pair_results = 0;
@@ -274,7 +274,7 @@ int main(int argc, char **argv)
     /* initialize tascel */
     double totaltime = MPI_Wtime();
     TascelConfig::initialize(NUM_WORKERS_DEFAULT, comm);
-    utcs = new UniformTaskCollectionSplit*[NUM_WORKERS];
+    utcs = new UniformTaskCollection*[NUM_WORKERS];
     treestats = new TreeStats[NUM_WORKERS];
     pair_results = new vector<pair<size_t,size_t> >[NUM_WORKERS];
     timeout = new double[NUM_WORKERS];
@@ -387,14 +387,13 @@ int main(int argc, char **argv)
     /* the tascel part */
     for (int worker=0; worker<NUM_WORKERS; ++worker)
     {
-        UniformTaskCollectionSplit*& utc = utcs[worker];
         TslFuncRegTbl *frt = new TslFuncRegTbl();
         TslFunc tf = frt->add(tree_task);
         TaskCollProps props;
         props.functions(tf, frt)
             .taskSize(sizeof(task_desc_tree))
             .maxTasks(max_tasks_per_worker);
-        utc = new UniformTaskCollectionSplit(props, worker);
+        utcs[worker] = new UniformTaskCollectionSplit(props, worker);
     }
 
     MPI_Barrier(comm);

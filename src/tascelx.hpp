@@ -14,11 +14,6 @@
 
 #include <tascel.h>
 #include <tascel/UniformTaskCollection.h>
-#if USE_ITER
-#include <tascel/UniformTaskCollIter.h>
-#else
-#include <tascel/UniformTaskCollectionSplit.h>
-#endif
 
 #include "Bootstrap.hpp"
 
@@ -35,9 +30,11 @@ using namespace tascel;
 static pthread_t *threadHandles = 0;
 static unsigned *threadRanks = 0;
 // Synchronization for worker threads
-pthread_barrier_t workersStart, workersEnd;
+pthread_barrier_t workersStart;
+pthread_barrier_t workersEnd;
 // Synchronization for server thread
-pthread_barrier_t serverStart, serverEnd;
+pthread_barrier_t serverStart;
+pthread_barrier_t serverEnd;
 volatile bool serverEnabled = true;
 
 /**
@@ -93,7 +90,7 @@ static void *server_thread(void *_args)
 
     // When enabled execute any active messages that arrive
     pthread_barrier_wait(args->server_start);
-    while (*(args->server_enabled)) {
+    while (*(args->server_enabled) || !serverDispatcher.empty()) {
         AmListenObjCodelet<NullMutex> *lcodelet;
         if ((lcodelet = theAm().amListeners[0]->progress()) != NULL) {
             lcodelet->execute();
@@ -118,25 +115,17 @@ static void *server_thread(void *_args)
  */
 typedef struct worker_thread_args {
     unsigned int rank;
-#if USE_ITER
-    UniformTaskCollIter *utcs;
-#else
-    UniformTaskCollectionSplit *utcs;
-#endif
+    UniformTaskCollection *utc;
     pthread_barrier_t *workers_start;
     pthread_barrier_t *workers_end;
 
     worker_thread_args(
         unsigned int rank,
-#if USE_ITER
-        UniformTaskCollIter *utcs,
-#else
-        UniformTaskCollectionSplit *utcs,
-#endif
+        UniformTaskCollection *utc,
         pthread_barrier_t *workers_start,
         pthread_barrier_t *workers_end)
         :   rank(rank)
-        ,   utcs(utcs)
+        ,   utc(utc)
         ,   workers_start(workers_start)
         ,   workers_end(workers_end)
     {}
@@ -158,7 +147,7 @@ static void *worker_thread(void *_args)
     set_affinity(args->rank);
 
     pthread_barrier_wait(args->workers_start);
-    args->utcs->process();
+    args->utc->process();
     pthread_barrier_wait(args->workers_end);
 
     delete args;
@@ -203,11 +192,7 @@ static void allocate_threads()
 }
 
 
-#if USE_ITER
-static void initialize_threads(UniformTaskCollIter **utcs)
-#else
-static void initialize_threads(UniformTaskCollectionSplit **utcs)
-#endif
+static void initialize_threads(UniformTaskCollection **utcs)
 {
     set_affinity(0);
     for (int i = 1; i < NUM_WORKERS; ++i) {
@@ -241,6 +226,9 @@ static void finalize_threads()
     pthread_barrier_wait(&serverEnd);
     amBarrier();
     pthread_join(threadHandles[NUM_WORKERS], NULL);
+
+    delete [] threadHandles;
+    delete [] threadRanks;
 }
 
 

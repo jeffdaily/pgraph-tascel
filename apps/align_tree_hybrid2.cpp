@@ -49,7 +49,7 @@ using namespace tascel;
 using namespace pgraph;
 
 
-UniformTaskCollectionSplit** utcs = 0;
+UniformTaskCollection** utcs = 0;
 AlignStats *stats = 0;
 TreeStats *treestats = 0;
 SequenceDatabase *sequences = 0;
@@ -248,7 +248,7 @@ int main(int argc, char **argv)
     /* initialize tascel */
     double totaltime = MPI_Wtime();
     TascelConfig::initialize(NUM_WORKERS_DEFAULT, comm);
-    utcs = new UniformTaskCollectionSplit*[NUM_WORKERS];
+    utcs = new UniformTaskCollection*[NUM_WORKERS];
     stats = new AlignStats[NUM_WORKERS];
     treestats = new TreeStats[NUM_WORKERS];
     edge_results = new vector<EdgeResult>[NUM_WORKERS];
@@ -363,14 +363,13 @@ int main(int argc, char **argv)
     /* the tascel part */
     for (int worker=0; worker<NUM_WORKERS; ++worker)
     {
-        UniformTaskCollectionSplit*& utc = utcs[worker];
         TslFuncRegTbl *frt = new TslFuncRegTbl();
         TslFunc tf = frt->add(hybrid_task);
         TaskCollProps props;
         props.functions(tf, frt)
             .taskSize(sizeof(task_desc_hybrid))
             .maxTasks(max_tasks_per_worker);
-        utc = new UniformTaskCollectionSplit(props, worker);
+        utcs[worker] = new UniformTaskCollectionSplit(props, worker);
     }
     if (0 == trank(0)) {
         printf("created UTCs\n");
