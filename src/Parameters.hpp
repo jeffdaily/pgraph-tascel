@@ -42,6 +42,10 @@ public:
      */
     Parameters(const char *parameters_file, MPI_Comm comm);
 
+    ~Parameters() {
+        prefix_filter.clear();
+    }
+
     /**
      * Parses the given parameters file.
      *

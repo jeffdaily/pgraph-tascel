@@ -102,6 +102,7 @@ Parameters::Parameters()
     , gap(-1)
     , mem_worker(512U*MB)
     , mem_sequences(2U*GB)
+    , prefix_filter()
 {
 }
 
@@ -116,6 +117,7 @@ Parameters::Parameters(const char *parameters_file, MPI_Comm comm)
     , gap(-1)
     , mem_worker(512U*MB)
     , mem_sequences(2U*GB)
+    , prefix_filter()
 {
     parse(parameters_file, comm);
 }
@@ -131,7 +133,6 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
     map<string,size_t*> kv_zu;
 
     if (ends_with(parameters_file, ".yaml")) {
-        cout << "PARSING YAML FILE" << endl;
         parse_yaml(parameters_file, comm);
         return;
     }
@@ -187,7 +188,18 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
         }
     }
 
-    mpix_bcast(this, 0, comm);
+    /* slow, but correct */
+    mpix_bcast(AOL, 0, comm);
+    mpix_bcast(AOL, 0, comm);
+    mpix_bcast(SIM, 0, comm);
+    mpix_bcast(OS, 0, comm);
+    mpix_bcast(exact_match_len, 0, comm);
+    mpix_bcast(window_size, 0, comm);
+    mpix_bcast(open, 0, comm);
+    mpix_bcast(gap, 0, comm);
+    mpix_bcast(mem_worker, 0, comm);
+    mpix_bcast(mem_sequences, 0, comm);
+    mpix_bcast(prefix_filter, 0, comm);
 }
 
 
@@ -212,8 +224,8 @@ void Parameters::parse_yaml(const char *parameters_file, MPI_Comm comm)
         mem_sequences = config["MemorySequences"].as<size_t>(2U*GB);
         const YAML::Node filter_node = config["SkipPrefixes"];
         for (size_t i=0; i<filter_node.size(); ++i) {
-            string filter = filter_node[i].as<string>();
-            if (filter.size() != window_size) {
+            const string filter = filter_node[i].as<string>();
+            if (filter.size() != ((unsigned)window_size)) {
                 cerr << "skip prefix length must match slide window size" << endl;
                 cerr << "'" << filter << "' len=" << filter.size() << " SlideWindowSize=" << window_size << endl;
                 MPI_Abort(comm, -1);
@@ -222,9 +234,18 @@ void Parameters::parse_yaml(const char *parameters_file, MPI_Comm comm)
         }
     }
 
-    //mpix_bcast(*this, 0, comm);
-    status = MPI_Bcast(this, int(sizeof(Parameters)), MPI_CHAR, 0, comm);
-    MPI_CHECK_IERR(status, comm_rank, comm);
+    /* slow, but correct */
+    mpix_bcast(AOL, 0, comm);
+    mpix_bcast(AOL, 0, comm);
+    mpix_bcast(SIM, 0, comm);
+    mpix_bcast(OS, 0, comm);
+    mpix_bcast(exact_match_len, 0, comm);
+    mpix_bcast(window_size, 0, comm);
+    mpix_bcast(open, 0, comm);
+    mpix_bcast(gap, 0, comm);
+    mpix_bcast(mem_worker, 0, comm);
+    mpix_bcast(mem_sequences, 0, comm);
+    mpix_bcast(prefix_filter, 0, comm);
 }
 
 ostream& operator<< (ostream &os, const Parameters &p)
