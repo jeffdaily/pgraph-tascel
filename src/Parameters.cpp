@@ -36,6 +36,38 @@ namespace pgraph {
 #define MB (KB*KB)
 #define GB (KB*KB*KB)
 
+/* Keys */
+const string Parameters::KEY_ALIGN_OVER_LONGER_SEQUENCE("AlignOverLongerSequence");
+const string Parameters::KEY_MATCH_SIMILARITY("MatchSimilarity");
+const string Parameters::KEY_OPTIMAL_SCORE_OVER_SELF_SCORE("OptimalScoreOverSelfScore");
+const string Parameters::KEY_EXACT_MATCH_LENGTH("ExactMatchLength");
+const string Parameters::KEY_SLIDE_WINDOW_SIZE("SlideWindowSize");
+const string Parameters::KEY_OPEN("Open");
+const string Parameters::KEY_GAP("Gap");
+const string Parameters::KEY_MEMORY_WORKER("MemoryWorker");
+const string Parameters::KEY_MEMORY_SEQUENCES("MemorySequences");
+const string Parameters::KEY_SKIP_PREFIXES("SkipPrefixes");
+const string Parameters::KEY_OUTPUT_ALL("OutputAll");
+const string Parameters::KEY_DISTRIBUTE_SEQUENCES("DistributeSequences");
+const string Parameters::KEY_USE_LENGTH_FILTER("UseLengthFilter");
+const string Parameters::KEY_USE_ITERATOR("UseIterator");
+/* Defaults */
+const int Parameters::DEF_ALIGN_OVER_LONGER_SEQUENCE(8);
+const int Parameters::DEF_MATCH_SIMILARITY(4);
+const int Parameters::DEF_OPTIMAL_SCORE_OVER_SELF_SCORE(3);
+const int Parameters::DEF_EXACT_MATCH_LENGTH(4);
+const int Parameters::DEF_SLIDE_WINDOW_SIZE(3);
+const int Parameters::DEF_OPEN(-10);
+const int Parameters::DEF_GAP(-1);
+const size_t Parameters::DEF_MEMORY_WORKER(512U*MB);
+const size_t Parameters::DEF_MEMORY_SEQUENCES(2U*GB);
+const vector<string> Parameters::DEF_SKIP_PREFIXES;
+const bool Parameters::DEF_OUTPUT_ALL(false);
+const bool Parameters::DEF_DISTRIBUTE_SEQUENCES(false);
+const bool Parameters::DEF_USE_LENGTH_FILTER(true);
+const bool Parameters::DEF_USE_ITERATOR(false);
+
+
 static size_t parse_memory_budget(const string& value)
 {
     long budget_signed = 0;
@@ -73,51 +105,60 @@ static size_t parse_memory_budget(const string& value)
         assert(0);
     }
 
-    assert(budget > 0);
-    return size_t(budget);
+    return budget;
 }
 
 
 static bool ends_with(string const &fullString, string const &ending)
 {
+    bool retval = false;
+
     if (fullString.length() >= ending.length()) {
-        return (0 == fullString.compare(
+        retval = (0 == fullString.compare(
                     fullString.length() - ending.length(),
                     ending.length(),
                     ending));
-    } else {
-        return false;
     }
+
+    return retval;
 }
 
 
 
 Parameters::Parameters()
-    : AOL(8)
-    , SIM(4)
-    , OS(3)
-    , exact_match_len(4)
-    , window_size(3)
-    , open(-10)
-    , gap(-1)
-    , mem_worker(512U*MB)
-    , mem_sequences(2U*GB)
-    , prefix_filter()
+    : AOL(DEF_ALIGN_OVER_LONGER_SEQUENCE)
+    , SIM(DEF_MATCH_SIMILARITY)
+    , OS(DEF_OPTIMAL_SCORE_OVER_SELF_SCORE)
+    , exact_match_length(DEF_EXACT_MATCH_LENGTH)
+    , window_size(DEF_SLIDE_WINDOW_SIZE)
+    , open(DEF_OPEN)
+    , gap(DEF_GAP)
+    , memory_worker(DEF_MEMORY_WORKER)
+    , memory_sequences(DEF_MEMORY_SEQUENCES)
+    , skip_prefixes()
+    , output_all(DEF_OUTPUT_ALL)
+    , distribute_sequences(DEF_DISTRIBUTE_SEQUENCES)
+    , use_length_filter(DEF_USE_LENGTH_FILTER)
+    , use_iterator(DEF_USE_ITERATOR)
 {
 }
 
 
 Parameters::Parameters(const char *parameters_file, MPI_Comm comm)
-    : AOL(8)
-    , SIM(4)
-    , OS(3)
-    , exact_match_len(4)
-    , window_size(3)
-    , open(-10)
-    , gap(-1)
-    , mem_worker(512U*MB)
-    , mem_sequences(2U*GB)
-    , prefix_filter()
+    : AOL(DEF_ALIGN_OVER_LONGER_SEQUENCE)
+    , SIM(DEF_MATCH_SIMILARITY)
+    , OS(DEF_OPTIMAL_SCORE_OVER_SELF_SCORE)
+    , exact_match_length(DEF_EXACT_MATCH_LENGTH)
+    , window_size(DEF_SLIDE_WINDOW_SIZE)
+    , open(DEF_OPEN)
+    , gap(DEF_GAP)
+    , memory_worker(DEF_MEMORY_WORKER)
+    , memory_sequences(DEF_MEMORY_SEQUENCES)
+    , skip_prefixes()
+    , output_all(DEF_OUTPUT_ALL)
+    , distribute_sequences(DEF_DISTRIBUTE_SEQUENCES)
+    , use_length_filter(DEF_USE_LENGTH_FILTER)
+    , use_iterator(DEF_USE_ITERATOR)
 {
     parse(parameters_file, comm);
 }
@@ -126,103 +167,46 @@ Parameters::Parameters(const char *parameters_file, MPI_Comm comm)
 void Parameters::parse(const char *parameters_file, MPI_Comm comm)
 {
     int comm_rank = 0;  /* rank 0 will open the file */
-    int comm_size = 0;
-    int status = 0;     /* for MPI routine return codes */
-    map<string,int*> kv_int;
-    map<string,string> kv_str;
-    map<string,size_t*> kv_zu;
-
-    if (ends_with(parameters_file, ".yaml")) {
-        parse_yaml(parameters_file, comm);
-        return;
-    }
-
-    status = MPI_Comm_rank(comm, &comm_rank);
-    MPI_CHECK_IERR(status, comm_rank, comm);
-    status = MPI_Comm_size(comm, &comm_size);
-    MPI_CHECK_IERR(status, comm_rank, comm);
-
-    /* create mapping for parser */
-    kv_int["AlignOverLongerSeq"] = &AOL;
-    kv_int["MatchSimilarity"] = &SIM;
-    kv_int["OptimalScoreOverSelfScore"] = &OS;
-    kv_int["SlideWindowSize"] = &window_size;
-    kv_int["ExactMatchLen"] = &exact_match_len;
-    kv_str["CWD"] = "";
-    kv_zu["MemoryWorker"] = &mem_worker;
-    kv_zu["MemorySequences"] = &mem_sequences;
-
-    if (0 == comm_rank) {
-        ifstream is(parameters_file);
-        string line;
-
-        while (getline(is, line)) {
-            string key;
-            istringstream line_(line);
-
-            if (line.empty() || *line.begin() == COMMENT) {
-                continue;
-            }
-            line_ >> key;
-            if (kv_int.find(key) != kv_int.end()) {
-                int value;
-                line_ >> value;
-                *kv_int[key] = value;
-            }
-            else if (kv_str.find(key) != kv_str.end()) {
-                string value;
-                line_ >> value;
-                kv_str[key] = value;
-            }
-            else if (kv_zu.find(key) != kv_zu.end()) {
-                string value;
-                line_ >> value;
-                *kv_zu[key] = parse_memory_budget(value);
-            }
-            else {
-                if (0 == comm_rank) {
-                    cerr << "invalid config file param '" << key << "'" << endl;
-                }
-                MPI_Abort(comm, -1);
-            }
-        }
-    }
-
-    /* slow, but correct */
-    mpix_bcast(AOL, 0, comm);
-    mpix_bcast(AOL, 0, comm);
-    mpix_bcast(SIM, 0, comm);
-    mpix_bcast(OS, 0, comm);
-    mpix_bcast(exact_match_len, 0, comm);
-    mpix_bcast(window_size, 0, comm);
-    mpix_bcast(open, 0, comm);
-    mpix_bcast(gap, 0, comm);
-    mpix_bcast(mem_worker, 0, comm);
-    mpix_bcast(mem_sequences, 0, comm);
-    mpix_bcast(prefix_filter, 0, comm);
-}
-
-
-void Parameters::parse_yaml(const char *parameters_file, MPI_Comm comm)
-{
-    int comm_rank = 0;  /* rank 0 will open the file */
     int status = 0;     /* for MPI routine return codes */
 
     status = MPI_Comm_rank(comm, &comm_rank);
     MPI_CHECK_IERR(status, comm_rank, comm);
+
+    if (!ends_with(parameters_file, ".yaml")) {
+        cerr << "unrecognized config file format, expecting *.yaml" << endl;
+        MPI_Abort(comm, -1);
+    }
 
     if (0 == comm_rank) {
         const YAML::Node config = YAML::LoadFile(parameters_file);
-        AOL = config["AlignOverLongerSeq"].as<int>(8);
-        SIM = config["MatchSimilarity"].as<int>(4);
-        OS = config["OptimalScoreOverSelfScore"].as<int>(3);
-        exact_match_len = config["ExactMatchLen"].as<int>(8);
-        window_size = config["SlideWindowSize"].as<int>(3);
-        open = config["Open"].as<int>(-10);
-        gap = config["Gap"].as<int>(-1);
-        mem_worker = config["MemoryWorker"].as<size_t>(512U*MB);
-        mem_sequences = config["MemorySequences"].as<size_t>(2U*GB);
-        const YAML::Node filter_node = config["SkipPrefixes"];
+        AOL = config[KEY_ALIGN_OVER_LONGER_SEQUENCE].as<int>(
+                DEF_ALIGN_OVER_LONGER_SEQUENCE);
+        SIM = config[KEY_MATCH_SIMILARITY].as<int>(
+                DEF_MATCH_SIMILARITY);
+        OS = config[KEY_OPTIMAL_SCORE_OVER_SELF_SCORE].as<int>(
+                DEF_OPTIMAL_SCORE_OVER_SELF_SCORE);
+        exact_match_length = config[KEY_EXACT_MATCH_LENGTH].as<int>(
+                DEF_EXACT_MATCH_LENGTH);
+        window_size = config[KEY_SLIDE_WINDOW_SIZE].as<int>(
+                DEF_SLIDE_WINDOW_SIZE);
+        open = config[KEY_OPEN].as<int>(
+                DEF_OPEN);
+        gap = config[KEY_GAP].as<int>(
+                DEF_GAP);
+        memory_worker = config[KEY_MEMORY_WORKER].as<size_t>(
+                DEF_MEMORY_WORKER);
+        memory_sequences = config[KEY_MEMORY_SEQUENCES].as<size_t>(
+                DEF_MEMORY_SEQUENCES);
+        output_all = config[KEY_OUTPUT_ALL].as<bool>(
+                DEF_OUTPUT_ALL);
+        distribute_sequences = config[KEY_DISTRIBUTE_SEQUENCES].as<bool>(
+                DEF_DISTRIBUTE_SEQUENCES);
+        use_length_filter = config[KEY_USE_LENGTH_FILTER].as<bool>(
+                DEF_USE_LENGTH_FILTER);
+        use_iterator = config[KEY_USE_ITERATOR].as<bool>(
+                DEF_USE_ITERATOR);
+
+        const YAML::Node filter_node = config[KEY_SKIP_PREFIXES];
         for (size_t i=0; i<filter_node.size(); ++i) {
             const string filter = filter_node[i].as<string>();
             if (filter.size() != ((unsigned)window_size)) {
@@ -230,40 +214,50 @@ void Parameters::parse_yaml(const char *parameters_file, MPI_Comm comm)
                 cerr << "'" << filter << "' len=" << filter.size() << " SlideWindowSize=" << window_size << endl;
                 MPI_Abort(comm, -1);
             }
-            prefix_filter.push_back(filter);
+            skip_prefixes.push_back(filter);
         }
     }
 
     /* slow, but correct */
     mpix_bcast(AOL, 0, comm);
-    mpix_bcast(AOL, 0, comm);
     mpix_bcast(SIM, 0, comm);
     mpix_bcast(OS, 0, comm);
-    mpix_bcast(exact_match_len, 0, comm);
+    mpix_bcast(exact_match_length, 0, comm);
     mpix_bcast(window_size, 0, comm);
     mpix_bcast(open, 0, comm);
     mpix_bcast(gap, 0, comm);
-    mpix_bcast(mem_worker, 0, comm);
-    mpix_bcast(mem_sequences, 0, comm);
-    mpix_bcast(prefix_filter, 0, comm);
+    mpix_bcast(memory_worker, 0, comm);
+    mpix_bcast(memory_sequences, 0, comm);
+    mpix_bcast(output_all, 0, comm);
+    mpix_bcast(distribute_sequences, 0, comm);
+    mpix_bcast(use_length_filter, 0, comm);
+    mpix_bcast(use_iterator, 0, comm);
+    mpix_bcast(skip_prefixes, 0, comm);
 }
+
 
 ostream& operator<< (ostream &os, const Parameters &p)
 {
-    os << "AlignOverLongerSeq: " << p.AOL << endl;
-    os << "MatchSimilarity: " << p.SIM << endl;
-    os << "OptimalScoreOverSelfScore: " << p.OS << endl;
-    os << "ExactMatchLen: " << p.exact_match_len << endl;
-    os << "SlideWindowSize: " << p.window_size << endl;
-    os << "Open: " << p.open << endl;
-    os << "Gap: " << p.gap << endl;
-    os << "MemoryWorker: " << p.mem_worker << endl;
-    os << "MemorySequences: " << p.mem_sequences << endl;
-    os << "SkipPrefixes:" << endl;
-    for (size_t i=0; i<p.prefix_filter.size(); ++i) {
-        os << "  - " << p.prefix_filter[i] << endl;
+    YAML::Emitter out;
+    out << YAML::BeginMap;
+    out << YAML::Key << Parameters::KEY_ALIGN_OVER_LONGER_SEQUENCE << YAML::Value << p.AOL;
+    out << YAML::Key << Parameters::KEY_MATCH_SIMILARITY << YAML::Value << p.SIM;
+    out << YAML::Key << Parameters::KEY_OPTIMAL_SCORE_OVER_SELF_SCORE << YAML::Value << p.OS;
+    out << YAML::Key << Parameters::KEY_EXACT_MATCH_LENGTH << YAML::Value << p.exact_match_length;
+    out << YAML::Key << Parameters::KEY_SLIDE_WINDOW_SIZE << YAML::Value << p.window_size;
+    out << YAML::Key << Parameters::KEY_OPEN << YAML::Value << p.open;
+    out << YAML::Key << Parameters::KEY_GAP << YAML::Value << p.gap;
+    out << YAML::Key << Parameters::KEY_MEMORY_WORKER << YAML::Value << p.memory_worker;
+    out << YAML::Key << Parameters::KEY_MEMORY_SEQUENCES << YAML::Value << p.memory_sequences;
+    if (!p.skip_prefixes.empty()) {
+        out << YAML::Key << Parameters::KEY_SKIP_PREFIXES << YAML::Value << p.skip_prefixes;
     }
-
+    out << YAML::Key << Parameters::KEY_OUTPUT_ALL << YAML::Value << p.output_all;
+    out << YAML::Key << Parameters::KEY_DISTRIBUTE_SEQUENCES << YAML::Value << p.distribute_sequences;
+    out << YAML::Key << Parameters::KEY_USE_LENGTH_FILTER << YAML::Value << p.use_length_filter;
+    out << YAML::Key << Parameters::KEY_USE_ITERATOR << YAML::Value << p.use_iterator;
+    out << YAML::EndMap;
+    os << out.c_str();
     return os;
 }
 

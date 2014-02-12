@@ -230,15 +230,15 @@ bool SuffixTree::generate_pairs_cb(Callback callback)
     size_t i = 0;
     int j = 0;
     SuffixTreeNode *stnode = NULL;
-    int sIndex;
-    int eIndex;
+    size_t sIndex;
+    size_t eIndex;
     size_t m;
     size_t n;
     size_t s;
     size_t t;
     Suffix *p = NULL;
     Suffix *q = NULL;
-    int EM;
+    size_t EM;
     int cutOff; /* cut off value of filter 1 */
 
     srtIndex = new size_t[this->size];
@@ -251,7 +251,8 @@ bool SuffixTree::generate_pairs_cb(Callback callback)
     /* only two rows are allocated */
     assert(NROW == 2);
 
-    EM = param.exact_match_len;
+    assert(param.exact_match_length >= 1);
+    EM = param.exact_match_length;
     cutOff = param.AOL * param.SIM;
 
     /* srtIndex maintain an order of NON-increasing depth of stNodes[] */

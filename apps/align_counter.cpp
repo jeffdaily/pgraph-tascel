@@ -201,7 +201,7 @@ int main(int argc, char **argv)
     if (0 == rank_world) {
         printf("----------------------------------------------\n");
         printf("%-20s: %d\n", "slide size", parameters.window_size);
-        printf("%-20s: %d\n", "exactMatch len", parameters.exact_match_len);
+        printf("%-20s: %d\n", "exactMatch len", parameters.exact_match_length);
         printf("%-20s: %d\n", "AlignOverLongerSeq", parameters.AOL);
         printf("%-20s: %d\n", "MatchSimilarity", parameters.SIM);
         printf("%-20s: %d\n", "OptimalScoreOverSelfScore", parameters.OS);

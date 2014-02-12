@@ -438,8 +438,8 @@ void SuffixTree::generate_pairs(set<pair<size_t,size_t> > &pairs)
     nSeqs = sequences->get_global_count();
     maxSeqLen = sequences->get_max_length();
 
-    assert(param.exact_match_len >= 1);
-    EM = param.exact_match_len;
+    assert(param.exact_match_length >= 1);
+    EM = param.exact_match_length;
     cutOff = param.AOL * param.SIM;
 
     /* srtIndex maintain an order of NON-increasing depth of stNodes[] */
@@ -552,8 +552,8 @@ void SuffixTree::generate_pairs(vector<pair<size_t,size_t> > &pairs)
     nSeqs = sequences->get_global_count();
     maxSeqLen = sequences->get_max_length();
 
-    assert(param.exact_match_len >= 1);
-    EM = param.exact_match_len;
+    assert(param.exact_match_length >= 1);
+    EM = param.exact_match_length;
     cutOff = param.AOL * param.SIM;
 
     /* srtIndex maintain an order of NON-increasing depth of stNodes[] */

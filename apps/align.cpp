@@ -31,16 +31,16 @@
 #include <string>
 #include <vector>
 
+#include "alignment.hpp"
 #include "AlignStats.hpp"
 #include "Bootstrap.hpp"
-#include "constants.h"
 #include "combinations.h"
+#include "constants.h"
 #include "EdgeResult.hpp"
-#include "alignment.hpp"
 #include "mpix.hpp"
 #include "Parameters.hpp"
-#include "tascelx.hpp"
 #include "SequenceDatabase.hpp"
+#include "tascelx.hpp"
 #ifdef USE_GARRAY
 #include "SequenceDatabaseGArray.hpp"
 #elif HAVE_ARMCI
@@ -54,7 +54,6 @@ using namespace std;
 using namespace tascel;
 using namespace pgraph;
 
-#define ALL_RESULTS 1
 
 #ifdef USE_ITER
 typedef struct {
@@ -135,26 +134,23 @@ static void alignment_task(
 #endif
     unsigned long s1Len = (*sequences)[seq_id[0]].get_sequence_length();
     unsigned long s2Len = (*sequences)[seq_id[1]].get_sequence_length();
-#ifdef LENGTH_FILTER
-    int cutOff = AOL * SIM;
-    if ((s1Len <= s2Len && (100 * s1Len < cutOff * s2Len))
-            || (s2Len < s1Len && (100 * s2Len < cutOff * s1Len))) {
-        stats[thd].work_skipped += s1Len * s2Len;
-        ++stats[thd].align_skipped;
+    bool do_alignment = true;
+    if (parameters->use_length_filter) {
+        int cutOff = AOL * SIM;
+        if ((s1Len <= s2Len && (100 * s1Len < cutOff * s2Len))
+                || (s2Len < s1Len && (100 * s2Len < cutOff * s1Len))) {
+            stats[thd].work_skipped += s1Len * s2Len;
+            ++stats[thd].align_skipped;
+            do_alignment = false;
+        }
     }
-    else
-#endif
+
+    if (do_alignment)
     {
         stats[thd].work += s1Len * s2Len;
         ++stats[thd].align_counts;
         t = MPI_Wtime();
-#if defined(NOALIGN)
-#else
-#if USE_SSW
-        sequences->align_ssw(seq_id[0], seq_id[1], result.score, result.matches, result.length, open, gap, thd);
-#else
         sequences->align(seq_id[0], seq_id[1], result.score, result.matches, result.length, open, gap, thd);
-#endif
         is_edge_answer = sequences->is_edge(
                 seq_id[0],
                 seq_id[1],
@@ -162,37 +158,19 @@ static void alignment_task(
                 AOL, SIM, OS,
                 sscore, max_len);
 
-        if (is_edge_answer || ALL_RESULTS)
+        if (is_edge_answer || parameters->output_all)
         {
-#if DEBUG
-            cout << trank(thd)
-                << ": aligned " << seq_id[0] << " " << seq_id[1]
-                << ": (score,ndig,alen)=("
-                << result.score << ","
-                << result.matches << ","
-                << result.length << ")"
-                << ": edge? " << is_edge_answer << endl;
-#endif
             edge_results[thd].push_back(EdgeResult(
                         seq_id[0], seq_id[1],
-#if 0
-                        1.0*result.alen/max_len,
-                        1.0*result.ndig/result.alen,
+                        1.0*result.length/max_len,
+                        1.0*result.matches/result.length,
                         1.0*result.score/sscore
-#else
-                        result.length,
-                        result.matches,
-                        result.score
-#endif
-#if ALL_RESULTS
                         ,is_edge_answer
-#endif
                         ));
-            if (is_edge_answer) {
-                ++stats[thd].edge_counts;
-            }
         }
-#endif
+        if (is_edge_answer) {
+            ++stats[thd].edge_counts;
+        }
         t = MPI_Wtime() - t;
         stats[thd].align_times_tot += t;
         stats[thd].calc_min(t);
@@ -308,26 +286,26 @@ int main(int argc, char **argv)
     if (0 == trank(0)) {
         printf("----------------------------------------------\n");
         printf("%-20s: %d\n", "slide size", parameters->window_size);
-        printf("%-20s: %d\n", "exactMatch len", parameters->exact_match_len);
+        printf("%-20s: %d\n", "exactMatch len", parameters->exact_match_length);
         printf("%-20s: %d\n", "AlignOverLongerSeq", parameters->AOL);
         printf("%-20s: %d\n", "MatchSimilarity", parameters->SIM);
         printf("%-20s: %d\n", "OptimalScoreOverSelfScore", parameters->OS);
         printf("%-20s: %d\n", "gap open", parameters->open);
         printf("%-20s: %d\n", "gap extend", parameters->gap);
-        printf("%-20s: %zu\n", "mem worker", parameters->mem_worker);
-        printf("%-20s: %zu\n", "mem sequences", parameters->mem_sequences);
+        printf("%-20s: %zu\n", "mem worker", parameters->memory_worker);
+        printf("%-20s: %zu\n", "mem sequences", parameters->memory_sequences);
         printf("----------------------------------------------\n");
     }
 
 #ifdef USE_GARRAY
     sequences = new SequenceDatabaseGArray(all_argv[1],
-            parameters->mem_sequences, '\0');
+            parameters->memory_sequences, '\0');
 #elif HAVE_ARMCI
     sequences = new SequenceDatabaseArmci(all_argv[1],
-            parameters->mem_sequences, pgraph::comm, NUM_WORKERS, '\0');
+            parameters->memory_sequences, pgraph::comm, NUM_WORKERS, '\0');
 #else
     sequences = new SequenceDatabaseReplicated(all_argv[1],
-            parameters->mem_sequences, pgraph::comm, NUM_WORKERS, '\0');
+            parameters->memory_sequences, pgraph::comm, NUM_WORKERS, '\0');
 #endif
 
     local_data->sequences = sequences;

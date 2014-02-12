@@ -100,11 +100,11 @@ bool SuffixBuckets::filter_out(const char *kmer, int k)
     bool result = false;
     string str(kmer, k);
 
-    for (size_t i=0; i<param.prefix_filter.size(); ++i) {
+    for (size_t i=0; i<param.skip_prefixes.size(); ++i) {
         regex_t preq;
         int retval = 0;
         
-        retval = regcomp(&preq, param.prefix_filter[i].c_str(), REG_NOSUB);
+        retval = regcomp(&preq, param.skip_prefixes[i].c_str(), REG_NOSUB);
         assert(0 == retval);
 
         retval = regexec(&preq, str.c_str(), 0, NULL, 0);
@@ -906,11 +906,11 @@ bool SuffixBuckets2::filter_out(const char *kmer, int k)
     bool result = false;
     string str(kmer, k);
 
-    for (size_t i=0; i<param.prefix_filter.size(); ++i) {
+    for (size_t i=0; i<param.skip_prefixes.size(); ++i) {
         regex_t preq;
         int retval = 0;
         
-        retval = regcomp(&preq, param.prefix_filter[i].c_str(), REG_NOSUB);
+        retval = regcomp(&preq, param.skip_prefixes[i].c_str(), REG_NOSUB);
         assert(0 == retval);
 
         retval = regexec(&preq, str.c_str(), 0, NULL, 0);

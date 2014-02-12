@@ -20,7 +20,10 @@ int main(int argc, char **argv)
     cout << parameters << endl;
 
     if (argc == 2) {
-        parameters.parse_yaml(argv[1], MPI_COMM_WORLD);
+        parameters.parse(argv[1], MPI_COMM_WORLD);
+        cout << endl;
+        cout << "Parsing " << argv[1] << " from command line" << endl;
+        cout << endl;
         cout << parameters << endl;
     }
 
