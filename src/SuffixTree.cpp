@@ -286,7 +286,7 @@ void SuffixTree::create()
     }
 
     build_tree_recursive(
-            sequences, sequences->get_global_count(),
+            sequences, sequences->size(),
             bucket->suffixes, param.window_size - 1, param.window_size,
             this->nodes, &(this->size),
             this->size_internal, this->fanout,
@@ -432,11 +432,11 @@ void SuffixTree::generate_pairs(set<pair<size_t,size_t> > &pairs)
     int cutOff; /* cut off value of filter 1 */
 
     srtIndex = new size_t[this->size];
-    count_sort(this->nodes, srtIndex, this->size, sequences->get_max_length());
+    count_sort(this->nodes, srtIndex, this->size, sequences->longest());
     stNodes = this->nodes;
     nStNodes = this->size;
-    nSeqs = sequences->get_global_count();
-    maxSeqLen = sequences->get_max_length();
+    nSeqs = sequences->size();
+    maxSeqLen = sequences->longest();
 
     assert(param.exact_match_length >= 1);
     EM = param.exact_match_length;
@@ -546,11 +546,11 @@ void SuffixTree::generate_pairs(vector<pair<size_t,size_t> > &pairs)
     int cutOff; /* cut off value of filter 1 */
 
     srtIndex = new size_t[this->size];
-    count_sort(this->nodes, srtIndex, this->size, sequences->get_max_length());
+    count_sort(this->nodes, srtIndex, this->size, sequences->longest());
     stNodes = this->nodes;
     nStNodes = this->size;
-    nSeqs = sequences->get_global_count();
-    maxSeqLen = sequences->get_max_length();
+    nSeqs = sequences->size();
+    maxSeqLen = sequences->longest();
 
     assert(param.exact_match_length >= 1);
     EM = param.exact_match_length;

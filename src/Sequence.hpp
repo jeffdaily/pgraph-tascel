@@ -106,17 +106,31 @@ class Sequence
                  const bool &owns=false);
 
         /** Destructs instance and deletes data, if owner. */
-        virtual ~Sequence();
+        virtual ~Sequence() {
+            if (is_owner) {
+                delete [] buffer;
+            }
+            buffer = NULL;
+        }
 
         /**
-         * Retrieves ID and length of ID.
+         * Retrieves ID and length of ID -- do not delete.
          *
          * @param[out] id the id as a character buffer (not null terminated)
          * @param[out] length of the id character buffer
          */
-        void get_id(const char * &id, size_t &length) {
-            id = &data[id_offset];
+        void get_id(const char * &id, size_t &length) const {
+            id = &buffer[id_offset];
             length = id_length;
+        }
+
+        /**
+         * Retrieves copy of ID as a string.
+         *
+         * @param[out] id the id as a string
+         */
+        void get_id(string &id) const {
+            id.assign(&buffer[id_offset], id_length);
         }
 
         /**
@@ -124,20 +138,47 @@ class Sequence
          *
          * @return length of the sequence character buffer
          */
-        size_t get_sequence_length() {
+        size_t get_sequence_length() const {
             return sequence_length;
         }
 
         /**
-         * Retrieves sequence and length of sequence.
+         * Retrieves length of sequence.
+         *
+         * @return length of the sequence character buffer
+         */
+        size_t size() const {
+            return sequence_length;
+        }
+
+        /**
+         * Retrieves length of sequence.
+         *
+         * @return length of the sequence character buffer
+         */
+        const char * data() const {
+            return &buffer[sequence_offset];
+        }
+
+        /**
+         * Retrieves sequence and length of sequence -- do not delete.
          *
          * @param[out] sequence the sequence as a character buffer
          *             (not null * terminated)
          * @param[out] length of the sequence character buffer
          */
-        void get_sequence(const char * &sequence, size_t &length) {
-            sequence = &data[sequence_offset];
+        void get_sequence(const char * &sequence, size_t &length) const {
+            sequence = &buffer[sequence_offset];
             length = sequence_length;
+        }
+
+        /**
+         * Retrieves copy of sequence as string.
+         *
+         * @param[out] sequence the sequence as a string
+         */
+        void get_sequence(string &sequence) const {
+            sequence.assign(&buffer[sequence_offset], sequence_length);
         }
 
         /**
@@ -146,8 +187,8 @@ class Sequence
          * @param[out] data the buffer backing this Sequence
          * @param[out] length the size of the data buffer
          */
-        void get_data(const char * &data, size_t &length) {
-            data = this->data;
+        void get_buffer(const char * &data, size_t &length) const {
+            data = this->buffer;
             if (id_length == 0) {
                 /* no ID present in data */
                 length = sequence_length;
@@ -164,21 +205,46 @@ class Sequence
             }
         }
 
-        const char & operator[](size_t i) const {
-            return data[sequence_offset+i];
+        /**
+         * Retrieves copy of data buffer as a string.
+         *
+         * @param[out] data copy of the buffer backing this Sequence
+         */
+        void get_buffer(string &data) const {
+            size_t length;
+            if (id_length == 0) {
+                /* no ID present in data */
+                length = sequence_length;
+            }
+            else {
+                /* ID present in data, probably at the front */
+                if (id_offset < sequence_offset) {
+                    length = sequence_offset + sequence_length;
+                }
+                else {
+                    assert(id_offset != sequence_offset);
+                    length = id_offset + id_length;
+                }
+            }
+            data.assign(this->buffer, length);
         }
 
-        /** affine gap align, returning score, #matches, and align length */
-        void align(const Sequence &that, int &score, int &ndig, int &alen);
+        const char & operator[](size_t i) const {
+            return buffer[sequence_offset+i];
+        }
 
         /** overload of string cast */
-        operator string() const;
+        operator string() const {
+            assert(NULL != buffer);
+            assert(sequence_length > 0);
+            return string(&buffer[sequence_offset], sequence_length);
+        }
 
         friend ostream &operator << (ostream &os, const Sequence &s);
 
     private:
         bool is_owner;  /**< whether this instance should delete the data */
-        const char *data;   /**< all data, possibly containing ID */
+        const char *buffer;   /**< all data, possibly containing ID */
         size_t id_offset;   /**< offset into data for start of ID */
         size_t id_length;   /**< length of ID */
         size_t sequence_offset; /**< offset into data for start of sequence */
@@ -188,137 +254,114 @@ class Sequence
 
 /* for easy use with functions in alignment.hpp */
 
-/**
- * Implementation of affine gap pairwise sequence alignment.
- *
- * It is a space efficient version using only two rows. Also, memory for
- * all dynamic tables are allocated ONLY ONCE outside of this function call
- * using allocate_cell_table() and allocate_int_table() and passed as
- * tbl, del, and ins arguments.
- *
- * @param[in] s1 first Sequence
- * @param[in] s2 second Sequence
- * @param[in] tbl pre-allocated score table
- * @param[in] del pre-allocated deletion table
- * @param[in] ins pre-allocated insertion table
- * @param[in] open gap penalty
- * @param[in] gap extension penalty
- * @param[in] sub substitution matrix e.g. BLOSUM
- * @param[in] map mapping for substitution matrix
- * @param[in] first (zeroth) character of mapping alphabet e.g. 'A'
- * @return alignment result
- */
-cell_t affine_gap_align(
+cell_t align_global_affine(
         const Sequence &s1,
         const Sequence &s2,
-        cell_t ** const restrict tbl,
-        int ** const restrict del,
-        int ** const restrict ins,
-        int open, int gap,
-        const int ** const restrict sub,
-        const int * const restrict map, char first);
+        match_t match,
+        int open=-10, int gap=-1,
+        cell_t * const restrict * const restrict tbl=NULL,
+        int * const restrict * const restrict del=NULL,
+        int * const restrict * const restrict ins=NULL);
 
-
-/**
- * Implementation of affine gap pairwise sequence alignment.
- *
- * It is a space efficient version using only two rows. Also, memory for
- * all dynamic tables are allocated ONLY ONCE outside of this function call
- * using allocate_cell_table() and allocate_int_table() and passed as
- * tbl, del, and ins arguments.
- *
- * @param[in] s1 first Sequence
- * @param[in] s2 second Sequence
- * @param[in] tbl pre-allocated score table
- * @param[in] del pre-allocated deletion table
- * @param[in] ins pre-allocated insertion table
- * @param[in] open gap penalty
- * @param[in] gap extension penalty
- * @param[in] match callback function to calculate any character match/mismatch
- * @return alignment result
- */
-cell_t affine_gap_align(
+cell_t align_global_affine(
         const Sequence &s1,
         const Sequence &s2,
-        cell_t ** const restrict tbl,
-        int ** const restrict del,
-        int ** const restrict ins,
-        int open, int gap,
-        match_t match);
+        const int * const restrict * const restrict sub,
+        const int * const restrict map, char first,
+        int open=-10, int gap=-1,
+        cell_t * const restrict * const restrict tbl=NULL,
+        int * const restrict * const restrict del=NULL,
+        int * const restrict * const restrict ins=NULL);
 
-
-/**
- * Implementation of affine gap pairwise sequence alignment.
- *
- * It is a space efficient version using only two rows. Also, memory for
- * all dynamic tables are allocated ONLY ONCE outside of this function call
- * using allocate_cell_table() and allocate_int_table() and passed as
- * tbl, del, and ins arguments.
- *
- * @param[in] s1 first Sequence
- * @param[in] s2 second Sequence
- * @param[in] tbl pre-allocated score table
- * @param[in] del pre-allocated deletion table
- * @param[in] ins pre-allocated insertion table
- * @param[in] open gap penalty
- * @param[in] gap extension penalty
- * @param[in] match score
- * @param[in] mismatch score
- * @return alignment result
- */
-cell_t affine_gap_align(
+cell_t align_global_affine(
         const Sequence &s1,
         const Sequence &s2,
-        cell_t ** const restrict tbl,
-        int ** const restrict del,
-        int ** const restrict ins,
-        int open, int gap,
-        int match, int mismatch);
+        int match, int mismatch,
+        int open=-10, int gap=-1,
+        cell_t * const restrict * const restrict tbl=NULL,
+        int * const restrict * const restrict del=NULL,
+        int * const restrict * const restrict ins=NULL);
 
-
-/**
- * Implementation of affine gap pairwise sequence alignment using blosum.
- *
- * It is a space efficient version using only two rows. Also, memory for
- * all dynamic tables are allocated ONLY ONCE outside of this function call
- * using allocate_cell_table() and allocate_int_table() and passed as
- * tbl, del, and ins arguments.
- *
- * @param[in] s1 first Sequence
- * @param[in] s2 second Sequence
- * @param[in] tbl pre-allocated score table
- * @param[in] del pre-allocated deletion table
- * @param[in] ins pre-allocated insertion table
- * @param[in] open gap penalty
- * @param[in] gap extension penalty
- * @return alignment result
- */
-cell_t affine_gap_align_blosum(
+cell_t align_global_affine(
         const Sequence &s1,
         const Sequence &s2,
-        cell_t ** const restrict tbl,
-        int ** const restrict del,
-        int ** const restrict ins,
-        int open, int gap);
+        int open=-10, int gap=-1,
+        cell_t * const restrict * const restrict tbl=NULL,
+        int * const restrict * const restrict del=NULL,
+        int * const restrict * const restrict ins=NULL);
 
+cell_t align_semi_affine(
+        const Sequence &s1,
+        const Sequence &s2,
+        match_t match,
+        int open=-10, int gap=-1,
+        cell_t * const restrict * const restrict tbl=NULL,
+        int * const restrict * const restrict del=NULL,
+        int * const restrict * const restrict ins=NULL);
 
-/**
- * Asks whether the given cell_t alignment result is an edge, based on
- * the given parameters.
- *
- * @param[in] result the dynamic programming alignment result
- * @param[in] s1 first Sequence
- * @param[in] s2 second Sequence
- * @param[in] AOL alignment over longer sequence (heuristic)
- * @param[in] SIM match similarity (heuristic)
- * @param[in] OS optimal score over self score (heuristic)
- * @param[out] self_score self score
- * @param[out] max_len longer of s1_len and s2_len
- * @param[in] sub substitution matrix
- * @param[in] map index mapping for substitution matrix
- * @param[in] first character offset (see doc above)
- * @return true if this is an edge, false otherwise
- */
+cell_t align_semi_affine(
+        const Sequence &s1,
+        const Sequence &s2,
+        const int * const restrict * const restrict sub,
+        const int * const restrict map, char first,
+        int open=-10, int gap=-1,
+        cell_t * const restrict * const restrict tbl=NULL,
+        int * const restrict * const restrict del=NULL,
+        int * const restrict * const restrict ins=NULL);
+
+cell_t align_semi_affine(
+        const Sequence &s1,
+        const Sequence &s2,
+        int match, int mismatch,
+        int open=-10, int gap=-1,
+        cell_t * const restrict * const restrict tbl=NULL,
+        int * const restrict * const restrict del=NULL,
+        int * const restrict * const restrict ins=NULL);
+
+cell_t align_semi_affine(
+        const Sequence &s1,
+        const Sequence &s2,
+        int open=-10, int gap=-1,
+        cell_t * const restrict * const restrict tbl=NULL,
+        int * const restrict * const restrict del=NULL,
+        int * const restrict * const restrict ins=NULL);
+
+cell_t align_local_affine(
+        const Sequence &s1,
+        const Sequence &s2,
+        match_t match,
+        int open=-10, int gap=-1,
+        cell_t * const restrict * const restrict tbl=NULL,
+        int * const restrict * const restrict del=NULL,
+        int * const restrict * const restrict ins=NULL);
+
+cell_t align_local_affine(
+        const Sequence &s1,
+        const Sequence &s2,
+        const int * const restrict * const restrict sub,
+        const int * const restrict map, char first,
+        int open=-10, int gap=-1,
+        cell_t * const restrict * const restrict tbl=NULL,
+        int * const restrict * const restrict del=NULL,
+        int * const restrict * const restrict ins=NULL);
+
+cell_t align_local_affine(
+        const Sequence &s1,
+        const Sequence &s2,
+        int match, int mismatch,
+        int open=-10, int gap=-1,
+        cell_t * const restrict * const restrict tbl=NULL,
+        int * const restrict * const restrict del=NULL,
+        int * const restrict * const restrict ins=NULL);
+
+cell_t align_local_affine(
+        const Sequence &s1,
+        const Sequence &s2,
+        int open=-10, int gap=-1,
+        cell_t * const restrict * const restrict tbl=NULL,
+        int * const restrict * const restrict del=NULL,
+        int * const restrict * const restrict ins=NULL);
+
 bool is_edge(
         const cell_t &result,
         const Sequence &s1,
@@ -331,22 +374,6 @@ bool is_edge(
         const int ** const restrict sub,
         const int * const restrict map, char first);
 
-
-/**
- * Asks whether the given cell_t alignment result is an edge, based on
- * the given parameters.
- *
- * @param[in] result the dynamic programming alignment result
- * @param[in] s1 first Sequence
- * @param[in] s2 second Sequence
- * @param[in] AOL alignment over longer sequence (heuristic)
- * @param[in] SIM match similarity (heuristic)
- * @param[in] OS optimal score over self score (heuristic)
- * @param[out] self_score self score
- * @param[out] max_len longer of s1_len and s2_len
- * @param[in] match callback function to calculate any character match/mismatch
- * @return true if this is an edge, false otherwise
- */
 bool is_edge(
         const cell_t &result,
         const Sequence &s1,
@@ -358,22 +385,6 @@ bool is_edge(
         size_t &max_len,
         match_t match);
 
-
-/**
- * Asks whether the given cell_t alignment result is an edge, based on
- * the given parameters.
- *
- * @param[in] result the dynamic programming alignment result
- * @param[in] s1 first Sequence
- * @param[in] s2 second Sequence
- * @param[in] AOL alignment over longer sequence (heuristic)
- * @param[in] SIM match similarity (heuristic)
- * @param[in] OS optimal score over self score (heuristic)
- * @param[out] self_score self score
- * @param[out] max_len longer of s1_len and s2_len
- * @param[in] match the static score of a character match
- * @return true if this is an edge, false otherwise
- */
 bool is_edge(
         const cell_t &result,
         const Sequence &s1,
@@ -385,22 +396,7 @@ bool is_edge(
         size_t &max_len,
         int match);
 
-
-/**
- * Asks whether the given cell_t alignment result is an edge, based on
- * the given parameters.
- *
- * @param[in] result the dynamic programming alignment result
- * @param[in] s1 first Sequence
- * @param[in] s2 second Sequence
- * @param[in] AOL alignment over longer sequence (heuristic)
- * @param[in] SIM match similarity (heuristic)
- * @param[in] OS optimal score over self score (heuristic)
- * @param[out] self_score self score
- * @param[out] max_len longer of s1_len and s2_len
- * @return true if this is an edge, false otherwise
- */
-bool is_edge_blosum(
+bool is_edge(
         const cell_t &result,
         const Sequence &s1,
         const Sequence &s2,
@@ -409,7 +405,6 @@ bool is_edge_blosum(
         int OS,
         int &self_score,
         size_t &max_len);
-
 
 }; /* namespace pgraph */
 

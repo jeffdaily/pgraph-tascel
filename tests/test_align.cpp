@@ -52,6 +52,20 @@ static const char seq_original2[] =
 "VKIPPSIGSEMGWLRSRNDEHGKLFAGRRFMILRKFTMNPYFDYKQLIELVQQCGGEILSCYENLSPEKL"
 "YIIFSKHSKAIEESKNIENLYKCDVVTMEWVLDSISEYLILPTQPYKAVDSIGCLQD";
 
+static void print_result(cell_t result, const char *msg) {
+    printf("---------------------------------------------------\n");
+    printf("%s\n", msg);
+    printf("result->score=%d\n", result.score);
+    printf("result->ndig=%d\n", result.matches);
+    printf("result->alen=%d\n", result.length);
+}
+
+
+static int callback(char ch1, char ch2) {
+    return blosum62_[MAP_BLOSUM[ch1-'A']][MAP_BLOSUM[ch2-'A']];
+}
+
+
 int test(const char *seq1, const char *seq2)
 {
     size_t i = 0;
@@ -70,11 +84,13 @@ int test(const char *seq1, const char *seq2)
     const int OS = 3;
     const int OPEN = -10;
     const int GAP = -1;
+    unsigned long long t = timer_start();
 #define NROW 2
 
     tbl = allocate_cell_table(NROW, max_seq_len);
     del = allocate_int_table(NROW, max_seq_len);
     ins = allocate_int_table(NROW, max_seq_len);
+    select_blosum(62);
 
     result = affine_gap_align(
             seq1, seq1_len,
@@ -82,22 +98,103 @@ int test(const char *seq1, const char *seq2)
             tbl, del, ins,
             OPEN, GAP,
             blosum62_, MAP_BLOSUM, 'A');
+    print_result(result, "custom map");
 
-    is_edge_answer = is_edge(
-            result, seq1, seq1_len, seq2, seq2_len,
-            AOL, SIM, OS, sscore, maxLen,
-            blosum62_, MAP_BLOSUM, 'A');
+    result = affine_gap_align(
+            seq1, seq1_len,
+            seq2, seq2_len,
+            tbl, del, ins,
+            OPEN, GAP,
+            callback);
+    print_result(result, "callback");
+
+    result = affine_gap_align_blosum(
+            seq1, seq1_len,
+            seq2, seq2_len,
+            tbl, del, ins,
+            OPEN, GAP);
+    print_result(result, "blosum");
+
+    result = align_semi_affine(
+            seq1, seq1_len,
+            seq2, seq2_len,
+            blosum62_, MAP_BLOSUM, 'A',
+            OPEN, GAP,
+            tbl, del, ins);
+    print_result(result, "new semi custom map");
+
+    result = align_semi_affine(
+            seq1, seq1_len,
+            seq2, seq2_len,
+            callback,
+            OPEN, GAP,
+            tbl, del, ins);
+    print_result(result, "new semi callback");
+
+    result = align_semi_affine(
+            seq1, seq1_len,
+            seq2, seq2_len,
+            OPEN, GAP,
+            tbl, del, ins);
+    print_result(result, "new semi blosum");
+
+    result = align_global_affine(
+            seq1, seq1_len,
+            seq2, seq2_len,
+            blosum62_, MAP_BLOSUM, 'A',
+            OPEN, GAP,
+            tbl, del, ins);
+    print_result(result, "new global custom map");
+
+    result = align_global_affine(
+            seq1, seq1_len,
+            seq2, seq2_len,
+            callback,
+            OPEN, GAP,
+            tbl, del, ins);
+    print_result(result, "new global callback");
+
+    result = align_global_affine(
+            seq1, seq1_len,
+            seq2, seq2_len,
+            OPEN, GAP,
+            tbl, del, ins);
+    print_result(result, "new global blosum");
+
+    result = align_local_affine(
+            seq1, seq1_len,
+            seq2, seq2_len,
+            blosum62_, MAP_BLOSUM, 'A',
+            OPEN, GAP,
+            tbl, del, ins);
+    print_result(result, "new local custom map");
+
+    result = align_local_affine(
+            seq1, seq1_len,
+            seq2, seq2_len,
+            callback,
+            OPEN, GAP,
+            tbl, del, ins);
+    print_result(result, "new local callback");
+
+    result = align_local_affine(
+            seq1, seq1_len,
+            seq2, seq2_len,
+            OPEN, GAP,
+            tbl, del, ins);
+    print_result(result, "new local blosum");
+
+#if HAVE_EMMINTRIN_H
+    result = align_local_affine_ssw(
+            seq1, seq1_len,
+            seq2, seq2_len,
+            OPEN, GAP);
+    print_result(result, "new local blosum ssw");
+#endif
 
     printf("---------------------------------------------------\n");
-    printf("result->score=%d\n", result.score);
-    printf("result->ndig=%d\n", result.matches);
-    printf("result->alen=%d\n", result.length);
-    printf("is_edge_answer=%d\n", is_edge_answer);
-    printf("alen/maxLen=%f\n", 1.0*result.length/maxLen);
-    printf("nmatch/alen=%f\n", 1.0*result.matches/result.length);
-    printf("score/sscore=%f\n", 1.0*result.score/sscore);
-    printf("timing 10000 calls to affine_gap_align\n");
-    unsigned long long t = timer_start();
+
+    t = timer_start();
     for (i = 0; i < 10000U; ++i) {
         result = affine_gap_align(
                 seq1, seq1_len,
@@ -107,7 +204,75 @@ int test(const char *seq1, const char *seq2)
                 blosum62_, MAP_BLOSUM, 'A');
     }
     t = timer_end(t);
-    printf("%s timer took %llu units\n", timer_name(), t);
+    printf("    custom map %s timer took %llu units\n", timer_name(), t);
+
+    t = timer_start();
+    for (i = 0; i < 10000U; ++i) {
+        result = affine_gap_align(
+                seq1, seq1_len,
+                seq2, seq2_len,
+                tbl, del, ins,
+                OPEN, GAP,
+                callback);
+    }
+    t = timer_end(t);
+    printf("      callback %s timer took %llu units\n", timer_name(), t);
+
+    t = timer_start();
+    for (i = 0; i < 10000U; ++i) {
+        result = affine_gap_align_blosum(
+                seq1, seq1_len,
+                seq2, seq2_len,
+                tbl, del, ins,
+                OPEN, GAP);
+    }
+    t = timer_end(t);
+    printf("        blosum %s timer took %llu units\n", timer_name(), t);
+
+    t = timer_start();
+    for (i = 0; i < 10000U; ++i) {
+        result = align_semi_affine(
+                seq1, seq1_len,
+                seq2, seq2_len,
+                blosum62_, MAP_BLOSUM, 'A',
+                OPEN, GAP,
+                tbl, del, ins);
+    }
+    t = timer_end(t);
+    printf("new custom map %s timer took %llu units\n", timer_name(), t);
+
+    t = timer_start();
+    for (i = 0; i < 10000U; ++i) {
+        result = align_semi_affine(
+                seq1, seq1_len,
+                seq2, seq2_len,
+                callback,
+                OPEN, GAP,
+                tbl, del, ins);
+    }
+    t = timer_end(t);
+    printf(" new  callback %s timer took %llu units\n", timer_name(), t);
+
+    t = timer_start();
+    for (i = 0; i < 10000U; ++i) {
+        result = align_semi_affine(
+                seq1, seq1_len,
+                seq2, seq2_len,
+                OPEN, GAP,
+                tbl, del, ins);
+    }
+    t = timer_end(t);
+    printf("   new  blosum %s timer took %llu units\n", timer_name(), t);
+
+    t = timer_start();
+    for (i = 0; i < 10000U; ++i) {
+        result = align_local_affine_ssw(
+                seq1, seq1_len,
+                seq2, seq2_len,
+                OPEN, GAP);
+    }
+    t = timer_end(t);
+    printf("new ssw blosum %s timer took %llu units\n", timer_name(), t);
 
     free_cell_table(tbl, NROW);
     free_int_table(del, NROW);

@@ -51,51 +51,25 @@ static const int8_t * restrict blosum__ = blosum62__;
 
 cell_t **allocate_cell_table(size_t nrow, size_t ncol)
 {
-    size_t i = 0;
-    cell_t **table = NULL;
-
-    table = new cell_t*[nrow];
-    for (i = 0; i < nrow; i++) {
-        /* +1 for dynamic align */
-        table[i] = new cell_t[ncol + 1];
-    }
-
-    return table;
+    return allocate_table<cell_t>(nrow, ncol);
 }
 
 
 int **allocate_int_table(size_t nrow, size_t ncol)
 {
-    size_t i = 0;
-    int **table = NULL;
-
-    table = new int*[nrow];
-    for (i = 0; i < nrow; i++) {
-        /* +1 for dynamic align */
-        table[i] = new int[ncol + 1];
-    }
-
-    return table;
+    return allocate_table<int>(nrow, ncol);
 }
 
 
 void free_cell_table(cell_t **table, size_t nrow)
 {
-    size_t i;
-    for (i = 0; i < nrow; i++) {
-        delete [] table[i];
-    }
-    delete [] table;
+    free_table<cell_t>(table, nrow);
 }
 
 
 void free_int_table(int **table, size_t nrow)
 {
-    size_t i;
-    for (i = 0; i < nrow; i++) {
-        delete [] table[i];
-    }
-    delete [] table;
+    free_table<int>(table, nrow);
 }
 
 
@@ -181,15 +155,26 @@ void select_blosum(int number)
 }
 
 
-#define AFFINE_GAP_ALIGN_DECL                                               \
+#define AFFINE_GAP_DECL                                                     \
     size_t i = 0;                       /* first sequence char index */     \
     size_t j = 0;                       /* second sequence char index */    \
+    bool delete_tbl = (tbl_ == NULL);                                       \
+    bool delete_del = (del_ == NULL);                                       \
+    bool delete_ins = (ins_ == NULL);                                       \
+    size_t longestLen = MAX(s1Len,s2Len);                                   \
+    cell_t * const restrict * const restrict tbl =                          \
+            delete_tbl ? allocate_cell_table(2U,longestLen) : tbl_;         \
+    int * const restrict * const restrict del =                             \
+            delete_del ? allocate_int_table(2U,longestLen) : del_;          \
+    int * const restrict * const restrict ins =                             \
+            delete_ins ? allocate_int_table(2U,longestLen) : ins_;          \
+    cell_t maxCell = {INT_MIN, 0, 0};   /* max cell in table */
+
+#define AFFINE_GAP_DECL_SEMI                                                \
     cell_t lastCol = {INT_MIN, 0, 0};   /* max cell in last col */          \
     cell_t lastRow = {INT_MIN, 0, 0};   /* max cell in last row */          \
-    cell_t * restrict tI = NULL;        /* current DP table row */          \
-    cell_t * restrict pI = NULL;        /* previous DP table row */
 
-#define AFFINE_GAP_ALIGN_ASSERT \
+#define AFFINE_GAP_ASSERT       \
     assert(s1);                 \
     assert(s2);                 \
     assert(s1Len > 0);          \
@@ -198,22 +183,32 @@ void select_blosum(int number)
     assert(del);                \
     assert(ins);
 
-#define AFFINE_GAP_ALIGN_BODY(CALCULATE_SCORE)                              \
-    /* init first row of 3 tables */                                        \
+#define AFFINE_GAP_INIT_CORNER                                              \
     tbl[0][0].score = 0;                                                    \
     tbl[0][0].matches = 0;                                                  \
     tbl[0][0].length = 0;                                                   \
-    del[0][0] = 0;                                                          \
-    ins[0][0] = 0;                                                          \
-    tI = tbl[0];                                                            \
+    del[0][0] = INT_MIN;                                                    \
+    ins[0][0] = INT_MIN;
+
+#define AFFINE_GAP_INIT_FIRST_ROW_WITH_PENALTY                              \
     for (j = 1; j <= s2Len; j++) {                                          \
-        tI[j].score = open + j * gap;                                       \
-        tI[j].matches = 0;                                                  \
-        tI[j].length = 0;                                                   \
+        tbl[0][j].score = open + j * gap;                                   \
+        tbl[0][j].matches = 0;                                              \
+        tbl[0][j].length = 0;                                               \
         del[0][j] = INT_MIN;                                                \
         ins[0][j] = open + j * gap;                                         \
-    }                                                                       \
-                                                                            \
+    }
+
+#define AFFINE_GAP_INIT_FIRST_ROW_WITHOUT_PENALTY                           \
+    for (j = 1; j <= s2Len; j++) {                                          \
+        tbl[0][j].score = 0;                                                \
+        tbl[0][j].matches = 0;                                              \
+        tbl[0][j].length = 0;                                               \
+        del[0][j] = INT_MIN;                                                \
+        ins[0][j] = open + j * gap;                                         \
+    }
+
+#define AFFINE_GAP_BODY1                                                    \
     for (i = 1; i <= s1Len; ++i) {                                          \
         int dig = 0;        /* diagonal value in DP table */                \
         int up = 0;         /* upper value in DP table */                   \
@@ -226,16 +221,24 @@ void select_blosum(int number)
         cr = CROW(i);                                                       \
         pr = PROW(i);                                                       \
         ch1 = s1[i - 1];                                                    \
-        tI = tbl[cr];                                                       \
-        pI = tbl[pr];                                                       \
-                                                                            \
+
+#define AFFINE_GAP_INIT_FIRST_COL_WITH_PENALTY                              \
         /* init first column of 3 tables */                                 \
-        tI[0].score = open + i * gap;                                       \
-        tI[0].matches = 0;                                                  \
-        tI[0].length = 0;                                                   \
+        tbl[cr][0].score = open + i * gap;                                  \
+        tbl[cr][0].matches = 0;                                             \
+        tbl[cr][0].length = 0;                                              \
         del[cr][0] = open + i * gap;                                        \
-        ins[cr][0] = INT_MIN;                                               \
-                                                                            \
+        ins[cr][0] = INT_MIN;
+
+#define AFFINE_GAP_INIT_FIRST_COL_WITHOUT_PENALTY                           \
+        /* init first column of 3 tables */                                 \
+        tbl[cr][0].score = 0;                                               \
+        tbl[cr][0].matches = 0;                                             \
+        tbl[cr][0].length = 0;                                              \
+        del[cr][0] = open + i * gap;                                        \
+        ins[cr][0] = INT_MIN;
+
+#define AFFINE_GAP_BODY2(CALCULATE_SCORE)                                   \
         for (j = 1; j <= s2Len; j++) {                                      \
             int tmp1 = 0;   /* temporary during DP calculation */           \
             int tmp2 = 0;   /* temporary during DP calculation */           \
@@ -244,311 +247,365 @@ void select_blosum(int number)
             ch2 = s2[j - 1];                                                \
                                                                             \
             /* overflow could happen, INT_MIN-1 = 2147483647 */             \
-            tmp1 = pI[j].score + open + gap;                                \
+            tmp1 = tbl[pr][j].score + open + gap;                           \
             tmp2 = NEG_ADD(del[pr][j], gap);                                \
             up = MAX(tmp1, tmp2);                                           \
             del[cr][j] = up;                                                \
-            tmp1 = tI[j - 1].score + open + gap;                            \
+            tmp1 = tbl[cr][j - 1].score + open + gap;                       \
             tmp2 = NEG_ADD(ins[cr][j - 1], gap);                            \
             left = MAX(tmp1, tmp2);                                         \
             ins[cr][j] = left;                                              \
             maxScore = MAX(up, left);                                       \
-            dig = pI[j - 1].score + CALCULATE_SCORE;                        \
+            tmp1 = CALCULATE_SCORE;                                         \
+            dig = NEG_ADD(tbl[pr][j - 1].score, tmp1);                      \
             maxScore = MAX(maxScore, dig);                                  \
-            tI[j].score = maxScore;                                         \
-                                                                            \
+
+#define AFFINE_GAP_MAX_SCORE                                                \
+            tbl[cr][j].score = maxScore;
+
+#define AFFINE_GAP_MAX_SCORE_LOCAL                                          \
+            maxScore = MAX(maxScore, 0);                                    \
+            tbl[cr][j].score = maxScore;                                    \
+            if (tbl[cr][j].score > maxCell.score) {                         \
+                maxCell = tbl[cr][j];                                       \
+            }                                                               \
+            if (tbl[cr][j].score == 0) {                                    \
+                tbl[cr][j].matches = 0;                                     \
+                tbl[cr][j].length = 0;                                      \
+            } else
+
+#define AFFINE_GAP_BODY3                                                    \
             if (maxScore == dig) {                                          \
-                tI[j].matches = pI[j - 1].matches + ((ch1 == ch2) ? 1 : 0); \
-                tI[j].length = pI[j - 1].length + 1;                        \
+                tbl[cr][j].matches =                                        \
+                        tbl[pr][j - 1].matches + ((ch1 == ch2) ? 1 : 0);    \
+                tbl[cr][j].length = tbl[pr][j - 1].length + 1;              \
             }                                                               \
             else if (maxScore == up) {                                      \
-                tI[j].matches = pI[j].matches;                              \
-                tI[j].length = pI[j].length + 1;                            \
+                tbl[cr][j].matches = tbl[pr][j].matches;                    \
+                tbl[cr][j].length = tbl[pr][j].length + 1;                  \
             }                                                               \
             else {                                                          \
-                tI[j].matches = tI[j - 1].matches;                          \
-                tI[j].length = tI[j - 1].length + 1;                        \
-            }                                                               \
-                                                                            \
+                tbl[cr][j].matches = tbl[cr][j - 1].matches;                \
+                tbl[cr][j].length = tbl[cr][j - 1].length + 1;              \
+            }
+
+#define AFFINE_GAP_END_SEMI                                                 \
             /* track the maximum of last row */                             \
-            if (i == s1Len && tI[j].score > lastRow.score) {                \
-                lastRow = tI[j];                                            \
+            if (i == s1Len && tbl[cr][j].score > lastRow.score) {           \
+                lastRow = tbl[cr][j];                                       \
             }                                                               \
         } /* end of j loop */                                               \
                                                                             \
         assert(j == (s2Len + 1));                                           \
                                                                             \
         /* update the maximum of last column */                             \
-        if (tI[s2Len].score > lastCol.score) {                              \
-            lastCol = tI[s2Len];                                            \
+        if (tbl[cr][s2Len].score > lastCol.score) {                         \
+            lastCol = tbl[cr][s2Len];                                       \
+        }                                                                   \
+    } /* end of i loop */                                                   \
+    maxCell = (lastCol.score > lastRow.score) ? lastCol : lastRow;          \
+                                                                            \
+    return maxCell;
+
+#define AFFINE_GAP_END_LOCAL                                                \
+        } /* end of j loop */                                               \
+                                                                            \
+        assert(j == (s2Len + 1));                                           \
+    } /* end of i loop */                                                   \
+                                                                            \
+    return maxCell;
+
+#define AFFINE_GAP_END_GLOBAL                                               \
+        } /* end of j loop */                                               \
+                                                                            \
+        assert(j == (s2Len + 1));                                           \
+        if (i == s1Len && j == s2Len+1) {                                   \
+            maxCell = tbl[cr][s2Len];                                       \
         }                                                                   \
     } /* end of i loop */                                                   \
                                                                             \
-    return (lastCol.score > lastRow.score) ? lastCol : lastRow;
+    return maxCell;
+
+#define AFFINE_GAP_FREE                                                     \
+    if (delete_tbl) free_table(tbl,2U);                                     \
+    if (delete_del) free_table(del,2U);                                     \
+    if (delete_ins) free_table(ins,2U);
 
 
-cell_t affine_gap_align(
+cell_t align_global_affine(
         const char * const restrict s1, size_t s1Len,
         const char * const restrict s2, size_t s2Len,
-        cell_t ** const restrict tbl,
-        int ** const restrict del,
-        int ** const restrict ins,
+        match_t callback,
         int open, int gap,
-        const int * const restrict * const restrict sub,
-        const int * const restrict map, char first)
+        cell_t * const restrict * const restrict tbl_,
+        int * const restrict * const restrict del_,
+        int * const restrict * const restrict ins_)
 {
-    AFFINE_GAP_ALIGN_DECL
+    AFFINE_GAP_DECL
+    AFFINE_GAP_ASSERT
+    AFFINE_GAP_INIT_CORNER
+    AFFINE_GAP_INIT_FIRST_ROW_WITH_PENALTY
+    AFFINE_GAP_BODY1
+    AFFINE_GAP_INIT_FIRST_COL_WITH_PENALTY
+    AFFINE_GAP_BODY2(callback(ch1, ch2))
+    AFFINE_GAP_MAX_SCORE
+    AFFINE_GAP_BODY3
+    AFFINE_GAP_FREE
+    AFFINE_GAP_END_GLOBAL
+}
 
-    AFFINE_GAP_ALIGN_ASSERT
+cell_t align_global_affine(
+        const char * const restrict s1, size_t s1Len,
+        const char * const restrict s2, size_t s2Len,
+        const int * const restrict * const restrict sub,
+        const int * const restrict map, char first,
+        int open, int gap,
+        cell_t * const restrict * const restrict tbl_,
+        int * const restrict * const restrict del_,
+        int * const restrict * const restrict ins_)
+{
+    AFFINE_GAP_DECL
+    AFFINE_GAP_ASSERT
     assert(sub);
     assert(map);
-
-    AFFINE_GAP_ALIGN_BODY(SCORE(sub, map, first, ch1, ch2))
+    AFFINE_GAP_INIT_CORNER
+    AFFINE_GAP_INIT_FIRST_ROW_WITH_PENALTY
+    AFFINE_GAP_BODY1
+    AFFINE_GAP_INIT_FIRST_COL_WITH_PENALTY
+    AFFINE_GAP_BODY2(SCORE(sub, map, first, ch1, ch2))
+    AFFINE_GAP_MAX_SCORE
+    AFFINE_GAP_BODY3
+    AFFINE_GAP_FREE
+    AFFINE_GAP_END_GLOBAL
 }
 
-
-cell_t affine_gap_align(
+cell_t align_global_affine(
         const char * const restrict s1, size_t s1Len,
         const char * const restrict s2, size_t s2Len,
-        cell_t ** const restrict tbl,
-        int ** const restrict del,
-        int ** const restrict ins,
+        int match, int mismatch,
         int open, int gap,
-        match_t callback)
+        cell_t * const restrict * const restrict tbl_,
+        int * const restrict * const restrict del_,
+        int * const restrict * const restrict ins_)
 {
-    AFFINE_GAP_ALIGN_DECL
-
-    AFFINE_GAP_ALIGN_ASSERT
-
-    AFFINE_GAP_ALIGN_BODY(callback(ch1, ch2))
+    AFFINE_GAP_DECL
+    AFFINE_GAP_ASSERT
+    AFFINE_GAP_INIT_CORNER
+    AFFINE_GAP_INIT_FIRST_ROW_WITH_PENALTY
+    AFFINE_GAP_BODY1
+    AFFINE_GAP_INIT_FIRST_COL_WITH_PENALTY
+    AFFINE_GAP_BODY2((ch1 == ch2 ? match : mismatch))
+    AFFINE_GAP_MAX_SCORE
+    AFFINE_GAP_BODY3
+    AFFINE_GAP_FREE
+    AFFINE_GAP_END_GLOBAL
 }
 
-
-cell_t affine_gap_align(
+cell_t align_global_affine(
         const char * const restrict s1, size_t s1Len,
         const char * const restrict s2, size_t s2Len,
-        cell_t ** const restrict tbl,
-        int ** const restrict del,
-        int ** const restrict ins,
         int open, int gap,
-        int match,
-        int mismatch)
+        cell_t * const restrict * const restrict tbl_,
+        int * const restrict * const restrict del_,
+        int * const restrict * const restrict ins_)
 {
-    AFFINE_GAP_ALIGN_DECL
-
-    AFFINE_GAP_ALIGN_ASSERT
-
-    AFFINE_GAP_ALIGN_BODY((ch1 == ch2 ? match : mismatch))
+    AFFINE_GAP_DECL
+    AFFINE_GAP_ASSERT
+    AFFINE_GAP_INIT_CORNER
+    AFFINE_GAP_INIT_FIRST_ROW_WITH_PENALTY
+    AFFINE_GAP_BODY1
+    AFFINE_GAP_INIT_FIRST_COL_WITH_PENALTY
+    AFFINE_GAP_BODY2(BLOSUM(ch1, ch2))
+    AFFINE_GAP_MAX_SCORE
+    AFFINE_GAP_BODY3
+    AFFINE_GAP_FREE
+    AFFINE_GAP_END_GLOBAL
 }
 
 
-cell_t affine_gap_align_blosum(
+cell_t align_semi_affine(
         const char * const restrict s1, size_t s1Len,
         const char * const restrict s2, size_t s2Len,
-        cell_t ** const restrict tbl,
-        int ** const restrict del,
-        int ** const restrict ins,
-        int open, int gap)
+        match_t callback,
+        int open, int gap,
+        cell_t * const restrict * const restrict tbl_,
+        int * const restrict * const restrict del_,
+        int * const restrict * const restrict ins_)
 {
-    AFFINE_GAP_ALIGN_DECL
+    AFFINE_GAP_DECL
+    AFFINE_GAP_DECL_SEMI
+    AFFINE_GAP_ASSERT
+    AFFINE_GAP_INIT_CORNER
+    AFFINE_GAP_INIT_FIRST_ROW_WITHOUT_PENALTY
+    AFFINE_GAP_BODY1
+    AFFINE_GAP_INIT_FIRST_COL_WITHOUT_PENALTY
+    AFFINE_GAP_BODY2(callback(ch1, ch2))
+    AFFINE_GAP_MAX_SCORE
+    AFFINE_GAP_BODY3
+    AFFINE_GAP_FREE
+    AFFINE_GAP_END_SEMI
+}
 
-    AFFINE_GAP_ALIGN_ASSERT
+cell_t align_semi_affine(
+        const char * const restrict s1, size_t s1Len,
+        const char * const restrict s2, size_t s2Len,
+        const int * const restrict * const restrict sub,
+        const int * const restrict map, char first,
+        int open, int gap,
+        cell_t * const restrict * const restrict tbl_,
+        int * const restrict * const restrict del_,
+        int * const restrict * const restrict ins_)
+{
+    AFFINE_GAP_DECL
+    AFFINE_GAP_DECL_SEMI
+    AFFINE_GAP_ASSERT
+    assert(sub);
+    assert(map);
+    AFFINE_GAP_INIT_CORNER
+    AFFINE_GAP_INIT_FIRST_ROW_WITHOUT_PENALTY
+    AFFINE_GAP_BODY1
+    AFFINE_GAP_INIT_FIRST_COL_WITHOUT_PENALTY
+    AFFINE_GAP_BODY2(SCORE(sub, map, first, ch1, ch2))
+    AFFINE_GAP_MAX_SCORE
+    AFFINE_GAP_BODY3
+    AFFINE_GAP_FREE
+    AFFINE_GAP_END_SEMI
+}
 
-    /* init first row of 3 tables */                                        
-    tbl[0][0].score = 0;                                                    
-    tbl[0][0].matches = 0;                                                  
-    tbl[0][0].length = 0;                                                   
-    del[0][0] = 0;                                                          
-    ins[0][0] = 0;                                                          
-    tI = tbl[0];                                                            
-    for (j = 1; j <= s2Len; j++) {                                          
-        tI[j].score = open + j * gap;
-        tI[j].matches = 0;                                                  
-        tI[j].length = 0;                                                   
-        del[0][j] = INT_MIN;                                                
-        ins[0][j] = open + j * gap;                                         
-    }                                                                       
-                                                                            
-    for (i = 1; i <= s1Len; ++i) {                                          
-        int dig = 0;        /* diagonal value in DP table */                
-        int up = 0;         /* upper value in DP table */                   
-        int left = 0;       /* left value in DP table */                    
-        int maxScore = 0;   /* max of dig, up, and left in DP table */      
-        size_t cr = 0;      /* current row index in DP table */             
-        size_t pr = 0;      /* previous row index in DP table */            
-        char ch1 = 0;       /* current character in first sequence */       
-                                                                            
-        cr = CROW(i);                                                       
-        pr = PROW(i);                                                       
-        ch1 = s1[i - 1];                                                    
-        tI = tbl[cr];                                                       
-        pI = tbl[pr];                                                       
-                                                                            
-        /* init first column of 3 tables */                                 
-        tI[0].score = open + j * gap;
-        tI[0].matches = 0;                                                  
-        tI[0].length = 0;                                                   
-        del[cr][0] = open + i * gap;                                        
-        ins[cr][0] = INT_MIN;                                               
-                                                                            
-        for (j = 1; j <= s2Len; j++) {                                      
-            int tmp1 = 0;   /* temporary during DP calculation */           
-            int tmp2 = 0;   /* temporary during DP calculation */           
-            int tmp3 = 0;   /* temporary during DP calculation */           
-            char ch2 = 0;   /* current character in second sequence */      
-                                                                            
-            ch2 = s2[j - 1];                                                
-                                                                            
-            /* overflow could happen, INT_MIN-1 = 2147483647 */             
-            tmp1 = NEG_ADD(NEG_ADD(pI[j].score, open), gap);
-            tmp2 = NEG_ADD(del[pr][j], gap);                                
-            up = MAX(tmp1, tmp2);                                           
-            del[cr][j] = up;                                                
-            tmp1 = NEG_ADD(NEG_ADD(tI[j - 1].score, open), gap);
-            tmp2 = NEG_ADD(ins[cr][j - 1], gap);                            
-            left = MAX(tmp1, tmp2);                                         
-            ins[cr][j] = left;                                              
-            maxScore = MAX(up, left);
-            tmp3 = BLOSUM(ch1, ch2);                       
-            dig = NEG_ADD(pI[j - 1].score, tmp3);
-            maxScore = MAX(maxScore, dig);
-            tI[j].score = maxScore;                                         
-                                                                            
-            if (maxScore == dig) {                                          
-                tI[j].matches = pI[j - 1].matches + ((ch1 == ch2) ? 1 : 0); 
-                tI[j].length = pI[j - 1].length + 1;                        
-            }                                                               
-            else if (maxScore == up) {                                      
-                tI[j].matches = pI[j].matches;                              
-                tI[j].length = pI[j].length + 1;                            
-            }                                                               
-            else {                                                          
-                tI[j].matches = tI[j - 1].matches;                          
-                tI[j].length = tI[j - 1].length + 1;                        
-            }                                                               
-                                                                            
-            /* track the maximum of last row */                             
-            if (i == s1Len && tI[j].score > lastRow.score) {                
-                lastRow = tI[j];                                            
-            }                                                               
-        } /* end of j loop */                                               
-                                                                            
-        assert(j == (s2Len + 1));                                           
-                                                                            
-        /* update the maximum of last column */                             
-        if (tI[s2Len].score > lastCol.score) {                              
-            lastCol = tI[s2Len];                                            
-        }                                                                   
-    } /* end of i loop */                                                   
-                                                                            
-    return (lastCol.score > lastRow.score) ? lastCol : lastRow;
+cell_t align_semi_affine(
+        const char * const restrict s1, size_t s1Len,
+        const char * const restrict s2, size_t s2Len,
+        int match, int mismatch,
+        int open, int gap,
+        cell_t * const restrict * const restrict tbl_,
+        int * const restrict * const restrict del_,
+        int * const restrict * const restrict ins_)
+{
+    AFFINE_GAP_DECL
+    AFFINE_GAP_DECL_SEMI
+    AFFINE_GAP_ASSERT
+    AFFINE_GAP_INIT_CORNER
+    AFFINE_GAP_INIT_FIRST_ROW_WITHOUT_PENALTY
+    AFFINE_GAP_BODY1
+    AFFINE_GAP_INIT_FIRST_COL_WITHOUT_PENALTY
+    AFFINE_GAP_BODY2((ch1 == ch2 ? match : mismatch))
+    AFFINE_GAP_MAX_SCORE
+    AFFINE_GAP_BODY3
+    AFFINE_GAP_FREE
+    AFFINE_GAP_END_SEMI
+}
+
+cell_t align_semi_affine(
+        const char * const restrict s1, size_t s1Len,
+        const char * const restrict s2, size_t s2Len,
+        int open, int gap,
+        cell_t * const restrict * const restrict tbl_,
+        int * const restrict * const restrict del_,
+        int * const restrict * const restrict ins_)
+{
+    AFFINE_GAP_DECL
+    AFFINE_GAP_DECL_SEMI
+    AFFINE_GAP_ASSERT
+    AFFINE_GAP_INIT_CORNER
+    AFFINE_GAP_INIT_FIRST_ROW_WITHOUT_PENALTY
+    AFFINE_GAP_BODY1
+    AFFINE_GAP_INIT_FIRST_COL_WITHOUT_PENALTY
+    AFFINE_GAP_BODY2(BLOSUM(ch1, ch2))
+    AFFINE_GAP_MAX_SCORE
+    AFFINE_GAP_BODY3
+    AFFINE_GAP_FREE
+    AFFINE_GAP_END_SEMI
 }
 
 
-cell_t local_affine_gap_align_blosum(
+cell_t align_local_affine(
         const char * const restrict s1, size_t s1Len,
         const char * const restrict s2, size_t s2Len,
-        cell_t ** const restrict tbl,
-        int ** const restrict del,
-        int ** const restrict ins,
-        int open, int gap)
+        match_t callback,
+        int open, int gap,
+        cell_t * const restrict * const restrict tbl_,
+        int * const restrict * const restrict del_,
+        int * const restrict * const restrict ins_)
 {
-    size_t i = 0;                       /* first sequence char index */
-    size_t j = 0;                       /* second sequence char index */
-    cell_t result = {INT_MIN, 0, 0};   /* max cell in last col */
-    cell_t * restrict tI = NULL;        /* current DP table row */
-    cell_t * restrict pI = NULL;        /* previous DP table row */
+    AFFINE_GAP_DECL
+    AFFINE_GAP_ASSERT
+    AFFINE_GAP_INIT_CORNER
+    AFFINE_GAP_INIT_FIRST_ROW_WITHOUT_PENALTY
+    AFFINE_GAP_BODY1
+    AFFINE_GAP_INIT_FIRST_COL_WITHOUT_PENALTY
+    AFFINE_GAP_BODY2(callback(ch1, ch2))
+    AFFINE_GAP_MAX_SCORE_LOCAL
+    AFFINE_GAP_BODY3
+    AFFINE_GAP_FREE
+    AFFINE_GAP_END_LOCAL
+}
 
-    AFFINE_GAP_ALIGN_ASSERT
+cell_t align_local_affine(
+        const char * const restrict s1, size_t s1Len,
+        const char * const restrict s2, size_t s2Len,
+        const int * const restrict * const restrict sub,
+        const int * const restrict map, char first,
+        int open, int gap,
+        cell_t * const restrict * const restrict tbl_,
+        int * const restrict * const restrict del_,
+        int * const restrict * const restrict ins_)
+{
+    AFFINE_GAP_DECL
+    AFFINE_GAP_ASSERT
+    assert(sub);
+    assert(map);
+    AFFINE_GAP_INIT_CORNER
+    AFFINE_GAP_INIT_FIRST_ROW_WITHOUT_PENALTY
+    AFFINE_GAP_BODY1
+    AFFINE_GAP_INIT_FIRST_COL_WITHOUT_PENALTY
+    AFFINE_GAP_BODY2(SCORE(sub, map, first, ch1, ch2))
+    AFFINE_GAP_MAX_SCORE_LOCAL
+    AFFINE_GAP_BODY3
+    AFFINE_GAP_FREE
+    AFFINE_GAP_END_LOCAL
+}
 
-    /* init first row of 3 tables */                                        
-    tbl[0][0].score = 0;                                                    
-    tbl[0][0].matches = 0;                                                  
-    tbl[0][0].length = 0;                                                   
-    del[0][0] = 0;                                                          
-    ins[0][0] = 0;                                                          
-    tI = tbl[0];                                                            
-    for (j = 1; j <= s2Len; j++) {                                          
-        tI[j].score = 0;
-        tI[j].matches = 0;                                                  
-        tI[j].length = 0;                                                   
-        del[0][j] = 0;
-        ins[0][j] = 0;
-    }                                                                       
-                                                                            
-    for (i = 1; i <= s1Len; ++i) {                                          
-        int dig = 0;        /* diagonal value in DP table */                
-        int up = 0;         /* upper value in DP table */                   
-        int left = 0;       /* left value in DP table */                    
-        int maxScore = 0;   /* max of dig, up, and left in DP table */      
-        size_t cr = 0;      /* current row index in DP table */             
-        size_t pr = 0;      /* previous row index in DP table */            
-        char ch1 = 0;       /* current character in first sequence */       
-                                                                            
-        cr = CROW(i);                                                       
-        pr = PROW(i);                                                       
-        ch1 = s1[i - 1];                                                    
-        tI = tbl[cr];                                                       
-        pI = tbl[pr];                                                       
-                                                                            
-        /* init first column of 3 tables */                                 
-        tI[0].score = 0;
-        tI[0].matches = 0;                                                  
-        tI[0].length = 0;                                                   
-        del[cr][0] = 0;
-        ins[cr][0] = 0;
-                                                                            
-        for (j = 1; j <= s2Len; j++) {                                      
-            int tmp1 = 0;   /* temporary during DP calculation */           
-            int tmp2 = 0;   /* temporary during DP calculation */           
-            int tmp3 = 0;   /* temporary during DP calculation */           
-            char ch2 = 0;   /* current character in second sequence */      
-                                                                            
-            ch2 = s2[j - 1];                                                
-                                                                            
-            /* overflow could happen, INT_MIN-1 = 2147483647 */             
-            tmp1 = NEG_ADD(pI[j].score, open);
-            tmp2 = NEG_ADD(del[pr][j], gap);                                
-            up = MAX(tmp1, tmp2);                                           
-            del[cr][j] = up;                                                
-            tmp1 = NEG_ADD(tI[j - 1].score, open);
-            tmp2 = NEG_ADD(ins[cr][j - 1], gap);                            
-            left = MAX(tmp1, tmp2);                                         
-            ins[cr][j] = left;                                              
-            maxScore = MAX(up, left);
-            tmp3 = BLOSUM(ch1, ch2);                       
-            dig = NEG_ADD(pI[j - 1].score, tmp3);
-            maxScore = MAX(MAX(maxScore, dig), 0);
-            tI[j].score = maxScore;
-                                                                            
-            if (maxScore == 0) {
-                tI[j].matches = 0;
-                tI[j].length = 0;
-            }
-            else if (maxScore == dig) {
-                tI[j].matches = pI[j - 1].matches + ((ch1 == ch2) ? 1 : 0); 
-                tI[j].length = pI[j - 1].length + 1;                        
-            }                                                               
-            else if (maxScore == up) {                                      
-                tI[j].matches = pI[j].matches;                              
-                tI[j].length = pI[j].length + 1;                            
-            }                                                               
-            else {                                                          
-                tI[j].matches = tI[j - 1].matches;                          
-                tI[j].length = tI[j - 1].length + 1;                        
-            }                                                               
-                                                                            
-            /* track the table max */
-            if (tI[j].score > result.score) {
-                result = tI[j];
-            }
-        } /* end of j loop */                                               
-                                                                            
-        assert(j == (s2Len + 1));                                           
-                                                                            
-    } /* end of i loop */                                                   
-                                                                            
-    return result;
+cell_t align_local_affine(
+        const char * const restrict s1, size_t s1Len,
+        const char * const restrict s2, size_t s2Len,
+        int match, int mismatch,
+        int open, int gap,
+        cell_t * const restrict * const restrict tbl_,
+        int * const restrict * const restrict del_,
+        int * const restrict * const restrict ins_)
+{
+    AFFINE_GAP_DECL
+    AFFINE_GAP_ASSERT
+    AFFINE_GAP_INIT_CORNER
+    AFFINE_GAP_INIT_FIRST_ROW_WITHOUT_PENALTY
+    AFFINE_GAP_BODY1
+    AFFINE_GAP_INIT_FIRST_COL_WITHOUT_PENALTY
+    AFFINE_GAP_BODY2((ch1 == ch2 ? match : mismatch))
+    AFFINE_GAP_MAX_SCORE_LOCAL
+    AFFINE_GAP_BODY3
+    AFFINE_GAP_FREE
+    AFFINE_GAP_END_LOCAL
+}
+
+cell_t align_local_affine(
+        const char * const restrict s1, size_t s1Len,
+        const char * const restrict s2, size_t s2Len,
+        int open, int gap,
+        cell_t * const restrict * const restrict tbl_,
+        int * const restrict * const restrict del_,
+        int * const restrict * const restrict ins_)
+{
+    AFFINE_GAP_DECL
+    AFFINE_GAP_ASSERT
+    AFFINE_GAP_INIT_CORNER
+    AFFINE_GAP_INIT_FIRST_ROW_WITHOUT_PENALTY
+    AFFINE_GAP_BODY1
+    AFFINE_GAP_INIT_FIRST_COL_WITHOUT_PENALTY
+    AFFINE_GAP_BODY2(BLOSUM(ch1, ch2))
+    AFFINE_GAP_MAX_SCORE_LOCAL
+    AFFINE_GAP_BODY3
+    AFFINE_GAP_FREE
+    AFFINE_GAP_END_LOCAL
 }
 
 
@@ -638,7 +695,7 @@ bool is_edge(
 }
 
 
-bool is_edge_blosum(
+bool is_edge(
         const cell_t &result,
         const char * const restrict s1, size_t s1_len,
         const char * const restrict s2, size_t s2_len,
@@ -655,7 +712,7 @@ bool is_edge_blosum(
 }
 
 
-cell_t affine_gap_align_blosum_ssw(
+cell_t align_local_affine_ssw(
 #if NOSWAP
         const char * const restrict s1, size_t s1_len,
         const char * const restrict s2, size_t s2_len,

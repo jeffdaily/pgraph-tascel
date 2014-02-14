@@ -153,9 +153,7 @@ am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
 	src/Parameters.hpp src/param.cpp src/param.hpp \
 	src/pthread_fixes.h src/Sequence.cpp src/Sequence.hpp \
 	src/SequenceDatabaseReplicated.cpp \
-	src/SequenceDatabaseReplicated.hpp \
-	src/SequenceDatabaseGArray.cpp src/SequenceDatabaseGArray.hpp \
-	src/SequenceDatabase.cpp src/SequenceDatabase.hpp \
+	src/SequenceDatabaseReplicated.hpp src/SequenceDatabase.hpp \
 	src/stree.cpp src/stree.hpp src/SuffixBuckets.cpp \
 	src/SuffixBuckets.hpp src/SuffixTree.cpp src/SuffixTree.hpp \
 	src/TreeStats.hpp src/timer.h src/SequenceDatabaseArmci.cpp \
@@ -259,11 +257,9 @@ am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
 am_libpgraph_la_OBJECTS = src/alignment.lo src/Bootstrap.lo \
 	src/bucket.lo src/combinations.lo src/csequence.lo src/io.lo \
 	src/mpix.lo src/Parameters.lo src/param.lo src/Sequence.lo \
-	src/SequenceDatabaseReplicated.lo \
-	src/SequenceDatabaseGArray.lo src/SequenceDatabase.lo \
-	src/stree.lo src/SuffixBuckets.lo src/SuffixTree.lo \
-	$(am__objects_1) $(am__objects_2) \
-	contrib/yaml-cpp-0.5.1/src/binary.lo \
+	src/SequenceDatabaseReplicated.lo src/stree.lo \
+	src/SuffixBuckets.lo src/SuffixTree.lo $(am__objects_1) \
+	$(am__objects_2) contrib/yaml-cpp-0.5.1/src/binary.lo \
 	contrib/yaml-cpp-0.5.1/src/contrib/graphbuilderadapter.lo \
 	contrib/yaml-cpp-0.5.1/src/contrib/graphbuilder.lo \
 	contrib/yaml-cpp-0.5.1/src/convert.lo \
@@ -936,9 +932,7 @@ libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
 	src/Parameters.hpp src/param.cpp src/param.hpp \
 	src/pthread_fixes.h src/Sequence.cpp src/Sequence.hpp \
 	src/SequenceDatabaseReplicated.cpp \
-	src/SequenceDatabaseReplicated.hpp \
-	src/SequenceDatabaseGArray.cpp src/SequenceDatabaseGArray.hpp \
-	src/SequenceDatabase.cpp src/SequenceDatabase.hpp \
+	src/SequenceDatabaseReplicated.hpp src/SequenceDatabase.hpp \
 	src/stree.cpp src/stree.hpp src/SuffixBuckets.cpp \
 	src/SuffixBuckets.hpp src/SuffixTree.cpp src/SuffixTree.hpp \
 	src/TreeStats.hpp src/timer.h $(am__append_2) $(am__append_3) \
@@ -1250,10 +1244,6 @@ src/Parameters.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/param.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/Sequence.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/SequenceDatabaseReplicated.lo: src/$(am__dirstamp) \
-	src/$(DEPDIR)/$(am__dirstamp)
-src/SequenceDatabaseGArray.lo: src/$(am__dirstamp) \
-	src/$(DEPDIR)/$(am__dirstamp)
-src/SequenceDatabase.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
 src/stree.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/SuffixBuckets.lo: src/$(am__dirstamp) \
@@ -1779,12 +1769,8 @@ mostlyclean-compile:
 	-rm -f src/Parameters.lo
 	-rm -f src/Sequence.$(OBJEXT)
 	-rm -f src/Sequence.lo
-	-rm -f src/SequenceDatabase.$(OBJEXT)
-	-rm -f src/SequenceDatabase.lo
 	-rm -f src/SequenceDatabaseArmci.$(OBJEXT)
 	-rm -f src/SequenceDatabaseArmci.lo
-	-rm -f src/SequenceDatabaseGArray.$(OBJEXT)
-	-rm -f src/SequenceDatabaseGArray.lo
 	-rm -f src/SequenceDatabaseReplicated.$(OBJEXT)
 	-rm -f src/SequenceDatabaseReplicated.lo
 	-rm -f src/SuffixBuckets.$(OBJEXT)
@@ -1894,9 +1880,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Bootstrap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Parameters.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Sequence.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabase.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabaseArmci.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabaseGArray.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabaseReplicated.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SuffixBuckets.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SuffixTree.Plo@am__quote@

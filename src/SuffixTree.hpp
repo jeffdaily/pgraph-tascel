@@ -242,11 +242,11 @@ bool SuffixTree::generate_pairs_cb(Callback callback)
     int cutOff; /* cut off value of filter 1 */
 
     srtIndex = new size_t[this->size];
-    count_sort(this->nodes, srtIndex, this->size, sequences->get_max_length());
+    count_sort(this->nodes, srtIndex, this->size, sequences->longest());
     stNodes = this->nodes;
     nStNodes = this->size;
-    nSeqs = sequences->get_global_count();
-    maxSeqLen = sequences->get_max_length();
+    nSeqs = sequences->size();
+    maxSeqLen = sequences->longest();
 
     /* only two rows are allocated */
     assert(NROW == 2);

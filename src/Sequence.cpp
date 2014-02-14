@@ -27,7 +27,7 @@ namespace pgraph {
 
 Sequence::Sequence()
     :   is_owner(false)
-    ,   data(NULL)
+    ,   buffer(NULL)
     ,   id_offset(0)
     ,   id_length(0)
     ,   sequence_offset(0)
@@ -38,7 +38,7 @@ Sequence::Sequence()
 
 Sequence::Sequence(const Sequence &that)
     :   is_owner(false)
-    ,   data(that.data)
+    ,   buffer(that.buffer)
     ,   id_offset(that.id_offset)
     ,   id_length(that.id_length)
     ,   sequence_offset(that.sequence_offset)
@@ -49,7 +49,7 @@ Sequence::Sequence(const Sequence &that)
 
 Sequence::Sequence(const char *data, const bool &owns)
     :   is_owner(owns)
-    ,   data(data)
+    ,   buffer(data)
     ,   id_offset(0)
     ,   id_length(0)
     ,   sequence_offset(0)
@@ -60,7 +60,7 @@ Sequence::Sequence(const char *data, const bool &owns)
 
 Sequence::Sequence(const char *data, const size_t &length, const bool &owns)
     :   is_owner(owns)
-    ,   data(data)
+    ,   buffer(data)
     ,   id_offset(0)
     ,   id_length(0)
     ,   sequence_offset(0)
@@ -76,7 +76,7 @@ Sequence::Sequence(const char *data,
                    const size_t &sequence_length,
                    const bool &owns)
     :   is_owner(owns)
-    ,   data(data)
+    ,   buffer(data)
     ,   id_offset(id_offset)
     ,   id_length(id_length)
     ,   sequence_offset(sequence_offset)
@@ -85,66 +85,233 @@ Sequence::Sequence(const char *data,
 }
 
 
-Sequence::~Sequence()
-{
-    if (is_owner) {
-        delete [] data;
-    }
-    data = NULL;
-}
-
-
-void Sequence::align(const Sequence &that, int &score, int &ndig, int &alen)
-{
-    cell_t result = {0,0,0};
-    size_t bigger = 0;
-    cell_t **tbl = NULL;
-    int **del = NULL;
-    int **ins = NULL;
-
-    bigger = this->sequence_length > that.sequence_length ?
-        this->sequence_length :
-        that.sequence_length;
-    tbl = allocate_cell_table(2, bigger);
-    del = allocate_int_table(2, bigger);
-    ins = allocate_int_table(2, bigger);
-
-    result = affine_gap_align_blosum(
-            &this->data[sequence_offset], this->sequence_length,
-            &that.data[sequence_offset], that.sequence_length,
-            tbl, del, ins, 10, 1);
-
-    free_cell_table(tbl, 2);
-    free_int_table(del, 2);
-    free_int_table(ins, 2);
-
-    /* return */
-    score = result.score;
-    ndig = result.matches;
-    alen = result.length;
-}
-
-
-Sequence::operator string() const
-{
-    assert(NULL != data);
-    assert(sequence_length > 0);
-
-    return string(&data[sequence_offset], sequence_length);
-}
-
-
 ostream &operator << (ostream &os, const Sequence &s)
 {
     for (size_t i = 0; i < s.id_length; ++i) {
-        os << s.data[s.id_offset + i];
+        os << s.buffer[s.id_offset + i];
     }
     os << endl;
     for (size_t i = 0; i < s.sequence_length; ++i) {
-        os << s.data[s.sequence_offset + i];
+        os << s.buffer[s.sequence_offset + i];
     }
     os << endl;
     return os;
+}
+
+cell_t align_global_affine(
+        const Sequence &s1,
+        const Sequence &s2,
+        match_t match,
+        int open, int gap,
+        cell_t * const restrict * const restrict tbl,
+        int * const restrict * const restrict del,
+        int * const restrict * const restrict ins)
+{
+    return align_global_affine(s1.data(), s1.size(), s2.data(), s2.size(),
+            match, open, gap, tbl, del, ins);
+}
+
+cell_t align_global_affine(
+        const Sequence &s1,
+        const Sequence &s2,
+        const int * const restrict * const restrict sub,
+        const int * const restrict map, char first,
+        int open, int gap,
+        cell_t * const restrict * const restrict tbl,
+        int * const restrict * const restrict del,
+        int * const restrict * const restrict ins)
+{
+    return align_global_affine(s1.data(), s1.size(), s2.data(), s2.size(),
+            sub, map, first, open, gap, tbl, del, ins);
+}
+
+cell_t align_global_affine(
+        const Sequence &s1,
+        const Sequence &s2,
+        int match, int mismatch,
+        int open, int gap,
+        cell_t * const restrict * const restrict tbl,
+        int * const restrict * const restrict del,
+        int * const restrict * const restrict ins)
+{
+    return align_global_affine(s1.data(), s1.size(), s2.data(), s2.size(),
+            match, mismatch, open, gap, tbl, del, ins);
+}
+
+cell_t align_global_affine(
+        const Sequence &s1,
+        const Sequence &s2,
+        int open, int gap,
+        cell_t * const restrict * const restrict tbl,
+        int * const restrict * const restrict del,
+        int * const restrict * const restrict ins)
+{
+    return align_global_affine(s1.data(), s1.size(), s2.data(), s2.size(),
+            open, gap, tbl, del, ins);
+}
+
+cell_t align_semi_affine(
+        const Sequence &s1,
+        const Sequence &s2,
+        match_t match,
+        int open, int gap,
+        cell_t * const restrict * const restrict tbl,
+        int * const restrict * const restrict del,
+        int * const restrict * const restrict ins)
+{
+    return align_semi_affine(s1.data(), s1.size(), s2.data(), s2.size(),
+            match, open, gap, tbl, del, ins);
+}
+
+cell_t align_semi_affine(
+        const Sequence &s1,
+        const Sequence &s2,
+        const int * const restrict * const restrict sub,
+        const int * const restrict map, char first,
+        int open, int gap,
+        cell_t * const restrict * const restrict tbl,
+        int * const restrict * const restrict del,
+        int * const restrict * const restrict ins)
+{
+    return align_semi_affine(s1.data(), s1.size(), s2.data(), s2.size(),
+            sub, map, first, open, gap, tbl, del, ins);
+}
+
+cell_t align_semi_affine(
+        const Sequence &s1,
+        const Sequence &s2,
+        int match, int mismatch,
+        int open, int gap,
+        cell_t * const restrict * const restrict tbl,
+        int * const restrict * const restrict del,
+        int * const restrict * const restrict ins)
+{
+    return align_semi_affine(s1.data(), s1.size(), s2.data(), s2.size(),
+            match, mismatch, open, gap, tbl, del, ins);
+}
+
+cell_t align_semi_affine(
+        const Sequence &s1,
+        const Sequence &s2,
+        int open, int gap,
+        cell_t * const restrict * const restrict tbl,
+        int * const restrict * const restrict del,
+        int * const restrict * const restrict ins)
+{
+    return align_semi_affine(s1.data(), s1.size(), s2.data(), s2.size(),
+            open, gap, tbl, del, ins);
+}
+
+cell_t align_local_affine(
+        const Sequence &s1,
+        const Sequence &s2,
+        match_t match,
+        int open, int gap,
+        cell_t * const restrict * const restrict tbl,
+        int * const restrict * const restrict del,
+        int * const restrict * const restrict ins)
+{
+    return align_local_affine(s1.data(), s1.size(), s2.data(), s2.size(),
+            match, open, gap, tbl, del, ins);
+}
+
+cell_t align_local_affine(
+        const Sequence &s1,
+        const Sequence &s2,
+        const int * const restrict * const restrict sub,
+        const int * const restrict map, char first,
+        int open, int gap,
+        cell_t * const restrict * const restrict tbl,
+        int * const restrict * const restrict del,
+        int * const restrict * const restrict ins)
+{
+    return align_local_affine(s1.data(), s1.size(), s2.data(), s2.size(),
+            sub, map, first, open, gap, tbl, del, ins);
+}
+
+cell_t align_local_affine(
+        const Sequence &s1,
+        const Sequence &s2,
+        int match, int mismatch,
+        int open, int gap,
+        cell_t * const restrict * const restrict tbl,
+        int * const restrict * const restrict del,
+        int * const restrict * const restrict ins)
+{
+    return align_local_affine(s1.data(), s1.size(), s2.data(), s2.size(),
+            match, mismatch, open, gap, tbl, del, ins);
+}
+
+cell_t align_local_affine(
+        const Sequence &s1,
+        const Sequence &s2,
+        int open, int gap,
+        cell_t * const restrict * const restrict tbl,
+        int * const restrict * const restrict del,
+        int * const restrict * const restrict ins)
+{
+    return align_local_affine(s1.data(), s1.size(), s2.data(), s2.size(),
+            open, gap, tbl, del, ins);
+}
+
+bool is_edge(
+        const cell_t &result,
+        const Sequence &s1,
+        const Sequence &s2,
+        int AOL,
+        int SIM,
+        int OS,
+        int &self_score,
+        size_t &max_len,
+        const int ** const restrict sub,
+        const int * const restrict map, char first)
+{
+    return is_edge(result, s1.data(), s1.size(), s2.data(), s2.size(),
+            AOL, SIM, OS, self_score, max_len, sub, map, first);
+}
+
+bool is_edge(
+        const cell_t &result,
+        const Sequence &s1,
+        const Sequence &s2,
+        int AOL,
+        int SIM,
+        int OS,
+        int &self_score,
+        size_t &max_len,
+        match_t match)
+{
+    return is_edge(result, s1.data(), s1.size(), s2.data(), s2.size(),
+            AOL, SIM, OS, self_score, max_len, match);
+}
+
+bool is_edge(
+        const cell_t &result,
+        const Sequence &s1,
+        const Sequence &s2,
+        int AOL,
+        int SIM,
+        int OS,
+        int &self_score,
+        size_t &max_len,
+        int match)
+{
+    return is_edge(result, s1.data(), s1.size(), s2.data(), s2.size(),
+            AOL, SIM, OS, self_score, max_len, match);
+}
+
+bool is_edge(
+        const cell_t &result,
+        const Sequence &s1,
+        const Sequence &s2,
+        int AOL,
+        int SIM,
+        int OS,
+        int &self_score,
+        size_t &max_len)
+{
+    return is_edge(result, s1.data(), s1.size(), s2.data(), s2.size(),
+            AOL, SIM, OS, self_score, max_len);
 }
 
 }; /* namespace pgraph */

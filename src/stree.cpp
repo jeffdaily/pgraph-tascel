@@ -530,7 +530,7 @@ is_candidate(sequence_t *seqs, size_t nSeqs,
             int ignore1;
             size_t ignore2;
             assert(0);
-            dup[index] = is_edge_blosum(result,
+            dup[index] = is_edge(result,
                     seqs[f1].str, seqs[f1].size,
                     seqs[f2].str, seqs[f2].size,
                     param.AOL, param.SIM, param.OS,

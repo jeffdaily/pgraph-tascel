@@ -39,11 +39,10 @@
 #include "EdgeResult.hpp"
 #include "mpix.hpp"
 #include "Parameters.hpp"
+#include "Sequence.hpp"
 #include "SequenceDatabase.hpp"
 #include "tascelx.hpp"
-#ifdef USE_GARRAY
-#include "SequenceDatabaseGArray.hpp"
-#elif HAVE_ARMCI
+#if HAVE_ARMCI
 #include "SequenceDatabaseArmci.hpp"
 #else
 #include "SequenceDatabaseReplicated.hpp"
@@ -76,6 +75,9 @@ typedef struct {
     SequenceDatabase *sequences;
     vector<EdgeResult> *edge_results;
     Parameters *parameters;
+    cell_t ***tbl;
+    int ***del;
+    int ***ins;
 } local_data_t;
 
 
@@ -103,7 +105,6 @@ static void alignment_task(
     task_description *desc = (task_description*)bigd;
     local_data_t *local_data = (local_data_t*)pldata;
     unsigned long seq_id[2];
-    cell_t result;
     bool is_edge_answer = false;
     double t = 0;
     double tt = 0;
@@ -114,6 +115,9 @@ static void alignment_task(
     SequenceDatabase *sequences = local_data->sequences;
     vector<EdgeResult> *edge_results = local_data->edge_results;
     Parameters *parameters = local_data->parameters;
+    cell_t ***tbl = local_data->tbl;
+    int ***del = local_data->del;
+    int ***ins = local_data->ins;
 
     int open = parameters->open;
     int gap = parameters->gap;
@@ -132,8 +136,10 @@ static void alignment_task(
     seq_id[0] = desc->id1;
     seq_id[1] = desc->id2;
 #endif
-    unsigned long s1Len = (*sequences)[seq_id[0]].get_sequence_length();
-    unsigned long s2Len = (*sequences)[seq_id[1]].get_sequence_length();
+    Sequence &s1 = (*sequences)[seq_id[0]];
+    Sequence &s2 = (*sequences)[seq_id[1]];
+    unsigned long s1Len = s1.get_sequence_length();
+    unsigned long s2Len = s2.get_sequence_length();
     bool do_alignment = true;
     if (parameters->use_length_filter) {
         int cutOff = AOL * SIM;
@@ -150,13 +156,10 @@ static void alignment_task(
         stats[thd].work += s1Len * s2Len;
         ++stats[thd].align_counts;
         t = MPI_Wtime();
-        sequences->align(seq_id[0], seq_id[1], result.score, result.matches, result.length, open, gap, thd);
-        is_edge_answer = sequences->is_edge(
-                seq_id[0],
-                seq_id[1],
-                result.score, result.matches, result.length,
-                AOL, SIM, OS,
-                sscore, max_len);
+        cell_t result = align_semi_affine(
+                s1, s2, open, gap, tbl[thd], del[thd], ins[thd]);
+        is_edge_answer = is_edge(
+                result, s1, s2, AOL, SIM, OS, sscore, max_len);
 
         if (is_edge_answer || parameters->output_all)
         {
@@ -164,9 +167,8 @@ static void alignment_task(
                         seq_id[0], seq_id[1],
                         1.0*result.length/max_len,
                         1.0*result.matches/result.length,
-                        1.0*result.score/sscore
-                        ,is_edge_answer
-                        ));
+                        1.0*result.score/sscore,
+                        is_edge_answer));
         }
         if (is_edge_answer) {
             ++stats[thd].edge_counts;
@@ -250,7 +252,6 @@ int main(int argc, char **argv)
     local_data->edge_results = edge_results;
     local_data->parameters = parameters;
 
-
     /* MPI standard does not guarantee all procs receive argc and argv */
     mpix_bcast_argv(argc, argv, all_argv, pgraph::comm);
 
@@ -297,24 +298,29 @@ int main(int argc, char **argv)
         printf("----------------------------------------------\n");
     }
 
-#ifdef USE_GARRAY
-    sequences = new SequenceDatabaseGArray(all_argv[1],
-            parameters->memory_sequences, '\0');
-#elif HAVE_ARMCI
+#if HAVE_ARMCI
     sequences = new SequenceDatabaseArmci(all_argv[1],
-            parameters->memory_sequences, pgraph::comm, NUM_WORKERS, '\0');
+            parameters->memory_sequences, pgraph::comm, '\0');
 #else
     sequences = new SequenceDatabaseReplicated(all_argv[1],
-            parameters->memory_sequences, pgraph::comm, NUM_WORKERS, '\0');
+            parameters->memory_sequences, pgraph::comm, '\0');
 #endif
 
     local_data->sequences = sequences;
+    local_data->tbl = new cell_t**[NUM_WORKERS];
+    local_data->del = new int**[NUM_WORKERS];
+    local_data->ins = new int**[NUM_WORKERS];
+    for (int worker=0; worker<NUM_WORKERS; ++worker) {
+        local_data->tbl[worker] = allocate_cell_table(2, sequences->longest());
+        local_data->del[worker] = allocate_int_table(2, sequences->longest());
+        local_data->ins[worker] = allocate_int_table(2, sequences->longest());
+    }
 
     /* how many combinations of sequences are there? */
-    nCk = binomial_coefficient(sequences->get_global_count(), 2);
+    nCk = binomial_coefficient(sequences->size(), 2);
     if (0 == trank(0)) {
         printf("brute force %lu C 2 has %lu combinations\n",
-                sequences->get_global_count(), nCk);
+                sequences->size(), nCk);
     }
 
     unsigned long nalignments = nCk;
@@ -477,6 +483,14 @@ int main(int argc, char **argv)
     delete [] edge_results;
     delete parameters;
     delete sequences;
+    for (int worker=0; worker<NUM_WORKERS; ++worker) {
+        free_cell_table(local_data->tbl[worker], 2);
+        free_int_table(local_data->del[worker], 2);
+        free_int_table(local_data->ins[worker], 2);
+    }
+    delete [] local_data->tbl;
+    delete [] local_data->del;
+    delete [] local_data->ins;
     delete local_data;
 
     TascelConfig::finalize();

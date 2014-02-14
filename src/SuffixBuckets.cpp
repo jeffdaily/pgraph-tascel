@@ -193,15 +193,15 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     vector<pair<size_t,size_t> > bucket_sorted_map(n_buckets);
 
     /* allocate suffixes */
-    n_suffixes = sequences->get_global_size()
-        - sequences->get_global_count() * param.window_size;
+    n_suffixes = sequences->char_size()
+        - sequences->size() * param.window_size;
 
     mpix_print_zero("n_buckets", n_buckets, comm);
     mpix_print_zero("n_suffixes", n_suffixes, comm);
 
     /* each MPI rank gets a contiguous range of sequences to bucket */
-    n_seq = sequences->get_global_count() / comm_size;
-    remainder = sequences->get_global_count() % comm_size;
+    n_seq = sequences->size() / comm_size;
+    remainder = sequences->size() % comm_size;
     start = n_seq * comm_rank;
     stop = n_seq * (comm_rank+1);
     if (comm_rank < remainder) {
@@ -212,8 +212,8 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
         start += remainder;
         stop += remainder;
     }
-    if (stop > sequences->get_global_count()) {
-        stop = sequences->get_global_count();
+    if (stop > sequences->size()) {
+        stop = sequences->size();
     }
 #if DEBUG || 1
     mpix_print_sync("n_seq", n_seq, comm);
@@ -436,7 +436,7 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
                 SuffixBucketIndexCompare);
         /* The suffixes contains sorted suffixes based on the buckets they belong
          * to. That means we can simply update the 'next' links! */
-        size_t last_id = sequences->get_global_count();
+        size_t last_id = sequences->size();
         bucket_size_total = 0;
         for (size_t i=0,limit=total_amount_to_recv-1; i<limit; ++i) {
             assert(suffixes[i].sid < last_id);
@@ -606,13 +606,13 @@ SuffixBuckets2::SuffixBuckets2(SequenceDatabase *sequences,
     }
 
     /* allocate suffixes */
-    n_suffixes = sequences->get_global_size()
-        - sequences->get_global_count() * param.window_size;
+    n_suffixes = sequences->char_size()
+        - sequences->size() * param.window_size;
     mpix_print_zero("n_suffixes", n_suffixes, comm);
 
     /* each MPI rank gets a contiguous range of sequences to bucket */
-    n_seq = sequences->get_global_count() / comm_size;
-    remainder = sequences->get_global_count() % comm_size;
+    n_seq = sequences->size() / comm_size;
+    remainder = sequences->size() % comm_size;
     start = n_seq * comm_rank;
     stop = n_seq * (comm_rank+1);
     if (comm_rank < remainder) {
@@ -623,8 +623,8 @@ SuffixBuckets2::SuffixBuckets2(SequenceDatabase *sequences,
         start += remainder;
         stop += remainder;
     }
-    if (stop > sequences->get_global_count()) {
-        stop = sequences->get_global_count();
+    if (stop > sequences->size()) {
+        stop = sequences->size();
     }
 #if DEBUG || 1
     mpix_print_sync("n_seq", n_seq, comm);
@@ -784,7 +784,7 @@ SuffixBuckets2::SuffixBuckets2(SequenceDatabase *sequences,
                 SuffixBucketIndexCompare);
         /* The suffixes contains sorted suffixes based on the buckets they belong
          * to. That means we can simply update the 'next' links! */
-        size_t last_id = sequences->get_global_count();
+        size_t last_id = sequences->size();
         for (size_t i=0,limit=total_amount_to_recv-1; i<limit; ++i) {
             assert(suffixes[i].sid < last_id);
             assert(suffixes[i].bid < n_buckets);

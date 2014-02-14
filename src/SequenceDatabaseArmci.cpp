@@ -30,11 +30,10 @@ extern "C" {
 #include <tascel.h>
 
 #include "alignment.hpp"
-#include "csequence.h"
-#include "Sequence.hpp"
-#include "SequenceDatabase.hpp"
-#include "SequenceDatabaseArmci.hpp"
 #include "mpix.hpp"
+#include "SequenceDatabaseArmci.hpp"
+#include "SequenceDatabase.hpp"
+#include "Sequence.hpp"
 
 using std::accumulate;
 using std::cerr;
@@ -56,7 +55,6 @@ SequenceDatabaseArmci::SequenceDatabaseArmci(
         const string &file_name,
         size_t budget,
         MPI_Comm comm,
-        size_t num_threads,
         char delimiter)
     :   SequenceDatabase()
     ,   comm_orig(comm)
@@ -67,7 +65,6 @@ SequenceDatabaseArmci::SequenceDatabaseArmci(
     ,   comm_size(0)
     ,   is_replicated(false)
     ,   budget(budget)
-    ,   num_threads(num_threads)
     ,   delimiter(delimiter)
     ,   file_name(file_name)
     ,   local_data(NULL)
@@ -82,11 +79,6 @@ SequenceDatabaseArmci::SequenceDatabaseArmci(
     ,   remote_cache()
     ,   mutex()
     ,   max_seq_size(0)
-    ,   tbl(NULL)
-    ,   del(NULL)
-    ,   ins(NULL)
-    ,   replica_count(-1)
-    ,   replica_index(-1)
 {
     int ierr = 0;
 
@@ -124,27 +116,6 @@ SequenceDatabaseArmci::~SequenceDatabaseArmci()
         delete it->second;
     }
 
-    for (size_t worker=0; worker<num_threads; ++worker) {
-#if 1
-        delete [] tbl[worker][1];
-        delete [] tbl[worker][0];
-        delete [] tbl[worker];
-        delete [] del[worker][1];
-        delete [] del[worker][0];
-        delete [] del[worker];
-        delete [] ins[worker][1];
-        delete [] ins[worker][0];
-        delete [] ins[worker];
-#else
-        free_cell_table(2, tbl[worker]);
-        free_int_table(2, del[worker]);
-        free_int_table(2, ins[worker]);
-#endif
-    }
-    delete [] tbl;
-    delete [] del;
-    delete [] ins;
-
     if (is_replicated) {
         delete [] local_data;
     }
@@ -156,25 +127,13 @@ SequenceDatabaseArmci::~SequenceDatabaseArmci()
 }
 
 
-size_t SequenceDatabaseArmci::get_local_count() const
-{
-    return local_cache.size();
-}
-
-
-size_t SequenceDatabaseArmci::get_local_size() const
-{
-    return local_size;
-}
-
-
-size_t SequenceDatabaseArmci::get_global_count() const
+size_t SequenceDatabaseArmci::size() const
 {
     return global_count;
 }
 
 
-size_t SequenceDatabaseArmci::get_global_size() const
+size_t SequenceDatabaseArmci::char_size() const
 {
     return global_size;
 }
@@ -235,8 +194,6 @@ void SequenceDatabaseArmci::read_and_parse_fasta()
         if (color == domain_count) {
             color -= 1;
         }
-        this->replica_count = domain_count;
-        this->replica_index = color;
         //mpix_print_sync("color", color, comm_orig);
         ierr = MPI_Comm_split(comm_orig, color, comm_orig_rank, &comm);
         MPI_CHECK_IERR(ierr, comm_orig_rank, comm_orig);
@@ -542,37 +499,6 @@ void SequenceDatabaseArmci::pack_and_index_fasta(char *buffer,
     mpix_print_zero("max_seq_size", max_seq_size, comm);
     //mpix_print_sync("local_size", local_size, comm);
     global_size = local_size;
-
-    assert(num_threads > 0);
-    tbl = new cell_t**[num_threads];
-    del = new int**[num_threads];
-    ins = new int**[num_threads];
-    for (size_t worker=0; worker<num_threads; ++worker) {
-#if 1
-        size_t max_seq_size_p1 = max_seq_size + 1;
-        tbl[worker] = new cell_t*[2];
-        tbl[worker][0] = new cell_t[max_seq_size_p1];
-        tbl[worker][1] = new cell_t[max_seq_size_p1];
-        del[worker] = new int*[2];
-        del[worker][0] = new int[max_seq_size_p1];
-        del[worker][1] = new int[max_seq_size_p1];
-        ins[worker] = new int*[2];
-        ins[worker][0] = new int[max_seq_size_p1];
-        ins[worker][1] = new int[max_seq_size_p1];
-#if USE_MEMSET
-        (void)memset(tbl[worker][0], 0, sizeof(cell_t)*max_seq_size_p1);
-        (void)memset(tbl[worker][1], 0, sizeof(cell_t)*max_seq_size_p1);
-        (void)memset(del[worker][0], 0, sizeof(int)*max_seq_size_p1);
-        (void)memset(del[worker][1], 0, sizeof(int)*max_seq_size_p1);
-        (void)memset(ins[worker][0], 0, sizeof(int)*max_seq_size_p1);
-        (void)memset(ins[worker][1], 0, sizeof(int)*max_seq_size_p1);
-#endif
-#else
-        tbl[worker] = allocate_cell_table(2, max_seq_size);
-        del[worker] = allocate_int_table(2, max_seq_size);
-        ins[worker] = allocate_int_table(2, max_seq_size);
-#endif
-    }
 }
 
 
@@ -642,177 +568,6 @@ Sequence &SequenceDatabaseArmci::operator[](size_t i)
 }
 
 
-void SequenceDatabaseArmci::set_num_threads(size_t num)
-{
-    assert(0); // not used yet
-    assert(tbl == NULL);
-    assert(del == NULL);
-    assert(ins == NULL);
-
-    tbl = new cell_t**[num];
-    assert(tbl);
-    del = new int**[num];
-    assert(del);
-    ins = new int**[num];
-    assert(ins);
-
-    for (size_t tid=0; tid<num; ++tid) {
-        tbl[tid] = NULL;
-        del[tid] = NULL;
-        ins[tid] = NULL;
-    }
-}
-
-
-void SequenceDatabaseArmci::align(size_t i,
-                                  size_t j,
-                                  int &score,
-                                  int &ndig,
-                                  int &alen,
-                                  int open,
-                                  int gap,
-                                  int tid)
-{
-    Sequence &s1 = get_sequence(i);
-    Sequence &s2 = get_sequence(j);
-    const char *c1 = NULL;
-    const char *c2 = NULL;
-    size_t l1 = 0;
-    size_t l2 = 0;
-    cell_t result;
-
-    assert(max_seq_size > 0);
-
-#if 0
-    if (tbl[tid] == NULL) {
-        tbl[tid] = new cell_t*[2];
-        tbl[tid][0] = new cell_t[max_seq_size];
-        tbl[tid][1] = new cell_t[max_seq_size];
-        assert(del[tid] == NULL);
-        del[tid] = new int*[2];
-        del[tid][0] = new int[max_seq_size];
-        del[tid][1] = new int[max_seq_size];
-        assert(ins[tid] == NULL);
-        ins[tid] = new int*[2];
-        ins[tid][0] = new int[max_seq_size];
-        ins[tid][1] = new int[max_seq_size];
-    }
-#else
-    assert(tbl);
-    assert(tbl[tid]);
-    assert(tbl[tid][0]);
-    assert(tbl[tid][1]);
-    assert(del);
-    assert(del[tid]);
-    assert(del[tid][0]);
-    assert(del[tid][1]);
-    assert(ins);
-    assert(ins[tid]);
-    assert(ins[tid][0]);
-    assert(ins[tid][1]);
-#endif
-
-    s1.get_sequence(c1,l1);
-    assert(c1);
-    assert(l1);
-    s2.get_sequence(c2,l2);
-    assert(c2);
-    assert(l2);
-    result = affine_gap_align_blosum(c1, l1, c2, l2,
-            tbl[tid], del[tid], ins[tid], open, gap);
-
-    score = result.score;
-    ndig = result.matches;
-    alen = result.length;
-}
-
-
-void SequenceDatabaseArmci::align_ssw(size_t i,
-                                      size_t j,
-                                      int &score,
-                                      int &ndig,
-                                      int &alen,
-                                      int open,
-                                      int gap,
-                                      int /*tid*/)
-{
-    Sequence &s1 = get_sequence(i);
-    Sequence &s2 = get_sequence(j);
-    const char *c1 = NULL;
-    const char *c2 = NULL;
-    size_t l1 = 0;
-    size_t l2 = 0;
-    cell_t result;
-
-    assert(max_seq_size > 0);
-
-    s1.get_sequence(c1,l1);
-    assert(c1);
-    assert(l1);
-    s2.get_sequence(c2,l2);
-    assert(c2);
-    assert(l2);
-    result = affine_gap_align_blosum_ssw(c1, l1, c2, l2, open, gap);
-
-    score = result.score;
-    ndig = result.matches;
-    alen = result.length;
-}
-
-
-bool SequenceDatabaseArmci::is_edge(size_t i,
-                                    size_t j,
-                                    const int &score,
-                                    const int &ndig,
-                                    const int &alen,
-                                    const int &AOL,
-                                    const int &SIM,
-                                    const int &OS,
-                                    int &sscore,
-                                    size_t &max_len)
-{
-    Sequence &s1 = get_sequence(i);
-    Sequence &s2 = get_sequence(j);
-    const char *c1;
-    const char *c2;
-    size_t l1;
-    size_t l2;
-    int nmatch = 0;
-
-    /* DO NOT need to compute the sscore value every time, if the later check
-     * failed at the first step, the sscore computation is wasted */
-    s1.get_sequence(c1,l1);
-    s2.get_sequence(c2,l2);
-
-    assert(l1);
-    assert(l2);
-
-    if (l1 > l2) {
-        max_len = l1;
-        sscore = self_score_blosum(c1,l1);
-    }
-    else {
-        max_len = l2;
-        sscore = self_score_blosum(c2,l2);
-    }
-
-    nmatch = ndig;
-
-    /* order the condition in strict->loose way, performance perspective
-     * comparison using integers, no overflow could happen */
-    if (score <= 0) {
-        return false;
-    }
-    else if ((alen * 100 >= AOL * int(max_len))
-             && (nmatch * 100 >= SIM * alen)
-             && (score * 100 >= OS * sscore)) {
-        return true;
-    }
-    else {
-        return false;
-    }
-}
-
 void SequenceDatabaseArmci::exchange_local_cache()
 {
     map<size_t, Sequence*>::const_iterator it;
@@ -832,7 +587,7 @@ void SequenceDatabaseArmci::exchange_local_cache()
 
         assert(it->first < global_count);
 
-        it->second->get_data(data, data_size);
+        it->second->get_buffer(data, data_size);
         owners[it->first] = comm_rank;
         offsets[it->first] = data - local_data;
         sizes[it->first] = data_size;
