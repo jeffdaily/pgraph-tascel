@@ -23,6 +23,10 @@
 #define MFENCE asm("mfence");
 #endif
 
+#if !HAVE_PTHREAD_BARRIER_T && defined(THREADED)
+#include "pthread_fixes.h"
+#endif
+
 using namespace tascel;
 /* For now, the pgraph namespace is only used in pthread_fixes.h header.
  * Once we properly namespace all of pgraph, this #if can be removed. */
@@ -153,19 +157,6 @@ static void *worker_thread(void *_args)
     delete args;
 
     return NULL;
-}
-
-
-/** active message progress barrier */
-static void amBarrier()
-{
-    int epoch = pgrp->signalBarrier();
-    while (!pgrp->testBarrier(epoch)) {
-        AmListenObjCodelet<NullMutex> *codelet;
-        if ((codelet = theAm().amListeners[0]->progress()) != NULL) {
-            codelet->execute();
-        }
-    }
 }
 
 

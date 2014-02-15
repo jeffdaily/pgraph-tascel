@@ -14,6 +14,9 @@
 #else
 #include <tascel/UniformTaskCollectionSplit.h>
 #endif
+#if THREADED
+#include "tascelx.hpp"
+#endif
 
 #include <algorithm>
 #include <cassert>
@@ -41,7 +44,6 @@
 #include "Parameters.hpp"
 #include "Sequence.hpp"
 #include "SequenceDatabase.hpp"
-#include "tascelx.hpp"
 #if HAVE_ARMCI
 #include "SequenceDatabaseArmci.hpp"
 #else

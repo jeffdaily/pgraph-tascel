@@ -54,7 +54,7 @@ typedef struct {
 } pthread_barrier_t;
 
 static int pthread_barrier_init(pthread_barrier_t *barrier,
-                         const void * barrier_attr,
+                         const void * /*barrier_attr*/,
                          unsigned count)
 {
     barrier->count = count;

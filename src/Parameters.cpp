@@ -182,58 +182,63 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
     }
 
     if (0 == comm_rank) {
-        const YAML::Node config = YAML::LoadFile(parameters_file);
-        AOL = config[KEY_ALIGN_OVER_LONGER_SEQUENCE].as<int>(
-                DEF_ALIGN_OVER_LONGER_SEQUENCE);
-        SIM = config[KEY_MATCH_SIMILARITY].as<int>(
-                DEF_MATCH_SIMILARITY);
-        OS = config[KEY_OPTIMAL_SCORE_OVER_SELF_SCORE].as<int>(
-                DEF_OPTIMAL_SCORE_OVER_SELF_SCORE);
-        exact_match_length = config[KEY_EXACT_MATCH_LENGTH].as<int>(
-                DEF_EXACT_MATCH_LENGTH);
-        window_size = config[KEY_SLIDE_WINDOW_SIZE].as<int>(
-                DEF_SLIDE_WINDOW_SIZE);
-        open = config[KEY_OPEN].as<int>(
-                DEF_OPEN);
-        gap = config[KEY_GAP].as<int>(
-                DEF_GAP);
-        output_all = config[KEY_OUTPUT_ALL].as<bool>(
-                DEF_OUTPUT_ALL);
-        output_to_disk = config[KEY_OUTPUT_TO_DISK].as<bool>(
-                DEF_OUTPUT_TO_DISK);
-        distribute_sequences = config[KEY_DISTRIBUTE_SEQUENCES].as<bool>(
-                DEF_DISTRIBUTE_SEQUENCES);
-        use_length_filter = config[KEY_USE_LENGTH_FILTER].as<bool>(
-                DEF_USE_LENGTH_FILTER);
-        use_iterator = config[KEY_USE_ITERATOR].as<bool>(
-                DEF_USE_ITERATOR);
+        try {
+            const YAML::Node config = YAML::LoadFile(parameters_file);
+            AOL = config[KEY_ALIGN_OVER_LONGER_SEQUENCE].as<int>(
+                    DEF_ALIGN_OVER_LONGER_SEQUENCE);
+            SIM = config[KEY_MATCH_SIMILARITY].as<int>(
+                    DEF_MATCH_SIMILARITY);
+            OS = config[KEY_OPTIMAL_SCORE_OVER_SELF_SCORE].as<int>(
+                    DEF_OPTIMAL_SCORE_OVER_SELF_SCORE);
+            exact_match_length = config[KEY_EXACT_MATCH_LENGTH].as<int>(
+                    DEF_EXACT_MATCH_LENGTH);
+            window_size = config[KEY_SLIDE_WINDOW_SIZE].as<int>(
+                    DEF_SLIDE_WINDOW_SIZE);
+            open = config[KEY_OPEN].as<int>(
+                    DEF_OPEN);
+            gap = config[KEY_GAP].as<int>(
+                    DEF_GAP);
+            output_all = config[KEY_OUTPUT_ALL].as<bool>(
+                    DEF_OUTPUT_ALL);
+            output_to_disk = config[KEY_OUTPUT_TO_DISK].as<bool>(
+                    DEF_OUTPUT_TO_DISK);
+            distribute_sequences = config[KEY_DISTRIBUTE_SEQUENCES].as<bool>(
+                    DEF_DISTRIBUTE_SEQUENCES);
+            use_length_filter = config[KEY_USE_LENGTH_FILTER].as<bool>(
+                    DEF_USE_LENGTH_FILTER);
+            use_iterator = config[KEY_USE_ITERATOR].as<bool>(
+                    DEF_USE_ITERATOR);
 
-        string val;
-        val = config[KEY_MEMORY_WORKER].as<string>("");
-        if (val.empty()) {
-            memory_worker = DEF_MEMORY_WORKER;
-        }
-        else {
-            memory_worker = parse_memory_budget(val);
-        }
-
-        val = config[KEY_MEMORY_SEQUENCES].as<string>("");
-        if (val.empty()) {
-            memory_sequences = DEF_MEMORY_SEQUENCES;
-        }
-        else {
-            memory_sequences = parse_memory_budget(val);
-        }
-
-        const YAML::Node filter_node = config[KEY_SKIP_PREFIXES];
-        for (size_t i=0; i<filter_node.size(); ++i) {
-            const string filter = filter_node[i].as<string>();
-            if (filter.size() != ((unsigned)window_size)) {
-                cerr << "skip prefix length must match slide window size" << endl;
-                cerr << "'" << filter << "' len=" << filter.size() << " SlideWindowSize=" << window_size << endl;
-                MPI_Abort(comm, -1);
+            string val;
+            val = config[KEY_MEMORY_WORKER].as<string>("");
+            if (val.empty()) {
+                memory_worker = DEF_MEMORY_WORKER;
             }
-            skip_prefixes.push_back(filter);
+            else {
+                memory_worker = parse_memory_budget(val);
+            }
+
+            val = config[KEY_MEMORY_SEQUENCES].as<string>("");
+            if (val.empty()) {
+                memory_sequences = DEF_MEMORY_SEQUENCES;
+            }
+            else {
+                memory_sequences = parse_memory_budget(val);
+            }
+
+            const YAML::Node filter_node = config[KEY_SKIP_PREFIXES];
+            for (size_t i=0; i<filter_node.size(); ++i) {
+                const string filter = filter_node[i].as<string>();
+                if (filter.size() != ((unsigned)window_size)) {
+                    cerr << "skip prefix length must match slide window size" << endl;
+                    cerr << "'" << filter << "' len=" << filter.size() << " SlideWindowSize=" << window_size << endl;
+                    MPI_Abort(comm, -1);
+                }
+                skip_prefixes.push_back(filter);
+            }
+        } catch (YAML::Exception &e) {
+            cerr << "unable to parse YAML file" << endl;
+            MPI_Abort(comm, -1);
         }
     }
 
