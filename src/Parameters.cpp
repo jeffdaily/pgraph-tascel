@@ -48,6 +48,7 @@ const string Parameters::KEY_MEMORY_WORKER("MemoryWorker");
 const string Parameters::KEY_MEMORY_SEQUENCES("MemorySequences");
 const string Parameters::KEY_SKIP_PREFIXES("SkipPrefixes");
 const string Parameters::KEY_OUTPUT_ALL("OutputAll");
+const string Parameters::KEY_OUTPUT_TO_DISK("OutputToDisk");
 const string Parameters::KEY_DISTRIBUTE_SEQUENCES("DistributeSequences");
 const string Parameters::KEY_USE_LENGTH_FILTER("UseLengthFilter");
 const string Parameters::KEY_USE_ITERATOR("UseIterator");
@@ -63,6 +64,7 @@ const size_t Parameters::DEF_MEMORY_WORKER(512U*MB);
 const size_t Parameters::DEF_MEMORY_SEQUENCES(2U*GB);
 const vector<string> Parameters::DEF_SKIP_PREFIXES;
 const bool Parameters::DEF_OUTPUT_ALL(false);
+const bool Parameters::DEF_OUTPUT_TO_DISK(true);
 const bool Parameters::DEF_DISTRIBUTE_SEQUENCES(false);
 const bool Parameters::DEF_USE_LENGTH_FILTER(true);
 const bool Parameters::DEF_USE_ITERATOR(false);
@@ -137,6 +139,7 @@ Parameters::Parameters()
     , memory_sequences(DEF_MEMORY_SEQUENCES)
     , skip_prefixes()
     , output_all(DEF_OUTPUT_ALL)
+    , output_to_disk(DEF_OUTPUT_TO_DISK)
     , distribute_sequences(DEF_DISTRIBUTE_SEQUENCES)
     , use_length_filter(DEF_USE_LENGTH_FILTER)
     , use_iterator(DEF_USE_ITERATOR)
@@ -156,6 +159,7 @@ Parameters::Parameters(const char *parameters_file, MPI_Comm comm)
     , memory_sequences(DEF_MEMORY_SEQUENCES)
     , skip_prefixes()
     , output_all(DEF_OUTPUT_ALL)
+    , output_to_disk(DEF_OUTPUT_TO_DISK)
     , distribute_sequences(DEF_DISTRIBUTE_SEQUENCES)
     , use_length_filter(DEF_USE_LENGTH_FILTER)
     , use_iterator(DEF_USE_ITERATOR)
@@ -193,18 +197,33 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
                 DEF_OPEN);
         gap = config[KEY_GAP].as<int>(
                 DEF_GAP);
-        memory_worker = config[KEY_MEMORY_WORKER].as<size_t>(
-                DEF_MEMORY_WORKER);
-        memory_sequences = config[KEY_MEMORY_SEQUENCES].as<size_t>(
-                DEF_MEMORY_SEQUENCES);
         output_all = config[KEY_OUTPUT_ALL].as<bool>(
                 DEF_OUTPUT_ALL);
+        output_to_disk = config[KEY_OUTPUT_TO_DISK].as<bool>(
+                DEF_OUTPUT_TO_DISK);
         distribute_sequences = config[KEY_DISTRIBUTE_SEQUENCES].as<bool>(
                 DEF_DISTRIBUTE_SEQUENCES);
         use_length_filter = config[KEY_USE_LENGTH_FILTER].as<bool>(
                 DEF_USE_LENGTH_FILTER);
         use_iterator = config[KEY_USE_ITERATOR].as<bool>(
                 DEF_USE_ITERATOR);
+
+        string val;
+        val = config[KEY_MEMORY_WORKER].as<string>("");
+        if (val.empty()) {
+            memory_worker = DEF_MEMORY_WORKER;
+        }
+        else {
+            memory_worker = parse_memory_budget(val);
+        }
+
+        val = config[KEY_MEMORY_SEQUENCES].as<string>("");
+        if (val.empty()) {
+            memory_sequences = DEF_MEMORY_SEQUENCES;
+        }
+        else {
+            memory_sequences = parse_memory_budget(val);
+        }
 
         const YAML::Node filter_node = config[KEY_SKIP_PREFIXES];
         for (size_t i=0; i<filter_node.size(); ++i) {
@@ -229,6 +248,7 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
     mpix_bcast(memory_worker, 0, comm);
     mpix_bcast(memory_sequences, 0, comm);
     mpix_bcast(output_all, 0, comm);
+    mpix_bcast(output_to_disk, 0, comm);
     mpix_bcast(distribute_sequences, 0, comm);
     mpix_bcast(use_length_filter, 0, comm);
     mpix_bcast(use_iterator, 0, comm);
@@ -253,6 +273,7 @@ ostream& operator<< (ostream &os, const Parameters &p)
         out << YAML::Key << Parameters::KEY_SKIP_PREFIXES << YAML::Value << p.skip_prefixes;
     }
     out << YAML::Key << Parameters::KEY_OUTPUT_ALL << YAML::Value << p.output_all;
+    out << YAML::Key << Parameters::KEY_OUTPUT_TO_DISK << YAML::Value << p.output_to_disk;
     out << YAML::Key << Parameters::KEY_DISTRIBUTE_SEQUENCES << YAML::Value << p.distribute_sequences;
     out << YAML::Key << Parameters::KEY_USE_LENGTH_FILTER << YAML::Value << p.use_length_filter;
     out << YAML::Key << Parameters::KEY_USE_ITERATOR << YAML::Value << p.use_iterator;

@@ -161,7 +161,8 @@ static void alignment_task(
         is_edge_answer = is_edge(
                 result, s1, s2, AOL, SIM, OS, sscore, max_len);
 
-        if (is_edge_answer || parameters->output_all)
+        if (parameters->output_to_disk
+                && (is_edge_answer || parameters->output_all))
         {
             edge_results[thd].push_back(EdgeResult(
                         seq_id[0], seq_id[1],
@@ -285,17 +286,9 @@ int main(int argc, char **argv)
         parameters->parse(all_argv[2].c_str(), pgraph::comm);
     }
     if (0 == trank(0)) {
-        printf("----------------------------------------------\n");
-        printf("%-20s: %d\n", "slide size", parameters->window_size);
-        printf("%-20s: %d\n", "exactMatch len", parameters->exact_match_length);
-        printf("%-20s: %d\n", "AlignOverLongerSeq", parameters->AOL);
-        printf("%-20s: %d\n", "MatchSimilarity", parameters->SIM);
-        printf("%-20s: %d\n", "OptimalScoreOverSelfScore", parameters->OS);
-        printf("%-20s: %d\n", "gap open", parameters->open);
-        printf("%-20s: %d\n", "gap extend", parameters->gap);
-        printf("%-20s: %zu\n", "mem worker", parameters->memory_worker);
-        printf("%-20s: %zu\n", "mem sequences", parameters->memory_sequences);
-        printf("----------------------------------------------\n");
+        cout << "----------------------------------------------" << endl;
+        cout << *parameters << endl;
+        cout << "----------------------------------------------" << endl;
     }
 
 #if HAVE_ARMCI
@@ -462,32 +455,28 @@ int main(int argc, char **argv)
     amBarrier();
     MPI_Barrier(pgraph::comm);
 
-#if OUTPUT_EDGES
-    ofstream edge_out(get_edges_filename(rank).c_str());
-#endif
+    if (parameters->output_to_disk) {
+        ofstream edge_out(get_edges_filename(rank).c_str());
+        for (int worker=0; worker<NUM_WORKERS; ++worker) {
+            for (size_t i=0,limit=edge_results[worker].size(); i<limit; ++i) {
+                edge_out << edge_results[worker][i] << endl;
+            }
+        }
+        edge_out.close();
+    }
+
     /* clean up */
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
         delete utcs[worker];
-#if OUTPUT_EDGES
-        for (size_t i=0,limit=edge_results[worker].size(); i<limit; ++i) {
-            edge_out << edge_results[worker][i] << endl;
-        }
-#endif
+        free_cell_table(local_data->tbl[worker], 2);
+        free_int_table(local_data->del[worker], 2);
+        free_int_table(local_data->ins[worker], 2);
     }
-#if OUTPUT_EDGES
-    edge_out.close();
-#endif
-
     delete [] utcs;
     delete [] stats;
     delete [] edge_results;
     delete parameters;
     delete sequences;
-    for (int worker=0; worker<NUM_WORKERS; ++worker) {
-        free_cell_table(local_data->tbl[worker], 2);
-        free_int_table(local_data->del[worker], 2);
-        free_int_table(local_data->ins[worker], 2);
-    }
     delete [] local_data->tbl;
     delete [] local_data->del;
     delete [] local_data->ins;

@@ -40,9 +40,11 @@ public:
     static const string KEY_MEMORY_SEQUENCES;
     static const string KEY_SKIP_PREFIXES;
     static const string KEY_OUTPUT_ALL;
+    static const string KEY_OUTPUT_TO_DISK;
     static const string KEY_DISTRIBUTE_SEQUENCES;
     static const string KEY_USE_LENGTH_FILTER;
     static const string KEY_USE_ITERATOR;
+    static const string KEY_;
 
     /* Defaults */
     static const int DEF_ALIGN_OVER_LONGER_SEQUENCE;
@@ -56,6 +58,7 @@ public:
     static const size_t DEF_MEMORY_SEQUENCES;
     static const vector<string> DEF_SKIP_PREFIXES;
     static const bool DEF_OUTPUT_ALL;
+    static const bool DEF_OUTPUT_TO_DISK;
     static const bool DEF_DISTRIBUTE_SEQUENCES;
     static const bool DEF_USE_LENGTH_FILTER;
     static const bool DEF_USE_ITERATOR;
@@ -95,6 +98,7 @@ public:
     size_t memory_sequences; /**< memory budget for sequence database */
     vector<string> skip_prefixes; /**< buckets to skip */
     bool output_all;    /**< whether to output all results instead of only edges */
+    bool output_to_disk;/**< whether to write results to disk (no==debugging) */
     bool distribute_sequences;/**< whether to allow sequence DB to distribute */
     bool use_length_filter; /**< whether to skip obviously bad alignments */
     bool use_iterator;  /**< whether to use tascel iterator */
