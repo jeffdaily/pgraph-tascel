@@ -179,7 +179,3 @@
 # define _Restrict
 # define __restrict__
 #endif
-
-#if !HAVE_PTHREAD_BARRIER_T
-#include "pthread_fixes.h"
-#endif
