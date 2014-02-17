@@ -9,11 +9,8 @@
 #include <mpi.h>
 #include <tascel.h>
 #include <tascel/UniformTaskCollection.h>
-#ifdef USE_ITER
 #include <tascel/UniformTaskCollIter.h>
-#else
 #include <tascel/UniformTaskCollectionSplit.h>
-#endif
 #if THREADED
 #include "tascelx.hpp"
 #endif
@@ -46,9 +43,9 @@
 #include "SequenceDatabase.hpp"
 #if HAVE_ARMCI
 #include "SequenceDatabaseArmci.hpp"
-#else
-#include "SequenceDatabaseReplicated.hpp"
 #endif
+#include "SequenceDatabaseReplicated.hpp"
+#include "Stats.hpp"
 #define printf(...) fprintf(stdout, __VA_ARGS__); fflush(stdout);
 
 using namespace std;
@@ -56,20 +53,20 @@ using namespace tascel;
 using namespace pgraph;
 
 
-#ifdef USE_ITER
 typedef struct {
     unsigned long id;
-} task_description;
+} task_description_iter;
+
 void createTaskFn(void *tsk, int tsk_size, TaskIndex tidx) {
-    assert(tsk_size == sizeof(task_description));
+    assert(tsk_size == sizeof(task_description_iter));
     *(unsigned long*)tsk = tidx;
 }
-#else
+
+
 typedef struct {
     unsigned long id1;
     unsigned long id2;
 } task_description;
-#endif
 
 
 typedef struct {
@@ -97,16 +94,11 @@ static string get_edges_filename(int rank)
 }
 
 
-static void alignment_task(
-        UniformTaskCollection * /*utc*/,
-        void *bigd, int /*bigd_len*/,
-        void *pldata, int /*pldata_len*/,
-        vector<void *> /*data_bufs*/,
-        int thd)
+static void align(
+    unsigned long seq_id[2],
+    local_data_t *local_data,
+    int thd)
 {
-    task_description *desc = (task_description*)bigd;
-    local_data_t *local_data = (local_data_t*)pldata;
-    unsigned long seq_id[2];
     bool is_edge_answer = false;
     double t = 0;
     double tt = 0;
@@ -129,15 +121,6 @@ static void alignment_task(
 
     tt = MPI_Wtime();
 
-#ifdef USE_ITER
-    t = MPI_Wtime();
-    k_combination2(desc->id, seq_id);
-    t = MPI_Wtime() - t;
-    stats[thd].kcomb_times_tot += t;
-#else
-    seq_id[0] = desc->id1;
-    seq_id[1] = desc->id2;
-#endif
     Sequence &s1 = (*sequences)[seq_id[0]];
     Sequence &s2 = (*sequences)[seq_id[1]];
     unsigned long s1Len = s1.get_sequence_length();
@@ -187,7 +170,46 @@ static void alignment_task(
 }
 
 
-unsigned long populate_tasks(
+static void alignment_task_iter(
+        UniformTaskCollection * /*utc*/,
+        void *bigd, int /*bigd_len*/,
+        void *pldata, int /*pldata_len*/,
+        vector<void *> /*data_bufs*/,
+        int thd)
+{
+    task_description_iter *desc = (task_description_iter*)bigd;
+    local_data_t *local_data = (local_data_t*)pldata;
+    unsigned long seq_id[2];
+    AlignStats *stats = local_data->stats;
+    double t = 0;
+
+    t = MPI_Wtime();
+    k_combination2(desc->id, seq_id);
+    t = MPI_Wtime() - t;
+    stats[thd].kcomb_times_tot += t;
+
+    align(seq_id, local_data, thd);
+}
+
+
+static void alignment_task(
+        UniformTaskCollection * /*utc*/,
+        void *bigd, int /*bigd_len*/,
+        void *pldata, int /*pldata_len*/,
+        vector<void *> /*data_bufs*/,
+        int thd)
+{
+    task_description *desc = (task_description*)bigd;
+    local_data_t *local_data = (local_data_t*)pldata;
+    unsigned long seq_id[2];
+    seq_id[0] = desc->id1;
+    seq_id[1] = desc->id2;
+
+    align(seq_id, local_data, thd);
+}
+
+
+unsigned long populate_tasks_iter(
         UniformTaskCollection **utcs, const TaskCollProps &props,
         unsigned long ntasks, unsigned long tasks_per_worker, int worker)
 {
@@ -201,31 +223,54 @@ unsigned long populate_tasks(
         upper_limit += remainder;
     }
 
-#ifdef USE_ITER
     --upper_limit;
     utcs[worker] = new UniformTaskCollIter(props, createTaskFn, lower_limit, upper_limit, worker);
     return upper_limit-lower_limit;
-#else
+}
+
+
+unsigned long populate_tasks(
+        UniformTaskCollection **utcs, const TaskCollProps &props,
+        unsigned long ntasks, unsigned long tasks_per_worker, int worker,
+        AlignStats *stats)
+{
+    int wrank = trank(worker);
+    unsigned long lower_limit = wrank*tasks_per_worker;
+    unsigned long upper_limit = lower_limit + tasks_per_worker;
+    unsigned long remainder = ntasks % (nprocs*NUM_WORKERS);
+    double t;
+
+    /* if I'm the last worker, add the remainder of the tasks */
+    if (wrank == nprocs*NUM_WORKERS-1) {
+        upper_limit += remainder;
+    }
+
     task_description desc;
     unsigned long count = 0;
     unsigned long i;
     unsigned long seq_id[2];
     utcs[worker] = new UniformTaskCollectionSplit(props, worker);
 
+
+    t = MPI_Wtime();
     k_combination(lower_limit, 2, seq_id);
+    t = MPI_Wtime() - t;
+    stats[worker].kcomb_times_tot += t;
     for (i=lower_limit; i<upper_limit; ++i) {
         desc.id1 = seq_id[0];
         desc.id2 = seq_id[1];
 #if DEBUG
         cout << wrank << " added " << seq_id[0] << "," << seq_id[1] << endl;
 #endif
+        t = MPI_Wtime();
         next_combination(2, seq_id);
+        t = MPI_Wtime() - t;
+        stats[worker].kcomb_times_tot += t;
         utcs[worker]->addTask(&desc, sizeof(desc));
         ++count;
     }
 
     return count;
-#endif
 }
 
 
@@ -293,13 +338,19 @@ int main(int argc, char **argv)
         cout << "----------------------------------------------" << endl;
     }
 
+    if (parameters->distribute_sequences) {
 #if HAVE_ARMCI
-    sequences = new SequenceDatabaseArmci(all_argv[1],
-            parameters->memory_sequences, pgraph::comm, '\0');
+        sequences = new SequenceDatabaseArmci(all_argv[1],
+                parameters->memory_sequences, pgraph::comm, '\0');
 #else
-    sequences = new SequenceDatabaseReplicated(all_argv[1],
-            parameters->memory_sequences, pgraph::comm, '\0');
+        cerr << "config file specified to distribute sequences, "
+            "but no implementation exists" << endl;
 #endif
+    }
+    else {
+        sequences = new SequenceDatabaseReplicated(all_argv[1],
+                parameters->memory_sequences, pgraph::comm, '\0');
+    }
 
     local_data->sequences = sequences;
     local_data->tbl = new cell_t**[NUM_WORKERS];
@@ -335,58 +386,66 @@ int main(int argc, char **argv)
     MPI_Barrier(pgraph::comm);
 
     /* the tascel part */
-    double populate_times[NUM_WORKERS];
-    unsigned long count[NUM_WORKERS];
+    vector<double> populate_time(NUM_WORKERS, 0.0);
+    vector<double> populate_count(NUM_WORKERS, 0.0);
     for (int worker=0; worker<NUM_WORKERS; ++worker)
     {
-        TslFuncRegTbl *frt = new TslFuncRegTbl();
-        TslFunc tf = frt->add(alignment_task);
+        TslFuncRegTbl *frt = NULL;
+        TslFunc tf;
         TaskCollProps props;
+        size_t taskSize = 0;
+
+        frt = new TslFuncRegTbl;
+        if (parameters->use_iterator) {
+            tf = frt->add(alignment_task_iter);
+            taskSize = sizeof(task_description_iter);
+        }
+        else {
+            tf = frt->add(alignment_task);
+            taskSize = sizeof(task_description);
+        }
 
         props.functions(tf, frt)
-            .taskSize(sizeof(task_description))
+            .taskSize(taskSize)
             .maxTasks(max_tasks_per_worker)
             .localData(local_data, sizeof(void*));
-        populate_times[worker] = MPI_Wtime();
-        count[worker] = populate_tasks(utcs, props, ntasks, tasks_per_worker, worker);
-        populate_times[worker] = MPI_Wtime() - populate_times[worker];
+        populate_time[worker] = MPI_Wtime();
+        if (parameters->use_iterator) {
+            populate_count[worker] = populate_tasks_iter(
+                    utcs, props, ntasks, tasks_per_worker, worker);
+        }
+        else {
+            populate_count[worker] = populate_tasks(
+                    utcs, props, ntasks, tasks_per_worker, worker, stats);
+        }
+        populate_time[worker] = MPI_Wtime() - populate_time[worker];
     }
-#if DEBUG
-    double *g_populate_times = new double[nprocs*NUM_WORKERS];
-    MPI_CHECK(MPI_Gather(populate_times, NUM_WORKERS, MPI_DOUBLE,
-                g_populate_times, NUM_WORKERS, MPI_DOUBLE, 0, pgraph::comm));
+#if DEBUG || 1
+    mpix_gather(populate_time, 0, pgraph::comm);
+    mpix_gather(populate_count, 0, pgraph::comm);
     if (0 == rank) {
-        double tally = 0;
-        cout << " pid populate_time" << endl;
-        for(int i=0; i<nprocs*NUM_WORKERS; i++) {
-            tally += g_populate_times[i];
-            cout << std::setw(4) << std::right << i
-                << setw(14) << fixed << g_populate_times[i] << endl;
+        Stats times;
+        Stats counts;
+        cout << right;
+        cout << setw(5) << "pid";
+        cout << setw(15) << "populate_time";
+        cout << setw(15) << "populate_count";
+        cout << endl;
+        for (size_t i=0; i<populate_time.size(); ++i) {
+            times.push_back(populate_time[i]);
+            counts.push_back(populate_count[i]);
+            cout << setw(5) << std::right << i
+                << setw(15) << fixed << populate_time[i] 
+                << setw(15) << fixed << populate_count[i]
+                << endl;
         }
         cout << "==============================================" << endl;
-        cout << setw(4) << right << "T" << setw(14) << fixed << tally << endl;
+        cout << "       " << Stats::header() << endl;
+        cout << "Times  " << times << endl;
+        cout << "Counts " << counts << endl;
     }
-    delete [] g_populate_times;
-#endif
-#if DEBUG
-    unsigned long *task_counts = new unsigned long[nprocs*NUM_WORKERS];
-    MPI_CHECK(MPI_Gather(count, NUM_WORKERS, MPI_UNSIGNED_LONG,
-                task_counts, NUM_WORKERS, MPI_UNSIGNED_LONG, 0, pgraph::comm));
-    if (0 == rank) {
-        unsigned long tally = 0;
-        cout << " pid        ntasks" << endl;
-        for(int i=0; i<nprocs*NUM_WORKERS; i++) {
-            tally += task_counts[i];
-            cout << std::setw(4) << std::right << i
-                << setw(14) << task_counts[i] << endl;
-        }
-        cout << "==============================================" << endl;
-        cout << setw(4) << right << "T" << setw(14) << tally << endl;
-        if (tally != ntasks) {
-            cout << "tally != ntasks\t" << tally << " != " << ntasks << endl;
-        }
-    }
-    delete [] task_counts;
+    populate_time.clear();
+    populate_count.clear();
 #endif
 
     amBarrier();

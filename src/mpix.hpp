@@ -263,6 +263,26 @@ void mpix_alltoall(vector<T> &sendbuf, vector<T> &recvbuf, MPI_Comm comm = MPI_C
                 &recvbuf[0], count, datatype, comm));
 }
 
+template <class T>
+void mpix_gather(vector<T> &buf, int root=0, MPI_Comm comm=MPI_COMM_WORLD)
+{
+    int rank = mpix_rank(comm);
+    int size = mpix_size(comm);
+    MPI_Datatype datatype = mpix_get_mpi_datatype(buf[0]);
+
+    if (rank == root) {
+        vector<T> buf_copy(buf);
+        buf.resize(size * buf_copy.size());
+
+        MPI_CHECK(MPI_Gather(&buf_copy[0], buf_copy.size(), datatype,
+                    &buf[0], buf_copy.size(), datatype, root, comm));
+    }
+    else {
+        MPI_CHECK(MPI_Gather(&buf[0], buf.size(), datatype,
+                    NULL, 0, datatype, root, comm));
+    }
+}
+
 /* overloads of mpix_print_sync */
 void mpix_print_sync(const string &name, const vector<string> &what, MPI_Comm comm=MPI_COMM_WORLD);
 void mpix_print_sync(const string &name, const string &what, MPI_Comm comm=MPI_COMM_WORLD);
