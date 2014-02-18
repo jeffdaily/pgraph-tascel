@@ -160,13 +160,11 @@ static void align(
             ++stats[thd].edge_counts;
         }
         t = MPI_Wtime() - t;
-        stats[thd].align_times_tot += t;
-        stats[thd].calc_min(t);
-        stats[thd].calc_max(t);
+        stats[thd].time_align.push_back(t);
     }
 
     tt = MPI_Wtime() - tt;
-    stats[thd].total_times_tot += tt;
+    stats[thd].time_total += tt;
 }
 
 
@@ -186,7 +184,7 @@ static void alignment_task_iter(
     t = MPI_Wtime();
     k_combination2(desc->id, seq_id);
     t = MPI_Wtime() - t;
-    stats[thd].kcomb_times_tot += t;
+    stats[thd].time_kcomb += t;
 
     align(seq_id, local_data, thd);
 }
@@ -223,9 +221,9 @@ unsigned long populate_tasks_iter(
         upper_limit += remainder;
     }
 
-    --upper_limit;
+    --upper_limit; /* inclusive range */
     utcs[worker] = new UniformTaskCollIter(props, createTaskFn, lower_limit, upper_limit, worker);
-    return upper_limit-lower_limit;
+    return upper_limit-lower_limit+1;
 }
 
 
@@ -255,7 +253,7 @@ unsigned long populate_tasks(
     t = MPI_Wtime();
     k_combination(lower_limit, 2, seq_id);
     t = MPI_Wtime() - t;
-    stats[worker].kcomb_times_tot += t;
+    stats[worker].time_kcomb += t;
     for (i=lower_limit; i<upper_limit; ++i) {
         desc.id1 = seq_id[0];
         desc.id2 = seq_id[1];
@@ -265,7 +263,7 @@ unsigned long populate_tasks(
         t = MPI_Wtime();
         next_combination(2, seq_id);
         t = MPI_Wtime() - t;
-        stats[worker].kcomb_times_tot += t;
+        stats[worker].time_kcomb += t;
         utcs[worker]->addTask(&desc, sizeof(desc));
         ++count;
     }
@@ -426,6 +424,8 @@ int main(int argc, char **argv)
     if (0 == rank) {
         Stats times;
         Stats counts;
+        int p = cout.precision();
+        cout << setprecision(2);
         cout << right;
         cout << setw(5) << "pid";
         cout << setw(15) << "populate_time";
@@ -443,6 +443,7 @@ int main(int argc, char **argv)
         cout << "       " << Stats::header() << endl;
         cout << "Times  " << times << endl;
         cout << "Counts " << counts << endl;
+        cout.precision(p);
     }
     populate_time.clear();
     populate_count.clear();
@@ -476,14 +477,39 @@ int main(int argc, char **argv)
 
     /* synchronously print alignment stats all from process 0 */
     if (0 == rank) {
-        AlignStats totals;
-        cout << " pid" << rstats[0].getHeader() << endl;      
+        Stats edge_counts;
+        Stats align_counts;
+        Stats align_skipped;
+        Stats time_align;
+        Stats time_kcomb;
+        Stats time_total;
+        Stats work;
+        Stats work_skipped;
+        int p = cout.precision();
+        cout << setprecision(2);
+        cout << right << setw(5) << "pid" << AlignStats::header() << endl;      
         for(int i=0; i<nprocs*NUM_WORKERS; i++) {
-            totals += rstats[i];
-            cout << std::setw(4) << std::right << i << rstats[i] << endl;
+            edge_counts.push_back(rstats[i].edge_counts);
+            align_counts.push_back(rstats[i].align_counts);
+            align_skipped.push_back(rstats[i].align_skipped);
+            time_align.push_back(rstats[i].time_align.sum());
+            time_kcomb.push_back(rstats[i].time_kcomb);
+            time_total.push_back(rstats[i].time_total);
+            work.push_back(rstats[i].work);
+            work_skipped.push_back(rstats[i].work_skipped);
+            cout << right << setw(5) << i << rstats[i] << endl;
         }
+        cout << setprecision(1);
         cout << "==============================================" << endl;
-        cout << setw(4) << right << "TOT" << totals << endl;
+        cout << "           " << Stats::header() << endl;
+        cout << "      Edges" << edge_counts << endl;
+        cout << " Alignments" << align_counts << endl;
+        cout << "  AlignSkip" << align_skipped << endl;
+        cout << "     TAlign" << time_align << endl;
+        cout << "     TTotal" << time_total << endl;
+        cout << "       Work" << work << endl;
+        cout << "WorkSkipped" << work_skipped << endl;
+        cout.precision(p);
     }
     delete [] rstats;
     rstats=NULL;
@@ -501,7 +527,7 @@ int main(int argc, char **argv)
     /* synchronously print stealing stats all from process 0 */
     if (0 == rank) {
         StealingStats tstt;
-        cout<<" pid "<<rstt[0].formatString()<<endl;      
+        cout<<" pid"<<rstt[0].formatString()<<endl;      
         for(int i=0; i<nprocs*NUM_WORKERS; i++) {
             tstt += rstt[i];
             cout<<std::setw(4)<<std::right<<i<<rstt[i]<<endl;

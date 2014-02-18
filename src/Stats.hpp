@@ -14,6 +14,8 @@
 #include <sstream>
 #include <string>
 
+#define WIDTH 15
+
 namespace pgraph {
 
 class Stats
@@ -61,30 +63,30 @@ class Stats
 
         friend ::std::ostream& operator << (::std::ostream &os, const Stats &obj);
 
-        static ::std::string header() {
+        static ::std::string header(const string &prefix="") {
             ostringstream os;
 
+            //os << ::std::right;
+            //os << ::std::setw(WIDTH);
+            //os << prefix + "Size";
             os << ::std::right;
-            os << ::std::setw(15);
-            os << "Size";
+            os << ::std::setw(WIDTH);
+            os << prefix + "Mean";
+            //os << ::std::right;
+            //os << ::std::setw(WIDTH);
+            //os << prefix + "Variance";
             os << ::std::right;
-            os << ::std::setw(15);
-            os << "Mean";
+            os << ::std::setw(WIDTH);
+            os << prefix + "StdDev";
             os << ::std::right;
-            os << ::std::setw(15);
-            os << "Variance";
+            os << ::std::setw(WIDTH);
+            os << prefix + "Sum";
             os << ::std::right;
-            os << ::std::setw(15);
-            os << "StdDev";
+            os << ::std::setw(WIDTH);
+            os << prefix + "Min";
             os << ::std::right;
-            os << ::std::setw(15);
-            os << "Sum";
-            os << ::std::right;
-            os << ::std::setw(15);
-            os << "Min";
-            os << ::std::right;
-            os << ::std::setw(15);
-            os << "Max";
+            os << ::std::setw(WIDTH);
+            os << prefix + "Max";
 
             return os.str();
         }
@@ -101,35 +103,34 @@ class Stats
 inline ::std::ostream& operator << (::std::ostream &os, const Stats &obj)
 {
     ::std::streamsize width = os.width();
-    ::std::streamsize precision = os.precision();
     ::std::ios_base::fmtflags flags = os.flags();
 
     os << ::std::fixed;
     os << ::std::showpoint;
     os << ::std::right;
-    os << ::std::setprecision(2);
 
-    os << ::std::setw(15);
-    os << obj.size();
-    os << ::std::setw(15);
+    //os << ::std::setw(WIDTH);
+    //os << obj.size();
+    os << ::std::setw(WIDTH);
     os << obj.mean();
-    os << ::std::setw(15);
-    os << obj.variance();
-    os << ::std::setw(15);
+    //os << ::std::setw(WIDTH);
+    //os << obj.variance();
+    os << ::std::setw(WIDTH);
     os << obj.stddev();
-    os << ::std::setw(15);
+    os << ::std::setw(WIDTH);
     os << obj.sum();
-    os << ::std::setw(15);
+    os << ::std::setw(WIDTH);
     os << obj.min();
-    os << ::std::setw(15);
+    os << ::std::setw(WIDTH);
     os << obj.max();
 
     os.width(width);
-    os.precision(precision);
     os.flags(flags);
 
     return os;
 }
+
+#undef WIDTH
 
 };
 
