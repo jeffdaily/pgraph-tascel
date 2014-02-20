@@ -23,6 +23,7 @@
 #include "SequenceDatabaseReplicated.hpp"
 
 using ::std::cerr;
+using ::std::cout;
 using ::std::endl;
 using ::std::size_t;
 using ::std::string;
@@ -55,15 +56,15 @@ SequenceDatabaseReplicated::SequenceDatabaseReplicated(
     comm_size = mpix_size(comm);
     file_size = mpix_get_file_size(file_name, comm);
 
-    mpix_print_zero("memory budget", budget, comm);
-    mpix_print_zero("file size", file_size, comm);
+    if (0 == comm_rank) {
+        cout << "sequence file size is " << file_size << endl;
+    }
     assert(MPI_Offset(budget) >= file_size);
 
     /* read directly into a local buffer */
     local_data = new char[file_size+2]; /* +2 for last delim and null */
     local_data[file_size] = delimiter;
     local_data[file_size+1] = '\0';
-    mpix_print_zero("allocated file buffer", comm);
 
     mpix_read_file(file_name, local_data, file_size_out, 1073741824, comm);
     assert(file_size == file_size_out);
@@ -74,7 +75,10 @@ SequenceDatabaseReplicated::SequenceDatabaseReplicated(
     local_data[new_size+1] = '\0';
     assert(!local_cache.empty());
     assert(local_cache.size() > 0);
-    mpix_print_zero("packed and indexed file", comm);
+
+    if (0 == comm_rank) {
+        cout << "longest sequence in file is " << _longest << endl;
+    }
 }
 
 
@@ -158,8 +162,6 @@ void SequenceDatabaseReplicated::pack_and_index_fasta(char *buffer,
     assert(!local_cache.empty());
 
     new_size = w;
-
-    mpix_print_zero("max_seq_size", _longest, comm);
 }
 
 }; /* namespace pgraph */

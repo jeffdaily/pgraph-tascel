@@ -257,9 +257,6 @@ unsigned long populate_tasks(
     for (i=lower_limit; i<upper_limit; ++i) {
         desc.id1 = seq_id[0];
         desc.id2 = seq_id[1];
-#if DEBUG
-        cout << wrank << " added " << seq_id[0] << "," << seq_id[1] << endl;
-#endif
         t = MPI_Wtime();
         next_combination(2, seq_id);
         t = MPI_Wtime() - t;
@@ -301,39 +298,43 @@ int main(int argc, char **argv)
     /* MPI standard does not guarantee all procs receive argc and argv */
     mpix_bcast_argv(argc, argv, all_argv, pgraph::comm);
 
-#if DEBUG
     /* print the command line arguments */
-    for (int i=0; i<nprocs; ++i) {
-        if (i == rank) {
-            for (size_t j=0; j<all_argv.size(); ++j) {
-                printf("[%d] argv[%zd]=%s\n", rank, j, all_argv[j].c_str());
-            }
+    if (0 == rank) {
+        ostringstream header;
+        header.fill('-');
+        header << left << setw(79) << "--- Command Line ";
+        cout << header.str() << endl;
+        for (size_t j=0; j<all_argv.size(); ++j) {
+            cout << "argv[" << j << "]='" << all_argv[j] << "'" << endl;
         }
-        MPI_Barrier(pgraph::comm);
     }
-#endif
 
     /* sanity check that we got the correct number of arguments */
     if (all_argv.size() <= 2 || all_argv.size() >= 4) {
         if (0 == rank) {
             if (all_argv.size() <= 1) {
-                printf("missing input file\n");
+                cout << "missing input file" << endl;
             }
             else if (all_argv.size() >= 4) {
-                printf("too many arguments\n");
+                cout << "too many arguments" << endl;
             }
-            printf("usage: align sequence_file <config_file>\n");
+            cout << "usage: align sequence_file <config_file>" << endl;
         }
+        TascelConfig::finalize();
         pgraph::finalize();
         return 1;
     }
     else if (all_argv.size() >= 3) {
         parameters->parse(all_argv[2].c_str(), pgraph::comm);
     }
-    if (0 == trank(0)) {
-        cout << "----------------------------------------------" << endl;
+
+    /* print parameters */
+    if (0 == rank) {
+        ostringstream header;
+        header.fill('-');
+        header << left << setw(79) << "-- Parameters ";
+        cout << header.str() << endl;
         cout << *parameters << endl;
-        cout << "----------------------------------------------" << endl;
     }
 
     if (parameters->distribute_sequences) {
@@ -341,8 +342,13 @@ int main(int argc, char **argv)
         sequences = new SequenceDatabaseArmci(all_argv[1],
                 parameters->memory_sequences, pgraph::comm, '\0');
 #else
-        cerr << "config file specified to distribute sequences, "
-            "but no implementation exists" << endl;
+        if (0 == rank) {
+            cerr << "config file specified to distribute sequences, "
+                "but no implementation exists" << endl;
+        }
+        TascelConfig::finalize();
+        pgraph::finalize();
+        return 1;
 #endif
     }
     else {
@@ -362,20 +368,22 @@ int main(int argc, char **argv)
 
     /* how many combinations of sequences are there? */
     nCk = binomial_coefficient(sequences->size(), 2);
-    if (0 == trank(0)) {
-        printf("brute force %lu C 2 has %lu combinations\n",
-                sequences->size(), nCk);
+    if (0 == rank) {
+        cout << "brute force "
+            << sequences->size()
+            << " choose 2 has "
+            << nCk
+            << " combinations"
+            << endl;
     }
 
-    unsigned long nalignments = nCk;
-    unsigned long ntasks = nalignments;
+    unsigned long ntasks = nCk;
     unsigned long global_num_workers = nprocs*NUM_WORKERS;
     unsigned long tasks_per_worker = ntasks / global_num_workers;
     unsigned long max_tasks_per_worker = ntasks / global_num_workers;
     max_tasks_per_worker += ntasks % global_num_workers;
     max_tasks_per_worker *= 10;
-    if (0 == trank(0)) {
-        printf("nalignments=%lu\n", nalignments);
+    if (0 == rank) {
         printf("ntasks=%lu\n", ntasks);
         printf("global_num_workers=%lu\n", global_num_workers);
         printf("tasks_per_worker=%lu\n", tasks_per_worker);
@@ -418,36 +426,42 @@ int main(int argc, char **argv)
         }
         populate_time[worker] = MPI_Wtime() - populate_time[worker];
     }
-#if DEBUG || 1
-    mpix_gather(populate_time, 0, pgraph::comm);
-    mpix_gather(populate_count, 0, pgraph::comm);
-    if (0 == rank) {
-        Stats times;
-        Stats counts;
-        int p = cout.precision();
-        cout << setprecision(2);
-        cout << right;
-        cout << setw(5) << "pid";
-        cout << setw(15) << "populate_time";
-        cout << setw(15) << "populate_count";
-        cout << endl;
-        for (size_t i=0; i<populate_time.size(); ++i) {
-            times.push_back(populate_time[i]);
-            counts.push_back(populate_count[i]);
-            cout << setw(5) << std::right << i
-                << setw(15) << fixed << populate_time[i] 
-                << setw(15) << fixed << populate_count[i]
-                << endl;
+
+    if (parameters->print_stats) {
+        mpix_gather(populate_time, 0, pgraph::comm);
+        mpix_gather(populate_count, 0, pgraph::comm);
+        if (0 == rank) {
+            Stats times;
+            Stats counts;
+            int p = cout.precision();
+            char f = cout.fill();
+            cout << setfill('-');
+            cout << left;
+            cout << setw(79) << "--- Task Population Statistics" << endl;
+            cout << setfill(f);
+            cout << setprecision(2);
+            cout << right;
+            cout << setw(5) << "pid";
+            cout << setw(15) << "populate_time";
+            cout << setw(15) << "populate_count";
+            cout << endl;
+            for (size_t i=0; i<populate_time.size(); ++i) {
+                times.push_back(populate_time[i]);
+                counts.push_back(populate_count[i]);
+                cout << setw(5) << std::right << i
+                    << setw(15) << fixed << populate_time[i] 
+                    << setw(15) << fixed << populate_count[i]
+                    << endl;
+            }
+            cout << string(79, '=') << endl;
+            cout << "       " << Stats::header() << endl;
+            cout << "Times  " << times << endl;
+            cout << "Counts " << counts << endl;
+            cout.precision(p);
         }
-        cout << "==============================================" << endl;
-        cout << "       " << Stats::header() << endl;
-        cout << "Times  " << times << endl;
-        cout << "Counts " << counts << endl;
-        cout.precision(p);
     }
     populate_time.clear();
     populate_count.clear();
-#endif
 
     amBarrier();
 
@@ -470,74 +484,77 @@ int main(int argc, char **argv)
     amBarrier();
     MPI_Barrier(pgraph::comm);
 
-    AlignStats * rstats = new AlignStats[NUM_WORKERS*nprocs];
-    MPI_Gather(stats, sizeof(AlignStats)*NUM_WORKERS, MPI_CHAR, 
-	       rstats, sizeof(AlignStats)*NUM_WORKERS, MPI_CHAR, 
-	       0, pgraph::comm);
-
-    /* synchronously print alignment stats all from process 0 */
-    if (0 == rank) {
-        Stats edge_counts;
-        Stats align_counts;
-        Stats align_skipped;
-        Stats time_align;
-        Stats time_kcomb;
-        Stats time_total;
-        Stats work;
-        Stats work_skipped;
-        int p = cout.precision();
-        cout << setprecision(2);
-        cout << right << setw(5) << "pid" << AlignStats::header() << endl;      
-        for(int i=0; i<nprocs*NUM_WORKERS; i++) {
-            edge_counts.push_back(rstats[i].edge_counts);
-            align_counts.push_back(rstats[i].align_counts);
-            align_skipped.push_back(rstats[i].align_skipped);
-            time_align.push_back(rstats[i].time_align.sum());
-            time_kcomb.push_back(rstats[i].time_kcomb);
-            time_total.push_back(rstats[i].time_total);
-            work.push_back(rstats[i].work);
-            work_skipped.push_back(rstats[i].work_skipped);
-            cout << right << setw(5) << i << rstats[i] << endl;
+    if (parameters->print_stats) {
+        AlignStats * rstats = new AlignStats[NUM_WORKERS*nprocs];
+        MPI_Gather(stats, sizeof(AlignStats)*NUM_WORKERS, MPI_CHAR, 
+                rstats, sizeof(AlignStats)*NUM_WORKERS, MPI_CHAR, 
+                0, pgraph::comm);
+        /* synchronously print alignment stats all from process 0 */
+        if (0 == rank) {
+            Stats edge_counts;
+            Stats align_counts;
+            Stats align_skipped;
+            Stats time_align;
+            Stats time_kcomb;
+            Stats time_total;
+            Stats work;
+            Stats work_skipped;
+            int p = cout.precision();
+            cout << setprecision(2);
+            cout << right << setw(5) << "pid" << AlignStats::header() << endl;
+            for(int i=0; i<nprocs*NUM_WORKERS; i++) {
+                edge_counts.push_back(rstats[i].edge_counts);
+                align_counts.push_back(rstats[i].align_counts);
+                align_skipped.push_back(rstats[i].align_skipped);
+                time_align.push_back(rstats[i].time_align.sum());
+                time_kcomb.push_back(rstats[i].time_kcomb);
+                time_total.push_back(rstats[i].time_total);
+                work.push_back(rstats[i].work);
+                work_skipped.push_back(rstats[i].work_skipped);
+                cout << right << setw(5) << i << rstats[i] << endl;
+            }
+            cout << setprecision(1);
+            cout << string(79, '=') << endl;
+            cout << "           " << Stats::header() << endl;
+            cout << "      Edges" << edge_counts << endl;
+            cout << " Alignments" << align_counts << endl;
+            cout << "  AlignSkip" << align_skipped << endl;
+            cout << "     TAlign" << time_align << endl;
+            cout << "     TTotal" << time_total << endl;
+            cout << "       Work" << work << endl;
+            cout << "WorkSkipped" << work_skipped << endl;
+            cout.precision(p);
         }
-        cout << setprecision(1);
-        cout << "==============================================" << endl;
-        cout << "           " << Stats::header() << endl;
-        cout << "      Edges" << edge_counts << endl;
-        cout << " Alignments" << align_counts << endl;
-        cout << "  AlignSkip" << align_skipped << endl;
-        cout << "     TAlign" << time_align << endl;
-        cout << "     TTotal" << time_total << endl;
-        cout << "       Work" << work << endl;
-        cout << "WorkSkipped" << work_skipped << endl;
-        cout.precision(p);
-    }
-    delete [] rstats;
-    rstats=NULL;
-
-    StealingStats *stt = new StealingStats[NUM_WORKERS];
-    for(int i=0; i<NUM_WORKERS; i++) {
-        stt[i] = utcs[i]->getStats();
+        delete [] rstats;
     }
 
-    StealingStats * rstt = new StealingStats[NUM_WORKERS*nprocs];
-    MPI_Gather(stt, sizeof(StealingStats)*NUM_WORKERS, MPI_CHAR, 
-            rstt, sizeof(StealingStats)*NUM_WORKERS, MPI_CHAR, 
-            0, pgraph::comm);
+    if (parameters->print_stats) {
+        StealingStats *stt = new StealingStats[NUM_WORKERS];
+        StealingStats * rstt = new StealingStats[NUM_WORKERS*nprocs];
 
-    /* synchronously print stealing stats all from process 0 */
-    if (0 == rank) {
-        StealingStats tstt;
-        cout<<" pid"<<rstt[0].formatString()<<endl;      
-        for(int i=0; i<nprocs*NUM_WORKERS; i++) {
-            tstt += rstt[i];
-            cout<<std::setw(4)<<std::right<<i<<rstt[i]<<endl;
+        for(int i=0; i<NUM_WORKERS; i++) {
+            stt[i] = utcs[i]->getStats();
         }
-        cout<<"=============================================="<<endl;
-        cout<<"TOT "<<tstt<<endl;
+
+        MPI_Gather(stt, sizeof(StealingStats)*NUM_WORKERS, MPI_CHAR, 
+                rstt, sizeof(StealingStats)*NUM_WORKERS, MPI_CHAR, 
+                0, pgraph::comm);
+
+        /* synchronously print stealing stats all from process 0 */
+        if (0 == rank) {
+            StealingStats tstt;
+            cout<<" pid"<<rstt[0].formatString()<<endl;      
+            for(int i=0; i<nprocs*NUM_WORKERS; i++) {
+                tstt += rstt[i];
+                cout<<std::setw(4)<<std::right<<i<<rstt[i]<<endl;
+            }
+            cout << string(79, '=') << endl;
+            cout<<"TOT "<<tstt<<endl;
+        }
+
+        delete [] rstt;
+        delete [] stt;
     }
-    delete [] rstt;
-    rstt=NULL;
-    delete [] stt;
 
     amBarrier();
     MPI_Barrier(pgraph::comm);

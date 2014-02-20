@@ -44,7 +44,7 @@ public:
     static const string KEY_DISTRIBUTE_SEQUENCES;
     static const string KEY_USE_LENGTH_FILTER;
     static const string KEY_USE_ITERATOR;
-    static const string KEY_;
+    static const string KEY_PRINT_STATS;
 
     /* Defaults */
     static const int DEF_ALIGN_OVER_LONGER_SEQUENCE;
@@ -62,6 +62,7 @@ public:
     static const bool DEF_DISTRIBUTE_SEQUENCES;
     static const bool DEF_USE_LENGTH_FILTER;
     static const bool DEF_USE_ITERATOR;
+    static const bool DEF_PRINT_STATS;
 
     /**
      * Constructs empty (default) parameters.
@@ -102,6 +103,7 @@ public:
     bool distribute_sequences;/**< whether to allow sequence DB to distribute */
     bool use_length_filter; /**< whether to skip obviously bad alignments */
     bool use_iterator;  /**< whether to use tascel iterator */
+    bool print_stats;   /**< whether to print detailed timings */
 };
 
 ostream& operator<< (ostream &os, const Parameters &p);

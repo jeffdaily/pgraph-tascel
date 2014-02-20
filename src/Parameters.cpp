@@ -52,6 +52,7 @@ const string Parameters::KEY_OUTPUT_TO_DISK("OutputToDisk");
 const string Parameters::KEY_DISTRIBUTE_SEQUENCES("DistributeSequences");
 const string Parameters::KEY_USE_LENGTH_FILTER("UseLengthFilter");
 const string Parameters::KEY_USE_ITERATOR("UseIterator");
+const string Parameters::KEY_PRINT_STATS("PrintStats");
 /* Defaults */
 const int Parameters::DEF_ALIGN_OVER_LONGER_SEQUENCE(8);
 const int Parameters::DEF_MATCH_SIMILARITY(4);
@@ -68,6 +69,7 @@ const bool Parameters::DEF_OUTPUT_TO_DISK(true);
 const bool Parameters::DEF_DISTRIBUTE_SEQUENCES(false);
 const bool Parameters::DEF_USE_LENGTH_FILTER(true);
 const bool Parameters::DEF_USE_ITERATOR(false);
+const bool Parameters::DEF_PRINT_STATS(true);
 
 
 static size_t parse_memory_budget(const string& value)
@@ -143,6 +145,7 @@ Parameters::Parameters()
     , distribute_sequences(DEF_DISTRIBUTE_SEQUENCES)
     , use_length_filter(DEF_USE_LENGTH_FILTER)
     , use_iterator(DEF_USE_ITERATOR)
+    , print_stats(DEF_PRINT_STATS)
 {
 }
 
@@ -163,6 +166,7 @@ Parameters::Parameters(const char *parameters_file, MPI_Comm comm)
     , distribute_sequences(DEF_DISTRIBUTE_SEQUENCES)
     , use_length_filter(DEF_USE_LENGTH_FILTER)
     , use_iterator(DEF_USE_ITERATOR)
+    , print_stats(DEF_PRINT_STATS)
 {
     parse(parameters_file, comm);
 }
@@ -208,6 +212,8 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
                     DEF_USE_LENGTH_FILTER);
             use_iterator = config[KEY_USE_ITERATOR].as<bool>(
                     DEF_USE_ITERATOR);
+            print_stats = config[KEY_PRINT_STATS].as<bool>(
+                    DEF_PRINT_STATS);
 
             string val;
             val = config[KEY_MEMORY_WORKER].as<string>("");

@@ -216,12 +216,6 @@ MPI_Offset mpix_get_file_size(const string &file_name, MPI_Comm comm)
 
     /* the file_size is broadcast to all */
     mpix_bcast(file_size, 0, comm);
-#if 0
-    if (0 == rank) {
-        printf("file_size=%ld\n", file_size);
-    }
-#endif
-    mpix_print_sync("file_size", file_size, comm);
 
     return file_size;
 }
