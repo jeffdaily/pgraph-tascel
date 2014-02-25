@@ -17,6 +17,12 @@
 #include "constants.h"
 #include "csequence.h"
 
+using ::std::size_t;
+
+#ifndef SIZE_MAX
+#define SIZE_MAX ((size_t)-1)
+#endif
+
 namespace pgraph {
 
 /** power function for size_t */

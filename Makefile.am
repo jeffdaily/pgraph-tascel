@@ -40,54 +40,68 @@ noinst_LTLIBRARIES += libpgraph.la
 libpgraph_la_SOURCES =
 libpgraph_la_SOURCES += src/alignment.cpp
 libpgraph_la_SOURCES += src/alignment.hpp
+libpgraph_la_SOURCES += src/alignment_defs.hpp
 libpgraph_la_SOURCES += src/AlignStats.hpp
 libpgraph_la_SOURCES += src/blosum/blosum40.h
 libpgraph_la_SOURCES += src/blosum/blosum45.h
+libpgraph_la_SOURCES += src/blosum/blosum50.h
 libpgraph_la_SOURCES += src/blosum/blosum62.h
 libpgraph_la_SOURCES += src/blosum/blosum75.h
 libpgraph_la_SOURCES += src/blosum/blosum80.h
-libpgraph_la_SOURCES += src/blosum/blosum90.h
 libpgraph_la_SOURCES += src/Bootstrap.cpp
 libpgraph_la_SOURCES += src/Bootstrap.hpp
-libpgraph_la_SOURCES += src/bucket.cpp
-libpgraph_la_SOURCES += src/bucket.hpp
+#libpgraph_la_SOURCES += src/bucket.cpp
+#libpgraph_la_SOURCES += src/bucket.hpp
 libpgraph_la_SOURCES += src/combinations.c
 libpgraph_la_SOURCES += src/combinations.h
-libpgraph_la_SOURCES += src/constants.h
-libpgraph_la_SOURCES += src/csequence.c
-libpgraph_la_SOURCES += src/csequence.h
-libpgraph_la_SOURCES += src/io.cpp
-libpgraph_la_SOURCES += src/io.hpp
+#libpgraph_la_SOURCES += src/constants.h
+#libpgraph_la_SOURCES += src/csequence.c
+#libpgraph_la_SOURCES += src/csequence.h
+libpgraph_la_SOURCES += src/EdgeResult.hpp
+#libpgraph_la_SOURCES += src/fadd.hpp
+#libpgraph_la_SOURCES += src/io.cpp
+#libpgraph_la_SOURCES += src/io.hpp
 libpgraph_la_SOURCES += src/mpix.cpp
 libpgraph_la_SOURCES += src/mpix.hpp
+#libpgraph_la_SOURCES += src/param.cpp
+#libpgraph_la_SOURCES += src/param.hpp
 libpgraph_la_SOURCES += src/Parameters.cpp
 libpgraph_la_SOURCES += src/Parameters.hpp
-libpgraph_la_SOURCES += src/param.cpp
-libpgraph_la_SOURCES += src/param.hpp
 libpgraph_la_SOURCES += src/pthread_fixes.h
 libpgraph_la_SOURCES += src/Sequence.cpp
 libpgraph_la_SOURCES += src/Sequence.hpp
+libpgraph_la_SOURCES += src/SequenceDatabase.hpp
 libpgraph_la_SOURCES += src/SequenceDatabaseReplicated.cpp
 libpgraph_la_SOURCES += src/SequenceDatabaseReplicated.hpp
-libpgraph_la_SOURCES += src/SequenceDatabase.hpp
-libpgraph_la_SOURCES += src/stree.cpp
-libpgraph_la_SOURCES += src/stree.hpp
+libpgraph_la_SOURCES += src/SigSegvHandler.hpp
+libpgraph_la_SOURCES += src/Stats.hpp
+#libpgraph_la_SOURCES += src/stree.cpp
+#libpgraph_la_SOURCES += src/stree.hpp
+libpgraph_la_SOURCES += src/Suffix.hpp
 libpgraph_la_SOURCES += src/SuffixBuckets.cpp
 libpgraph_la_SOURCES += src/SuffixBuckets.hpp
+libpgraph_la_SOURCES += src/SuffixBucketsTascel.cpp
+libpgraph_la_SOURCES += src/SuffixBucketsTascel.hpp
 libpgraph_la_SOURCES += src/SuffixTree.cpp
 libpgraph_la_SOURCES += src/SuffixTree.hpp
-libpgraph_la_SOURCES += src/TreeStats.hpp
+libpgraph_la_SOURCES += src/tascelx.hpp
 libpgraph_la_SOURCES += src/timer.h
+libpgraph_la_SOURCES += src/TreeStats.hpp
+
 if HAVE_ARMCI
+libpgraph_la_SOURCES += src/SuffixBucketsArmci.cpp
+libpgraph_la_SOURCES += src/SuffixBucketsArmci.hpp
 libpgraph_la_SOURCES += src/SequenceDatabaseArmci.cpp
 libpgraph_la_SOURCES += src/SequenceDatabaseArmci.hpp
 endif
+
 if HAVE_SSE2
 libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.c
 libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.h
 libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.cpp
 libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h
 endif
+
 libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/anchor.h
 libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/binary.h
 libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/contrib/anchordict.h
@@ -180,43 +194,45 @@ libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/token.h
 
 bin_PROGRAMS =
 bin_PROGRAMS += apps/align
-bin_PROGRAMS += apps/align_garray
-bin_PROGRAMS += apps/align_iter
-bin_PROGRAMS += apps/align_iter_length_filter
-bin_PROGRAMS += apps/align_length_filter
-bin_PROGRAMS += apps/align_length_filter_noalign
-bin_PROGRAMS += apps/align_pairs
-bin_PROGRAMS += apps/align_tree
-bin_PROGRAMS += apps/align_tree_noalign
-bin_PROGRAMS += apps/align_tree_dumb_noalign
-bin_PROGRAMS += apps/align_tree_dup
-bin_PROGRAMS += apps/align_tree_dynamic
-bin_PROGRAMS += apps/align_tree_dynamic_dup
-bin_PROGRAMS += apps/align_tree_dynamic_callback
-bin_PROGRAMS += apps/align_tree_dynamic_callback_dup
-bin_PROGRAMS += apps/ccd
-bin_PROGRAMS += apps/ccd2
-bin_PROGRAMS += apps/pairs
+#bin_PROGRAMS += apps/align_garray
+#bin_PROGRAMS += apps/align_iter
+#bin_PROGRAMS += apps/align_iter_length_filter
+#bin_PROGRAMS += apps/align_length_filter
+#bin_PROGRAMS += apps/align_length_filter_noalign
+#bin_PROGRAMS += apps/align_pairs
+#bin_PROGRAMS += apps/align_tree
+#bin_PROGRAMS += apps/align_tree_noalign
+#bin_PROGRAMS += apps/align_tree_dumb_noalign
+#bin_PROGRAMS += apps/align_tree_dup
+#bin_PROGRAMS += apps/align_tree_dynamic
+#bin_PROGRAMS += apps/align_tree_dynamic_dup
+#bin_PROGRAMS += apps/align_tree_dynamic_callback
+#bin_PROGRAMS += apps/align_tree_dynamic_callback_dup
+#bin_PROGRAMS += apps/ccd
+#bin_PROGRAMS += apps/ccd2
+#bin_PROGRAMS += apps/pairs
+
 if HAVE_ARMCI
-bin_PROGRAMS += apps/align_counter
-bin_PROGRAMS += apps/align_counter_length_filter
-bin_PROGRAMS += apps/align_tree_hybrid
-bin_PROGRAMS += apps/align_tree_hybrid_noalign
-bin_PROGRAMS += apps/align_tree_hybrid_sorted
-bin_PROGRAMS += apps/align_tree_hybrid_sorted_noalign
-bin_PROGRAMS += apps/align_tree_hybrid_dup
-bin_PROGRAMS += apps/align_tree_hybrid_callback
-bin_PROGRAMS += apps/align_tree_hybrid_callback_sorted
-bin_PROGRAMS += apps/align_tree_hybrid_callback_sorted_noalign
-bin_PROGRAMS += apps/align_tree_hybrid_callback_dup
-bin_PROGRAMS += apps/align_tree_hybrid2
+#bin_PROGRAMS += apps/align_counter
+#bin_PROGRAMS += apps/align_counter_length_filter
+#bin_PROGRAMS += apps/align_tree_hybrid
+#bin_PROGRAMS += apps/align_tree_hybrid_noalign
+#bin_PROGRAMS += apps/align_tree_hybrid_sorted
+#bin_PROGRAMS += apps/align_tree_hybrid_sorted_noalign
+#bin_PROGRAMS += apps/align_tree_hybrid_dup
+#bin_PROGRAMS += apps/align_tree_hybrid_callback
+#bin_PROGRAMS += apps/align_tree_hybrid_callback_sorted
+#bin_PROGRAMS += apps/align_tree_hybrid_callback_sorted_noalign
+#bin_PROGRAMS += apps/align_tree_hybrid_callback_dup
+#bin_PROGRAMS += apps/align_tree_hybrid2
 endif
+
 if HAVE_SSE2
-bin_PROGRAMS += apps/align_ssw
-bin_PROGRAMS += apps/align_iter_ssw
-bin_PROGRAMS += apps/align_tree_ssw
+#bin_PROGRAMS += apps/align_ssw
+#bin_PROGRAMS += apps/align_iter_ssw
+#bin_PROGRAMS += apps/align_tree_ssw
 if HAVE_ARMCI
-bin_PROGRAMS += apps/align_counter_ssw
+#bin_PROGRAMS += apps/align_counter_ssw
 endif
 if HAVE_ZLIB
 bin_PROGRAMS += apps/ssw_test
@@ -252,14 +268,12 @@ noinst_PROGRAMS += tests/test_read
 noinst_PROGRAMS += tests/test_read_fasta
 noinst_PROGRAMS += tests/test_read_serial
 noinst_PROGRAMS += tests/test_stl_container_performance
+
 if HAVE_SSE2
 if HAVE_ARMCI
 noinst_PROGRAMS += tests/test_ssw
 endif
 endif
-#if HAVE_UTC_ITER
-#noinst_PROGRAMS += sandbox/brute_force_iter
-#endif
 
 apps_align_SOURCES = apps/align.cpp
 apps_align_counter_SOURCES = apps/align_counter.cpp

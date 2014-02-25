@@ -16,9 +16,9 @@
 
 #include "alignment.hpp"
 
-using std::ostream;
-using std::size_t;
-using std::string;
+using ::std::ostream;
+using ::std::size_t;
+using ::std::string;
 
 namespace pgraph {
 
@@ -152,7 +152,10 @@ class Sequence
         }
 
         /**
-         * Retrieves length of sequence.
+         * Retrieves pointer to sequence data -- do not delete.
+         *
+         * As with string::data(), the buffer is not guaranteed to be
+         * NULL-terminated.
          *
          * @return length of the sequence character buffer
          */
@@ -230,6 +233,7 @@ class Sequence
         }
 
         const char & operator[](size_t i) const {
+            assert(i < sequence_length);
             return buffer[sequence_offset+i];
         }
 

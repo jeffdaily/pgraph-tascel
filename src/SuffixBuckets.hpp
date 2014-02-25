@@ -1,7 +1,6 @@
 /**
  * @file SuffixBuckets.hpp
  *
- * @author andy.cj.wu@gmail.com
  * @author jeff.daily@pnnl.gov
  *
  * Copyright 2010 Washington State University. All rights reserved.
@@ -13,49 +12,16 @@
 #include <mpi.h>
 
 #include <cstddef>
-#include <iostream>
 #include <vector>
 
-#include <tascel.h>
-
-#include "Parameters.hpp"
-
-using tascel::PthreadMutex;
+using ::std::size_t;
+using ::std::vector;
 
 namespace pgraph {
 
 class Parameters;
 class SequenceDatabase;
-
-/**
- * A suffix of a Sequence.
- */
-class Suffix
-{
-    public:
-        Suffix()
-            :   sid(0)
-            ,   pid(0)
-            ,   bid(0)
-            ,   next(NULL)
-        { }
-
-        Suffix(size_t suffix_id, size_t offset, size_t bucket_id, Suffix *next=NULL)
-            :   sid(suffix_id)
-            ,   pid(offset)
-            ,   bid(bucket_id)
-            ,   next(next)
-        { }
-
-        size_t sid;     /**< suffix id */
-        size_t pid;     /**< position id i.e. offset */
-        size_t bid;     /**< bucket id */
-        Suffix *next;   /**< link to next Suffix  */
-};
-
-ostream& operator<<(ostream &os, const Suffix &suffix);
-
-
+class Suffix;
 
 /**
  * Bucket structure (linked list of related suffixes).
@@ -66,13 +32,14 @@ class Bucket
         Bucket()
             :   suffixes(NULL)
             ,   size(0)
+            ,   bid(0)
         { }
 
         Suffix *suffixes;   /**< linked list of zero or more suffixes */
         size_t size;        /**< number of suffixes */
+        size_t bid;         /**< bucket ID/index */
 };
 
-enum SplitEnum {SPLIT_DUMB=0, SPLIT_SUFFIXES=1, SPLIT_SORTED=2};
 
 class SuffixBuckets
 {
@@ -87,106 +54,89 @@ class SuffixBuckets
          */
         SuffixBuckets(SequenceDatabase *sequences,
                       const Parameters &param,
-                      MPI_Comm comm,
-                      const SplitEnum &split_type=SPLIT_SORTED);
-
-        /**
-         * Free memory associated with suffixes and buckets.
-         */
-        ~SuffixBuckets();
-
-        Suffix *get(size_t bid);
-
-        bool owns(size_t bid) const;
-
-    protected:
-        bool filter_out(const char *kmer, int k);
-
-    //private:
-    public:
-        size_t comm_rank;
-        size_t comm_size;
-        SequenceDatabase *sequences;    /**< sequences to process */
-        Parameters param;       /**< configuration parameters */
-        Suffix *suffixes;       /**< array of all suffixes */
-        size_t suffixes_size;   /**< size of suffixes array */
-        Bucket *buckets;        /**< array of all suffix buckets */
-        size_t buckets_size;    /**< size of buckets array */
-        std::vector<size_t> my_buckets;
-        std::vector<size_t> bucket_size;
-        std::vector<size_t> bucket_owner;
-        std::vector<size_t> bucket_offset;
-        Suffix **bucket_address;
-        size_t bucket_size_total;
-        PthreadMutex mutex;
-        SplitEnum split_type;
-
-        bool operator()(const Suffix &i, const Suffix &j) {
-            return bucket_owner[i.bid] < bucket_owner[j.bid];
-        }
-};
-
-
-class Bucket2
-{
-    public:
-        Bucket2()
-            :   offset(0)
-            ,   size(0)
-        { }
-
-        size_t offset;
-        size_t size;
-};
-
-
-class SuffixBuckets2
-{
-    public:
-        /**
-         * Create and separate suffixes into appropriate suffix prefix buckets.
-         * Distribut buckets evenly among available MPI ranks.
-         *
-         * @param[in] sequences to process
-         * @param[in] param configuration parameters
-         * @param[in] comm MPI communicator
-         */
-        SuffixBuckets2(SequenceDatabase *sequences,
-                      const Parameters &param,
                       MPI_Comm comm);
 
         /**
          * Free memory associated with suffixes and buckets.
          */
-        ~SuffixBuckets2();
+        virtual ~SuffixBuckets();
 
-        Bucket* get(size_t bid);
+        /**
+         * Retrieve a bucket, either remote or local.
+         *
+         * @param[in] bid Bucket index
+         * @return the Bucket
+         */
+        virtual Bucket* get(size_t bid) = 0;
 
-        void rem(size_t bid, Bucket*);
+        /**
+         * Free the memory of the given Bucket instance.
+         *
+         * @param[in] bucket the Bucket
+         */
+        virtual void rem(Bucket *bucket) = 0;
 
-        bool owns(size_t bid) const;
+        /**
+         * Returns true if the Bucket is owned by this process.
+         *
+         * That is, the Suffix instances that belong in the Bucket are
+         * allocated on this process.
+         *
+         * @param[in] bid bucket index
+         */
+        virtual bool owns(size_t bid) const = 0;
+
+        /**
+         * Returns vector of all Bucket indexes owned by this process.
+         *
+         * That is, the Suffix instances that belong in the Bucket are
+         * allocated on this process.
+         *
+         * @param[in] bid bucket index
+         */
+        virtual const vector<size_t> & owns() const = 0;
+
+        /**
+         * Returns the number of buckets managed by this SuffixBuckets
+         * instance.
+         *
+         * @return the size of this SuffixBuckets instance
+         */
+        size_t size() const { return n_buckets; }
 
     protected:
-        bool filter_out(const char *kmer, int k);
+        /**
+         * Returns Bucket index for the given Suffix string.
+         *
+         * Rather, the first 'k' characters of the given k-mer are the
+         * prefix of the k-mer (suffix) where 'k' is the slide window
+         * size as indicated by the stored Parameters instance. This
+         * suffix prefix is calculated as a 0-based bucket index.
+         *
+         * @param[in] kmer address of of k-mer (suffix) string
+         * @return the Bucket index
+         */
+        size_t bucket_index(const char *kmer);
 
-    //private:
-    public:
-        size_t comm_rank;
-        size_t comm_size;
-        size_t n_buckets;
+        /**
+         * Compare kmer against user-supplied prefix filters.
+         *
+         * @param[in] kmer address of of k-mer (suffix) string
+         * @return true if the kmer should be skipped
+         */
+        bool filter_out(const char *kmer);
+
+        MPI_Comm comm;                  /**< communicator */
+        size_t comm_rank;               /**< communicator rank */
+        size_t comm_size;               /**< communicator size */
+        size_t n_buckets;               /**< number of buckets */
         SequenceDatabase *sequences;    /**< sequences to process */
-        Parameters param;               /**< configuration parameters */
-        Suffix **suffixes_remote;       /**< addresses of remote suffixes */
-        Suffix *suffixes;               /**< array of all local suffixes */
-        size_t suffixes_size;           /**< size of local suffixes array */
-        Bucket2 **buckets_remote;       /**< addresses of remote buckets */
-        Bucket2 *buckets;               /**< array of all local buckets */
-        size_t buckets_size;            /**< size of local buckets array */
-        PthreadMutex mutex;
-        size_t count_remote_buckets;
-        size_t count_remote_suffixes;
+        const Parameters &param;        /**< configuration parameters */
+        size_t SIGMA;                   /**< alphabet size */
+        vector<size_t> alphabet_table;  /**< lookup table for alphabet index */
+        
+        static const size_t npos;
 };
-
 
 }; /* namespace pgraph */
 

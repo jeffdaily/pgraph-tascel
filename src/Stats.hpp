@@ -64,7 +64,7 @@ class Stats
         friend ::std::ostream& operator << (::std::ostream &os, const Stats &obj);
 
         static ::std::string header(const string &prefix="") {
-            ostringstream os;
+            ::std::ostringstream os;
 
             //os << ::std::right;
             //os << ::std::setw(WIDTH);

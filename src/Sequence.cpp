@@ -98,6 +98,7 @@ ostream &operator << (ostream &os, const Sequence &s)
     return os;
 }
 
+
 cell_t align_global_affine(
         const Sequence &s1,
         const Sequence &s2,
@@ -110,6 +111,7 @@ cell_t align_global_affine(
     return align_global_affine(s1.data(), s1.size(), s2.data(), s2.size(),
             match, open, gap, tbl, del, ins);
 }
+
 
 cell_t align_global_affine(
         const Sequence &s1,
@@ -125,6 +127,7 @@ cell_t align_global_affine(
             sub, map, first, open, gap, tbl, del, ins);
 }
 
+
 cell_t align_global_affine(
         const Sequence &s1,
         const Sequence &s2,
@@ -138,6 +141,7 @@ cell_t align_global_affine(
             match, mismatch, open, gap, tbl, del, ins);
 }
 
+
 cell_t align_global_affine(
         const Sequence &s1,
         const Sequence &s2,
@@ -149,6 +153,7 @@ cell_t align_global_affine(
     return align_global_affine(s1.data(), s1.size(), s2.data(), s2.size(),
             open, gap, tbl, del, ins);
 }
+
 
 cell_t align_semi_affine(
         const Sequence &s1,
@@ -162,6 +167,7 @@ cell_t align_semi_affine(
     return align_semi_affine(s1.data(), s1.size(), s2.data(), s2.size(),
             match, open, gap, tbl, del, ins);
 }
+
 
 cell_t align_semi_affine(
         const Sequence &s1,
@@ -177,6 +183,7 @@ cell_t align_semi_affine(
             sub, map, first, open, gap, tbl, del, ins);
 }
 
+
 cell_t align_semi_affine(
         const Sequence &s1,
         const Sequence &s2,
@@ -190,6 +197,7 @@ cell_t align_semi_affine(
             match, mismatch, open, gap, tbl, del, ins);
 }
 
+
 cell_t align_semi_affine(
         const Sequence &s1,
         const Sequence &s2,
@@ -201,6 +209,7 @@ cell_t align_semi_affine(
     return align_semi_affine(s1.data(), s1.size(), s2.data(), s2.size(),
             open, gap, tbl, del, ins);
 }
+
 
 cell_t align_local_affine(
         const Sequence &s1,
@@ -214,6 +223,7 @@ cell_t align_local_affine(
     return align_local_affine(s1.data(), s1.size(), s2.data(), s2.size(),
             match, open, gap, tbl, del, ins);
 }
+
 
 cell_t align_local_affine(
         const Sequence &s1,
@@ -229,6 +239,7 @@ cell_t align_local_affine(
             sub, map, first, open, gap, tbl, del, ins);
 }
 
+
 cell_t align_local_affine(
         const Sequence &s1,
         const Sequence &s2,
@@ -242,6 +253,7 @@ cell_t align_local_affine(
             match, mismatch, open, gap, tbl, del, ins);
 }
 
+
 cell_t align_local_affine(
         const Sequence &s1,
         const Sequence &s2,
@@ -253,6 +265,7 @@ cell_t align_local_affine(
     return align_local_affine(s1.data(), s1.size(), s2.data(), s2.size(),
             open, gap, tbl, del, ins);
 }
+
 
 bool is_edge(
         const cell_t &result,
@@ -270,6 +283,7 @@ bool is_edge(
             AOL, SIM, OS, self_score, max_len, sub, map, first);
 }
 
+
 bool is_edge(
         const cell_t &result,
         const Sequence &s1,
@@ -285,6 +299,7 @@ bool is_edge(
             AOL, SIM, OS, self_score, max_len, match);
 }
 
+
 bool is_edge(
         const cell_t &result,
         const Sequence &s1,
@@ -299,6 +314,7 @@ bool is_edge(
     return is_edge(result, s1.data(), s1.size(), s2.data(), s2.size(),
             AOL, SIM, OS, self_score, max_len, match);
 }
+
 
 bool is_edge(
         const cell_t &result,

@@ -10,6 +10,7 @@
 #ifndef _CONSTANTS_H_
 #define _CONSTANTS_H_
 
+#if 0
 #define DOLLAR 'U'
 #define BEGIN 'O'  /* it is oh, not zero */
 #define SIGMA 26U /**< size of alphabet */
@@ -22,5 +23,6 @@
 enum {ERROR = -1, DOL_END = -2};
 enum {FALSE = 0, TRUE = 1, MAYBE = 2};
 enum {NO = 0, YES = 1/*, MAYBE = 2*/};
+#endif
 
 #endif /* _CONSTANTS_H_ */

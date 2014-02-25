@@ -17,12 +17,14 @@
 
 #include "Parameters.hpp"
 #include "SequenceDatabase.hpp"
+#include "Stats.hpp"
+#include "Suffix.hpp"
 #include "SuffixBuckets.hpp"
 
-using std::pair;
-using std::set;
-using std::vector;
-using std::size_t;
+using ::std::pair;
+using ::std::set;
+using ::std::vector;
+using ::std::size_t;
 
 namespace pgraph {
 
@@ -47,6 +49,26 @@ typedef void(*SuffixTreePairCallback)(pair<size_t,size_t>);
 class SuffixTree
 {
     public:
+        struct VectorCallback {
+            vector<pair<size_t,size_t> > &pairs;
+            VectorCallback(vector<pair<size_t,size_t> > &pairs)
+                : pairs(pairs) {}
+            bool operator()(const pair<size_t,size_t> &p) {
+                pairs.push_back(p);
+                return false;
+            }
+        };
+
+        struct SetCallback {
+            set<pair<size_t,size_t> > &pairs;
+            SetCallback(set<pair<size_t,size_t> > &pairs)
+                : pairs(pairs) {}
+            bool operator()(const pair<size_t,size_t> &p) {
+                pairs.insert(p);
+                return false;
+            }
+        };
+
         /**
          * Builds a tree for the given bucket (list of suffixes).
          *
@@ -74,14 +96,18 @@ class SuffixTree
          *
          * @param[out] pairs
          */
-        void generate_pairs(set<pair<size_t,size_t> > &pairs);
+        bool generate_pairs(set<pair<size_t,size_t> > &pairs) {
+            return generate_pairs(SetCallback(pairs));
+        }
 
         /**
          * Generate promising pairs for alignment.
          *
          * @param[out] pairs
          */
-        void generate_pairs(vector<pair<size_t,size_t> > &pairs);
+        bool generate_pairs(vector<pair<size_t,size_t> > &pairs) {
+            return generate_pairs(VectorCallback(pairs));
+        }
 
         /**
          * Generate promising pairs for alignment.
@@ -89,289 +115,78 @@ class SuffixTree
          * @param[out] pairs
          */
         template <class Callback>
-        bool generate_pairs_cb(Callback callback);
+        bool generate_pairs(Callback callback);
 
-        double get_size_internal() const { return size_internal; }
+        size_t get_size() const { return size; }
 
-        double get_avg_fanout() const { return fanout; }
+        size_t get_size_internal() const { return size_internal; }
 
-        double get_avg_depth() const { return avgdepth; }
+        const Stats& get_fanout() const { return fanout_stats; }
 
-        double get_deepest() const { return deepest; }
+        const Stats& get_depth() const { return depth_stats; }
 
-        double get_suffix_avg_length() const { return suffix_avg_length; }
-
-        double get_suffix_max_length() const { return suffix_max_length; }
+        const Stats& get_suffix_length() const { return suffix_length_stats; }
 
     private:
-        void create();
+        size_t build_tree_recursive(Suffix *suffixes, int depth);
+        void compute_lset(Suffix *suffixes, Suffix **lset);
+        int next_diff_pos(Suffix *suffixes, int depth);
+        bool is_candidate(Suffix *p, Suffix *q);
+        size_t* count_sort();
+        void merge_lsets(size_t sIndex, size_t eIndex);
+
+        template <class Callback>
+        bool proc_leaf(Suffix **lset, Callback callback);
+
+        template <class Callback>
+        bool proc_node(size_t sIndex, size_t eIndex, Callback callback);
 
         SequenceDatabase *sequences;
         Bucket *bucket;
-        Parameters param;
+        const Parameters &param;/**< user parameters */
+        const size_t SIGMA;     /**< alphabet size */
+        const char DOLLAR;      /**< terminal character */
+        const char BEGIN;       /**< leftmost terminal character */
+        const string alphabet;  /**< the alphabet */
+        vector<size_t> alphabet_table;/** lookup table for alphabet index */
+        int window_size;        /**< sliding window size */
         SuffixTreeNode *nodes;  /**< tree nodes */
         size_t size;            /**< number of nodes */
+        size_t size_internal;   /**< number of internal nodes */
         Suffix **lset_array;    /**< memory for all node's lsets (SIGMA*nnodes) */
-        double fanout;          /**< average fanout */
-        double size_internal;   /**< number of internal nodes */
-        double avgdepth;        /**< average node depth */
-        double deepest;         /**< deepest node depth */
-        double suffix_avg_length;   /**< average suffix length */
-        double suffix_max_length;   /**< longest suffix */
+        Stats fanout_stats;     /**< average fanout */
+        Stats depth_stats;      /**< node depth stats */
+        Stats suffix_length_stats;/**< suffix length stats */
+
+        static const size_t npos;
 };
-
-/**
- * counting sort based on the depth of the tree nodes.
- *
- * @param stNodes -
- * @param srtIndex -
- * @param nStNodes -
- * @param maxSeqLen -
- * -----------------------------------------------------------*/
-static inline void
-count_sort(SuffixTreeNode *stNodes, size_t *srtIndex, size_t nStNodes, size_t maxSeqLen)
-{
-    size_t i;
-    size_t *cnt = NULL;
-    size_t depth;
-
-    cnt = new size_t[maxSeqLen];
-    if (NULL == cnt) {
-        perror("count_sort: malloc cnt");
-        exit(EXIT_FAILURE);
-    }
-
-    /* init counters */
-    for (i = 0; i < maxSeqLen; i++) {
-        cnt[i] = 0;
-    }
-
-    /* fill in counters */
-    for (i = 0; i < nStNodes; i++) {
-        depth = stNodes[i].depth; /* depth starts from 0 */
-        assert(((unsigned)depth) < maxSeqLen);
-        cnt[depth]++;
-    }
-
-    /* suffix sum to sort in a reverse way */
-    for (i = maxSeqLen - 2; i > 0; i--) {
-        cnt[i] += cnt[i + 1];
-    }
-    cnt[0] += cnt[1]; /* because var i was unsigned */
-
-    /* store the sorted index into srtIndex */
-    for (i = 0; i < nStNodes; i++) {
-        depth = stNodes[i].depth;
-        srtIndex[cnt[depth] - 1] = i;
-        assert(cnt[depth] >= 1);
-        cnt[depth]--;
-    }
-
-    delete [] cnt;
-}
-
-static inline int
-is_candidate(SequenceDatabase *seqs, size_t nSeqs,
-             Suffix *p, Suffix *q, Parameters param)
-{
-    size_t s1Len = 0;
-    size_t s2Len = 0;
-    size_t f1 = 0;
-    size_t f2 = 0;
-    int cutOff = param.AOL * param.SIM;
-    char result = FALSE;
-
-    f1 = p->sid;
-    f2 = q->sid;
-    assert(f1 < nSeqs);
-    assert(f2 < nSeqs);
-
-    if (f1 == f2) {
-        result = FALSE;
-    }
-    else {
-        if (f1 > f2) {
-            size_t swap = f1;
-            f1 = f2;
-            f2 = swap;
-        }
-        s1Len = (*seqs)[f1].get_sequence_length() - 1;
-        s2Len = (*seqs)[f2].get_sequence_length() - 1;
-        if (s1Len <= s2Len) {
-            if (100 * s1Len < cutOff * s2Len) {
-                result = FALSE;
-            }
-            else {
-                result = TRUE;
-            }
-        }
-        else {
-            if (100 * s2Len < cutOff * s1Len) {
-                result = FALSE;
-            }
-            else {
-                result = TRUE;
-            }
-        }
-    }
-
-    return result;
-}
 
 
 template <class Callback>
-bool SuffixTree::generate_pairs_cb(Callback callback)
+bool SuffixTree::generate_pairs(Callback callback)
 {
-    SuffixTreeNode *stNodes = NULL;
-    size_t *srtIndex = NULL;
-    size_t nStNodes = 0;
-    int nSeqs = 0;
-    int maxSeqLen = 0;
-    size_t i = 0;
-    int j = 0;
-    SuffixTreeNode *stnode = NULL;
-    size_t sIndex;
-    size_t eIndex;
-    size_t m;
-    size_t n;
-    size_t s;
-    size_t t;
-    Suffix *p = NULL;
-    Suffix *q = NULL;
-    size_t EM;
-    int cutOff; /* cut off value of filter 1 */
-
-    srtIndex = new size_t[this->size];
-    count_sort(this->nodes, srtIndex, this->size, sequences->longest());
-    stNodes = this->nodes;
-    nStNodes = this->size;
-    nSeqs = sequences->size();
-    maxSeqLen = sequences->longest();
-
-    /* only two rows are allocated */
-    assert(NROW == 2);
+    size_t *srtIndex = count_sort();
+    size_t EM = param.exact_match_length;
 
     assert(param.exact_match_length >= 1);
-    EM = param.exact_match_length;
-    cutOff = param.AOL * param.SIM;
 
-    /* srtIndex maintain an order of NON-increasing depth of stNodes[] */
-    for (i = 0; i < nStNodes; i++) {
-        sIndex = srtIndex[i];
-        stnode = &stNodes[sIndex];
+    /* srtIndex maintain an order of NON-increasing depth of nodes[] */
+    for (size_t i = 0; i < size; i++) {
+        size_t sIndex = srtIndex[i];
+        SuffixTreeNode *node = &nodes[sIndex];
 
 #ifdef DEBUG
-        printf("stNode->depth=%d, stnode->rLeaf=%ld, sIndex=%ld\n", stnode->depth, stnode->rLeaf, sIndex);
+        printf("stNode->depth=%d, node->rLeaf=%ld, sIndex=%ld\n", node->depth, node->rLeaf, sIndex);
 #endif
 
-        bool retval = false;
-        if (stnode->depth >= EM - 1) {
-            if (stnode->rLeaf == sIndex) { /* leaf node */
-                Suffix **lset = stnode->lset;
-                SequenceDatabase *seqs = sequences;
-                size_t i;
-                size_t j;
-                Suffix *p = NULL;
-                Suffix *q = NULL;
-                int cutOff;
-
-                cutOff = param.AOL * param.SIM;
-
-                for (i = 0; i < SIGMA; i++) {
-                    if (lset[i]) {
-                        if (i == BEGIN - 'A') { /* inter cross */
-                            for (p = lset[i]; p != NULL; p = p->next) {
-                                for (q = p->next; q != NULL; q = q->next) {
-                                    if (TRUE == is_candidate(seqs, nSeqs, p, q, param)) {
-                                        if (p->sid > q->sid) {
-                                            retval = callback(make_pair(q->sid, p->sid));
-                                        }
-                                        else {
-                                            retval = callback(make_pair(p->sid, q->sid));
-                                        }
-                                        if (retval) return true;
-                                    }
-                                }
-                            }
-                        }
-
-                        /* intra cross */
-                        for (j = i + 1; j < SIGMA; j++) {
-                            if (lset[j]) {
-                                for (p = lset[i]; p != NULL; p = p->next) {
-                                    for (q = lset[j]; q != NULL; q = q->next) {
-                                        if (TRUE == is_candidate(seqs, nSeqs, p, q, param)) {
-                                            if (p->sid > q->sid) {
-                                                retval = callback(make_pair(q->sid, p->sid));
-                                            }
-                                            else {
-                                                retval = callback(make_pair(p->sid, q->sid));
-                                            }
-                                            if (retval) return true;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+        if (node->depth >= EM - 1) {
+            if (node->rLeaf == sIndex) { /* leaf node */
+                if (proc_leaf(node->lset, callback)) return true;
             }
             else {                       /* internal node */
-                eIndex = stnode->rLeaf;
-
-                /* pairs generation loop for internal node */
-                for (m = sIndex + 1; m < eIndex; m = stNodes[m].rLeaf+1) {
-                    for (n = stNodes[m].rLeaf+1; n <= eIndex; n = stNodes[n].rLeaf+1) {
-                        for (s = 0; s < SIGMA; s++) {
-                            if (stNodes[m].lset[s]) {
-                                for (t = 0; t < SIGMA; t++) {
-                                    if (stNodes[n].lset[t]) {
-                                        if (s != t || s == (BEGIN - 'A')) {
-                                            for (p = stNodes[m].lset[s]; p != NULL; p = p->next) {
-                                                for (q = stNodes[n].lset[t]; q != NULL; q = q->next) {
-                                                    if (TRUE == is_candidate(
-                                                                sequences, nSeqs, p, q, param)) {
-                                                        if (p->sid > q->sid) {
-                                                            retval = callback(make_pair(q->sid, p->sid));
-                                                        }
-                                                        else {
-                                                            retval = callback(make_pair(p->sid, q->sid));
-                                                        }
-                                                        if (retval) return true;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                /* merge the lsets of subtree */
-                for (m = 0; m < SIGMA; m++) {
-                    p = NULL;
-                    for (j = sIndex + 1; j <= eIndex; j = stNodes[j].rLeaf + 1) {
-                        if ((q = stNodes[j].lset[m])) {
-
-                            /* empty the subtree's ptrs array */
-                            stNodes[j].lset[m] = NULL;
-                            if (p == NULL) {
-                                p = q;
-                                stNodes[sIndex].lset[m] = q;
-                            }
-                            else {
-                                p->next = q;
-                            }
-
-                            /* walk to the end */
-                            while (p->next) {
-                                p = p->next;
-                            }
-                        }
-                    }
-                }
+                size_t eIndex = node->rLeaf;
+                if (proc_node(sIndex, eIndex, callback)) return true;
+                merge_lsets(sIndex, eIndex);
             }
         }
         else {
@@ -387,6 +202,105 @@ bool SuffixTree::generate_pairs_cb(Callback callback)
     return false;
 }
 
+
+template <class Callback>
+bool SuffixTree::proc_leaf(Suffix **lset, Callback callback)
+{
+    size_t i;
+    size_t j;
+    Suffix *p = NULL;
+    Suffix *q = NULL;
+    int cutOff;
+
+    cutOff = param.AOL * param.SIM;
+
+    for (i = 0; i < SIGMA; i++) {
+        if (lset[i]) {
+            if (i == alphabet_table[BEGIN]) { /* inter cross */
+                for (p = lset[i]; p != NULL; p = p->next) {
+                    for (q = p->next; q != NULL; q = q->next) {
+                        if (is_candidate(p, q)) {
+                            bool retval = false;
+                            if (p->sid > q->sid) {
+                                retval = callback(make_pair(q->sid, p->sid));
+                            }
+                            else {
+                                retval = callback(make_pair(p->sid, q->sid));
+                            }
+                            if (retval) return true;
+                        }
+                    }
+                }
+            }
+
+            /* intra cross */
+            for (j = i + 1; j < SIGMA; j++) {
+                if (lset[j]) {
+                    for (p = lset[i]; p != NULL; p = p->next) {
+                        for (q = lset[j]; q != NULL; q = q->next) {
+                            if (is_candidate(p, q)) {
+                                bool retval = false;
+                                if (p->sid > q->sid) {
+                                    retval = callback(make_pair(q->sid, p->sid));
+                                }
+                                else {
+                                    retval = callback(make_pair(p->sid, q->sid));
+                                }
+                                if (retval) return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+
+template <class Callback>
+bool SuffixTree::proc_node(size_t sIndex, size_t eIndex, Callback callback)
+{
+    size_t m;
+    size_t n;
+    size_t s;
+    size_t t;
+    Suffix *p = NULL;
+    Suffix *q = NULL;
+
+    /* pairs generation loop for internal node */
+    for (m = sIndex + 1; m < eIndex; m = nodes[m].rLeaf+1) {
+        for (n = nodes[m].rLeaf+1; n <= eIndex; n = nodes[n].rLeaf+1) {
+            for (s = 0; s < SIGMA; s++) {
+                if (nodes[m].lset[s]) {
+                    for (t = 0; t < SIGMA; t++) {
+                        if (nodes[n].lset[t]) {
+                            if (s != t || s == alphabet_table[BEGIN]) {
+                                for (p = nodes[m].lset[s]; p != NULL; p = p->next) {
+                                    for (q = nodes[n].lset[t]; q != NULL; q = q->next) {
+                                        if (is_candidate(p, q)) {
+                                            bool retval = false;
+                                            if (p->sid > q->sid) {
+                                                retval = callback(make_pair(q->sid, p->sid));
+                                            }
+                                            else {
+                                                retval = callback(make_pair(p->sid, q->sid));
+                                            }
+                                            if (retval) return true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
+}
 
 }; /* namespace pgraph */
 

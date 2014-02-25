@@ -12,22 +12,204 @@
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
+#include <iostream>
+#include <limits>
 #include <set>
 #include <utility>
+#include <vector>
 
-using std::make_pair;
-using std::pair;
-using std::set;
+using ::std::cout;
+using ::std::endl;
+using ::std::make_pair;
+using ::std::numeric_limits;
+using ::std::pair;
+using ::std::set;
+using ::std::size_t;
+using ::std::vector;
 
-#include "constants.h"
-//#include "alignment.hpp"
 #include "Parameters.hpp"
 #include "Sequence.hpp"
 #include "SequenceDatabase.hpp"
 #include "SuffixBuckets.hpp"
 #include "SuffixTree.hpp"
 
+#define ERROR -1
+#define DOL_END -2
+
 namespace pgraph {
+
+const size_t SuffixTree::npos(-1);
+
+SuffixTree::SuffixTree(
+        SequenceDatabase *sequences, Bucket *bucket, const Parameters &param)
+    :   sequences(sequences)
+    ,   bucket(bucket)
+    ,   param(param)
+    ,   SIGMA(param.alphabet.size())
+    ,   DOLLAR('U') /** @todo TODO get from parameters */
+    ,   BEGIN('O') /** @todo TODO get from parameters */
+    ,   alphabet(param.alphabet)
+    ,   alphabet_table(numeric_limits<unsigned char>::max(), npos)
+    ,   window_size(param.window_size)
+    ,   nodes(NULL)
+    ,   size(0U)
+    ,   size_internal(0U)
+    ,   lset_array(NULL)
+    ,   fanout_stats()
+    ,   depth_stats()
+    ,   suffix_length_stats()
+{
+    size_t n_nodes = 2 * bucket->size;
+    size_t i = 0;
+
+    cout << "SuffixTree bid=" << bucket->bid << " size=" << bucket->size << endl;
+
+    for (i=0; i<SIGMA; ++i) {
+        alphabet_table[(unsigned char)(param.alphabet[i])] = i;
+    }
+
+    /* allocate lset pointer memory for tree nodes */
+    lset_array = new Suffix*[SIGMA * n_nodes];
+    if (NULL == lset_array) {
+        perror("build_tree: malloc lset array");
+        exit(EXIT_FAILURE);
+    }
+    /* initialize lset pointer memory */
+    for (i = 0; i < SIGMA * n_nodes; ++i) {
+        lset_array[i] = NULL;
+    }
+
+    /* allocate tree nodes */
+    nodes = new SuffixTreeNode[n_nodes];
+    if (NULL == nodes) {
+        perror("build_tree: malloc tree nodes");
+        exit(EXIT_FAILURE);
+    }
+
+    /* initialize tree nodes */
+    for (i = 0; i < n_nodes; ++i) {
+        nodes[i].depth = 0;
+        nodes[i].rLeaf = 0;
+        nodes[i].lset = &(lset_array[i*SIGMA]);
+    }
+
+    /* gather suffix statistics */
+    Suffix *p = NULL;
+    Suffix *q = NULL;
+    for (p = bucket->suffixes; p != NULL; p = q) {
+        q = p->next;
+        Sequence &seq = (*sequences)[p->sid];
+        /* depth also includes the '$' */
+        double len = (seq.size() - 1) - p->pid;
+        suffix_length_stats.push_back(len);
+    }
+
+    build_tree_recursive(bucket->suffixes, param.window_size - 1);
+}
+
+
+SuffixTree::~SuffixTree()
+{
+    delete [] nodes;
+    delete [] lset_array;
+}
+
+
+
+/**
+ * TODO
+ */
+size_t SuffixTree::build_tree_recursive(Suffix *suffixes, int depth)
+{
+    int diffPos;
+
+    diffPos = next_diff_pos(suffixes, depth);
+    if (diffPos == ERROR) { /* can never happen */
+        fprintf(stderr, "wrong when exploring diff chars!");
+        exit(EXIT_FAILURE);
+    }
+    else if (diffPos == DOL_END) { /* leaf node */
+        Sequence &seq = (*sequences)[suffixes->sid];
+
+        /* depth also includes the '$' */
+        nodes[size].depth = (seq.size() - 1) - suffixes->pid;
+        nodes[size].rLeaf = size; /* point to itself */
+
+        compute_lset(suffixes, nodes[size].lset);
+
+        return size++;
+    }
+    else {  /* internal node */
+        size_t i;
+        size_t j; /* store the index of the internal node */
+        Suffix **heads = NULL;
+        Suffix *p = NULL;
+        Suffix *q = NULL;
+        size_t rLeaf = SIZE_MAX;
+
+        j = size; /* store st_index in the stack */
+        size++;
+        nodes[j].depth = diffPos - 1 ;
+
+        depth_stats.push_back(nodes[j].depth);
+
+        heads = nodes[j].lset;
+        for (i = 0; i < SIGMA; i++) {
+            heads[i] = NULL;
+        }
+
+        /* partition suffixes into SIGMA sub-buckets */
+        for (p = suffixes; p != NULL; p = q) {
+            char hChar = (*sequences)[p->sid][p->pid + diffPos];
+            size_t hIndex = alphabet_table[(unsigned)hChar];
+            if (hIndex == npos) {
+                fprintf(stderr, "invalid h index caused by '%c'\n", hChar);
+            }
+            assert(hIndex != npos);
+            assert(hIndex < SIGMA);
+
+            q = p->next;
+            p->next = heads[hIndex];
+            heads[hIndex] = p;
+        }
+
+        /* compute fanout */
+        size_internal++;
+        for (i = 0; i < SIGMA; i++) {
+            size_t fanout = 0;
+            if (heads[i]) {
+                ++fanout;
+            }
+            fanout_stats.push_back(fanout);
+        }
+
+        /* recursively construct the tree in DFS way */
+        for (i = 0; i < SIGMA; i++) {
+            if (heads[i]) {
+                /* branching with '$' */
+                if (i == (alphabet_table[DOLLAR])) {
+                    nodes[size].depth =
+                        ((*sequences)[heads[i]->sid].size() - 1 - heads[i]->pid);
+                    nodes[size].rLeaf = size;
+
+                    compute_lset(heads[i], nodes[size].lset);
+                    rLeaf = size++;
+                }
+                else {
+                    rLeaf = build_tree_recursive(heads[i], diffPos);
+                }
+
+                /* put it back into NULL */
+                heads[i] = NULL;
+            }
+        }
+
+        /* store the right most leaf in the internal node */
+        nodes[j].rLeaf = rLeaf;
+        return nodes[j].rLeaf;
+    }
+}
+
 
 /**
  * compute lset according to the left character of pid to
@@ -38,8 +220,7 @@ namespace pgraph {
  * @param seqs - all seqs info
  * @param lset -
  */
-static inline void
-compute_lset(Suffix *suffixes, SequenceDatabase *seqs, Suffix **lset)
+void SuffixTree::compute_lset(Suffix *suffixes, Suffix **lset)
 {
     Suffix *p = NULL;
     Suffix *q = NULL;
@@ -48,12 +229,12 @@ compute_lset(Suffix *suffixes, SequenceDatabase *seqs, Suffix **lset)
     for (p = suffixes; p != NULL; p = q) {
         q = p->next;
         if (p->pid == 0) {
-            lIndex = BEGIN - 'A';
+            lIndex = alphabet_table[BEGIN];
             p->next = lset[lIndex];
             lset[lIndex] = p;
         }
         else {
-            lIndex = (*seqs)[p->sid][p->pid - 1] - 'A';
+            lIndex = (*sequences)[p->sid][p->pid - 1] - 'A';
             p->next = lset[lIndex];
             lset[lIndex] = p;
         }
@@ -70,13 +251,10 @@ compute_lset(Suffix *suffixes, SequenceDatabase *seqs, Suffix **lset)
  *        -1: error, cannot happen
  *         i: next diff position from starting point
  *
- * @param[in] seqs - all fasta seqs
  * @param[in] suffixes - bucket in linked list way
  * @param[in] depth - depth since root, which has 0 depth
- * @param[in] window_size - slide window size for bucketing
  * ---------------------------------------------------*/
-static inline int
-nextDiffPos(SequenceDatabase *seqs, Suffix *suffixes, int depth)
+int SuffixTree::next_diff_pos(Suffix *suffixes, int depth)
 {
     int i;
     Suffix *p = NULL;
@@ -89,13 +267,13 @@ nextDiffPos(SequenceDatabase *seqs, Suffix *suffixes, int depth)
 
     while (1) {
         i++; /* step forward one more char for comparison */
-        //std::cout << "i+p->pid=" << i+p->pid << " <? p->sid.size=" << (*seqs)[p->sid].get_sequence_length() << std::endl;
-        assert((i + p->pid) < (*seqs)[p->sid].get_sequence_length());
-        pCh = (*seqs)[p->sid][p->pid + i];
+        //std::cout << "i+p->pid=" << i+p->pid << " <? p->sid.size=" << (*sequences)[p->sid].size() << std::endl;
+        assert((i + p->pid) < (*sequences)[p->sid].size());
+        pCh = (*sequences)[p->sid][p->pid + i];
 
         for (p = p->next; p != NULL; p = p->next) {
-            assert((i + p->pid) < (*seqs)[p->sid].get_sequence_length());
-            cCh = (*seqs)[p->sid][p->pid + i];
+            assert((i + p->pid) < (*sequences)[p->sid].size());
+            cCh = (*sequences)[p->sid][p->pid + i];
             if (cCh != pCh) {
                 return i;
             }
@@ -112,529 +290,133 @@ nextDiffPos(SequenceDatabase *seqs, Suffix *suffixes, int depth)
 }
 
 
-/**
- * TODO
- */
-static inline size_t
-build_tree_recursive(
-    SequenceDatabase *sequences, size_t n_sequences,
-    Suffix *suffixes, int depth, int window_size,
-    SuffixTreeNode *st_nodes, size_t *st_index,
-    double &size_internal, double &fanout,
-    double &avgdepth, double &deepest,
-    double &suffix_avg_length, double &suffix_max_length)
+bool SuffixTree::is_candidate(Suffix *p, Suffix *q)
 {
-    int diffPos;
-    size_t i;
-    int j; /* store the index of the internal node */
-    Suffix **heads = NULL;
-    Suffix *p = NULL;
-    Suffix *q = NULL;
-    int hIndex;
-    size_t rLeaf = SIZE_MAX;
+    size_t s1Len = 0;
+    size_t s2Len = 0;
+    size_t f1 = 0;
+    size_t f2 = 0;
+    int cutOff = param.AOL * param.SIM;
+    bool result = false;
 
-    diffPos = nextDiffPos(sequences, suffixes, depth);
-    if (diffPos == ERROR) { /* can never happen */
-        fprintf(stderr, "wrong when exploring diff chars!");
-        exit(EXIT_FAILURE);
+    f1 = p->sid;
+    f2 = q->sid;
+    assert(f1 < sequences->size());
+    assert(f2 < sequences->size());
+
+    if (f1 == f2) {
+        result = false;
     }
-    else if (diffPos == DOL_END) { /* leaf node */
-        Sequence &seq = (*sequences)[suffixes[0].sid];
-
-        /* depth also includes the '$' */
-        st_nodes[*st_index].depth = (seq.get_sequence_length() - 1) - suffixes[0].pid;
-        st_nodes[*st_index].rLeaf = *st_index; /* point to itself */
-
-        compute_lset(suffixes, sequences, st_nodes[*st_index].lset);
-
-        return (*st_index)++;
-    }
-    else {  /* internal node */
-
-        j = *st_index; /* store st_index in the stack */
-        (*st_index)++;
-        st_nodes[j].depth = diffPos - 1 ;
-
-        avgdepth += st_nodes[j].depth;
-        if (st_nodes[j].depth > deepest) {
-            deepest = st_nodes[j].depth;
+    else {
+        if (f1 > f2) {
+            size_t swap = f1;
+            f1 = f2;
+            f2 = swap;
         }
-
-        heads = st_nodes[j].lset;
-        for (i = 0; i < SIGMA; i++) {
-            heads[i] = NULL;
-        }
-
-        /* partition suffixes into SIGMA sub-buckets */
-        for (p = suffixes; p != NULL; p = q) {
-            q = p->next;
-            hIndex = (*sequences)[p->sid][p->pid + diffPos] - 'A';
-            assert(hIndex >= 0 && (unsigned)hIndex < SIGMA);
-
-            p->next = heads[hIndex];
-            heads[hIndex] = p;
-        }
-
-        /* compute fanout */
-        size_internal += 1.0;
-        for (i = 0; i < SIGMA; i++) {
-            if (heads[i]) {
-                fanout += 1.0;
+        s1Len = (*sequences)[f1].size() - 1;
+        s2Len = (*sequences)[f2].size() - 1;
+        if (s1Len <= s2Len) {
+            if (100 * s1Len < cutOff * s2Len) {
+                result = false;
+            }
+            else {
+                result = true;
             }
         }
+        else {
+            if (100 * s2Len < cutOff * s1Len) {
+                result = false;
+            }
+            else {
+                result = true;
+            }
+        }
+    }
 
-        /* recursively construct the tree in DFS way */
-        for (i = 0; i < SIGMA; i++) {
-            if (heads[i]) {
-                /* branching with '$' */
-                if (i == (DOLLAR - 'A')) {
-                    st_nodes[*st_index].depth =
-                        ((*sequences)[heads[i]->sid].get_sequence_length() - 1 - heads[i]->pid);
-                    st_nodes[*st_index].rLeaf = *st_index;
+    return result;
+}
 
-                    compute_lset(heads[i], sequences, st_nodes[*st_index].lset);
-                    rLeaf = (*st_index)++;
+
+/**
+ * counting sort based on the depth of the tree nodes.
+ * @return a sorted index of the SuffixTree nodes
+ */
+size_t* SuffixTree::count_sort()
+{
+    size_t i;
+    size_t *cnt = NULL;
+    size_t depth;
+    size_t maxSeqLen = sequences->longest();
+    size_t *srtIndex = new size_t[size];
+
+    cnt = new size_t[maxSeqLen];
+    if (NULL == cnt) {
+        perror("count_sort: malloc cnt");
+        exit(EXIT_FAILURE);
+    }
+
+    /* init counters */
+    for (i = 0; i < maxSeqLen; i++) {
+        cnt[i] = 0;
+    }
+
+    /* fill in counters */
+    for (i = 0; i < size; i++) {
+        depth = nodes[i].depth; /* depth starts from 0 */
+        assert(((unsigned)depth) < maxSeqLen);
+        cnt[depth]++;
+    }
+
+    /* suffix sum to sort in a reverse way */
+    for (i = maxSeqLen - 2; i > 0; i--) {
+        cnt[i] += cnt[i + 1];
+    }
+    cnt[0] += cnt[1]; /* because var i was unsigned */
+
+    /* store the sorted index into srtIndex */
+    for (i = 0; i < size; i++) {
+        depth = nodes[i].depth;
+        srtIndex[cnt[depth] - 1] = i;
+        assert(cnt[depth] >= 1);
+        cnt[depth]--;
+    }
+
+    delete [] cnt;
+
+    return srtIndex;
+}
+
+
+void SuffixTree::merge_lsets(size_t sIndex, size_t eIndex)
+{
+    size_t m = 0;
+    size_t j = 0;
+    Suffix *p = NULL;
+    Suffix *q = NULL;
+
+    /* merge the lsets of subtree */
+    for (m = 0; m < SIGMA; m++) {
+        p = NULL;
+        for (j = sIndex + 1; j <= eIndex; j = nodes[j].rLeaf + 1) {
+            if ((q = nodes[j].lset[m])) {
+
+                /* empty the subtree's ptrs array */
+                nodes[j].lset[m] = NULL;
+                if (p == NULL) {
+                    p = q;
+                    nodes[sIndex].lset[m] = q;
                 }
                 else {
-                    rLeaf = build_tree_recursive(
-                            sequences, n_sequences, heads[i], diffPos,
-                            window_size, st_nodes, st_index,
-                            size_internal, fanout,
-                            avgdepth, deepest,
-                            suffix_avg_length, suffix_max_length);
+                    p->next = q;
                 }
 
-                /* put it back into NULL */
-                heads[i] = NULL;
-            }
-        }
-
-        /* store the right most leaf in the internal node */
-        st_nodes[j].rLeaf = rLeaf;
-        return st_nodes[j].rLeaf;
-    }
-}
-
-
-SuffixTree::SuffixTree(
-        SequenceDatabase *sequences, Bucket *bucket, const Parameters &param)
-    :   sequences(sequences)
-    ,   bucket(bucket)
-    ,   param(param)
-    ,   nodes(NULL)
-    ,   size(0)
-    ,   lset_array(NULL)
-    ,   fanout(0.0)
-    ,   size_internal(0.0)
-    ,   avgdepth(0.0)
-    ,   deepest(0.0)
-    ,   suffix_avg_length(0.0)
-    ,   suffix_max_length(0.0)
-{
-    create();
-}
-
-
-void SuffixTree::create()
-{
-    size_t n_nodes = 0;
-    size_t i = 0;
-
-    /* allocate tree nodes */
-    n_nodes = 2 * bucket->size;
-    this->nodes = new SuffixTreeNode[n_nodes];
-    if (NULL == this->nodes) {
-        perror("build_tree: malloc tree nodes");
-        exit(EXIT_FAILURE);
-    }
-
-    this->size = 0;
-
-    /* allocate lset pointer memory for tree nodes */
-    this->lset_array = new Suffix*[SIGMA * n_nodes];
-    if (NULL == this->lset_array) {
-        perror("build_tree: malloc lset array");
-        exit(EXIT_FAILURE);
-    }
-    /* initialize lset pointer memory */
-    for (i = 0; i < SIGMA * n_nodes; ++i) {
-        this->lset_array[i] = NULL;
-    }
-
-    /* initialize tree nodes */
-    for (i = 0; i < n_nodes; ++i) {
-        this->nodes[i].depth = 0;
-        this->nodes[i].rLeaf = 0;
-        this->nodes[i].lset = &(this->lset_array[i*SIGMA]);
-    }
-
-    /* gather suffix statistics */
-    Suffix *p = NULL;
-    Suffix *q = NULL;
-    for (p = bucket->suffixes; p != NULL; p = q) {
-        q = p->next;
-        Sequence &seq = (*sequences)[p->sid];
-        /* depth also includes the '$' */
-        double len = (seq.get_sequence_length() - 1) - p->pid;
-        this->suffix_avg_length += len;
-        if (len > this->suffix_max_length) {
-            this->suffix_max_length = len;
-        }
-    }
-    if (this->suffix_avg_length > 0 && this->bucket->size > 0) {
-        this->suffix_avg_length /= double(this->bucket->size);
-    }
-
-    build_tree_recursive(
-            sequences, sequences->size(),
-            bucket->suffixes, param.window_size - 1, param.window_size,
-            this->nodes, &(this->size),
-            this->size_internal, this->fanout,
-            this->avgdepth, this->deepest,
-            this->suffix_avg_length, this->suffix_max_length);
-
-    if (this->fanout > 0 && this->size_internal > 0) {
-        this->fanout /= this->size_internal;
-    }
-    if (this->avgdepth > 0 && this->size_internal > 0) {
-        this->avgdepth /= this->size_internal;
-    }
-}
-
-
-SuffixTree::~SuffixTree()
-{
-    delete [] this->nodes;
-    delete [] this->lset_array;
-}
-
-
-static inline void
-procLeaf(Suffix **lset, SequenceDatabase *seqs, int nSeqs, Parameters param, set<pair<size_t,size_t> > &pairs)
-{
-    size_t i;
-    size_t j;
-    Suffix *p = NULL;
-    Suffix *q = NULL;
-    int cutOff;
-
-    cutOff = param.AOL * param.SIM;
-
-    for (i = 0; i < SIGMA; i++) {
-        if (lset[i]) {
-            if (i == BEGIN - 'A') { /* inter cross */
-                for (p = lset[i]; p != NULL; p = p->next) {
-                    for (q = p->next; q != NULL; q = q->next) {
-                        if (TRUE == is_candidate(seqs, nSeqs, p, q, param)) {
-                            if (p->sid > q->sid) {
-                                pairs.insert(make_pair(q->sid, p->sid));
-                            }
-                            else {
-                                pairs.insert(make_pair(p->sid, q->sid));
-                            }
-                        }
-                    }
-                }
-            }
-
-            /* intra cross */
-            for (j = i + 1; j < SIGMA; j++) {
-                if (lset[j]) {
-                    for (p = lset[i]; p != NULL; p = p->next) {
-                        for (q = lset[j]; q != NULL; q = q->next) {
-                            if (TRUE == is_candidate(seqs, nSeqs, p, q, param)) {
-                                if (p->sid > q->sid) {
-                                    pairs.insert(make_pair(q->sid, p->sid));
-                                }
-                                else {
-                                    pairs.insert(make_pair(p->sid, q->sid));
-                                }
-                            }
-                        }
-                    }
+                /* walk to the end */
+                while (p->next) {
+                    p = p->next;
                 }
             }
         }
     }
-}
-
-
-static inline void
-procLeaf(Suffix **lset, SequenceDatabase *seqs, int nSeqs, Parameters param, vector<pair<size_t,size_t> > &pairs)
-{
-    size_t i;
-    size_t j;
-    Suffix *p = NULL;
-    Suffix *q = NULL;
-    int cutOff;
-
-    cutOff = param.AOL * param.SIM;
-
-    for (i = 0; i < SIGMA; i++) {
-        if (lset[i]) {
-            if (i == BEGIN - 'A') { /* inter cross */
-                for (p = lset[i]; p != NULL; p = p->next) {
-                    for (q = p->next; q != NULL; q = q->next) {
-                        if (TRUE == is_candidate(seqs, nSeqs, p, q, param)) {
-                            if (p->sid > q->sid) {
-                                pairs.push_back(make_pair(q->sid, p->sid));
-                            }
-                            else {
-                                pairs.push_back(make_pair(p->sid, q->sid));
-                            }
-                        }
-                    }
-                }
-            }
-
-            /* intra cross */
-            for (j = i + 1; j < SIGMA; j++) {
-                if (lset[j]) {
-                    for (p = lset[i]; p != NULL; p = p->next) {
-                        for (q = lset[j]; q != NULL; q = q->next) {
-                            if (TRUE == is_candidate(seqs, nSeqs, p, q, param)) {
-                                if (p->sid > q->sid) {
-                                    pairs.push_back(make_pair(q->sid, p->sid));
-                                }
-                                else {
-                                    pairs.push_back(make_pair(p->sid, q->sid));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-
-void SuffixTree::generate_pairs(set<pair<size_t,size_t> > &pairs)
-{
-    SuffixTreeNode *stNodes = NULL;
-    size_t *srtIndex = NULL;
-    size_t nStNodes = 0;
-    int nSeqs = 0;
-    int maxSeqLen = 0;
-    size_t i = 0;
-    size_t j = 0;
-    SuffixTreeNode *stnode = NULL;
-    size_t sIndex;
-    size_t eIndex;
-    size_t m;
-    size_t n;
-    size_t s;
-    size_t t;
-    Suffix *p = NULL;
-    Suffix *q = NULL;
-    size_t EM;
-    int cutOff; /* cut off value of filter 1 */
-
-    srtIndex = new size_t[this->size];
-    count_sort(this->nodes, srtIndex, this->size, sequences->longest());
-    stNodes = this->nodes;
-    nStNodes = this->size;
-    nSeqs = sequences->size();
-    maxSeqLen = sequences->longest();
-
-    assert(param.exact_match_length >= 1);
-    EM = param.exact_match_length;
-    cutOff = param.AOL * param.SIM;
-
-    /* srtIndex maintain an order of NON-increasing depth of stNodes[] */
-    for (i = 0; i < nStNodes; i++) {
-        sIndex = srtIndex[i];
-        stnode = &stNodes[sIndex];
-
-#ifdef DEBUG
-        printf("stNode->depth=%d, stnode->rLeaf=%ld, sIndex=%ld\n", stnode->depth, stnode->rLeaf, sIndex);
-#endif
-
-        if (stnode->depth >= EM - 1) {
-            if (stnode->rLeaf == sIndex) { /* leaf node */
-                procLeaf(stnode->lset, sequences, nSeqs, param, pairs);
-            }
-            else {                       /* internal node */
-                eIndex = stnode->rLeaf;
-
-                /* pairs generation loop for internal node */
-                for (m = sIndex + 1; m < eIndex; m = stNodes[m].rLeaf+1) {
-                    for (n = stNodes[m].rLeaf+1; n <= eIndex; n = stNodes[n].rLeaf+1) {
-                        for (s = 0; s < SIGMA; s++) {
-                            if (stNodes[m].lset[s]) {
-                                for (t = 0; t < SIGMA; t++) {
-                                    if (stNodes[n].lset[t]) {
-                                        if (s != t || s == (BEGIN - 'A')) {
-                                            for (p = stNodes[m].lset[s]; p != NULL; p = p->next) {
-                                                for (q = stNodes[n].lset[t]; q != NULL; q = q->next) {
-                                                    if (TRUE == is_candidate(
-                                                                sequences, nSeqs, p, q, param)) {
-                                                        if (p->sid > q->sid) {
-                                                            pairs.insert(make_pair(q->sid, p->sid));
-                                                        }
-                                                        else {
-                                                            pairs.insert(make_pair(p->sid, q->sid));
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                /* merge the lsets of subtree */
-                for (m = 0; m < SIGMA; m++) {
-                    p = NULL;
-                    for (j = sIndex + 1; j <= eIndex; j = stNodes[j].rLeaf + 1) {
-                        if ((q = stNodes[j].lset[m])) {
-
-                            /* empty the subtree's ptrs array */
-                            stNodes[j].lset[m] = NULL;
-                            if (p == NULL) {
-                                p = q;
-                                stNodes[sIndex].lset[m] = q;
-                            }
-                            else {
-                                p->next = q;
-                            }
-
-                            /* walk to the end */
-                            while (p->next) {
-                                p = p->next;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        else {
-            /* stnodes are sorted, so later part
-             * will not satisfy EM cutoff */
-            break;
-        }
-    }
-
-    /* free */
-    delete [] srtIndex;
-}
-
-
-void SuffixTree::generate_pairs(vector<pair<size_t,size_t> > &pairs)
-{
-    SuffixTreeNode *stNodes = NULL;
-    size_t *srtIndex = NULL;
-    size_t nStNodes = 0;
-    int nSeqs = 0;
-    int maxSeqLen = 0;
-    size_t i = 0;
-    size_t j = 0;
-    SuffixTreeNode *stnode = NULL;
-    size_t sIndex;
-    size_t eIndex;
-    size_t m;
-    size_t n;
-    size_t s;
-    size_t t;
-    Suffix *p = NULL;
-    Suffix *q = NULL;
-    size_t EM;
-    int cutOff; /* cut off value of filter 1 */
-
-    srtIndex = new size_t[this->size];
-    count_sort(this->nodes, srtIndex, this->size, sequences->longest());
-    stNodes = this->nodes;
-    nStNodes = this->size;
-    nSeqs = sequences->size();
-    maxSeqLen = sequences->longest();
-
-    assert(param.exact_match_length >= 1);
-    EM = param.exact_match_length;
-    cutOff = param.AOL * param.SIM;
-
-    /* srtIndex maintain an order of NON-increasing depth of stNodes[] */
-    for (i = 0; i < nStNodes; i++) {
-        sIndex = srtIndex[i];
-        stnode = &stNodes[sIndex];
-
-#ifdef DEBUG
-        printf("stNode->depth=%d, stnode->rLeaf=%ld, sIndex=%ld\n", stnode->depth, stnode->rLeaf, sIndex);
-#endif
-
-        if (stnode->depth >= EM - 1) {
-            if (stnode->rLeaf == sIndex) { /* leaf node */
-                procLeaf(stnode->lset, sequences, nSeqs, param, pairs);
-            }
-            else {                       /* internal node */
-                eIndex = stnode->rLeaf;
-
-                /* pairs generation loop for internal node */
-                for (m = sIndex + 1; m < eIndex; m = stNodes[m].rLeaf+1) {
-                    for (n = stNodes[m].rLeaf+1; n <= eIndex; n = stNodes[n].rLeaf+1) {
-                        for (s = 0; s < SIGMA; s++) {
-                            if (stNodes[m].lset[s]) {
-                                for (t = 0; t < SIGMA; t++) {
-                                    if (stNodes[n].lset[t]) {
-                                        if (s != t || s == (BEGIN - 'A')) {
-                                            for (p = stNodes[m].lset[s]; p != NULL; p = p->next) {
-                                                for (q = stNodes[n].lset[t]; q != NULL; q = q->next) {
-                                                    if (TRUE == is_candidate(
-                                                                sequences, nSeqs, p, q, param)) {
-                                                        if (p->sid > q->sid) {
-                                                            pairs.push_back(make_pair(q->sid, p->sid));
-                                                        }
-                                                        else {
-                                                            pairs.push_back(make_pair(p->sid, q->sid));
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                /* merge the lsets of subtree */
-                for (m = 0; m < SIGMA; m++) {
-                    p = NULL;
-                    for (j = sIndex + 1; j <= eIndex; j = stNodes[j].rLeaf + 1) {
-                        if ((q = stNodes[j].lset[m])) {
-
-                            /* empty the subtree's ptrs array */
-                            stNodes[j].lset[m] = NULL;
-                            if (p == NULL) {
-                                p = q;
-                                stNodes[sIndex].lset[m] = q;
-                            }
-                            else {
-                                p->next = q;
-                            }
-
-                            /* walk to the end */
-                            while (p->next) {
-                                p = p->next;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        else {
-            /* stnodes are sorted, so later part
-             * will not satisfy EM cutoff */
-            break;
-        }
-    }
-
-    /* free */
-    delete [] srtIndex;
 }
 
 }; /* namespace pgraph */

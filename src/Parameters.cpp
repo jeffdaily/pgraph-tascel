@@ -20,8 +20,6 @@
 #include "Parameters.hpp"
 #include "mpix.hpp"
 
-#define COMMENT '#'
-
 using std::cerr;
 using std::endl;
 using std::getline;
@@ -52,7 +50,11 @@ const string Parameters::KEY_OUTPUT_TO_DISK("OutputToDisk");
 const string Parameters::KEY_DISTRIBUTE_SEQUENCES("DistributeSequences");
 const string Parameters::KEY_USE_LENGTH_FILTER("UseLengthFilter");
 const string Parameters::KEY_USE_ITERATOR("UseIterator");
+const string Parameters::KEY_USE_TREE("UseTree");
+const string Parameters::KEY_USE_TREE_DYNAMIC("UseTreeDynamic");
+const string Parameters::KEY_USE_TREE_HYBRID("UseTreeHybrid");
 const string Parameters::KEY_PRINT_STATS("PrintStats");
+const string Parameters::KEY_ALPHABET("Alphabet");
 /* Defaults */
 const int Parameters::DEF_ALIGN_OVER_LONGER_SEQUENCE(8);
 const int Parameters::DEF_MATCH_SIMILARITY(4);
@@ -69,7 +71,11 @@ const bool Parameters::DEF_OUTPUT_TO_DISK(true);
 const bool Parameters::DEF_DISTRIBUTE_SEQUENCES(false);
 const bool Parameters::DEF_USE_LENGTH_FILTER(true);
 const bool Parameters::DEF_USE_ITERATOR(false);
+const bool Parameters::DEF_USE_TREE(false);
+const bool Parameters::DEF_USE_TREE_DYNAMIC(false);
+const bool Parameters::DEF_USE_TREE_HYBRID(false);
 const bool Parameters::DEF_PRINT_STATS(true);
+const string Parameters::DEF_ALPHABET("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 
 
 static size_t parse_memory_budget(const string& value)
@@ -145,7 +151,11 @@ Parameters::Parameters()
     , distribute_sequences(DEF_DISTRIBUTE_SEQUENCES)
     , use_length_filter(DEF_USE_LENGTH_FILTER)
     , use_iterator(DEF_USE_ITERATOR)
+    , use_tree(DEF_USE_TREE)
+    , use_tree_dynamic(DEF_USE_TREE_DYNAMIC)
+    , use_tree_hybrid(DEF_USE_TREE_HYBRID)
     , print_stats(DEF_PRINT_STATS)
+    , alphabet(DEF_ALPHABET)
 {
 }
 
@@ -166,7 +176,11 @@ Parameters::Parameters(const char *parameters_file, MPI_Comm comm)
     , distribute_sequences(DEF_DISTRIBUTE_SEQUENCES)
     , use_length_filter(DEF_USE_LENGTH_FILTER)
     , use_iterator(DEF_USE_ITERATOR)
+    , use_tree(DEF_USE_TREE)
+    , use_tree_dynamic(DEF_USE_TREE_DYNAMIC)
+    , use_tree_hybrid(DEF_USE_TREE_HYBRID)
     , print_stats(DEF_PRINT_STATS)
+    , alphabet(DEF_ALPHABET)
 {
     parse(parameters_file, comm);
 }
@@ -212,8 +226,16 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
                     DEF_USE_LENGTH_FILTER);
             use_iterator = config[KEY_USE_ITERATOR].as<bool>(
                     DEF_USE_ITERATOR);
+            use_tree = config[KEY_USE_TREE].as<bool>(
+                    DEF_USE_TREE);
+            use_tree_dynamic = config[KEY_USE_TREE_DYNAMIC].as<bool>(
+                    DEF_USE_TREE_DYNAMIC);
+            use_tree_hybrid = config[KEY_USE_TREE_HYBRID].as<bool>(
+                    DEF_USE_TREE_HYBRID);
             print_stats = config[KEY_PRINT_STATS].as<bool>(
                     DEF_PRINT_STATS);
+            alphabet = config[KEY_ALPHABET].as<string>(
+                    DEF_ALPHABET);
 
             string val;
             val = config[KEY_MEMORY_WORKER].as<string>("");
@@ -263,6 +285,11 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
     mpix_bcast(distribute_sequences, 0, comm);
     mpix_bcast(use_length_filter, 0, comm);
     mpix_bcast(use_iterator, 0, comm);
+    mpix_bcast(use_tree, 0, comm);
+    mpix_bcast(use_tree_dynamic, 0, comm);
+    mpix_bcast(use_tree_hybrid, 0, comm);
+    mpix_bcast(print_stats, 0, comm);
+    mpix_bcast(alphabet, 0, comm);
     mpix_bcast(skip_prefixes, 0, comm);
 }
 
@@ -288,6 +315,11 @@ ostream& operator<< (ostream &os, const Parameters &p)
     out << YAML::Key << Parameters::KEY_DISTRIBUTE_SEQUENCES << YAML::Value << p.distribute_sequences;
     out << YAML::Key << Parameters::KEY_USE_LENGTH_FILTER << YAML::Value << p.use_length_filter;
     out << YAML::Key << Parameters::KEY_USE_ITERATOR << YAML::Value << p.use_iterator;
+    out << YAML::Key << Parameters::KEY_USE_TREE << YAML::Value << p.use_tree;
+    out << YAML::Key << Parameters::KEY_USE_TREE_DYNAMIC << YAML::Value << p.use_tree_dynamic;
+    out << YAML::Key << Parameters::KEY_USE_TREE_HYBRID << YAML::Value << p.use_tree_hybrid;
+    out << YAML::Key << Parameters::KEY_PRINT_STATS << YAML::Value << p.print_stats;
+    out << YAML::Key << Parameters::KEY_ALPHABET << YAML::Value << p.alphabet;
     out << YAML::EndMap;
     os << out.c_str();
     return os;

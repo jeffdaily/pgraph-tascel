@@ -79,7 +79,10 @@ class SequenceDatabaseReplicated : public SequenceDatabase
          * @param[in] i the index based on the global count of sequences
          * @return the Sequence reference (owned by this SequenceDatabaseReplicated)
          */
-        virtual Sequence &get_sequence(size_t i) { return *local_cache[i]; }
+        virtual Sequence &get_sequence(size_t i) {
+            assert(local_cache.end() != local_cache.find(i));
+            return *local_cache[i];
+        }
 
         /**
          * Returns a reference to the Sequence based on the global index i.
@@ -87,7 +90,7 @@ class SequenceDatabaseReplicated : public SequenceDatabase
          * @param[in] i the index based on the global count of sequences
          * @return the Sequence reference (owned by this SequenceDatabaseReplicated)
          */
-        virtual Sequence &operator[](size_t i) { return *local_cache[i]; }
+        virtual Sequence &operator[](size_t i) { return get_sequence(i); }
 
     private:
         /**

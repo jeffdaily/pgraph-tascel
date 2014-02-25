@@ -80,50 +80,58 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 @HAVE_SSE2_TRUE@am__append_1 = -I$(top_srcdir)/contrib/Complete-Striped-Smith-Waterman-Library/src
-@HAVE_ARMCI_TRUE@am__append_2 = src/SequenceDatabaseArmci.cpp \
+@HAVE_ARMCI_TRUE@am__append_2 = src/SuffixBucketsArmci.cpp \
+@HAVE_ARMCI_TRUE@	src/SuffixBucketsArmci.hpp \
+@HAVE_ARMCI_TRUE@	src/SequenceDatabaseArmci.cpp \
 @HAVE_ARMCI_TRUE@	src/SequenceDatabaseArmci.hpp
 @HAVE_SSE2_TRUE@am__append_3 = contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.c \
 @HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.h \
 @HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.cpp \
 @HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h
-bin_PROGRAMS = apps/align$(EXEEXT) apps/align_garray$(EXEEXT) \
-	apps/align_iter$(EXEEXT) \
-	apps/align_iter_length_filter$(EXEEXT) \
-	apps/align_length_filter$(EXEEXT) \
-	apps/align_length_filter_noalign$(EXEEXT) \
-	apps/align_pairs$(EXEEXT) apps/align_tree$(EXEEXT) \
-	apps/align_tree_noalign$(EXEEXT) \
-	apps/align_tree_dumb_noalign$(EXEEXT) \
-	apps/align_tree_dup$(EXEEXT) apps/align_tree_dynamic$(EXEEXT) \
-	apps/align_tree_dynamic_dup$(EXEEXT) \
-	apps/align_tree_dynamic_callback$(EXEEXT) \
-	apps/align_tree_dynamic_callback_dup$(EXEEXT) \
-	apps/ccd$(EXEEXT) apps/ccd2$(EXEEXT) apps/pairs$(EXEEXT) \
-	$(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
-	$(am__EXEEXT_4)
-@HAVE_ARMCI_TRUE@am__append_4 = apps/align_counter \
-@HAVE_ARMCI_TRUE@	apps/align_counter_length_filter \
-@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid \
-@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_noalign \
-@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_sorted \
-@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_sorted_noalign \
-@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_dup \
-@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_callback \
-@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_callback_sorted \
-@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_callback_sorted_noalign \
-@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_callback_dup \
-@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid2
-@HAVE_SSE2_TRUE@am__append_5 = apps/align_ssw apps/align_iter_ssw \
-@HAVE_SSE2_TRUE@	apps/align_tree_ssw
-@HAVE_ARMCI_TRUE@@HAVE_SSE2_TRUE@am__append_6 = apps/align_counter_ssw
-@HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@am__append_7 = apps/ssw_test
+bin_PROGRAMS = apps/align$(EXEEXT) $(am__EXEEXT_1)
+#bin_PROGRAMS += apps/align_garray
+#bin_PROGRAMS += apps/align_iter
+#bin_PROGRAMS += apps/align_iter_length_filter
+#bin_PROGRAMS += apps/align_length_filter
+#bin_PROGRAMS += apps/align_length_filter_noalign
+#bin_PROGRAMS += apps/align_pairs
+#bin_PROGRAMS += apps/align_tree
+#bin_PROGRAMS += apps/align_tree_noalign
+#bin_PROGRAMS += apps/align_tree_dumb_noalign
+#bin_PROGRAMS += apps/align_tree_dup
+#bin_PROGRAMS += apps/align_tree_dynamic
+#bin_PROGRAMS += apps/align_tree_dynamic_dup
+#bin_PROGRAMS += apps/align_tree_dynamic_callback
+#bin_PROGRAMS += apps/align_tree_dynamic_callback_dup
+#bin_PROGRAMS += apps/ccd
+#bin_PROGRAMS += apps/ccd2
+#bin_PROGRAMS += apps/pairs
+
+#bin_PROGRAMS += apps/align_counter
+#bin_PROGRAMS += apps/align_counter_length_filter
+#bin_PROGRAMS += apps/align_tree_hybrid
+#bin_PROGRAMS += apps/align_tree_hybrid_noalign
+#bin_PROGRAMS += apps/align_tree_hybrid_sorted
+#bin_PROGRAMS += apps/align_tree_hybrid_sorted_noalign
+#bin_PROGRAMS += apps/align_tree_hybrid_dup
+#bin_PROGRAMS += apps/align_tree_hybrid_callback
+#bin_PROGRAMS += apps/align_tree_hybrid_callback_sorted
+#bin_PROGRAMS += apps/align_tree_hybrid_callback_sorted_noalign
+#bin_PROGRAMS += apps/align_tree_hybrid_callback_dup
+#bin_PROGRAMS += apps/align_tree_hybrid2
+
+#bin_PROGRAMS += apps/align_ssw
+#bin_PROGRAMS += apps/align_iter_ssw
+#bin_PROGRAMS += apps/align_tree_ssw
+#bin_PROGRAMS += apps/align_counter_ssw
+@HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@am__append_4 = apps/ssw_test
 noinst_PROGRAMS = tests/test_align$(EXEEXT) \
 	tests/test_combinations$(EXEEXT) tests/test_dynamic$(EXEEXT) \
 	tests/test_kcombo2$(EXEEXT) tests/test_parser$(EXEEXT) \
 	tests/test_read$(EXEEXT) tests/test_read_fasta$(EXEEXT) \
 	tests/test_read_serial$(EXEEXT) \
-	tests/test_stl_container_performance$(EXEEXT) $(am__EXEEXT_5)
-@HAVE_ARMCI_TRUE@@HAVE_SSE2_TRUE@am__append_8 = tests/test_ssw
+	tests/test_stl_container_performance$(EXEEXT) $(am__EXEEXT_2)
+@HAVE_ARMCI_TRUE@@HAVE_SSE2_TRUE@am__append_5 = tests/test_ssw
 check_PROGRAMS = tests/test_mpi$(EXEEXT)
 subdir = .
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
@@ -173,20 +181,22 @@ libpgtest_a_OBJECTS = $(am_libpgtest_a_OBJECTS)
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libpgraph_la_LIBADD =
 am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
-	src/AlignStats.hpp src/blosum/blosum40.h src/blosum/blosum45.h \
-	src/blosum/blosum62.h src/blosum/blosum75.h \
-	src/blosum/blosum80.h src/blosum/blosum90.h src/Bootstrap.cpp \
-	src/Bootstrap.hpp src/bucket.cpp src/bucket.hpp \
-	src/combinations.c src/combinations.h src/constants.h \
-	src/csequence.c src/csequence.h src/io.cpp src/io.hpp \
-	src/mpix.cpp src/mpix.hpp src/Parameters.cpp \
-	src/Parameters.hpp src/param.cpp src/param.hpp \
-	src/pthread_fixes.h src/Sequence.cpp src/Sequence.hpp \
+	src/alignment_defs.hpp src/AlignStats.hpp \
+	src/blosum/blosum40.h src/blosum/blosum45.h \
+	src/blosum/blosum50.h src/blosum/blosum62.h \
+	src/blosum/blosum75.h src/blosum/blosum80.h src/Bootstrap.cpp \
+	src/Bootstrap.hpp src/combinations.c src/combinations.h \
+	src/EdgeResult.hpp src/mpix.cpp src/mpix.hpp \
+	src/Parameters.cpp src/Parameters.hpp src/pthread_fixes.h \
+	src/Sequence.cpp src/Sequence.hpp src/SequenceDatabase.hpp \
 	src/SequenceDatabaseReplicated.cpp \
-	src/SequenceDatabaseReplicated.hpp src/SequenceDatabase.hpp \
-	src/stree.cpp src/stree.hpp src/SuffixBuckets.cpp \
-	src/SuffixBuckets.hpp src/SuffixTree.cpp src/SuffixTree.hpp \
-	src/TreeStats.hpp src/timer.h src/SequenceDatabaseArmci.cpp \
+	src/SequenceDatabaseReplicated.hpp src/SigSegvHandler.hpp \
+	src/Stats.hpp src/Suffix.hpp src/SuffixBuckets.cpp \
+	src/SuffixBuckets.hpp src/SuffixBucketsTascel.cpp \
+	src/SuffixBucketsTascel.hpp src/SuffixTree.cpp \
+	src/SuffixTree.hpp src/tascelx.hpp src/timer.h \
+	src/TreeStats.hpp src/SuffixBucketsArmci.cpp \
+	src/SuffixBucketsArmci.hpp src/SequenceDatabaseArmci.cpp \
 	src/SequenceDatabaseArmci.hpp \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.c \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.h \
@@ -281,15 +291,16 @@ am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
 	contrib/yaml-cpp-0.5.1/src/tag.cpp \
 	contrib/yaml-cpp-0.5.1/src/tag.h \
 	contrib/yaml-cpp-0.5.1/src/token.h
-@HAVE_ARMCI_TRUE@am__objects_1 = src/SequenceDatabaseArmci.lo
+@HAVE_ARMCI_TRUE@am__objects_1 = src/SuffixBucketsArmci.lo \
+@HAVE_ARMCI_TRUE@	src/SequenceDatabaseArmci.lo
 @HAVE_SSE2_TRUE@am__objects_2 = contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.lo \
 @HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.lo
 am_libpgraph_la_OBJECTS = src/alignment.lo src/Bootstrap.lo \
-	src/bucket.lo src/combinations.lo src/csequence.lo src/io.lo \
-	src/mpix.lo src/Parameters.lo src/param.lo src/Sequence.lo \
-	src/SequenceDatabaseReplicated.lo src/stree.lo \
-	src/SuffixBuckets.lo src/SuffixTree.lo $(am__objects_1) \
-	$(am__objects_2) contrib/yaml-cpp-0.5.1/src/binary.lo \
+	src/combinations.lo src/mpix.lo src/Parameters.lo \
+	src/Sequence.lo src/SequenceDatabaseReplicated.lo \
+	src/SuffixBuckets.lo src/SuffixBucketsTascel.lo \
+	src/SuffixTree.lo $(am__objects_1) $(am__objects_2) \
+	contrib/yaml-cpp-0.5.1/src/binary.lo \
 	contrib/yaml-cpp-0.5.1/src/contrib/graphbuilderadapter.lo \
 	contrib/yaml-cpp-0.5.1/src/contrib/graphbuilder.lo \
 	contrib/yaml-cpp-0.5.1/src/convert.lo \
@@ -323,25 +334,9 @@ AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
-@HAVE_ARMCI_TRUE@am__EXEEXT_1 = apps/align_counter$(EXEEXT) \
-@HAVE_ARMCI_TRUE@	apps/align_counter_length_filter$(EXEEXT) \
-@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid$(EXEEXT) \
-@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_noalign$(EXEEXT) \
-@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_sorted$(EXEEXT) \
-@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_sorted_noalign$(EXEEXT) \
-@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_dup$(EXEEXT) \
-@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_callback$(EXEEXT) \
-@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_callback_sorted$(EXEEXT) \
-@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_callback_sorted_noalign$(EXEEXT) \
-@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid_callback_dup$(EXEEXT) \
-@HAVE_ARMCI_TRUE@	apps/align_tree_hybrid2$(EXEEXT)
-@HAVE_SSE2_TRUE@am__EXEEXT_2 = apps/align_ssw$(EXEEXT) \
-@HAVE_SSE2_TRUE@	apps/align_iter_ssw$(EXEEXT) \
-@HAVE_SSE2_TRUE@	apps/align_tree_ssw$(EXEEXT)
-@HAVE_ARMCI_TRUE@@HAVE_SSE2_TRUE@am__EXEEXT_3 = apps/align_counter_ssw$(EXEEXT)
-@HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@am__EXEEXT_4 = apps/ssw_test$(EXEEXT)
+@HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@am__EXEEXT_1 = apps/ssw_test$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)"
-@HAVE_ARMCI_TRUE@@HAVE_SSE2_TRUE@am__EXEEXT_5 =  \
+@HAVE_ARMCI_TRUE@@HAVE_SSE2_TRUE@am__EXEEXT_2 =  \
 @HAVE_ARMCI_TRUE@@HAVE_SSE2_TRUE@	tests/test_ssw$(EXEEXT)
 PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
 am_apps_align_OBJECTS = apps/align.$(OBJEXT)
@@ -349,237 +344,6 @@ apps_align_OBJECTS = $(am_apps_align_OBJECTS)
 apps_align_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
 apps_align_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am_apps_align_counter_OBJECTS = apps/align_counter.$(OBJEXT)
-apps_align_counter_OBJECTS = $(am_apps_align_counter_OBJECTS)
-apps_align_counter_LDADD = $(LDADD)
-apps_align_counter_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am_apps_align_counter_length_filter_OBJECTS =  \
-	apps/apps_align_counter_length_filter-align_counter.$(OBJEXT)
-apps_align_counter_length_filter_OBJECTS =  \
-	$(am_apps_align_counter_length_filter_OBJECTS)
-apps_align_counter_length_filter_LDADD = $(LDADD)
-apps_align_counter_length_filter_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_apps_align_counter_ssw_OBJECTS =  \
-	apps/apps_align_counter_ssw-align_counter.$(OBJEXT)
-apps_align_counter_ssw_OBJECTS = $(am_apps_align_counter_ssw_OBJECTS)
-apps_align_counter_ssw_LDADD = $(LDADD)
-apps_align_counter_ssw_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_apps_align_garray_OBJECTS = apps/apps_align_garray-align.$(OBJEXT)
-apps_align_garray_OBJECTS = $(am_apps_align_garray_OBJECTS)
-apps_align_garray_LDADD = $(LDADD)
-apps_align_garray_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am_apps_align_iter_OBJECTS = apps/apps_align_iter-align.$(OBJEXT)
-apps_align_iter_OBJECTS = $(am_apps_align_iter_OBJECTS)
-apps_align_iter_LDADD = $(LDADD)
-apps_align_iter_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am_apps_align_iter_length_filter_OBJECTS =  \
-	apps/apps_align_iter_length_filter-align.$(OBJEXT)
-apps_align_iter_length_filter_OBJECTS =  \
-	$(am_apps_align_iter_length_filter_OBJECTS)
-apps_align_iter_length_filter_LDADD = $(LDADD)
-apps_align_iter_length_filter_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_apps_align_iter_ssw_OBJECTS =  \
-	apps/apps_align_iter_ssw-align.$(OBJEXT)
-apps_align_iter_ssw_OBJECTS = $(am_apps_align_iter_ssw_OBJECTS)
-apps_align_iter_ssw_LDADD = $(LDADD)
-apps_align_iter_ssw_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am_apps_align_length_filter_OBJECTS =  \
-	apps/apps_align_length_filter-align.$(OBJEXT)
-apps_align_length_filter_OBJECTS =  \
-	$(am_apps_align_length_filter_OBJECTS)
-apps_align_length_filter_LDADD = $(LDADD)
-apps_align_length_filter_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_apps_align_length_filter_noalign_OBJECTS =  \
-	apps/apps_align_length_filter_noalign-align.$(OBJEXT)
-apps_align_length_filter_noalign_OBJECTS =  \
-	$(am_apps_align_length_filter_noalign_OBJECTS)
-apps_align_length_filter_noalign_LDADD = $(LDADD)
-apps_align_length_filter_noalign_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_apps_align_pairs_OBJECTS = apps/align_pairs.$(OBJEXT)
-apps_align_pairs_OBJECTS = $(am_apps_align_pairs_OBJECTS)
-apps_align_pairs_LDADD = $(LDADD)
-apps_align_pairs_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am_apps_align_ssw_OBJECTS = apps/apps_align_ssw-align.$(OBJEXT)
-apps_align_ssw_OBJECTS = $(am_apps_align_ssw_OBJECTS)
-apps_align_ssw_LDADD = $(LDADD)
-apps_align_ssw_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am_apps_align_tree_OBJECTS = apps/align_tree.$(OBJEXT)
-apps_align_tree_OBJECTS = $(am_apps_align_tree_OBJECTS)
-apps_align_tree_LDADD = $(LDADD)
-apps_align_tree_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am_apps_align_tree_dumb_noalign_OBJECTS =  \
-	apps/apps_align_tree_dumb_noalign-align_tree.$(OBJEXT)
-apps_align_tree_dumb_noalign_OBJECTS =  \
-	$(am_apps_align_tree_dumb_noalign_OBJECTS)
-apps_align_tree_dumb_noalign_LDADD = $(LDADD)
-apps_align_tree_dumb_noalign_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_apps_align_tree_dup_OBJECTS =  \
-	apps/apps_align_tree_dup-align_tree.$(OBJEXT)
-apps_align_tree_dup_OBJECTS = $(am_apps_align_tree_dup_OBJECTS)
-apps_align_tree_dup_LDADD = $(LDADD)
-apps_align_tree_dup_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am_apps_align_tree_dynamic_OBJECTS =  \
-	apps/align_tree_dynamic.$(OBJEXT)
-apps_align_tree_dynamic_OBJECTS =  \
-	$(am_apps_align_tree_dynamic_OBJECTS)
-apps_align_tree_dynamic_LDADD = $(LDADD)
-apps_align_tree_dynamic_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_apps_align_tree_dynamic_callback_OBJECTS = apps/apps_align_tree_dynamic_callback-align_tree_dynamic.$(OBJEXT)
-apps_align_tree_dynamic_callback_OBJECTS =  \
-	$(am_apps_align_tree_dynamic_callback_OBJECTS)
-apps_align_tree_dynamic_callback_LDADD = $(LDADD)
-apps_align_tree_dynamic_callback_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_apps_align_tree_dynamic_callback_dup_OBJECTS = apps/apps_align_tree_dynamic_callback_dup-align_tree_dynamic.$(OBJEXT)
-apps_align_tree_dynamic_callback_dup_OBJECTS =  \
-	$(am_apps_align_tree_dynamic_callback_dup_OBJECTS)
-apps_align_tree_dynamic_callback_dup_LDADD = $(LDADD)
-apps_align_tree_dynamic_callback_dup_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_apps_align_tree_dynamic_dup_OBJECTS =  \
-	apps/apps_align_tree_dynamic_dup-align_tree_dynamic.$(OBJEXT)
-apps_align_tree_dynamic_dup_OBJECTS =  \
-	$(am_apps_align_tree_dynamic_dup_OBJECTS)
-apps_align_tree_dynamic_dup_LDADD = $(LDADD)
-apps_align_tree_dynamic_dup_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_apps_align_tree_hybrid_OBJECTS = apps/align_tree_hybrid.$(OBJEXT)
-apps_align_tree_hybrid_OBJECTS = $(am_apps_align_tree_hybrid_OBJECTS)
-apps_align_tree_hybrid_LDADD = $(LDADD)
-apps_align_tree_hybrid_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_apps_align_tree_hybrid2_OBJECTS =  \
-	apps/align_tree_hybrid2.$(OBJEXT)
-apps_align_tree_hybrid2_OBJECTS =  \
-	$(am_apps_align_tree_hybrid2_OBJECTS)
-apps_align_tree_hybrid2_LDADD = $(LDADD)
-apps_align_tree_hybrid2_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_apps_align_tree_hybrid_callback_OBJECTS = apps/apps_align_tree_hybrid_callback-align_tree_hybrid.$(OBJEXT)
-apps_align_tree_hybrid_callback_OBJECTS =  \
-	$(am_apps_align_tree_hybrid_callback_OBJECTS)
-apps_align_tree_hybrid_callback_LDADD = $(LDADD)
-apps_align_tree_hybrid_callback_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_apps_align_tree_hybrid_callback_dup_OBJECTS = apps/apps_align_tree_hybrid_callback_dup-align_tree_hybrid.$(OBJEXT)
-apps_align_tree_hybrid_callback_dup_OBJECTS =  \
-	$(am_apps_align_tree_hybrid_callback_dup_OBJECTS)
-apps_align_tree_hybrid_callback_dup_LDADD = $(LDADD)
-apps_align_tree_hybrid_callback_dup_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_apps_align_tree_hybrid_callback_sorted_OBJECTS = apps/apps_align_tree_hybrid_callback_sorted-align_tree_hybrid.$(OBJEXT)
-apps_align_tree_hybrid_callback_sorted_OBJECTS =  \
-	$(am_apps_align_tree_hybrid_callback_sorted_OBJECTS)
-apps_align_tree_hybrid_callback_sorted_LDADD = $(LDADD)
-apps_align_tree_hybrid_callback_sorted_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_apps_align_tree_hybrid_callback_sorted_noalign_OBJECTS = apps/apps_align_tree_hybrid_callback_sorted_noalign-align_tree_hybrid.$(OBJEXT)
-apps_align_tree_hybrid_callback_sorted_noalign_OBJECTS =  \
-	$(am_apps_align_tree_hybrid_callback_sorted_noalign_OBJECTS)
-apps_align_tree_hybrid_callback_sorted_noalign_LDADD = $(LDADD)
-apps_align_tree_hybrid_callback_sorted_noalign_DEPENDENCIES =  \
-	libpgraph.la $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_apps_align_tree_hybrid_dup_OBJECTS =  \
-	apps/apps_align_tree_hybrid_dup-align_tree_hybrid.$(OBJEXT)
-apps_align_tree_hybrid_dup_OBJECTS =  \
-	$(am_apps_align_tree_hybrid_dup_OBJECTS)
-apps_align_tree_hybrid_dup_LDADD = $(LDADD)
-apps_align_tree_hybrid_dup_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_apps_align_tree_hybrid_noalign_OBJECTS = apps/apps_align_tree_hybrid_noalign-align_tree_hybrid.$(OBJEXT)
-apps_align_tree_hybrid_noalign_OBJECTS =  \
-	$(am_apps_align_tree_hybrid_noalign_OBJECTS)
-apps_align_tree_hybrid_noalign_LDADD = $(LDADD)
-apps_align_tree_hybrid_noalign_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_apps_align_tree_hybrid_sorted_OBJECTS = apps/apps_align_tree_hybrid_sorted-align_tree_hybrid.$(OBJEXT)
-apps_align_tree_hybrid_sorted_OBJECTS =  \
-	$(am_apps_align_tree_hybrid_sorted_OBJECTS)
-apps_align_tree_hybrid_sorted_LDADD = $(LDADD)
-apps_align_tree_hybrid_sorted_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_apps_align_tree_hybrid_sorted_noalign_OBJECTS = apps/apps_align_tree_hybrid_sorted_noalign-align_tree_hybrid.$(OBJEXT)
-apps_align_tree_hybrid_sorted_noalign_OBJECTS =  \
-	$(am_apps_align_tree_hybrid_sorted_noalign_OBJECTS)
-apps_align_tree_hybrid_sorted_noalign_LDADD = $(LDADD)
-apps_align_tree_hybrid_sorted_noalign_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_apps_align_tree_noalign_OBJECTS =  \
-	apps/apps_align_tree_noalign-align_tree.$(OBJEXT)
-apps_align_tree_noalign_OBJECTS =  \
-	$(am_apps_align_tree_noalign_OBJECTS)
-apps_align_tree_noalign_LDADD = $(LDADD)
-apps_align_tree_noalign_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_apps_align_tree_ssw_OBJECTS =  \
-	apps/apps_align_tree_ssw-align_tree.$(OBJEXT)
-apps_align_tree_ssw_OBJECTS = $(am_apps_align_tree_ssw_OBJECTS)
-apps_align_tree_ssw_LDADD = $(LDADD)
-apps_align_tree_ssw_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am_apps_ccd_OBJECTS = apps/ccd.$(OBJEXT)
-apps_ccd_OBJECTS = $(am_apps_ccd_OBJECTS)
-apps_ccd_LDADD = $(LDADD)
-apps_ccd_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am_apps_ccd2_OBJECTS = apps/ccd2.$(OBJEXT)
-apps_ccd2_OBJECTS = $(am_apps_ccd2_OBJECTS)
-apps_ccd2_LDADD = $(LDADD)
-apps_ccd2_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am_apps_pairs_OBJECTS = apps/pairs.$(OBJEXT)
-apps_pairs_OBJECTS = $(am_apps_pairs_OBJECTS)
-apps_pairs_LDADD = $(LDADD)
-apps_pairs_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 am_apps_ssw_test_OBJECTS = contrib/Complete-Striped-Smith-Waterman-Library/src/main.$(OBJEXT)
@@ -714,35 +478,6 @@ am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
 	$(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
-	$(apps_align_counter_SOURCES) \
-	$(apps_align_counter_length_filter_SOURCES) \
-	$(apps_align_counter_ssw_SOURCES) $(apps_align_garray_SOURCES) \
-	$(apps_align_iter_SOURCES) \
-	$(apps_align_iter_length_filter_SOURCES) \
-	$(apps_align_iter_ssw_SOURCES) \
-	$(apps_align_length_filter_SOURCES) \
-	$(apps_align_length_filter_noalign_SOURCES) \
-	$(apps_align_pairs_SOURCES) $(apps_align_ssw_SOURCES) \
-	$(apps_align_tree_SOURCES) \
-	$(apps_align_tree_dumb_noalign_SOURCES) \
-	$(apps_align_tree_dup_SOURCES) \
-	$(apps_align_tree_dynamic_SOURCES) \
-	$(apps_align_tree_dynamic_callback_SOURCES) \
-	$(apps_align_tree_dynamic_callback_dup_SOURCES) \
-	$(apps_align_tree_dynamic_dup_SOURCES) \
-	$(apps_align_tree_hybrid_SOURCES) \
-	$(apps_align_tree_hybrid2_SOURCES) \
-	$(apps_align_tree_hybrid_callback_SOURCES) \
-	$(apps_align_tree_hybrid_callback_dup_SOURCES) \
-	$(apps_align_tree_hybrid_callback_sorted_SOURCES) \
-	$(apps_align_tree_hybrid_callback_sorted_noalign_SOURCES) \
-	$(apps_align_tree_hybrid_dup_SOURCES) \
-	$(apps_align_tree_hybrid_noalign_SOURCES) \
-	$(apps_align_tree_hybrid_sorted_SOURCES) \
-	$(apps_align_tree_hybrid_sorted_noalign_SOURCES) \
-	$(apps_align_tree_noalign_SOURCES) \
-	$(apps_align_tree_ssw_SOURCES) $(apps_ccd_SOURCES) \
-	$(apps_ccd2_SOURCES) $(apps_pairs_SOURCES) \
 	$(apps_ssw_test_SOURCES) $(tests_test_align_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_kcombo2_SOURCES) \
@@ -752,35 +487,6 @@ SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
 	$(tests_test_stl_container_performance_SOURCES)
 DIST_SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
 	$(am__libpgraph_la_SOURCES_DIST) $(apps_align_SOURCES) \
-	$(apps_align_counter_SOURCES) \
-	$(apps_align_counter_length_filter_SOURCES) \
-	$(apps_align_counter_ssw_SOURCES) $(apps_align_garray_SOURCES) \
-	$(apps_align_iter_SOURCES) \
-	$(apps_align_iter_length_filter_SOURCES) \
-	$(apps_align_iter_ssw_SOURCES) \
-	$(apps_align_length_filter_SOURCES) \
-	$(apps_align_length_filter_noalign_SOURCES) \
-	$(apps_align_pairs_SOURCES) $(apps_align_ssw_SOURCES) \
-	$(apps_align_tree_SOURCES) \
-	$(apps_align_tree_dumb_noalign_SOURCES) \
-	$(apps_align_tree_dup_SOURCES) \
-	$(apps_align_tree_dynamic_SOURCES) \
-	$(apps_align_tree_dynamic_callback_SOURCES) \
-	$(apps_align_tree_dynamic_callback_dup_SOURCES) \
-	$(apps_align_tree_dynamic_dup_SOURCES) \
-	$(apps_align_tree_hybrid_SOURCES) \
-	$(apps_align_tree_hybrid2_SOURCES) \
-	$(apps_align_tree_hybrid_callback_SOURCES) \
-	$(apps_align_tree_hybrid_callback_dup_SOURCES) \
-	$(apps_align_tree_hybrid_callback_sorted_SOURCES) \
-	$(apps_align_tree_hybrid_callback_sorted_noalign_SOURCES) \
-	$(apps_align_tree_hybrid_dup_SOURCES) \
-	$(apps_align_tree_hybrid_noalign_SOURCES) \
-	$(apps_align_tree_hybrid_sorted_SOURCES) \
-	$(apps_align_tree_hybrid_sorted_noalign_SOURCES) \
-	$(apps_align_tree_noalign_SOURCES) \
-	$(apps_align_tree_ssw_SOURCES) $(apps_ccd_SOURCES) \
-	$(apps_ccd2_SOURCES) $(apps_pairs_SOURCES) \
 	$(apps_ssw_test_SOURCES) $(tests_test_align_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
 	$(tests_test_dynamic_SOURCES) $(tests_test_kcombo2_SOURCES) \
@@ -987,21 +693,34 @@ LDADD = libpgraph.la $(TASCEL_LIBS) $(ARMCI_LIBS) $(PT_MPI_LIBS) \
 	$(GMP_LIBS)
 #LDADD += $(GA_FLIBS)
 noinst_LTLIBRARIES = libpgraph.la
+#libpgraph_la_SOURCES += src/bucket.cpp
+#libpgraph_la_SOURCES += src/bucket.hpp
+#libpgraph_la_SOURCES += src/constants.h
+#libpgraph_la_SOURCES += src/csequence.c
+#libpgraph_la_SOURCES += src/csequence.h
+#libpgraph_la_SOURCES += src/fadd.hpp
+#libpgraph_la_SOURCES += src/io.cpp
+#libpgraph_la_SOURCES += src/io.hpp
+#libpgraph_la_SOURCES += src/param.cpp
+#libpgraph_la_SOURCES += src/param.hpp
+#libpgraph_la_SOURCES += src/stree.cpp
+#libpgraph_la_SOURCES += src/stree.hpp
 libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
-	src/AlignStats.hpp src/blosum/blosum40.h src/blosum/blosum45.h \
-	src/blosum/blosum62.h src/blosum/blosum75.h \
-	src/blosum/blosum80.h src/blosum/blosum90.h src/Bootstrap.cpp \
-	src/Bootstrap.hpp src/bucket.cpp src/bucket.hpp \
-	src/combinations.c src/combinations.h src/constants.h \
-	src/csequence.c src/csequence.h src/io.cpp src/io.hpp \
-	src/mpix.cpp src/mpix.hpp src/Parameters.cpp \
-	src/Parameters.hpp src/param.cpp src/param.hpp \
-	src/pthread_fixes.h src/Sequence.cpp src/Sequence.hpp \
+	src/alignment_defs.hpp src/AlignStats.hpp \
+	src/blosum/blosum40.h src/blosum/blosum45.h \
+	src/blosum/blosum50.h src/blosum/blosum62.h \
+	src/blosum/blosum75.h src/blosum/blosum80.h src/Bootstrap.cpp \
+	src/Bootstrap.hpp src/combinations.c src/combinations.h \
+	src/EdgeResult.hpp src/mpix.cpp src/mpix.hpp \
+	src/Parameters.cpp src/Parameters.hpp src/pthread_fixes.h \
+	src/Sequence.cpp src/Sequence.hpp src/SequenceDatabase.hpp \
 	src/SequenceDatabaseReplicated.cpp \
-	src/SequenceDatabaseReplicated.hpp src/SequenceDatabase.hpp \
-	src/stree.cpp src/stree.hpp src/SuffixBuckets.cpp \
-	src/SuffixBuckets.hpp src/SuffixTree.cpp src/SuffixTree.hpp \
-	src/TreeStats.hpp src/timer.h $(am__append_2) $(am__append_3) \
+	src/SequenceDatabaseReplicated.hpp src/SigSegvHandler.hpp \
+	src/Stats.hpp src/Suffix.hpp src/SuffixBuckets.cpp \
+	src/SuffixBuckets.hpp src/SuffixBucketsTascel.cpp \
+	src/SuffixBucketsTascel.hpp src/SuffixTree.cpp \
+	src/SuffixTree.hpp src/tascelx.hpp src/timer.h \
+	src/TreeStats.hpp $(am__append_2) $(am__append_3) \
 	contrib/yaml-cpp-0.5.1/include/yaml-cpp/anchor.h \
 	contrib/yaml-cpp-0.5.1/include/yaml-cpp/binary.h \
 	contrib/yaml-cpp-0.5.1/include/yaml-cpp/contrib/anchordict.h \
@@ -1091,9 +810,6 @@ libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
 	contrib/yaml-cpp-0.5.1/src/tag.cpp \
 	contrib/yaml-cpp-0.5.1/src/tag.h \
 	contrib/yaml-cpp-0.5.1/src/token.h
-#if HAVE_UTC_ITER
-#noinst_PROGRAMS += sandbox/brute_force_iter
-#endif
 apps_align_SOURCES = apps/align.cpp
 apps_align_counter_SOURCES = apps/align_counter.cpp
 apps_align_counter_length_filter_SOURCES = apps/align_counter.cpp
@@ -1305,20 +1021,19 @@ src/$(DEPDIR)/$(am__dirstamp):
 	@: > src/$(DEPDIR)/$(am__dirstamp)
 src/alignment.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/Bootstrap.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
-src/bucket.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/combinations.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
-src/csequence.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
-src/io.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/mpix.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/Parameters.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
-src/param.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/Sequence.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/SequenceDatabaseReplicated.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
-src/stree.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/SuffixBuckets.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
+src/SuffixBucketsTascel.lo: src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
 src/SuffixTree.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/SuffixBucketsArmci.lo: src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
 src/SequenceDatabaseArmci.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
 contrib/Complete-Striped-Smith-Waterman-Library/src/$(am__dirstamp):
@@ -1512,204 +1227,6 @@ apps/align.$(OBJEXT): apps/$(am__dirstamp) \
 apps/align$(EXEEXT): $(apps_align_OBJECTS) $(apps_align_DEPENDENCIES) $(EXTRA_apps_align_DEPENDENCIES) apps/$(am__dirstamp)
 	@rm -f apps/align$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_OBJECTS) $(apps_align_LDADD) $(LIBS)
-apps/align_counter.$(OBJEXT): apps/$(am__dirstamp) \
-	apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_counter$(EXEEXT): $(apps_align_counter_OBJECTS) $(apps_align_counter_DEPENDENCIES) $(EXTRA_apps_align_counter_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_counter$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_counter_OBJECTS) $(apps_align_counter_LDADD) $(LIBS)
-apps/apps_align_counter_length_filter-align_counter.$(OBJEXT):  \
-	apps/$(am__dirstamp) apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_counter_length_filter$(EXEEXT): $(apps_align_counter_length_filter_OBJECTS) $(apps_align_counter_length_filter_DEPENDENCIES) $(EXTRA_apps_align_counter_length_filter_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_counter_length_filter$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_counter_length_filter_OBJECTS) $(apps_align_counter_length_filter_LDADD) $(LIBS)
-apps/apps_align_counter_ssw-align_counter.$(OBJEXT):  \
-	apps/$(am__dirstamp) apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_counter_ssw$(EXEEXT): $(apps_align_counter_ssw_OBJECTS) $(apps_align_counter_ssw_DEPENDENCIES) $(EXTRA_apps_align_counter_ssw_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_counter_ssw$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_counter_ssw_OBJECTS) $(apps_align_counter_ssw_LDADD) $(LIBS)
-apps/apps_align_garray-align.$(OBJEXT): apps/$(am__dirstamp) \
-	apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_garray$(EXEEXT): $(apps_align_garray_OBJECTS) $(apps_align_garray_DEPENDENCIES) $(EXTRA_apps_align_garray_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_garray$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_garray_OBJECTS) $(apps_align_garray_LDADD) $(LIBS)
-apps/apps_align_iter-align.$(OBJEXT): apps/$(am__dirstamp) \
-	apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_iter$(EXEEXT): $(apps_align_iter_OBJECTS) $(apps_align_iter_DEPENDENCIES) $(EXTRA_apps_align_iter_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_iter$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_iter_OBJECTS) $(apps_align_iter_LDADD) $(LIBS)
-apps/apps_align_iter_length_filter-align.$(OBJEXT):  \
-	apps/$(am__dirstamp) apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_iter_length_filter$(EXEEXT): $(apps_align_iter_length_filter_OBJECTS) $(apps_align_iter_length_filter_DEPENDENCIES) $(EXTRA_apps_align_iter_length_filter_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_iter_length_filter$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_iter_length_filter_OBJECTS) $(apps_align_iter_length_filter_LDADD) $(LIBS)
-apps/apps_align_iter_ssw-align.$(OBJEXT): apps/$(am__dirstamp) \
-	apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_iter_ssw$(EXEEXT): $(apps_align_iter_ssw_OBJECTS) $(apps_align_iter_ssw_DEPENDENCIES) $(EXTRA_apps_align_iter_ssw_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_iter_ssw$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_iter_ssw_OBJECTS) $(apps_align_iter_ssw_LDADD) $(LIBS)
-apps/apps_align_length_filter-align.$(OBJEXT): apps/$(am__dirstamp) \
-	apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_length_filter$(EXEEXT): $(apps_align_length_filter_OBJECTS) $(apps_align_length_filter_DEPENDENCIES) $(EXTRA_apps_align_length_filter_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_length_filter$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_length_filter_OBJECTS) $(apps_align_length_filter_LDADD) $(LIBS)
-apps/apps_align_length_filter_noalign-align.$(OBJEXT):  \
-	apps/$(am__dirstamp) apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_length_filter_noalign$(EXEEXT): $(apps_align_length_filter_noalign_OBJECTS) $(apps_align_length_filter_noalign_DEPENDENCIES) $(EXTRA_apps_align_length_filter_noalign_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_length_filter_noalign$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_length_filter_noalign_OBJECTS) $(apps_align_length_filter_noalign_LDADD) $(LIBS)
-apps/align_pairs.$(OBJEXT): apps/$(am__dirstamp) \
-	apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_pairs$(EXEEXT): $(apps_align_pairs_OBJECTS) $(apps_align_pairs_DEPENDENCIES) $(EXTRA_apps_align_pairs_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_pairs$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_pairs_OBJECTS) $(apps_align_pairs_LDADD) $(LIBS)
-apps/apps_align_ssw-align.$(OBJEXT): apps/$(am__dirstamp) \
-	apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_ssw$(EXEEXT): $(apps_align_ssw_OBJECTS) $(apps_align_ssw_DEPENDENCIES) $(EXTRA_apps_align_ssw_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_ssw$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_ssw_OBJECTS) $(apps_align_ssw_LDADD) $(LIBS)
-apps/align_tree.$(OBJEXT): apps/$(am__dirstamp) \
-	apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_tree$(EXEEXT): $(apps_align_tree_OBJECTS) $(apps_align_tree_DEPENDENCIES) $(EXTRA_apps_align_tree_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_tree$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_OBJECTS) $(apps_align_tree_LDADD) $(LIBS)
-apps/apps_align_tree_dumb_noalign-align_tree.$(OBJEXT):  \
-	apps/$(am__dirstamp) apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_tree_dumb_noalign$(EXEEXT): $(apps_align_tree_dumb_noalign_OBJECTS) $(apps_align_tree_dumb_noalign_DEPENDENCIES) $(EXTRA_apps_align_tree_dumb_noalign_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_tree_dumb_noalign$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_dumb_noalign_OBJECTS) $(apps_align_tree_dumb_noalign_LDADD) $(LIBS)
-apps/apps_align_tree_dup-align_tree.$(OBJEXT): apps/$(am__dirstamp) \
-	apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_tree_dup$(EXEEXT): $(apps_align_tree_dup_OBJECTS) $(apps_align_tree_dup_DEPENDENCIES) $(EXTRA_apps_align_tree_dup_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_tree_dup$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_dup_OBJECTS) $(apps_align_tree_dup_LDADD) $(LIBS)
-apps/align_tree_dynamic.$(OBJEXT): apps/$(am__dirstamp) \
-	apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_tree_dynamic$(EXEEXT): $(apps_align_tree_dynamic_OBJECTS) $(apps_align_tree_dynamic_DEPENDENCIES) $(EXTRA_apps_align_tree_dynamic_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_tree_dynamic$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_dynamic_OBJECTS) $(apps_align_tree_dynamic_LDADD) $(LIBS)
-apps/apps_align_tree_dynamic_callback-align_tree_dynamic.$(OBJEXT):  \
-	apps/$(am__dirstamp) apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_tree_dynamic_callback$(EXEEXT): $(apps_align_tree_dynamic_callback_OBJECTS) $(apps_align_tree_dynamic_callback_DEPENDENCIES) $(EXTRA_apps_align_tree_dynamic_callback_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_tree_dynamic_callback$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_dynamic_callback_OBJECTS) $(apps_align_tree_dynamic_callback_LDADD) $(LIBS)
-apps/apps_align_tree_dynamic_callback_dup-align_tree_dynamic.$(OBJEXT):  \
-	apps/$(am__dirstamp) apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_tree_dynamic_callback_dup$(EXEEXT): $(apps_align_tree_dynamic_callback_dup_OBJECTS) $(apps_align_tree_dynamic_callback_dup_DEPENDENCIES) $(EXTRA_apps_align_tree_dynamic_callback_dup_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_tree_dynamic_callback_dup$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_dynamic_callback_dup_OBJECTS) $(apps_align_tree_dynamic_callback_dup_LDADD) $(LIBS)
-apps/apps_align_tree_dynamic_dup-align_tree_dynamic.$(OBJEXT):  \
-	apps/$(am__dirstamp) apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_tree_dynamic_dup$(EXEEXT): $(apps_align_tree_dynamic_dup_OBJECTS) $(apps_align_tree_dynamic_dup_DEPENDENCIES) $(EXTRA_apps_align_tree_dynamic_dup_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_tree_dynamic_dup$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_dynamic_dup_OBJECTS) $(apps_align_tree_dynamic_dup_LDADD) $(LIBS)
-apps/align_tree_hybrid.$(OBJEXT): apps/$(am__dirstamp) \
-	apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_tree_hybrid$(EXEEXT): $(apps_align_tree_hybrid_OBJECTS) $(apps_align_tree_hybrid_DEPENDENCIES) $(EXTRA_apps_align_tree_hybrid_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_tree_hybrid$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_hybrid_OBJECTS) $(apps_align_tree_hybrid_LDADD) $(LIBS)
-apps/align_tree_hybrid2.$(OBJEXT): apps/$(am__dirstamp) \
-	apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_tree_hybrid2$(EXEEXT): $(apps_align_tree_hybrid2_OBJECTS) $(apps_align_tree_hybrid2_DEPENDENCIES) $(EXTRA_apps_align_tree_hybrid2_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_tree_hybrid2$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_hybrid2_OBJECTS) $(apps_align_tree_hybrid2_LDADD) $(LIBS)
-apps/apps_align_tree_hybrid_callback-align_tree_hybrid.$(OBJEXT):  \
-	apps/$(am__dirstamp) apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_tree_hybrid_callback$(EXEEXT): $(apps_align_tree_hybrid_callback_OBJECTS) $(apps_align_tree_hybrid_callback_DEPENDENCIES) $(EXTRA_apps_align_tree_hybrid_callback_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_tree_hybrid_callback$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_hybrid_callback_OBJECTS) $(apps_align_tree_hybrid_callback_LDADD) $(LIBS)
-apps/apps_align_tree_hybrid_callback_dup-align_tree_hybrid.$(OBJEXT):  \
-	apps/$(am__dirstamp) apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_tree_hybrid_callback_dup$(EXEEXT): $(apps_align_tree_hybrid_callback_dup_OBJECTS) $(apps_align_tree_hybrid_callback_dup_DEPENDENCIES) $(EXTRA_apps_align_tree_hybrid_callback_dup_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_tree_hybrid_callback_dup$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_hybrid_callback_dup_OBJECTS) $(apps_align_tree_hybrid_callback_dup_LDADD) $(LIBS)
-apps/apps_align_tree_hybrid_callback_sorted-align_tree_hybrid.$(OBJEXT):  \
-	apps/$(am__dirstamp) apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_tree_hybrid_callback_sorted$(EXEEXT): $(apps_align_tree_hybrid_callback_sorted_OBJECTS) $(apps_align_tree_hybrid_callback_sorted_DEPENDENCIES) $(EXTRA_apps_align_tree_hybrid_callback_sorted_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_tree_hybrid_callback_sorted$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_hybrid_callback_sorted_OBJECTS) $(apps_align_tree_hybrid_callback_sorted_LDADD) $(LIBS)
-apps/apps_align_tree_hybrid_callback_sorted_noalign-align_tree_hybrid.$(OBJEXT):  \
-	apps/$(am__dirstamp) apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_tree_hybrid_callback_sorted_noalign$(EXEEXT): $(apps_align_tree_hybrid_callback_sorted_noalign_OBJECTS) $(apps_align_tree_hybrid_callback_sorted_noalign_DEPENDENCIES) $(EXTRA_apps_align_tree_hybrid_callback_sorted_noalign_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_tree_hybrid_callback_sorted_noalign$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_hybrid_callback_sorted_noalign_OBJECTS) $(apps_align_tree_hybrid_callback_sorted_noalign_LDADD) $(LIBS)
-apps/apps_align_tree_hybrid_dup-align_tree_hybrid.$(OBJEXT):  \
-	apps/$(am__dirstamp) apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_tree_hybrid_dup$(EXEEXT): $(apps_align_tree_hybrid_dup_OBJECTS) $(apps_align_tree_hybrid_dup_DEPENDENCIES) $(EXTRA_apps_align_tree_hybrid_dup_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_tree_hybrid_dup$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_hybrid_dup_OBJECTS) $(apps_align_tree_hybrid_dup_LDADD) $(LIBS)
-apps/apps_align_tree_hybrid_noalign-align_tree_hybrid.$(OBJEXT):  \
-	apps/$(am__dirstamp) apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_tree_hybrid_noalign$(EXEEXT): $(apps_align_tree_hybrid_noalign_OBJECTS) $(apps_align_tree_hybrid_noalign_DEPENDENCIES) $(EXTRA_apps_align_tree_hybrid_noalign_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_tree_hybrid_noalign$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_hybrid_noalign_OBJECTS) $(apps_align_tree_hybrid_noalign_LDADD) $(LIBS)
-apps/apps_align_tree_hybrid_sorted-align_tree_hybrid.$(OBJEXT):  \
-	apps/$(am__dirstamp) apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_tree_hybrid_sorted$(EXEEXT): $(apps_align_tree_hybrid_sorted_OBJECTS) $(apps_align_tree_hybrid_sorted_DEPENDENCIES) $(EXTRA_apps_align_tree_hybrid_sorted_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_tree_hybrid_sorted$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_hybrid_sorted_OBJECTS) $(apps_align_tree_hybrid_sorted_LDADD) $(LIBS)
-apps/apps_align_tree_hybrid_sorted_noalign-align_tree_hybrid.$(OBJEXT):  \
-	apps/$(am__dirstamp) apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_tree_hybrid_sorted_noalign$(EXEEXT): $(apps_align_tree_hybrid_sorted_noalign_OBJECTS) $(apps_align_tree_hybrid_sorted_noalign_DEPENDENCIES) $(EXTRA_apps_align_tree_hybrid_sorted_noalign_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_tree_hybrid_sorted_noalign$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_hybrid_sorted_noalign_OBJECTS) $(apps_align_tree_hybrid_sorted_noalign_LDADD) $(LIBS)
-apps/apps_align_tree_noalign-align_tree.$(OBJEXT):  \
-	apps/$(am__dirstamp) apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_tree_noalign$(EXEEXT): $(apps_align_tree_noalign_OBJECTS) $(apps_align_tree_noalign_DEPENDENCIES) $(EXTRA_apps_align_tree_noalign_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_tree_noalign$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_noalign_OBJECTS) $(apps_align_tree_noalign_LDADD) $(LIBS)
-apps/apps_align_tree_ssw-align_tree.$(OBJEXT): apps/$(am__dirstamp) \
-	apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/align_tree_ssw$(EXEEXT): $(apps_align_tree_ssw_OBJECTS) $(apps_align_tree_ssw_DEPENDENCIES) $(EXTRA_apps_align_tree_ssw_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/align_tree_ssw$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_tree_ssw_OBJECTS) $(apps_align_tree_ssw_LDADD) $(LIBS)
-apps/ccd.$(OBJEXT): apps/$(am__dirstamp) \
-	apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/ccd$(EXEEXT): $(apps_ccd_OBJECTS) $(apps_ccd_DEPENDENCIES) $(EXTRA_apps_ccd_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/ccd$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_ccd_OBJECTS) $(apps_ccd_LDADD) $(LIBS)
-apps/ccd2.$(OBJEXT): apps/$(am__dirstamp) \
-	apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/ccd2$(EXEEXT): $(apps_ccd2_OBJECTS) $(apps_ccd2_DEPENDENCIES) $(EXTRA_apps_ccd2_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/ccd2$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_ccd2_OBJECTS) $(apps_ccd2_LDADD) $(LIBS)
-apps/pairs.$(OBJEXT): apps/$(am__dirstamp) \
-	apps/$(DEPDIR)/$(am__dirstamp)
-
-apps/pairs$(EXEEXT): $(apps_pairs_OBJECTS) $(apps_pairs_DEPENDENCIES) $(EXTRA_apps_pairs_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/pairs$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_pairs_OBJECTS) $(apps_pairs_LDADD) $(LIBS)
 contrib/Complete-Striped-Smith-Waterman-Library/src/main.$(OBJEXT): contrib/Complete-Striped-Smith-Waterman-Library/src/$(am__dirstamp) \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/$(am__dirstamp)
 
@@ -1801,39 +1318,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_counter.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_pairs.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_tree.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_tree_dynamic.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_tree_hybrid.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_tree_hybrid2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_counter_length_filter-align_counter.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_counter_ssw-align_counter.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_garray-align.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_iter-align.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_iter_length_filter-align.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_iter_ssw-align.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_length_filter-align.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_length_filter_noalign-align.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_ssw-align.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_tree_dumb_noalign-align_tree.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_tree_dup-align_tree.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_tree_dynamic_callback-align_tree_dynamic.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_tree_dynamic_callback_dup-align_tree_dynamic.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_tree_dynamic_dup-align_tree_dynamic.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_tree_hybrid_callback-align_tree_hybrid.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_tree_hybrid_callback_dup-align_tree_hybrid.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_tree_hybrid_callback_sorted-align_tree_hybrid.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_tree_hybrid_callback_sorted_noalign-align_tree_hybrid.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_tree_hybrid_dup-align_tree_hybrid.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_tree_hybrid_noalign-align_tree_hybrid.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_tree_hybrid_sorted-align_tree_hybrid.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_tree_hybrid_sorted_noalign-align_tree_hybrid.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_tree_noalign-align_tree.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_tree_ssw-align_tree.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/ccd.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/ccd2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/pairs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/ssw.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/ssw_cpp.Plo@am__quote@
@@ -1873,15 +1357,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabaseArmci.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabaseReplicated.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SuffixBuckets.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SuffixBucketsArmci.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SuffixBucketsTascel.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SuffixTree.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/alignment.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/bucket.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/combinations.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/csequence.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/io.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/mpix.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/param.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/stree.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/MpiEnvironment.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/StreamPrettyPrinter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_align.Po@am__quote@
@@ -1943,342 +1424,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LTCXXCOMPILE) -c -o $@ $<
-
-apps/apps_align_counter_length_filter-align_counter.o: apps/align_counter.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_counter_length_filter_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_counter_length_filter-align_counter.o -MD -MP -MF apps/$(DEPDIR)/apps_align_counter_length_filter-align_counter.Tpo -c -o apps/apps_align_counter_length_filter-align_counter.o `test -f 'apps/align_counter.cpp' || echo '$(srcdir)/'`apps/align_counter.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_counter_length_filter-align_counter.Tpo apps/$(DEPDIR)/apps_align_counter_length_filter-align_counter.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_counter.cpp' object='apps/apps_align_counter_length_filter-align_counter.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_counter_length_filter_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_counter_length_filter-align_counter.o `test -f 'apps/align_counter.cpp' || echo '$(srcdir)/'`apps/align_counter.cpp
-
-apps/apps_align_counter_length_filter-align_counter.obj: apps/align_counter.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_counter_length_filter_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_counter_length_filter-align_counter.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_counter_length_filter-align_counter.Tpo -c -o apps/apps_align_counter_length_filter-align_counter.obj `if test -f 'apps/align_counter.cpp'; then $(CYGPATH_W) 'apps/align_counter.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_counter.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_counter_length_filter-align_counter.Tpo apps/$(DEPDIR)/apps_align_counter_length_filter-align_counter.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_counter.cpp' object='apps/apps_align_counter_length_filter-align_counter.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_counter_length_filter_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_counter_length_filter-align_counter.obj `if test -f 'apps/align_counter.cpp'; then $(CYGPATH_W) 'apps/align_counter.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_counter.cpp'; fi`
-
-apps/apps_align_counter_ssw-align_counter.o: apps/align_counter.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_counter_ssw_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_counter_ssw-align_counter.o -MD -MP -MF apps/$(DEPDIR)/apps_align_counter_ssw-align_counter.Tpo -c -o apps/apps_align_counter_ssw-align_counter.o `test -f 'apps/align_counter.cpp' || echo '$(srcdir)/'`apps/align_counter.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_counter_ssw-align_counter.Tpo apps/$(DEPDIR)/apps_align_counter_ssw-align_counter.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_counter.cpp' object='apps/apps_align_counter_ssw-align_counter.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_counter_ssw_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_counter_ssw-align_counter.o `test -f 'apps/align_counter.cpp' || echo '$(srcdir)/'`apps/align_counter.cpp
-
-apps/apps_align_counter_ssw-align_counter.obj: apps/align_counter.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_counter_ssw_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_counter_ssw-align_counter.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_counter_ssw-align_counter.Tpo -c -o apps/apps_align_counter_ssw-align_counter.obj `if test -f 'apps/align_counter.cpp'; then $(CYGPATH_W) 'apps/align_counter.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_counter.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_counter_ssw-align_counter.Tpo apps/$(DEPDIR)/apps_align_counter_ssw-align_counter.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_counter.cpp' object='apps/apps_align_counter_ssw-align_counter.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_counter_ssw_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_counter_ssw-align_counter.obj `if test -f 'apps/align_counter.cpp'; then $(CYGPATH_W) 'apps/align_counter.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_counter.cpp'; fi`
-
-apps/apps_align_garray-align.o: apps/align.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_garray_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_garray-align.o -MD -MP -MF apps/$(DEPDIR)/apps_align_garray-align.Tpo -c -o apps/apps_align_garray-align.o `test -f 'apps/align.cpp' || echo '$(srcdir)/'`apps/align.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_garray-align.Tpo apps/$(DEPDIR)/apps_align_garray-align.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align.cpp' object='apps/apps_align_garray-align.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_garray_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_garray-align.o `test -f 'apps/align.cpp' || echo '$(srcdir)/'`apps/align.cpp
-
-apps/apps_align_garray-align.obj: apps/align.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_garray_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_garray-align.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_garray-align.Tpo -c -o apps/apps_align_garray-align.obj `if test -f 'apps/align.cpp'; then $(CYGPATH_W) 'apps/align.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_garray-align.Tpo apps/$(DEPDIR)/apps_align_garray-align.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align.cpp' object='apps/apps_align_garray-align.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_garray_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_garray-align.obj `if test -f 'apps/align.cpp'; then $(CYGPATH_W) 'apps/align.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align.cpp'; fi`
-
-apps/apps_align_iter-align.o: apps/align.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_iter_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_iter-align.o -MD -MP -MF apps/$(DEPDIR)/apps_align_iter-align.Tpo -c -o apps/apps_align_iter-align.o `test -f 'apps/align.cpp' || echo '$(srcdir)/'`apps/align.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_iter-align.Tpo apps/$(DEPDIR)/apps_align_iter-align.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align.cpp' object='apps/apps_align_iter-align.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_iter_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_iter-align.o `test -f 'apps/align.cpp' || echo '$(srcdir)/'`apps/align.cpp
-
-apps/apps_align_iter-align.obj: apps/align.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_iter_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_iter-align.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_iter-align.Tpo -c -o apps/apps_align_iter-align.obj `if test -f 'apps/align.cpp'; then $(CYGPATH_W) 'apps/align.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_iter-align.Tpo apps/$(DEPDIR)/apps_align_iter-align.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align.cpp' object='apps/apps_align_iter-align.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_iter_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_iter-align.obj `if test -f 'apps/align.cpp'; then $(CYGPATH_W) 'apps/align.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align.cpp'; fi`
-
-apps/apps_align_iter_length_filter-align.o: apps/align.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_iter_length_filter_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_iter_length_filter-align.o -MD -MP -MF apps/$(DEPDIR)/apps_align_iter_length_filter-align.Tpo -c -o apps/apps_align_iter_length_filter-align.o `test -f 'apps/align.cpp' || echo '$(srcdir)/'`apps/align.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_iter_length_filter-align.Tpo apps/$(DEPDIR)/apps_align_iter_length_filter-align.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align.cpp' object='apps/apps_align_iter_length_filter-align.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_iter_length_filter_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_iter_length_filter-align.o `test -f 'apps/align.cpp' || echo '$(srcdir)/'`apps/align.cpp
-
-apps/apps_align_iter_length_filter-align.obj: apps/align.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_iter_length_filter_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_iter_length_filter-align.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_iter_length_filter-align.Tpo -c -o apps/apps_align_iter_length_filter-align.obj `if test -f 'apps/align.cpp'; then $(CYGPATH_W) 'apps/align.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_iter_length_filter-align.Tpo apps/$(DEPDIR)/apps_align_iter_length_filter-align.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align.cpp' object='apps/apps_align_iter_length_filter-align.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_iter_length_filter_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_iter_length_filter-align.obj `if test -f 'apps/align.cpp'; then $(CYGPATH_W) 'apps/align.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align.cpp'; fi`
-
-apps/apps_align_iter_ssw-align.o: apps/align.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_iter_ssw_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_iter_ssw-align.o -MD -MP -MF apps/$(DEPDIR)/apps_align_iter_ssw-align.Tpo -c -o apps/apps_align_iter_ssw-align.o `test -f 'apps/align.cpp' || echo '$(srcdir)/'`apps/align.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_iter_ssw-align.Tpo apps/$(DEPDIR)/apps_align_iter_ssw-align.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align.cpp' object='apps/apps_align_iter_ssw-align.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_iter_ssw_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_iter_ssw-align.o `test -f 'apps/align.cpp' || echo '$(srcdir)/'`apps/align.cpp
-
-apps/apps_align_iter_ssw-align.obj: apps/align.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_iter_ssw_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_iter_ssw-align.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_iter_ssw-align.Tpo -c -o apps/apps_align_iter_ssw-align.obj `if test -f 'apps/align.cpp'; then $(CYGPATH_W) 'apps/align.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_iter_ssw-align.Tpo apps/$(DEPDIR)/apps_align_iter_ssw-align.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align.cpp' object='apps/apps_align_iter_ssw-align.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_iter_ssw_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_iter_ssw-align.obj `if test -f 'apps/align.cpp'; then $(CYGPATH_W) 'apps/align.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align.cpp'; fi`
-
-apps/apps_align_length_filter-align.o: apps/align.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_length_filter_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_length_filter-align.o -MD -MP -MF apps/$(DEPDIR)/apps_align_length_filter-align.Tpo -c -o apps/apps_align_length_filter-align.o `test -f 'apps/align.cpp' || echo '$(srcdir)/'`apps/align.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_length_filter-align.Tpo apps/$(DEPDIR)/apps_align_length_filter-align.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align.cpp' object='apps/apps_align_length_filter-align.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_length_filter_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_length_filter-align.o `test -f 'apps/align.cpp' || echo '$(srcdir)/'`apps/align.cpp
-
-apps/apps_align_length_filter-align.obj: apps/align.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_length_filter_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_length_filter-align.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_length_filter-align.Tpo -c -o apps/apps_align_length_filter-align.obj `if test -f 'apps/align.cpp'; then $(CYGPATH_W) 'apps/align.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_length_filter-align.Tpo apps/$(DEPDIR)/apps_align_length_filter-align.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align.cpp' object='apps/apps_align_length_filter-align.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_length_filter_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_length_filter-align.obj `if test -f 'apps/align.cpp'; then $(CYGPATH_W) 'apps/align.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align.cpp'; fi`
-
-apps/apps_align_length_filter_noalign-align.o: apps/align.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_length_filter_noalign_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_length_filter_noalign-align.o -MD -MP -MF apps/$(DEPDIR)/apps_align_length_filter_noalign-align.Tpo -c -o apps/apps_align_length_filter_noalign-align.o `test -f 'apps/align.cpp' || echo '$(srcdir)/'`apps/align.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_length_filter_noalign-align.Tpo apps/$(DEPDIR)/apps_align_length_filter_noalign-align.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align.cpp' object='apps/apps_align_length_filter_noalign-align.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_length_filter_noalign_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_length_filter_noalign-align.o `test -f 'apps/align.cpp' || echo '$(srcdir)/'`apps/align.cpp
-
-apps/apps_align_length_filter_noalign-align.obj: apps/align.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_length_filter_noalign_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_length_filter_noalign-align.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_length_filter_noalign-align.Tpo -c -o apps/apps_align_length_filter_noalign-align.obj `if test -f 'apps/align.cpp'; then $(CYGPATH_W) 'apps/align.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_length_filter_noalign-align.Tpo apps/$(DEPDIR)/apps_align_length_filter_noalign-align.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align.cpp' object='apps/apps_align_length_filter_noalign-align.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_length_filter_noalign_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_length_filter_noalign-align.obj `if test -f 'apps/align.cpp'; then $(CYGPATH_W) 'apps/align.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align.cpp'; fi`
-
-apps/apps_align_ssw-align.o: apps/align.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_ssw_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_ssw-align.o -MD -MP -MF apps/$(DEPDIR)/apps_align_ssw-align.Tpo -c -o apps/apps_align_ssw-align.o `test -f 'apps/align.cpp' || echo '$(srcdir)/'`apps/align.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_ssw-align.Tpo apps/$(DEPDIR)/apps_align_ssw-align.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align.cpp' object='apps/apps_align_ssw-align.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_ssw_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_ssw-align.o `test -f 'apps/align.cpp' || echo '$(srcdir)/'`apps/align.cpp
-
-apps/apps_align_ssw-align.obj: apps/align.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_ssw_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_ssw-align.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_ssw-align.Tpo -c -o apps/apps_align_ssw-align.obj `if test -f 'apps/align.cpp'; then $(CYGPATH_W) 'apps/align.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_ssw-align.Tpo apps/$(DEPDIR)/apps_align_ssw-align.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align.cpp' object='apps/apps_align_ssw-align.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_ssw_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_ssw-align.obj `if test -f 'apps/align.cpp'; then $(CYGPATH_W) 'apps/align.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align.cpp'; fi`
-
-apps/apps_align_tree_dumb_noalign-align_tree.o: apps/align_tree.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dumb_noalign_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_dumb_noalign-align_tree.o -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_dumb_noalign-align_tree.Tpo -c -o apps/apps_align_tree_dumb_noalign-align_tree.o `test -f 'apps/align_tree.cpp' || echo '$(srcdir)/'`apps/align_tree.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_dumb_noalign-align_tree.Tpo apps/$(DEPDIR)/apps_align_tree_dumb_noalign-align_tree.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree.cpp' object='apps/apps_align_tree_dumb_noalign-align_tree.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dumb_noalign_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_dumb_noalign-align_tree.o `test -f 'apps/align_tree.cpp' || echo '$(srcdir)/'`apps/align_tree.cpp
-
-apps/apps_align_tree_dumb_noalign-align_tree.obj: apps/align_tree.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dumb_noalign_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_dumb_noalign-align_tree.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_dumb_noalign-align_tree.Tpo -c -o apps/apps_align_tree_dumb_noalign-align_tree.obj `if test -f 'apps/align_tree.cpp'; then $(CYGPATH_W) 'apps/align_tree.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_dumb_noalign-align_tree.Tpo apps/$(DEPDIR)/apps_align_tree_dumb_noalign-align_tree.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree.cpp' object='apps/apps_align_tree_dumb_noalign-align_tree.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dumb_noalign_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_dumb_noalign-align_tree.obj `if test -f 'apps/align_tree.cpp'; then $(CYGPATH_W) 'apps/align_tree.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree.cpp'; fi`
-
-apps/apps_align_tree_dup-align_tree.o: apps/align_tree.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dup_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_dup-align_tree.o -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_dup-align_tree.Tpo -c -o apps/apps_align_tree_dup-align_tree.o `test -f 'apps/align_tree.cpp' || echo '$(srcdir)/'`apps/align_tree.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_dup-align_tree.Tpo apps/$(DEPDIR)/apps_align_tree_dup-align_tree.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree.cpp' object='apps/apps_align_tree_dup-align_tree.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dup_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_dup-align_tree.o `test -f 'apps/align_tree.cpp' || echo '$(srcdir)/'`apps/align_tree.cpp
-
-apps/apps_align_tree_dup-align_tree.obj: apps/align_tree.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dup_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_dup-align_tree.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_dup-align_tree.Tpo -c -o apps/apps_align_tree_dup-align_tree.obj `if test -f 'apps/align_tree.cpp'; then $(CYGPATH_W) 'apps/align_tree.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_dup-align_tree.Tpo apps/$(DEPDIR)/apps_align_tree_dup-align_tree.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree.cpp' object='apps/apps_align_tree_dup-align_tree.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dup_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_dup-align_tree.obj `if test -f 'apps/align_tree.cpp'; then $(CYGPATH_W) 'apps/align_tree.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree.cpp'; fi`
-
-apps/apps_align_tree_dynamic_callback-align_tree_dynamic.o: apps/align_tree_dynamic.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dynamic_callback_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_dynamic_callback-align_tree_dynamic.o -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_dynamic_callback-align_tree_dynamic.Tpo -c -o apps/apps_align_tree_dynamic_callback-align_tree_dynamic.o `test -f 'apps/align_tree_dynamic.cpp' || echo '$(srcdir)/'`apps/align_tree_dynamic.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_dynamic_callback-align_tree_dynamic.Tpo apps/$(DEPDIR)/apps_align_tree_dynamic_callback-align_tree_dynamic.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree_dynamic.cpp' object='apps/apps_align_tree_dynamic_callback-align_tree_dynamic.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dynamic_callback_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_dynamic_callback-align_tree_dynamic.o `test -f 'apps/align_tree_dynamic.cpp' || echo '$(srcdir)/'`apps/align_tree_dynamic.cpp
-
-apps/apps_align_tree_dynamic_callback-align_tree_dynamic.obj: apps/align_tree_dynamic.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dynamic_callback_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_dynamic_callback-align_tree_dynamic.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_dynamic_callback-align_tree_dynamic.Tpo -c -o apps/apps_align_tree_dynamic_callback-align_tree_dynamic.obj `if test -f 'apps/align_tree_dynamic.cpp'; then $(CYGPATH_W) 'apps/align_tree_dynamic.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree_dynamic.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_dynamic_callback-align_tree_dynamic.Tpo apps/$(DEPDIR)/apps_align_tree_dynamic_callback-align_tree_dynamic.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree_dynamic.cpp' object='apps/apps_align_tree_dynamic_callback-align_tree_dynamic.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dynamic_callback_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_dynamic_callback-align_tree_dynamic.obj `if test -f 'apps/align_tree_dynamic.cpp'; then $(CYGPATH_W) 'apps/align_tree_dynamic.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree_dynamic.cpp'; fi`
-
-apps/apps_align_tree_dynamic_callback_dup-align_tree_dynamic.o: apps/align_tree_dynamic.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dynamic_callback_dup_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_dynamic_callback_dup-align_tree_dynamic.o -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_dynamic_callback_dup-align_tree_dynamic.Tpo -c -o apps/apps_align_tree_dynamic_callback_dup-align_tree_dynamic.o `test -f 'apps/align_tree_dynamic.cpp' || echo '$(srcdir)/'`apps/align_tree_dynamic.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_dynamic_callback_dup-align_tree_dynamic.Tpo apps/$(DEPDIR)/apps_align_tree_dynamic_callback_dup-align_tree_dynamic.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree_dynamic.cpp' object='apps/apps_align_tree_dynamic_callback_dup-align_tree_dynamic.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dynamic_callback_dup_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_dynamic_callback_dup-align_tree_dynamic.o `test -f 'apps/align_tree_dynamic.cpp' || echo '$(srcdir)/'`apps/align_tree_dynamic.cpp
-
-apps/apps_align_tree_dynamic_callback_dup-align_tree_dynamic.obj: apps/align_tree_dynamic.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dynamic_callback_dup_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_dynamic_callback_dup-align_tree_dynamic.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_dynamic_callback_dup-align_tree_dynamic.Tpo -c -o apps/apps_align_tree_dynamic_callback_dup-align_tree_dynamic.obj `if test -f 'apps/align_tree_dynamic.cpp'; then $(CYGPATH_W) 'apps/align_tree_dynamic.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree_dynamic.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_dynamic_callback_dup-align_tree_dynamic.Tpo apps/$(DEPDIR)/apps_align_tree_dynamic_callback_dup-align_tree_dynamic.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree_dynamic.cpp' object='apps/apps_align_tree_dynamic_callback_dup-align_tree_dynamic.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dynamic_callback_dup_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_dynamic_callback_dup-align_tree_dynamic.obj `if test -f 'apps/align_tree_dynamic.cpp'; then $(CYGPATH_W) 'apps/align_tree_dynamic.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree_dynamic.cpp'; fi`
-
-apps/apps_align_tree_dynamic_dup-align_tree_dynamic.o: apps/align_tree_dynamic.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dynamic_dup_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_dynamic_dup-align_tree_dynamic.o -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_dynamic_dup-align_tree_dynamic.Tpo -c -o apps/apps_align_tree_dynamic_dup-align_tree_dynamic.o `test -f 'apps/align_tree_dynamic.cpp' || echo '$(srcdir)/'`apps/align_tree_dynamic.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_dynamic_dup-align_tree_dynamic.Tpo apps/$(DEPDIR)/apps_align_tree_dynamic_dup-align_tree_dynamic.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree_dynamic.cpp' object='apps/apps_align_tree_dynamic_dup-align_tree_dynamic.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dynamic_dup_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_dynamic_dup-align_tree_dynamic.o `test -f 'apps/align_tree_dynamic.cpp' || echo '$(srcdir)/'`apps/align_tree_dynamic.cpp
-
-apps/apps_align_tree_dynamic_dup-align_tree_dynamic.obj: apps/align_tree_dynamic.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dynamic_dup_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_dynamic_dup-align_tree_dynamic.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_dynamic_dup-align_tree_dynamic.Tpo -c -o apps/apps_align_tree_dynamic_dup-align_tree_dynamic.obj `if test -f 'apps/align_tree_dynamic.cpp'; then $(CYGPATH_W) 'apps/align_tree_dynamic.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree_dynamic.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_dynamic_dup-align_tree_dynamic.Tpo apps/$(DEPDIR)/apps_align_tree_dynamic_dup-align_tree_dynamic.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree_dynamic.cpp' object='apps/apps_align_tree_dynamic_dup-align_tree_dynamic.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_dynamic_dup_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_dynamic_dup-align_tree_dynamic.obj `if test -f 'apps/align_tree_dynamic.cpp'; then $(CYGPATH_W) 'apps/align_tree_dynamic.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree_dynamic.cpp'; fi`
-
-apps/apps_align_tree_hybrid_callback-align_tree_hybrid.o: apps/align_tree_hybrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_callback_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_hybrid_callback-align_tree_hybrid.o -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_hybrid_callback-align_tree_hybrid.Tpo -c -o apps/apps_align_tree_hybrid_callback-align_tree_hybrid.o `test -f 'apps/align_tree_hybrid.cpp' || echo '$(srcdir)/'`apps/align_tree_hybrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_hybrid_callback-align_tree_hybrid.Tpo apps/$(DEPDIR)/apps_align_tree_hybrid_callback-align_tree_hybrid.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree_hybrid.cpp' object='apps/apps_align_tree_hybrid_callback-align_tree_hybrid.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_callback_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_hybrid_callback-align_tree_hybrid.o `test -f 'apps/align_tree_hybrid.cpp' || echo '$(srcdir)/'`apps/align_tree_hybrid.cpp
-
-apps/apps_align_tree_hybrid_callback-align_tree_hybrid.obj: apps/align_tree_hybrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_callback_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_hybrid_callback-align_tree_hybrid.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_hybrid_callback-align_tree_hybrid.Tpo -c -o apps/apps_align_tree_hybrid_callback-align_tree_hybrid.obj `if test -f 'apps/align_tree_hybrid.cpp'; then $(CYGPATH_W) 'apps/align_tree_hybrid.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree_hybrid.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_hybrid_callback-align_tree_hybrid.Tpo apps/$(DEPDIR)/apps_align_tree_hybrid_callback-align_tree_hybrid.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree_hybrid.cpp' object='apps/apps_align_tree_hybrid_callback-align_tree_hybrid.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_callback_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_hybrid_callback-align_tree_hybrid.obj `if test -f 'apps/align_tree_hybrid.cpp'; then $(CYGPATH_W) 'apps/align_tree_hybrid.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree_hybrid.cpp'; fi`
-
-apps/apps_align_tree_hybrid_callback_dup-align_tree_hybrid.o: apps/align_tree_hybrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_callback_dup_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_hybrid_callback_dup-align_tree_hybrid.o -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_hybrid_callback_dup-align_tree_hybrid.Tpo -c -o apps/apps_align_tree_hybrid_callback_dup-align_tree_hybrid.o `test -f 'apps/align_tree_hybrid.cpp' || echo '$(srcdir)/'`apps/align_tree_hybrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_hybrid_callback_dup-align_tree_hybrid.Tpo apps/$(DEPDIR)/apps_align_tree_hybrid_callback_dup-align_tree_hybrid.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree_hybrid.cpp' object='apps/apps_align_tree_hybrid_callback_dup-align_tree_hybrid.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_callback_dup_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_hybrid_callback_dup-align_tree_hybrid.o `test -f 'apps/align_tree_hybrid.cpp' || echo '$(srcdir)/'`apps/align_tree_hybrid.cpp
-
-apps/apps_align_tree_hybrid_callback_dup-align_tree_hybrid.obj: apps/align_tree_hybrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_callback_dup_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_hybrid_callback_dup-align_tree_hybrid.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_hybrid_callback_dup-align_tree_hybrid.Tpo -c -o apps/apps_align_tree_hybrid_callback_dup-align_tree_hybrid.obj `if test -f 'apps/align_tree_hybrid.cpp'; then $(CYGPATH_W) 'apps/align_tree_hybrid.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree_hybrid.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_hybrid_callback_dup-align_tree_hybrid.Tpo apps/$(DEPDIR)/apps_align_tree_hybrid_callback_dup-align_tree_hybrid.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree_hybrid.cpp' object='apps/apps_align_tree_hybrid_callback_dup-align_tree_hybrid.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_callback_dup_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_hybrid_callback_dup-align_tree_hybrid.obj `if test -f 'apps/align_tree_hybrid.cpp'; then $(CYGPATH_W) 'apps/align_tree_hybrid.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree_hybrid.cpp'; fi`
-
-apps/apps_align_tree_hybrid_callback_sorted-align_tree_hybrid.o: apps/align_tree_hybrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_callback_sorted_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_hybrid_callback_sorted-align_tree_hybrid.o -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_hybrid_callback_sorted-align_tree_hybrid.Tpo -c -o apps/apps_align_tree_hybrid_callback_sorted-align_tree_hybrid.o `test -f 'apps/align_tree_hybrid.cpp' || echo '$(srcdir)/'`apps/align_tree_hybrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_hybrid_callback_sorted-align_tree_hybrid.Tpo apps/$(DEPDIR)/apps_align_tree_hybrid_callback_sorted-align_tree_hybrid.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree_hybrid.cpp' object='apps/apps_align_tree_hybrid_callback_sorted-align_tree_hybrid.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_callback_sorted_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_hybrid_callback_sorted-align_tree_hybrid.o `test -f 'apps/align_tree_hybrid.cpp' || echo '$(srcdir)/'`apps/align_tree_hybrid.cpp
-
-apps/apps_align_tree_hybrid_callback_sorted-align_tree_hybrid.obj: apps/align_tree_hybrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_callback_sorted_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_hybrid_callback_sorted-align_tree_hybrid.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_hybrid_callback_sorted-align_tree_hybrid.Tpo -c -o apps/apps_align_tree_hybrid_callback_sorted-align_tree_hybrid.obj `if test -f 'apps/align_tree_hybrid.cpp'; then $(CYGPATH_W) 'apps/align_tree_hybrid.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree_hybrid.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_hybrid_callback_sorted-align_tree_hybrid.Tpo apps/$(DEPDIR)/apps_align_tree_hybrid_callback_sorted-align_tree_hybrid.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree_hybrid.cpp' object='apps/apps_align_tree_hybrid_callback_sorted-align_tree_hybrid.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_callback_sorted_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_hybrid_callback_sorted-align_tree_hybrid.obj `if test -f 'apps/align_tree_hybrid.cpp'; then $(CYGPATH_W) 'apps/align_tree_hybrid.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree_hybrid.cpp'; fi`
-
-apps/apps_align_tree_hybrid_callback_sorted_noalign-align_tree_hybrid.o: apps/align_tree_hybrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_callback_sorted_noalign_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_hybrid_callback_sorted_noalign-align_tree_hybrid.o -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_hybrid_callback_sorted_noalign-align_tree_hybrid.Tpo -c -o apps/apps_align_tree_hybrid_callback_sorted_noalign-align_tree_hybrid.o `test -f 'apps/align_tree_hybrid.cpp' || echo '$(srcdir)/'`apps/align_tree_hybrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_hybrid_callback_sorted_noalign-align_tree_hybrid.Tpo apps/$(DEPDIR)/apps_align_tree_hybrid_callback_sorted_noalign-align_tree_hybrid.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree_hybrid.cpp' object='apps/apps_align_tree_hybrid_callback_sorted_noalign-align_tree_hybrid.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_callback_sorted_noalign_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_hybrid_callback_sorted_noalign-align_tree_hybrid.o `test -f 'apps/align_tree_hybrid.cpp' || echo '$(srcdir)/'`apps/align_tree_hybrid.cpp
-
-apps/apps_align_tree_hybrid_callback_sorted_noalign-align_tree_hybrid.obj: apps/align_tree_hybrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_callback_sorted_noalign_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_hybrid_callback_sorted_noalign-align_tree_hybrid.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_hybrid_callback_sorted_noalign-align_tree_hybrid.Tpo -c -o apps/apps_align_tree_hybrid_callback_sorted_noalign-align_tree_hybrid.obj `if test -f 'apps/align_tree_hybrid.cpp'; then $(CYGPATH_W) 'apps/align_tree_hybrid.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree_hybrid.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_hybrid_callback_sorted_noalign-align_tree_hybrid.Tpo apps/$(DEPDIR)/apps_align_tree_hybrid_callback_sorted_noalign-align_tree_hybrid.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree_hybrid.cpp' object='apps/apps_align_tree_hybrid_callback_sorted_noalign-align_tree_hybrid.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_callback_sorted_noalign_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_hybrid_callback_sorted_noalign-align_tree_hybrid.obj `if test -f 'apps/align_tree_hybrid.cpp'; then $(CYGPATH_W) 'apps/align_tree_hybrid.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree_hybrid.cpp'; fi`
-
-apps/apps_align_tree_hybrid_dup-align_tree_hybrid.o: apps/align_tree_hybrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_dup_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_hybrid_dup-align_tree_hybrid.o -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_hybrid_dup-align_tree_hybrid.Tpo -c -o apps/apps_align_tree_hybrid_dup-align_tree_hybrid.o `test -f 'apps/align_tree_hybrid.cpp' || echo '$(srcdir)/'`apps/align_tree_hybrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_hybrid_dup-align_tree_hybrid.Tpo apps/$(DEPDIR)/apps_align_tree_hybrid_dup-align_tree_hybrid.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree_hybrid.cpp' object='apps/apps_align_tree_hybrid_dup-align_tree_hybrid.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_dup_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_hybrid_dup-align_tree_hybrid.o `test -f 'apps/align_tree_hybrid.cpp' || echo '$(srcdir)/'`apps/align_tree_hybrid.cpp
-
-apps/apps_align_tree_hybrid_dup-align_tree_hybrid.obj: apps/align_tree_hybrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_dup_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_hybrid_dup-align_tree_hybrid.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_hybrid_dup-align_tree_hybrid.Tpo -c -o apps/apps_align_tree_hybrid_dup-align_tree_hybrid.obj `if test -f 'apps/align_tree_hybrid.cpp'; then $(CYGPATH_W) 'apps/align_tree_hybrid.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree_hybrid.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_hybrid_dup-align_tree_hybrid.Tpo apps/$(DEPDIR)/apps_align_tree_hybrid_dup-align_tree_hybrid.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree_hybrid.cpp' object='apps/apps_align_tree_hybrid_dup-align_tree_hybrid.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_dup_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_hybrid_dup-align_tree_hybrid.obj `if test -f 'apps/align_tree_hybrid.cpp'; then $(CYGPATH_W) 'apps/align_tree_hybrid.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree_hybrid.cpp'; fi`
-
-apps/apps_align_tree_hybrid_noalign-align_tree_hybrid.o: apps/align_tree_hybrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_noalign_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_hybrid_noalign-align_tree_hybrid.o -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_hybrid_noalign-align_tree_hybrid.Tpo -c -o apps/apps_align_tree_hybrid_noalign-align_tree_hybrid.o `test -f 'apps/align_tree_hybrid.cpp' || echo '$(srcdir)/'`apps/align_tree_hybrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_hybrid_noalign-align_tree_hybrid.Tpo apps/$(DEPDIR)/apps_align_tree_hybrid_noalign-align_tree_hybrid.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree_hybrid.cpp' object='apps/apps_align_tree_hybrid_noalign-align_tree_hybrid.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_noalign_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_hybrid_noalign-align_tree_hybrid.o `test -f 'apps/align_tree_hybrid.cpp' || echo '$(srcdir)/'`apps/align_tree_hybrid.cpp
-
-apps/apps_align_tree_hybrid_noalign-align_tree_hybrid.obj: apps/align_tree_hybrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_noalign_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_hybrid_noalign-align_tree_hybrid.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_hybrid_noalign-align_tree_hybrid.Tpo -c -o apps/apps_align_tree_hybrid_noalign-align_tree_hybrid.obj `if test -f 'apps/align_tree_hybrid.cpp'; then $(CYGPATH_W) 'apps/align_tree_hybrid.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree_hybrid.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_hybrid_noalign-align_tree_hybrid.Tpo apps/$(DEPDIR)/apps_align_tree_hybrid_noalign-align_tree_hybrid.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree_hybrid.cpp' object='apps/apps_align_tree_hybrid_noalign-align_tree_hybrid.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_noalign_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_hybrid_noalign-align_tree_hybrid.obj `if test -f 'apps/align_tree_hybrid.cpp'; then $(CYGPATH_W) 'apps/align_tree_hybrid.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree_hybrid.cpp'; fi`
-
-apps/apps_align_tree_hybrid_sorted-align_tree_hybrid.o: apps/align_tree_hybrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_sorted_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_hybrid_sorted-align_tree_hybrid.o -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_hybrid_sorted-align_tree_hybrid.Tpo -c -o apps/apps_align_tree_hybrid_sorted-align_tree_hybrid.o `test -f 'apps/align_tree_hybrid.cpp' || echo '$(srcdir)/'`apps/align_tree_hybrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_hybrid_sorted-align_tree_hybrid.Tpo apps/$(DEPDIR)/apps_align_tree_hybrid_sorted-align_tree_hybrid.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree_hybrid.cpp' object='apps/apps_align_tree_hybrid_sorted-align_tree_hybrid.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_sorted_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_hybrid_sorted-align_tree_hybrid.o `test -f 'apps/align_tree_hybrid.cpp' || echo '$(srcdir)/'`apps/align_tree_hybrid.cpp
-
-apps/apps_align_tree_hybrid_sorted-align_tree_hybrid.obj: apps/align_tree_hybrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_sorted_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_hybrid_sorted-align_tree_hybrid.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_hybrid_sorted-align_tree_hybrid.Tpo -c -o apps/apps_align_tree_hybrid_sorted-align_tree_hybrid.obj `if test -f 'apps/align_tree_hybrid.cpp'; then $(CYGPATH_W) 'apps/align_tree_hybrid.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree_hybrid.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_hybrid_sorted-align_tree_hybrid.Tpo apps/$(DEPDIR)/apps_align_tree_hybrid_sorted-align_tree_hybrid.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree_hybrid.cpp' object='apps/apps_align_tree_hybrid_sorted-align_tree_hybrid.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_sorted_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_hybrid_sorted-align_tree_hybrid.obj `if test -f 'apps/align_tree_hybrid.cpp'; then $(CYGPATH_W) 'apps/align_tree_hybrid.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree_hybrid.cpp'; fi`
-
-apps/apps_align_tree_hybrid_sorted_noalign-align_tree_hybrid.o: apps/align_tree_hybrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_sorted_noalign_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_hybrid_sorted_noalign-align_tree_hybrid.o -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_hybrid_sorted_noalign-align_tree_hybrid.Tpo -c -o apps/apps_align_tree_hybrid_sorted_noalign-align_tree_hybrid.o `test -f 'apps/align_tree_hybrid.cpp' || echo '$(srcdir)/'`apps/align_tree_hybrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_hybrid_sorted_noalign-align_tree_hybrid.Tpo apps/$(DEPDIR)/apps_align_tree_hybrid_sorted_noalign-align_tree_hybrid.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree_hybrid.cpp' object='apps/apps_align_tree_hybrid_sorted_noalign-align_tree_hybrid.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_sorted_noalign_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_hybrid_sorted_noalign-align_tree_hybrid.o `test -f 'apps/align_tree_hybrid.cpp' || echo '$(srcdir)/'`apps/align_tree_hybrid.cpp
-
-apps/apps_align_tree_hybrid_sorted_noalign-align_tree_hybrid.obj: apps/align_tree_hybrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_sorted_noalign_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_hybrid_sorted_noalign-align_tree_hybrid.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_hybrid_sorted_noalign-align_tree_hybrid.Tpo -c -o apps/apps_align_tree_hybrid_sorted_noalign-align_tree_hybrid.obj `if test -f 'apps/align_tree_hybrid.cpp'; then $(CYGPATH_W) 'apps/align_tree_hybrid.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree_hybrid.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_hybrid_sorted_noalign-align_tree_hybrid.Tpo apps/$(DEPDIR)/apps_align_tree_hybrid_sorted_noalign-align_tree_hybrid.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree_hybrid.cpp' object='apps/apps_align_tree_hybrid_sorted_noalign-align_tree_hybrid.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_hybrid_sorted_noalign_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_hybrid_sorted_noalign-align_tree_hybrid.obj `if test -f 'apps/align_tree_hybrid.cpp'; then $(CYGPATH_W) 'apps/align_tree_hybrid.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree_hybrid.cpp'; fi`
-
-apps/apps_align_tree_noalign-align_tree.o: apps/align_tree.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_noalign_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_noalign-align_tree.o -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_noalign-align_tree.Tpo -c -o apps/apps_align_tree_noalign-align_tree.o `test -f 'apps/align_tree.cpp' || echo '$(srcdir)/'`apps/align_tree.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_noalign-align_tree.Tpo apps/$(DEPDIR)/apps_align_tree_noalign-align_tree.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree.cpp' object='apps/apps_align_tree_noalign-align_tree.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_noalign_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_noalign-align_tree.o `test -f 'apps/align_tree.cpp' || echo '$(srcdir)/'`apps/align_tree.cpp
-
-apps/apps_align_tree_noalign-align_tree.obj: apps/align_tree.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_noalign_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_noalign-align_tree.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_noalign-align_tree.Tpo -c -o apps/apps_align_tree_noalign-align_tree.obj `if test -f 'apps/align_tree.cpp'; then $(CYGPATH_W) 'apps/align_tree.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_noalign-align_tree.Tpo apps/$(DEPDIR)/apps_align_tree_noalign-align_tree.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree.cpp' object='apps/apps_align_tree_noalign-align_tree.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_noalign_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_noalign-align_tree.obj `if test -f 'apps/align_tree.cpp'; then $(CYGPATH_W) 'apps/align_tree.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree.cpp'; fi`
-
-apps/apps_align_tree_ssw-align_tree.o: apps/align_tree.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_ssw_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_ssw-align_tree.o -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_ssw-align_tree.Tpo -c -o apps/apps_align_tree_ssw-align_tree.o `test -f 'apps/align_tree.cpp' || echo '$(srcdir)/'`apps/align_tree.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_ssw-align_tree.Tpo apps/$(DEPDIR)/apps_align_tree_ssw-align_tree.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree.cpp' object='apps/apps_align_tree_ssw-align_tree.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_ssw_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_ssw-align_tree.o `test -f 'apps/align_tree.cpp' || echo '$(srcdir)/'`apps/align_tree.cpp
-
-apps/apps_align_tree_ssw-align_tree.obj: apps/align_tree.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_ssw_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_tree_ssw-align_tree.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_tree_ssw-align_tree.Tpo -c -o apps/apps_align_tree_ssw-align_tree.obj `if test -f 'apps/align_tree.cpp'; then $(CYGPATH_W) 'apps/align_tree.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_tree_ssw-align_tree.Tpo apps/$(DEPDIR)/apps_align_tree_ssw-align_tree.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_tree.cpp' object='apps/apps_align_tree_ssw-align_tree.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_tree_ssw_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_tree_ssw-align_tree.obj `if test -f 'apps/align_tree.cpp'; then $(CYGPATH_W) 'apps/align_tree.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_tree.cpp'; fi`
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
