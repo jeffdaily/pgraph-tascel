@@ -55,6 +55,12 @@ const string Parameters::KEY_USE_TREE_DYNAMIC("UseTreeDynamic");
 const string Parameters::KEY_USE_TREE_HYBRID("UseTreeHybrid");
 const string Parameters::KEY_PRINT_STATS("PrintStats");
 const string Parameters::KEY_ALPHABET("Alphabet");
+const string Parameters::KEY_ALPHABET_BEGIN("AlphabetBegin");
+const string Parameters::KEY_ALPHABET_DOLLAR("AlphabetDollar");
+const string Parameters::KEY_DUPLICATES_LOCAL("DuplicatesLocal");
+const string Parameters::KEY_DUPLICATES_SEMILOCAL("DuplicatesSemiLocal");
+const string Parameters::KEY_DUPLICATES_SMP("DuplicatesSmp");
+const string Parameters::KEY_DUPLICATES_GLOBAL("DuplicatesGlobal");
 /* Defaults */
 const int Parameters::DEF_ALIGN_OVER_LONGER_SEQUENCE(8);
 const int Parameters::DEF_MATCH_SIMILARITY(4);
@@ -76,6 +82,12 @@ const bool Parameters::DEF_USE_TREE_DYNAMIC(false);
 const bool Parameters::DEF_USE_TREE_HYBRID(false);
 const bool Parameters::DEF_PRINT_STATS(true);
 const string Parameters::DEF_ALPHABET("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+const char Parameters::DEF_ALPHABET_BEGIN('O');
+const char Parameters::DEF_ALPHABET_DOLLAR('U');
+const bool Parameters::DEF_DUPLICATES_LOCAL(true);
+const bool Parameters::DEF_DUPLICATES_SEMILOCAL(false);
+const bool Parameters::DEF_DUPLICATES_SMP(false);
+const bool Parameters::DEF_DUPLICATES_GLOBAL(false);
 
 
 static size_t parse_memory_budget(const string& value)
@@ -156,6 +168,12 @@ Parameters::Parameters()
     , use_tree_hybrid(DEF_USE_TREE_HYBRID)
     , print_stats(DEF_PRINT_STATS)
     , alphabet(DEF_ALPHABET)
+    , alphabet_begin(DEF_ALPHABET_BEGIN)
+    , alphabet_dollar(DEF_ALPHABET_DOLLAR)
+    , dup_local(DEF_DUPLICATES_LOCAL)
+    , dup_semilocal(DEF_DUPLICATES_SEMILOCAL)
+    , dup_smp(DEF_DUPLICATES_SMP)
+    , dup_global(DEF_DUPLICATES_GLOBAL)
 {
 }
 
@@ -181,6 +199,12 @@ Parameters::Parameters(const char *parameters_file, MPI_Comm comm)
     , use_tree_hybrid(DEF_USE_TREE_HYBRID)
     , print_stats(DEF_PRINT_STATS)
     , alphabet(DEF_ALPHABET)
+    , alphabet_begin(DEF_ALPHABET_BEGIN)
+    , alphabet_dollar(DEF_ALPHABET_DOLLAR)
+    , dup_local(DEF_DUPLICATES_LOCAL)
+    , dup_semilocal(DEF_DUPLICATES_SEMILOCAL)
+    , dup_smp(DEF_DUPLICATES_SMP)
+    , dup_global(DEF_DUPLICATES_GLOBAL)
 {
     parse(parameters_file, comm);
 }
@@ -234,8 +258,14 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
                     DEF_USE_TREE_HYBRID);
             print_stats = config[KEY_PRINT_STATS].as<bool>(
                     DEF_PRINT_STATS);
-            alphabet = config[KEY_ALPHABET].as<string>(
-                    DEF_ALPHABET);
+            dup_local = config[KEY_DUPLICATES_LOCAL].as<bool>(
+                    DEF_DUPLICATES_LOCAL);
+            dup_semilocal = config[KEY_DUPLICATES_SEMILOCAL].as<bool>(
+                    DEF_DUPLICATES_SEMILOCAL);
+            dup_smp = config[KEY_DUPLICATES_SMP].as<bool>(
+                    DEF_DUPLICATES_SMP);
+            dup_global = config[KEY_DUPLICATES_GLOBAL].as<bool>(
+                    DEF_DUPLICATES_GLOBAL);
 
             string val;
             val = config[KEY_MEMORY_WORKER].as<string>("");
@@ -290,7 +320,12 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
     mpix_bcast(use_tree_hybrid, 0, comm);
     mpix_bcast(print_stats, 0, comm);
     mpix_bcast(alphabet, 0, comm);
+    mpix_bcast(alphabet_begin, 0, comm);
+    mpix_bcast(alphabet_dollar, 0, comm);
     mpix_bcast(skip_prefixes, 0, comm);
+    mpix_bcast(dup_local, 0, comm);
+    mpix_bcast(dup_semilocal, 0, comm);
+    mpix_bcast(dup_global, 0, comm);
 }
 
 
@@ -320,6 +355,12 @@ ostream& operator<< (ostream &os, const Parameters &p)
     out << YAML::Key << Parameters::KEY_USE_TREE_HYBRID << YAML::Value << p.use_tree_hybrid;
     out << YAML::Key << Parameters::KEY_PRINT_STATS << YAML::Value << p.print_stats;
     out << YAML::Key << Parameters::KEY_ALPHABET << YAML::Value << p.alphabet;
+    out << YAML::Key << Parameters::KEY_ALPHABET_BEGIN << YAML::Value << p.alphabet_begin;
+    out << YAML::Key << Parameters::KEY_ALPHABET_DOLLAR << YAML::Value << p.alphabet_dollar;
+    out << YAML::Key << Parameters::KEY_DUPLICATES_LOCAL << YAML::Value << p.dup_local;
+    out << YAML::Key << Parameters::KEY_DUPLICATES_SEMILOCAL << YAML::Value << p.dup_semilocal;
+    out << YAML::Key << Parameters::KEY_DUPLICATES_SMP << YAML::Value << p.dup_smp;
+    out << YAML::Key << Parameters::KEY_DUPLICATES_GLOBAL << YAML::Value << p.dup_global;
     out << YAML::EndMap;
     os << out.c_str();
     return os;

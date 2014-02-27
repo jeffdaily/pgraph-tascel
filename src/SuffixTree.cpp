@@ -46,8 +46,8 @@ SuffixTree::SuffixTree(
     ,   bucket(bucket)
     ,   param(param)
     ,   SIGMA(param.alphabet.size())
-    ,   DOLLAR('U') /** @todo TODO get from parameters */
-    ,   BEGIN('O') /** @todo TODO get from parameters */
+    ,   DOLLAR(param.alphabet_dollar)
+    ,   BEGIN(param.alphabet_begin)
     ,   alphabet(param.alphabet)
     ,   alphabet_table(numeric_limits<unsigned char>::max(), npos)
     ,   window_size(param.window_size)
@@ -62,7 +62,7 @@ SuffixTree::SuffixTree(
     size_t n_nodes = 2 * bucket->size;
     size_t i = 0;
 
-    cout << "SuffixTree bid=" << bucket->bid << " size=" << bucket->size << endl;
+    //cout << "SuffixTree bid=" << bucket->bid << " size=" << bucket->size << endl;
 
     for (i=0; i<SIGMA; ++i) {
         alphabet_table[(unsigned char)(param.alphabet[i])] = i;
@@ -296,7 +296,7 @@ bool SuffixTree::is_candidate(Suffix *p, Suffix *q)
     size_t s2Len = 0;
     size_t f1 = 0;
     size_t f2 = 0;
-    int cutOff = param.AOL * param.SIM;
+    int cutOff = param.AOL * param.SIM / 100;
     bool result = false;
 
     f1 = p->sid;
@@ -315,21 +315,29 @@ bool SuffixTree::is_candidate(Suffix *p, Suffix *q)
         }
         s1Len = (*sequences)[f1].size() - 1;
         s2Len = (*sequences)[f2].size() - 1;
-        if (s1Len <= s2Len) {
-            if (100 * s1Len < cutOff * s2Len) {
-                result = false;
-            }
-            else {
-                result = true;
-            }
+        result = length_filter(s1Len, s2Len, cutOff);
+    }
+
+    return result;
+}
+
+
+/**
+ * Returns true if the strings s1 and s2 should be considered for
+ * alignment.
+ */
+bool SuffixTree::length_filter(size_t s1Len, size_t s2Len, size_t cutOff)
+{
+    bool result = true;
+
+    if (s1Len <= s2Len) {
+        if (100 * s1Len < cutOff * s2Len) {
+            result = false;
         }
-        else {
-            if (100 * s2Len < cutOff * s1Len) {
-                result = false;
-            }
-            else {
-                result = true;
-            }
+    }
+    else {
+        if (100 * s2Len < cutOff * s1Len) {
+            result = false;
         }
     }
 

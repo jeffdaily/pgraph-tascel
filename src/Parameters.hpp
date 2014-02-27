@@ -49,6 +49,12 @@ public:
     static const string KEY_USE_TREE_HYBRID;
     static const string KEY_PRINT_STATS;
     static const string KEY_ALPHABET;
+    static const string KEY_ALPHABET_BEGIN;
+    static const string KEY_ALPHABET_DOLLAR;
+    static const string KEY_DUPLICATES_LOCAL;
+    static const string KEY_DUPLICATES_SEMILOCAL;
+    static const string KEY_DUPLICATES_SMP;
+    static const string KEY_DUPLICATES_GLOBAL;
 
     /* Defaults */
     static const int DEF_ALIGN_OVER_LONGER_SEQUENCE;
@@ -71,6 +77,12 @@ public:
     static const bool DEF_USE_TREE_HYBRID;
     static const bool DEF_PRINT_STATS;
     static const string DEF_ALPHABET;
+    static const char DEF_ALPHABET_BEGIN;
+    static const char DEF_ALPHABET_DOLLAR;
+    static const bool DEF_DUPLICATES_LOCAL;
+    static const bool DEF_DUPLICATES_SEMILOCAL;
+    static const bool DEF_DUPLICATES_SMP;
+    static const bool DEF_DUPLICATES_GLOBAL;
 
     /**
      * Constructs empty (default) parameters.
@@ -116,6 +128,12 @@ public:
     bool use_tree_hybrid;  /**< whether to allow tree tasks to be stolen */
     bool print_stats;   /**< whether to print detailed timings */
     string alphabet;    /**< the valid characters expected in input file */
+    char alphabet_begin;/**< character representing left terminal */
+    char alphabet_dollar;/**< character representing right terminal */
+    bool dup_local;     /**< whether to check for duplicate pairs */
+    bool dup_semilocal; /**< whether to check for duplicate pairs across invocations */
+    bool dup_smp;       /**< whether to check for duplicate pairs across invocations, thread safe*/
+    bool dup_global;    /**< whether to check for duplicate pairs distributed */
 };
 
 ostream& operator<< (ostream &os, const Parameters &p);

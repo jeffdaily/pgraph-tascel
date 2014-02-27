@@ -43,6 +43,7 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
     ,   suffixes_size(0)
     ,   buckets(NULL)
     ,   buckets_size(0)
+    ,   n_nonempty(0)
     ,   count_remote_buckets(0)
     ,   count_remote_suffixes(0)
     ,   owned_buckets()
@@ -79,6 +80,7 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
     if (comm_rank < remainder) {
         start += comm_rank;
         stop += comm_rank+1;
+        n_seq += 1;
     }
     else {
         start += remainder;
@@ -257,6 +259,7 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
             size_t bucket_index = suffixes[i].bid / comm_size;
             if (buckets[bucket_index].size == 0) {
                 buckets[bucket_index].offset = i;
+                n_nonempty++;
             }
             buckets[bucket_index].size++;
             ++bucket_size_total;
@@ -272,12 +275,14 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
             size_t bucket_index = suffixes[i].bid / comm_size;
             if (buckets[bucket_index].size == 0) {
                 buckets[bucket_index].offset = i;
+                n_nonempty++;
             }
             buckets[bucket_index].size++;
             ++bucket_size_total;
         }
     }
 
+    mpix_allreduce(n_nonempty, MPI_SUM, comm);
 #if 1
     mpix_print_sync("bucket_size_total", bucket_size_total, comm);
 #endif

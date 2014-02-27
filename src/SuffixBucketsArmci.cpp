@@ -19,6 +19,7 @@
 
 #include <tascel.h>
 
+#include "Bootstrap.hpp"
 #include "constants.h"
 #include "mpix.hpp"
 #include "Parameters.hpp"
@@ -46,10 +47,12 @@ SuffixBucketsArmci::SuffixBucketsArmci(SequenceDatabase *sequences,
     ,   suffixes_size(0)
     ,   buckets_remote(NULL)
     ,   buckets(NULL)
-    ,   buckets_size()
+    ,   buckets_size(0)
+    ,   n_nonempty(0)
     ,   mutex()
     ,   count_remote_buckets(0)
     ,   count_remote_suffixes(0)
+    ,   owned_buckets()
 {
     size_t n_suffixes = 0;
     size_t suffix_index = 0;
@@ -58,6 +61,8 @@ SuffixBucketsArmci::SuffixBucketsArmci(SequenceDatabase *sequences,
     size_t start = 0;
     size_t stop = 0;
     int ierr = 0;
+
+    initialize_armci();
 
     /* how many buckets does this process own? */
     buckets_size = n_buckets / comm_size;
@@ -190,8 +195,11 @@ SuffixBucketsArmci::SuffixBucketsArmci(SequenceDatabase *sequences,
     buckets = buckets_remote[comm_rank];
     mpix_print_sync("buckets_size", buckets_size, comm);
     for (size_t i=0; i<buckets_size; ++i) {
+        size_t bid = i*comm_size + comm_rank;
         buckets[i].offset = 0;
         buckets[i].size = 0;
+        buckets[i].bid = bid;
+        owned_buckets.push_back(bid);
     }
 
     vector<int> send_displacements(comm_size, 0);
@@ -260,6 +268,7 @@ SuffixBucketsArmci::SuffixBucketsArmci(SequenceDatabase *sequences,
             size_t bucket_index = suffixes[i].bid / comm_size;
             if (buckets[bucket_index].size == 0) {
                 buckets[bucket_index].offset = i;
+                n_nonempty++;
             }
             buckets[bucket_index].size++;
             ++bucket_size_total;
@@ -275,12 +284,14 @@ SuffixBucketsArmci::SuffixBucketsArmci(SequenceDatabase *sequences,
             size_t bucket_index = suffixes[i].bid / comm_size;
             if (buckets[bucket_index].size == 0) {
                 buckets[bucket_index].offset = i;
+                n_nonempty++;
             }
             buckets[bucket_index].size++;
             ++bucket_size_total;
         }
     }
 
+    mpix_allreduce(n_nonempty, MPI_SUM, comm);
 #if 1
     mpix_print_sync("bucket_size_total", bucket_size_total, comm);
 #endif
@@ -312,8 +323,14 @@ Bucket* SuffixBucketsArmci::get(size_t bid)
 
     if (owner == comm_rank) {
         /* already owned, just return it */
-        bucket->suffixes = &suffixes[buckets[bucket_index].offset];
         bucket->size = buckets[bucket_index].size;
+        bucket->bid = bid;
+        if (bucket->size > 0) {
+            bucket->suffixes = &suffixes[buckets[bucket_index].offset];
+        }
+        else {
+            bucket->suffixes = NULL;
+        }
     }
     else {
         LockGuard<PthreadMutex> guard(mutex);
@@ -321,6 +338,7 @@ Bucket* SuffixBucketsArmci::get(size_t bid)
         BucketMeta *remote_bucket = (BucketMeta*)ARMCI_Malloc_local(sizeof(BucketMeta));
         ARMCI_Get(&buckets_remote[owner][bucket_index],
                 remote_bucket, sizeof(BucketMeta), owner);
+        assert(remote_bucket->bid == bid);
         bucket->size = remote_bucket->size;
         count_remote_buckets += 1;
         count_remote_suffixes += bucket->size;

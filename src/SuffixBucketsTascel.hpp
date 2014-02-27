@@ -49,6 +49,12 @@ class SuffixBucketsTascel : public SuffixBuckets
         /** @copydoc SuffixBuckets::owns() */
         virtual const vector<size_t>& owns() const { return owned_buckets; }
 
+        /** @copydoc SuffixBuckets::size_local() */
+        virtual size_t size_local() const { return buckets_size; }
+
+        /** @copydoc SuffixBuckets::size_nonempty() */
+        virtual size_t size_nonempty() const { return n_nonempty; }
+
     private:
         /** For indexing into locally-stored Suffix allocation. */
         struct BucketMeta {
@@ -82,6 +88,7 @@ class SuffixBucketsTascel : public SuffixBuckets
         size_t suffixes_size;           /**< size of local suffixes array */
         BucketMeta *buckets;            /**< array of all local buckets */
         size_t buckets_size;            /**< size of local buckets array */
+        size_t n_nonempty;              /**< global count of non-empty buckets */
         size_t count_remote_buckets;
         size_t count_remote_suffixes;
         vector<size_t> owned_buckets;

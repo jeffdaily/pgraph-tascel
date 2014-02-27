@@ -82,6 +82,19 @@ void k_combination(unsigned long pos, unsigned long k, unsigned long *result)
 }
 
 
+unsigned long k_combination_inv(unsigned long k, unsigned long *result)
+{
+    unsigned long i = 0;
+    unsigned long pos = 0;
+
+    for (i=0; i<k; ++i) {
+        pos += binomial_coefficient(result[i], i+1);
+    }
+
+    return pos;
+}
+
+
 void k_combination2(unsigned long pos, unsigned long *result)
 {
     double s;
@@ -96,6 +109,12 @@ void k_combination2(unsigned long pos, unsigned long *result)
     }
     result[0] = pos - s;
     result[1] = i;
+}
+
+
+unsigned long k_combination2_inv(unsigned long *result)
+{
+    return binomial_coefficient(result[0],1) + binomial_coefficient(result[1],2);
 }
 
 

@@ -38,6 +38,11 @@
 #include "constants.h"
 #include "EdgeResult.hpp"
 #include "mpix.hpp"
+#include "PairCheck.hpp"
+#include "PairCheckGlobal.hpp"
+#include "PairCheckLocal.hpp"
+#include "PairCheckSemiLocal.hpp"
+#include "PairCheckSmp.hpp"
 #include "Parameters.hpp"
 #include "Sequence.hpp"
 #include "SequenceDatabase.hpp"
@@ -62,10 +67,10 @@ using namespace pgraph;
 
 typedef struct {
     unsigned long id;
-} task_description_iter;
+} task_description_one;
 
 void createTaskFn(void *tsk, int tsk_size, TaskIndex tidx) {
-    assert(tsk_size == sizeof(task_description_iter));
+    assert(tsk_size == sizeof(task_description_one));
     *(unsigned long*)tsk = tidx;
 }
 
@@ -73,15 +78,18 @@ void createTaskFn(void *tsk, int tsk_size, TaskIndex tidx) {
 typedef struct {
     unsigned long id1;
     unsigned long id2;
-} task_description;
+} task_description_two;
 
 
 typedef struct {
+    UniformTaskCollection **utcs;
     AlignStats *stats_align;
     TreeStats *stats_tree;
     SequenceDatabase *sequences;
     vector<EdgeResult> *edge_results;
     Parameters *parameters;
+    PairCheck **pair_check;
+    SuffixBuckets *suffix_buckets;
     cell_t ***tbl;
     int ***del;
     int ***ins;
@@ -103,6 +111,19 @@ static void alignment_task(
         void *pldata, int /*pldata_len*/,
         vector<void *> /*data_bufs*/,
         int thd);
+static unsigned long process_tree(Bucket *bucket, local_data_t *local_data, int thd);
+static void tree_task(
+        UniformTaskCollection * /*utc*/,
+        void *bigd, int /*bigd_len*/,
+        void *pldata, int /*pldata_len*/,
+        vector<void *> /*data_bufs*/,
+        int thd);
+static void hybrid_task(
+        UniformTaskCollection * /*utc*/,
+        void *bigd, int /*bigd_len*/,
+        void *pldata, int /*pldata_len*/,
+        vector<void *> /*data_bufs*/,
+        int thd);
 static unsigned long populate_tasks_iter(
         UniformTaskCollection **utcs, const TaskCollProps &props,
         unsigned long ntasks, unsigned long tasks_per_worker,
@@ -113,8 +134,13 @@ static unsigned long populate_tasks(
         int worker);
 static unsigned long populate_tasks_tree(
         UniformTaskCollection **utcs, const TaskCollProps &props,
-        SequenceDatabase *sequences, const Parameters &parameters, TreeStats *stats,
-        int worker);
+        local_data_t *local_data, int worker);
+static unsigned long populate_tasks_tree_dynamic(
+        UniformTaskCollection **utcs, const TaskCollProps &props,
+        local_data_t *local_data, int worker);
+static unsigned long populate_tasks_tree_hybrid(
+        UniformTaskCollection **utcs, const TaskCollProps &props,
+        local_data_t *local_data, int worker);
 
 
 int main(int argc, char **argv)
@@ -125,6 +151,8 @@ int main(int argc, char **argv)
     TreeStats *stats_tree = NULL;
     SequenceDatabase *sequences = NULL;
     vector<EdgeResult> *edge_results = NULL;
+    PairCheck **pair_check = NULL;
+    SuffixBuckets *suffix_buckets = NULL;
     Parameters *parameters = NULL;
     local_data_t *local_data = NULL;
     char delimiter = '\0';
@@ -139,11 +167,14 @@ int main(int argc, char **argv)
     stats_align = new AlignStats[NUM_WORKERS];
     stats_tree = new TreeStats[NUM_WORKERS];
     edge_results = new vector<EdgeResult>[NUM_WORKERS];
+    pair_check = new PairCheck*[NUM_WORKERS];
     parameters = new Parameters;
     local_data = new local_data_t;
+    local_data->utcs = utcs;
     local_data->stats_align = stats_align;
     local_data->stats_tree = stats_tree;
     local_data->edge_results = edge_results;
+    local_data->pair_check = pair_check;
     local_data->parameters = parameters;
 
     /* MPI standard does not guarantee all procs receive argc and argv */
@@ -191,7 +222,26 @@ int main(int argc, char **argv)
     if (parameters->use_tree
             || parameters->use_tree_dynamic
             || parameters->use_tree_hybrid) {
-        delimiter = 'U'; /* dollar */
+        delimiter = parameters->alphabet_dollar; /* dollar */
+        if (parameters->dup_smp) {
+            pair_check[0] = new PairCheckSmp;
+            for (int worker=1; worker<NUM_WORKERS; ++worker) {
+                pair_check[worker] = pair_check[0];
+            }
+        }
+        else {
+            for (int worker=0; worker<NUM_WORKERS; ++worker) {
+                if (parameters->dup_local) {
+                    pair_check[worker] = new PairCheckLocal;
+                }
+                else if (parameters->dup_semilocal) {
+                    pair_check[worker] = new PairCheckSemiLocal;
+                }
+                else {
+                    assert(0);
+                }
+            }
+        }
     }
 
     if (parameters->distribute_sequences) {
@@ -223,6 +273,17 @@ int main(int argc, char **argv)
         local_data->ins[worker] = allocate_int_table(2, sequences->longest());
     }
 
+    if (parameters->use_tree
+            || parameters->use_tree_dynamic
+            || parameters->use_tree_hybrid) {
+#if HAVE_ARMCI
+        suffix_buckets = new SuffixBucketsArmci(sequences, *parameters, pgraph::comm);
+#else
+        suffix_buckets = new SuffixBucketsTascel(sequences, *parameters, pgraph::comm);
+#endif
+        local_data->suffix_buckets = suffix_buckets;
+    }
+
     /* how many combinations of sequences are there? */
     unsigned long ntasks = binomial_coefficient(sequences->size(), 2);
     if (0 == rank) {
@@ -249,63 +310,96 @@ int main(int argc, char **argv)
     /* the tascel part */
     vector<double> populate_time(NUM_WORKERS, 0.0);
     vector<double> populate_count(NUM_WORKERS, 0.0);
-    for (int worker=0; worker<NUM_WORKERS; ++worker)
-    {
-        TslFuncRegTbl *frt = NULL;
-        TslFunc tf;
-        //TslFunc tf2;
+
+    if (parameters->use_iterator) {
+        TslFuncRegTbl *frt = new TslFuncRegTbl;
+        TslFunc tf = frt->add(alignment_task_iter);
         TaskCollProps props;
-        size_t taskSize = 0;
-
-        frt = new TslFuncRegTbl;
-        if (parameters->use_iterator) {
-            tf = frt->add(alignment_task_iter);
-            taskSize = sizeof(task_description_iter);
-        }
-        else if (parameters->use_tree) {
-            tf = frt->add(alignment_task);
-            taskSize = sizeof(task_description);
-        }
-        else if (parameters->use_tree_dynamic) {
-            assert(0);
-        }
-        else if (parameters->use_tree_hybrid) {
-            assert(0);
-        }
-        else {
-            tf = frt->add(alignment_task);
-            taskSize = sizeof(task_description);
-        }
-
         props.functions(tf, frt)
-            .taskSize(taskSize)
-            .maxTasks(max_tasks_per_worker)
+            .taskSize(sizeof(task_description_one))
+            .maxTasks(parameters->memory_worker / sizeof(task_description_one))
             .localData(local_data, sizeof(void*));
-
-        populate_time[worker] = MPI_Wtime();
-        if (parameters->use_iterator) {
+        for (int worker=0; worker<NUM_WORKERS; ++worker) {
+            populate_time[worker] = MPI_Wtime();
             populate_count[worker] = populate_tasks_iter(
                     utcs, props, ntasks, tasks_per_worker, worker);
+            populate_time[worker] = MPI_Wtime() - populate_time[worker];
         }
-        else if (parameters->use_tree) {
+    }
+    else if (parameters->use_tree) {
+        TslFuncRegTbl *frt = new TslFuncRegTbl;
+        TslFunc tf = frt->add(alignment_task);
+        TaskCollProps props;
+        props.functions(tf, frt)
+            .taskSize(sizeof(task_description_two))
+            .maxTasks(parameters->memory_worker / sizeof(task_description_two))
+            .localData(local_data, sizeof(void*));
+        for (int worker=0; worker<NUM_WORKERS; ++worker) {
+            populate_time[worker] = MPI_Wtime();
             populate_count[worker] = populate_tasks_tree(
-                    utcs, props, sequences, *parameters, stats_tree, worker);
+                    utcs, props, local_data, worker);
+            populate_time[worker] = MPI_Wtime() - populate_time[worker];
         }
-        else if (parameters->use_tree_dynamic) {
-            //populate_count[worker] = populate_tasks(
-                    //utcs, props, ntasks, tasks_per_worker, worker, stats);
-            assert(0);
+    }
+    else if (parameters->use_tree_dynamic) {
+        TslFuncRegTbl *frt = new TslFuncRegTbl;
+        TslFunc tf = frt->add(alignment_task);
+        TslFunc tf2 = frt->add(tree_task);
+        TaskCollProps props;
+        props.functions(tf, frt, tf2)
+            .taskSize(sizeof(task_description_two))
+            .maxTasks(parameters->memory_worker / sizeof(task_description_two))
+            .taskSize2(sizeof(task_description_one))
+            .maxTasks2(suffix_buckets->owns().size())
+            .localData(local_data, sizeof(void*));
+        for (int worker=0; worker<NUM_WORKERS; ++worker) {
+            populate_time[worker] = MPI_Wtime();
+            populate_count[worker] = populate_tasks_tree_dynamic(
+                    utcs, props, local_data, worker);
+            populate_time[worker] = MPI_Wtime() - populate_time[worker];
         }
-        else if (parameters->use_tree_hybrid) {
-            //populate_count[worker] = populate_tasks(
-                    //utcs, props, ntasks, tasks_per_worker, worker, stats);
-            assert(0);
+    }
+    else if (parameters->use_tree_hybrid) {
+        TslFuncRegTbl *frt = new TslFuncRegTbl;
+        TslFunc tf = frt->add(hybrid_task);
+        TaskCollProps props;
+        props.functions(tf, frt)
+            .taskSize(sizeof(task_description_two))
+            .maxTasks(parameters->memory_worker / sizeof(task_description_two))
+            .localData(local_data, sizeof(void*));
+        for (int worker=0; worker<NUM_WORKERS; ++worker) {
+            populate_time[worker] = MPI_Wtime();
+            populate_count[worker] = populate_tasks_tree_hybrid(
+                    utcs, props, local_data, worker);
+            populate_time[worker] = MPI_Wtime() - populate_time[worker];
         }
-        else {
+    }
+    else {
+        TslFuncRegTbl *frt = new TslFuncRegTbl;
+        TslFunc tf = frt->add(alignment_task);
+        TaskCollProps props;
+        props.functions(tf, frt)
+            .taskSize(sizeof(task_description_two))
+            .maxTasks(parameters->memory_worker / sizeof(task_description_two))
+            .localData(local_data, sizeof(void*));
+        for (int worker=0; worker<NUM_WORKERS; ++worker) {
+            populate_time[worker] = MPI_Wtime();
             populate_count[worker] = populate_tasks(
                     utcs, props, ntasks, tasks_per_worker, stats_align, worker);
+            populate_time[worker] = MPI_Wtime() - populate_time[worker];
         }
-        populate_time[worker] = MPI_Wtime() - populate_time[worker];
+    }
+
+    if (suffix_buckets && parameters->print_stats) {
+        if (0 == rank) {
+            char f = cout.fill();
+            cout << setfill('-');
+            cout << left;
+            cout << setw(79) << "--- SuffixBucket Statistics" << endl;
+            cout << setfill(f);
+            cout << "n_buckets " << suffix_buckets->size() << endl;
+            cout << "non-empty " << suffix_buckets->size_nonempty() << endl;
+        }
     }
 
     if (parameters->print_stats) {
@@ -380,7 +474,12 @@ int main(int argc, char **argv)
             Stats time_total;
             Stats work;
             Stats work_skipped;
+            ostringstream header;
             int p = cout.precision();
+
+            header.fill('-');
+            header << left << setw(79) << "--- Align Stats ";
+            cout << header.str() << endl;
             cout << setprecision(2);
             cout << right << setw(5) << "pid" << AlignStats::header() << endl;
             for(int i=0; i<nprocs*NUM_WORKERS; i++) {
@@ -404,7 +503,42 @@ int main(int argc, char **argv)
             cout << "     TTotal" << time_total << endl;
             cout << "       Work" << work << endl;
             cout << "WorkSkipped" << work_skipped << endl;
+            cout << string(79, '-') << endl;
             cout.precision(p);
+        }
+        delete [] rstats;
+    }
+
+    if (parameters->print_stats) {
+        TreeStats * rstats = new TreeStats[NUM_WORKERS*nprocs];
+        MPI_Gather(stats_tree, sizeof(TreeStats)*NUM_WORKERS, MPI_CHAR, 
+                rstats, sizeof(TreeStats)*NUM_WORKERS, MPI_CHAR, 
+                0, pgraph::comm);
+        /* synchronously print alignment stats all from process 0 */
+        if (0 == rank) {
+            TreeStats cumulative;
+            ostringstream header;
+            int p = cout.precision();
+
+            header.fill('-');
+            header << left << setw(79) << "--- Tree Stats ";
+            cout << header.str() << endl;
+            cout << setprecision(2);
+            for(int i=0; i<nprocs*NUM_WORKERS; i++) {
+                cout << right << setw(5) << i;
+                cout << right << setw(14) << "name";
+                cout << Stats::header() << endl;
+                cumulative += rstats[i];
+                cout << rstats[i] << endl;
+            }
+            cout << setprecision(1);
+            cout << string(79, '=') << endl;
+            cout << right << setw(5) << "TOTAL";
+            cout << right << setw(14) << "name";
+            cout << Stats::header() << endl;
+            cout << cumulative << endl;
+            cout.precision(p);
+            cout << string(79, '-') << endl;
         }
         delete [] rstats;
     }
@@ -461,6 +595,7 @@ int main(int argc, char **argv)
     delete [] stats_align;
     delete [] stats_tree;
     delete [] edge_results;
+    delete [] pair_check;
     delete parameters;
     delete sequences;
     delete [] local_data->tbl;
@@ -522,13 +657,7 @@ static void align(
     unsigned long s2Len = s2.get_sequence_length();
     bool do_alignment = true;
     if (parameters->use_length_filter) {
-        int cutOff = AOL * SIM;
-        if ((s1Len <= s2Len && (100 * s1Len < cutOff * s2Len))
-                || (s2Len < s1Len && (100 * s2Len < cutOff * s1Len))) {
-            stats[thd].work_skipped += s1Len * s2Len;
-            ++stats[thd].align_skipped;
-            do_alignment = false;
-        }
+        do_alignment = SuffixTree::length_filter(s1Len, s2Len, AOL*SIM/100);
     }
 
     if (do_alignment)
@@ -570,7 +699,7 @@ static void alignment_task_iter(
         vector<void *> /*data_bufs*/,
         int thd)
 {
-    task_description_iter *desc = (task_description_iter*)bigd;
+    task_description_one *desc = (task_description_one*)bigd;
     local_data_t *local_data = (local_data_t*)pldata;
     unsigned long seq_id[2];
     AlignStats *stats= local_data->stats_align;
@@ -592,13 +721,103 @@ static void alignment_task(
         vector<void *> /*data_bufs*/,
         int thd)
 {
-    task_description *desc = (task_description*)bigd;
+    task_description_two *desc = (task_description_two*)bigd;
     local_data_t *local_data = (local_data_t*)pldata;
     unsigned long seq_id[2];
     seq_id[0] = desc->id1;
     seq_id[1] = desc->id2;
 
     align(seq_id, local_data, thd);
+}
+
+
+static unsigned long process_tree(Bucket *bucket, local_data_t *local_data, int worker)
+{
+    unsigned long count = 0;
+    SequenceDatabase *sequences = local_data->sequences;
+    UniformTaskCollection **utcs = local_data->utcs;
+    Parameters *parameters = local_data->parameters;
+    TreeStats *stats = local_data->stats_tree;
+    PairCheck **pair_check = local_data->pair_check;
+
+    if (NULL != bucket->suffixes) {
+        double t;
+        set<pair<size_t,size_t> > local_pairs;
+
+        assert(bucket->size > 0);
+
+        if (stats[worker].time_first == 0.0) {
+            stats[worker].time_first = MPI_Wtime();
+        }
+
+        /* construct tree */
+        t = MPI_Wtime();
+        SuffixTree *tree = new SuffixTree(sequences, bucket, *parameters);
+        stats[worker].time_build.push_back(MPI_Wtime() - t);
+
+        /* gather stats */
+        stats[worker].trees++;
+        stats[worker].suffixes.push_back(bucket->size);
+        stats[worker].size.push_back(tree->get_size());
+        stats[worker].size_internal.push_back(tree->get_size_internal());
+        stats[worker].fanout.push_back(tree->get_fanout());
+        stats[worker].depth.push_back(tree->get_depth());
+        stats[worker].suffix_length.push_back(tree->get_suffix_length());
+
+        /* generate pairs */
+        t = MPI_Wtime();
+        tree->generate_pairs(local_pairs);
+        stats[worker].time_process.push_back(MPI_Wtime() - t);
+        delete tree;
+        local_pairs = pair_check[worker]->check(local_pairs);
+
+        /* populate task queue */
+        for (set<pair<size_t,size_t> >::iterator it=local_pairs.begin();
+                it!=local_pairs.end(); ++it) {
+            task_description_two desc;
+            desc.id1 = it->first;
+            desc.id2 = it->second;
+            utcs[worker]->addTask(&desc, sizeof(desc));
+            ++count;
+        }
+
+        stats[worker].time_last = MPI_Wtime();
+    }
+
+    return count;
+}
+
+
+static void tree_task(
+        UniformTaskCollection * /*utc*/,
+        void *bigd, int /*bigd_len*/,
+        void *pldata, int /*pldata_len*/,
+        vector<void *> /*data_bufs*/,
+        int thd)
+{
+    task_description_one *tree_desc = (task_description_one*)bigd;
+    local_data_t *local_data = (local_data_t*)pldata;
+    unsigned long i = tree_desc->id;
+    Bucket *bucket = local_data->suffix_buckets->get(i);
+    process_tree(bucket, local_data, thd);
+    local_data->suffix_buckets->rem(bucket);
+}
+
+
+static void hybrid_task(
+        UniformTaskCollection * utc,
+        void *bigd, int bigd_len,
+        void *pldata, int pldata_len,
+        vector<void *> data_bufs,
+        int thd)
+{
+    task_description_two *desc = (task_description_two*)bigd;
+    if (desc->id1 == desc->id2) {
+        tree_task(utc, bigd, bigd_len, pldata, pldata_len, data_bufs, thd);
+    }
+    else {
+        alignment_task(utc, bigd, bigd_len, pldata, pldata_len, data_bufs, thd);
+    }
 }
 
 
@@ -638,7 +857,7 @@ unsigned long populate_tasks(
         upper_limit += remainder;
     }
 
-    task_description desc;
+    task_description_two desc;
     unsigned long count = 0;
     unsigned long i;
     unsigned long seq_id[2];
@@ -665,64 +884,75 @@ unsigned long populate_tasks(
 
 static unsigned long populate_tasks_tree(
         UniformTaskCollection **utcs, const TaskCollProps &props,
-        SequenceDatabase *sequences, const Parameters &parameters, TreeStats *stats,
-        int worker)
+        local_data_t *local_data, int worker)
 {
-#define GLOBAL_DUPLICATES 0
-#if GLOBAL_DUPLICATES
-    set<pair<size_t,size_t> > local_pairs;
-#endif
+    SuffixBuckets *suffix_buckets = local_data->suffix_buckets;
     unsigned long count=0;
-    SuffixBuckets *suffix_buckets = new SuffixBucketsTascel(
-            sequences, parameters, pgraph::comm);
     const vector<size_t> &my_buckets = suffix_buckets->owns();
 
     utcs[worker] = new UniformTaskCollectionSplit(props, worker);
 
     for (size_t i=0; i<my_buckets.size(); ++i) {
         if ((i%size_t(NUM_WORKERS)) == size_t(worker)) {
-            double t = 0.0;
             Bucket *bucket = suffix_buckets->get(my_buckets[i]);
+            count += process_tree(bucket, local_data, worker);
+        }
+    }
+
+    return count;
+}
+
+
+static unsigned long populate_tasks_tree_dynamic(
+        UniformTaskCollection **utcs, const TaskCollProps &props,
+        local_data_t *local_data, int worker)
+{
+    SuffixBuckets *suffix_buckets = local_data->suffix_buckets;
+    unsigned long count=0;
+    const vector<size_t> &my_buckets = suffix_buckets->owns();
+
+    utcs[worker] = new UniformTaskCollectionSplit(props, worker);
+
+    for (size_t i=0; i<my_buckets.size(); ++i) {
+        if ((i%size_t(NUM_WORKERS)) == size_t(worker)) {
+            size_t bid = my_buckets[i];
+            Bucket *bucket = suffix_buckets->get(bid);
             if (NULL != bucket->suffixes) {
-#if !GLOBAL_DUPLICATES
-                set<pair<size_t,size_t> > local_pairs;
-#endif
-                assert(bucket->size > 0);
-                /* construct tree */
-                t = MPI_Wtime();
-                SuffixTree *tree = new SuffixTree(
-                        sequences, bucket, parameters);
-                stats[worker].time_build += MPI_Wtime() - t;
-                /* generate pairs */
-                t = MPI_Wtime();
-                tree->generate_pairs(local_pairs);
-                stats[worker].time_process += MPI_Wtime() - t;
-                delete tree;
-#if !GLOBAL_DUPLICATES
-                /* populate task queue */
-                for (set<pair<size_t,size_t> >::iterator it=local_pairs.begin();
-                        it!=local_pairs.end(); ++it) {
-                    task_description desc;
-                    desc.id1 = it->first;
-                    desc.id2 = it->second;
-                    utcs[worker]->addTask(&desc, sizeof(desc));
-                    ++count;
-                }
-#endif
+                task_description_one desc;
+                desc.id = bid;
+                utcs[worker]->addTask2(&desc, sizeof(desc));
+                ++count;
             }
         }
     }
-#if GLOBAL_DUPLICATES
-    /* populate task queue */
-    for (set<pair<size_t,size_t> >::iterator it=local_pairs.begin();
-            it!=local_pairs.end(); ++it) {
-        task_description desc;
-        desc.id1 = it->first;
-        desc.id2 = it->second;
-        utcs[worker]->addTask(&desc, sizeof(desc));
-        ++count;
+
+    return count;
+}
+
+
+static unsigned long populate_tasks_tree_hybrid(
+        UniformTaskCollection **utcs, const TaskCollProps &props,
+        local_data_t *local_data, int worker)
+{
+    SuffixBuckets *suffix_buckets = local_data->suffix_buckets;
+    unsigned long count=0;
+    const vector<size_t> &my_buckets = suffix_buckets->owns();
+
+    utcs[worker] = new UniformTaskCollectionSplit(props, worker);
+
+    for (size_t i=0; i<my_buckets.size(); ++i) {
+        if ((i%size_t(NUM_WORKERS)) == size_t(worker)) {
+            size_t bid = my_buckets[i];
+            Bucket *bucket = suffix_buckets->get(bid);
+            if (NULL != bucket->suffixes) {
+                task_description_two desc;
+                desc.id1 = bid;
+                desc.id2 = bid;
+                utcs[worker]->addTask(&desc, sizeof(desc));
+                ++count;
+            }
+        }
     }
-#endif
 
     return count;
 }

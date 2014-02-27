@@ -127,6 +127,8 @@ class SuffixTree
 
         const Stats& get_suffix_length() const { return suffix_length_stats; }
 
+        static bool length_filter(size_t s1Len, size_t s2Len, size_t cutOff);
+
     private:
         size_t build_tree_recursive(Suffix *suffixes, int depth);
         void compute_lset(Suffix *suffixes, Suffix **lset);

@@ -46,13 +46,20 @@ class SuffixBucketsArmci : public SuffixBuckets
         virtual bool owns(size_t bid) const;
 
         /** @copydoc SuffixBuckets::owns() */
-        virtual const vector<size_t> & owns() const;
+        virtual const vector<size_t> & owns() const {return owned_buckets; }
+
+        /** @copydoc SuffixBuckets::size_local() */
+        virtual size_t size_local() const { return buckets_size; }
+
+        /** @copydoc SuffixBuckets::size_nonempty() */
+        virtual size_t size_nonempty() const { return n_nonempty; }
 
     private:
         /** For indexing into locally-stored Suffix allocation. */
         struct BucketMeta {
             size_t offset;
             size_t size;
+            size_t bid;
         };
 
         /** Functor for sorting Suffix instances based on Bucket owner. */
@@ -80,9 +87,11 @@ class SuffixBucketsArmci : public SuffixBuckets
         BucketMeta **buckets_remote;    /**< addresses of remote buckets */
         BucketMeta *buckets;            /**< array of all local buckets */
         size_t buckets_size;            /**< size of local buckets array */
+        size_t n_nonempty;              /**< global count of non-empty buckets */
         PthreadMutex mutex;
         size_t count_remote_buckets;
         size_t count_remote_suffixes;
+        vector<size_t> owned_buckets;
 };
 
 

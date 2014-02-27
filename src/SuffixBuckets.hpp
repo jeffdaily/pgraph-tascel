@@ -104,6 +104,22 @@ class SuffixBuckets
          */
         size_t size() const { return n_buckets; }
 
+        /**
+         * Returns the number of buckets managed by this SuffixBuckets
+         * instance on the current process.
+         *
+         * @return the number of process-local Bucket instances
+         */
+        virtual size_t size_local() const = 0;
+
+        /**
+         * Returns the number of non-NULL buckets managed by this
+         * SuffixBuckets instance.
+         *
+         * @return the size of this SuffixBuckets instance
+         */
+        virtual size_t size_nonempty() const = 0;
+
     protected:
         /**
          * Returns Bucket index for the given Suffix string.

@@ -12,18 +12,31 @@
 #include "SigSegvHandler.hpp"
 #endif
 
+#if HAVE_ARMCI
+/* ANL's armci does not extern "C" inside the header */
+extern "C" {
+#include <armci.h>
+}
+#endif
 
 namespace pgraph {
 
 MPI_Comm comm = MPI_COMM_NULL;
 int rank = 0;
 int nprocs = 0;
+int *argc_ = NULL;
+char ***argv_ = NULL;
+bool is_armci_initialized = false;
 
 void initialize(int *argc, char ***argv)
 {
 #ifdef PAUSE_ON_ERROR
     TrapSigSegv();
 #endif
+
+    argc_ = argc;
+    argv_ = argv;
+    is_armci_initialized = false;
 
     /* initialize MPI */
 #if defined(THREADED)
@@ -46,8 +59,30 @@ void initialize(int *argc, char ***argv)
 
 void finalize()
 {
+    finalize_armci();
     MPI_CHECK(MPI_Comm_free(&comm));
     MPI_CHECK(MPI_Finalize());
+}
+
+
+void initialize_armci()
+{
+#if HAVE_ARMCI
+    if (!is_armci_initialized) {
+        ARMCI_Init_args(argc_,argv_);
+        is_armci_initialized = true;
+    }
+#endif
+}
+
+
+void finalize_armci()
+{
+#if HAVE_ARMCI
+    if (is_armci_initialized) {
+        ARMCI_Finalize();
+    }
+#endif
 }
 
 };

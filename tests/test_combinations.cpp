@@ -38,6 +38,7 @@ int test(unsigned long k, unsigned long step, unsigned long limit)
     unsigned long *comb2 = NULL;
     unsigned long *comb2_prev = NULL;
     unsigned long *comb3 = NULL;
+    unsigned long reverse = 0;
 
     /* test k_combination, next_combination, inc_combination functions */
     comb1 = (unsigned long*)malloc(sizeof(unsigned long) * k);
@@ -53,6 +54,7 @@ int test(unsigned long k, unsigned long step, unsigned long limit)
             inc_combination(step, k, comb3);
         }
         k_combination(i, k, comb1);
+        reverse = k_combination_inv(k, comb1);
         cout << setw(4) << i << ": ";
         print_combo(k, comb2);
         cout << " ";
@@ -61,6 +63,8 @@ int test(unsigned long k, unsigned long step, unsigned long limit)
         print_combo(k, comb3);
         cout << " ";
         print_diff(k, comb2, comb2_prev);
+        cout << " ";
+        cout << reverse;
         cout << endl;
         /* verify each element is the same */
         for (j=0; j<k; ++j) {
@@ -72,6 +76,10 @@ int test(unsigned long k, unsigned long step, unsigned long limit)
                 cout << "FAILURE" << endl;
                 return EXIT_FAILURE;
             }
+        }
+        if (reverse != i) {
+            cout << "FAILURE" << endl;
+            return EXIT_FAILURE;
         }
         for (j=0; j<k; ++j) {
             comb2_prev[j] = comb2[j];
@@ -87,11 +95,12 @@ int test(unsigned long k, unsigned long step, unsigned long limit)
     pos = 204799679999;
     comb1 = (unsigned long*)malloc(sizeof(unsigned long) * k);
     k_combination(pos,k,comb1);
+    reverse = k_combination_inv(k,comb1);
     printf("%lu={%lu", pos, comb1[0]);
     for (i=1; i<k; ++i) {
         printf(",%lu", comb1[i]);
     }
-    printf("}\n");
+    printf("} reverse=%lu\n", reverse);
     free(comb1);
 
     return 0;

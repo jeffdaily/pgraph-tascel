@@ -186,10 +186,11 @@ am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
 	src/blosum/blosum50.h src/blosum/blosum62.h \
 	src/blosum/blosum75.h src/blosum/blosum80.h src/Bootstrap.cpp \
 	src/Bootstrap.hpp src/combinations.c src/combinations.h \
-	src/EdgeResult.hpp src/mpix.cpp src/mpix.hpp \
-	src/Parameters.cpp src/Parameters.hpp src/pthread_fixes.h \
-	src/Sequence.cpp src/Sequence.hpp src/SequenceDatabase.hpp \
-	src/SequenceDatabaseReplicated.cpp \
+	src/EdgeResult.hpp src/mpix.cpp src/mpix.hpp src/PairCheck.hpp \
+	src/PairCheckLocal.hpp src/PairCheckSemiLocal.hpp \
+	src/PairCheckSmp.hpp src/Parameters.cpp src/Parameters.hpp \
+	src/pthread_fixes.h src/Sequence.cpp src/Sequence.hpp \
+	src/SequenceDatabase.hpp src/SequenceDatabaseReplicated.cpp \
 	src/SequenceDatabaseReplicated.hpp src/SigSegvHandler.hpp \
 	src/Stats.hpp src/Suffix.hpp src/SuffixBuckets.cpp \
 	src/SuffixBuckets.hpp src/SuffixBucketsTascel.cpp \
@@ -703,6 +704,8 @@ noinst_LTLIBRARIES = libpgraph.la
 #libpgraph_la_SOURCES += src/io.hpp
 #libpgraph_la_SOURCES += src/param.cpp
 #libpgraph_la_SOURCES += src/param.hpp
+#libpgraph_la_SOURCES += src/PairCheckGlobal.cpp
+#libpgraph_la_SOURCES += src/PairCheckGlobal.hpp
 #libpgraph_la_SOURCES += src/stree.cpp
 #libpgraph_la_SOURCES += src/stree.hpp
 libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
@@ -711,10 +714,11 @@ libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
 	src/blosum/blosum50.h src/blosum/blosum62.h \
 	src/blosum/blosum75.h src/blosum/blosum80.h src/Bootstrap.cpp \
 	src/Bootstrap.hpp src/combinations.c src/combinations.h \
-	src/EdgeResult.hpp src/mpix.cpp src/mpix.hpp \
-	src/Parameters.cpp src/Parameters.hpp src/pthread_fixes.h \
-	src/Sequence.cpp src/Sequence.hpp src/SequenceDatabase.hpp \
-	src/SequenceDatabaseReplicated.cpp \
+	src/EdgeResult.hpp src/mpix.cpp src/mpix.hpp src/PairCheck.hpp \
+	src/PairCheckLocal.hpp src/PairCheckSemiLocal.hpp \
+	src/PairCheckSmp.hpp src/Parameters.cpp src/Parameters.hpp \
+	src/pthread_fixes.h src/Sequence.cpp src/Sequence.hpp \
+	src/SequenceDatabase.hpp src/SequenceDatabaseReplicated.cpp \
 	src/SequenceDatabaseReplicated.hpp src/SigSegvHandler.hpp \
 	src/Stats.hpp src/Suffix.hpp src/SuffixBuckets.cpp \
 	src/SuffixBuckets.hpp src/SuffixBucketsTascel.cpp \
