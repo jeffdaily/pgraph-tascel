@@ -35,7 +35,6 @@
 #include "AlignStats.hpp"
 #include "Bootstrap.hpp"
 #include "combinations.h"
-#include "constants.h"
 #include "EdgeResult.hpp"
 #include "mpix.hpp"
 #include "PairCheck.hpp"

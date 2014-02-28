@@ -10,18 +10,18 @@
 
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 #include "Stats.hpp"
 
-using std::fixed;
-using std::ostream;
-using std::setw;
-using std::showpoint;
-using std::string;
-
-#define MIN(x, y) (((x)<(y))? (x) : (y))
-#define MAX(x, y) (((x)>(y))? (x) : (y))
+using ::std::fixed;
+using ::std::ostream;
+using ::std::ostringstream;
+using ::std::right;
+using ::std::setw;
+using ::std::showpoint;
+using ::std::string;
 
 namespace pgraph {
 
@@ -79,8 +79,5 @@ class AlignStats
 };
 
 };
-
-#undef MIN
-#undef MAX
 
 #endif /* ALIGNSTATS_H_ */

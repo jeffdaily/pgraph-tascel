@@ -20,7 +20,6 @@
 #include <tascel.h>
 
 #include "Bootstrap.hpp"
-#include "constants.h"
 #include "mpix.hpp"
 #include "Parameters.hpp"
 #include "SequenceDatabase.hpp"

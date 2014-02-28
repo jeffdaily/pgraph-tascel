@@ -1,5 +1,10 @@
 ACLOCAL_AMFLAGS = -I m4
 
+bin_PROGRAMS =
+noinst_PROGRAMS =
+noinst_LTLIBRARIES =
+check_PROGRAMS =
+check_LIBRARIES =
 AM_CFLAGS =
 AM_CXXFLAGS =
 AM_CPPFLAGS =
@@ -33,10 +38,9 @@ LDADD += $(ARMCI_LIBS)
 LDADD += $(PT_MPI_LIBS)
 LDADD += $(GMP_LIBS)
 #LDADD += $(GA_FLIBS)
+LDADD += libyaml-cpp.la
 
-noinst_LTLIBRARIES =
 noinst_LTLIBRARIES += libpgraph.la
-
 libpgraph_la_SOURCES =
 libpgraph_la_SOURCES += src/alignment.cpp
 libpgraph_la_SOURCES += src/alignment.hpp
@@ -50,24 +54,12 @@ libpgraph_la_SOURCES += src/blosum/blosum75.h
 libpgraph_la_SOURCES += src/blosum/blosum80.h
 libpgraph_la_SOURCES += src/Bootstrap.cpp
 libpgraph_la_SOURCES += src/Bootstrap.hpp
-#libpgraph_la_SOURCES += src/bucket.cpp
-#libpgraph_la_SOURCES += src/bucket.hpp
 libpgraph_la_SOURCES += src/combinations.c
 libpgraph_la_SOURCES += src/combinations.h
-#libpgraph_la_SOURCES += src/constants.h
-#libpgraph_la_SOURCES += src/csequence.c
-#libpgraph_la_SOURCES += src/csequence.h
 libpgraph_la_SOURCES += src/EdgeResult.hpp
-#libpgraph_la_SOURCES += src/fadd.hpp
-#libpgraph_la_SOURCES += src/io.cpp
-#libpgraph_la_SOURCES += src/io.hpp
 libpgraph_la_SOURCES += src/mpix.cpp
 libpgraph_la_SOURCES += src/mpix.hpp
-#libpgraph_la_SOURCES += src/param.cpp
-#libpgraph_la_SOURCES += src/param.hpp
 libpgraph_la_SOURCES += src/PairCheck.hpp
-#libpgraph_la_SOURCES += src/PairCheckGlobal.cpp
-#libpgraph_la_SOURCES += src/PairCheckGlobal.hpp
 libpgraph_la_SOURCES += src/PairCheckLocal.hpp
 libpgraph_la_SOURCES += src/PairCheckSemiLocal.hpp
 libpgraph_la_SOURCES += src/PairCheckSmp.hpp
@@ -81,8 +73,6 @@ libpgraph_la_SOURCES += src/SequenceDatabaseReplicated.cpp
 libpgraph_la_SOURCES += src/SequenceDatabaseReplicated.hpp
 libpgraph_la_SOURCES += src/SigSegvHandler.hpp
 libpgraph_la_SOURCES += src/Stats.hpp
-#libpgraph_la_SOURCES += src/stree.cpp
-#libpgraph_la_SOURCES += src/stree.hpp
 libpgraph_la_SOURCES += src/Suffix.hpp
 libpgraph_la_SOURCES += src/SuffixBuckets.cpp
 libpgraph_la_SOURCES += src/SuffixBuckets.hpp
@@ -93,14 +83,12 @@ libpgraph_la_SOURCES += src/SuffixTree.hpp
 libpgraph_la_SOURCES += src/tascelx.hpp
 libpgraph_la_SOURCES += src/timer.h
 libpgraph_la_SOURCES += src/TreeStats.hpp
-
 if HAVE_ARMCI
 libpgraph_la_SOURCES += src/SuffixBucketsArmci.cpp
 libpgraph_la_SOURCES += src/SuffixBucketsArmci.hpp
 libpgraph_la_SOURCES += src/SequenceDatabaseArmci.cpp
 libpgraph_la_SOURCES += src/SequenceDatabaseArmci.hpp
 endif
-
 if HAVE_SSE2
 libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.c
 libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.h
@@ -108,284 +96,122 @@ libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_
 libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h
 endif
 
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/anchor.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/binary.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/contrib/anchordict.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/contrib/graphbuilder.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/dll.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/emitfromevents.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/emitterdef.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/emitter.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/emittermanip.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/eventhandler.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/exceptions.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/mark.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/convert.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/bool_type.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/impl.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/iterator_fwd.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/iterator.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/memory.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/node_data.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/node.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/node_iterator.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/node_ref.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/emit.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/impl.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/iterator.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/node.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/parse.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/ptr.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/type.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/noncopyable.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/null.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/ostream_wrapper.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/parser.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/stlemitter.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/traits.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/yaml.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/binary.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/collectionstack.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/contrib/graphbuilderadapter.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/contrib/graphbuilderadapter.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/contrib/graphbuilder.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/convert.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/directives.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/directives.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/emit.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/emitfromevents.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/emitter.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/emitterstate.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/emitterstate.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/emitterutils.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/emitterutils.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/exp.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/exp.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/indentation.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/memory.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/nodebuilder.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/nodebuilder.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/node.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/node_data.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/nodeevents.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/nodeevents.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/null.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/ostream_wrapper.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/parse.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/parser.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/ptr_stack.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/ptr_vector.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/regex.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/regex.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/regeximpl.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/scanner.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/scanner.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/scanscalar.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/scanscalar.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/scantag.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/scantag.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/scantoken.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/setting.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/simplekey.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/singledocparser.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/singledocparser.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/streamcharsource.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/stream.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/stream.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/stringsource.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/tag.cpp
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/tag.h
-libpgraph_la_SOURCES += contrib/yaml-cpp-0.5.1/src/token.h
+noinst_LTLIBRARIES += libyaml-cpp.la
+libyaml_cpp_la_SOURCES =
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/anchor.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/binary.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/contrib/anchordict.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/contrib/graphbuilder.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/dll.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/emitfromevents.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/emitterdef.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/emitter.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/emittermanip.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/eventhandler.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/exceptions.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/mark.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/convert.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/bool_type.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/impl.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/iterator_fwd.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/iterator.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/memory.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/node_data.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/node.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/node_iterator.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/node_ref.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/emit.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/impl.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/iterator.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/node.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/parse.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/ptr.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/type.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/noncopyable.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/null.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/ostream_wrapper.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/parser.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/stlemitter.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/traits.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/include/yaml-cpp/yaml.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/binary.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/collectionstack.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/contrib/graphbuilderadapter.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/contrib/graphbuilderadapter.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/contrib/graphbuilder.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/convert.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/directives.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/directives.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/emit.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/emitfromevents.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/emitter.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/emitterstate.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/emitterstate.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/emitterutils.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/emitterutils.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/exp.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/exp.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/indentation.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/memory.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/nodebuilder.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/nodebuilder.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/node.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/node_data.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/nodeevents.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/nodeevents.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/null.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/ostream_wrapper.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/parse.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/parser.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/ptr_stack.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/ptr_vector.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/regex.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/regex.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/regeximpl.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/scanner.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/scanner.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/scanscalar.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/scanscalar.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/scantag.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/scantag.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/scantoken.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/setting.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/simplekey.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/singledocparser.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/singledocparser.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/streamcharsource.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/stream.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/stream.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/stringsource.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/tag.cpp
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/tag.h
+libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/token.h
 
-bin_PROGRAMS =
 bin_PROGRAMS += apps/align
-#bin_PROGRAMS += apps/align_garray
-#bin_PROGRAMS += apps/align_iter
-#bin_PROGRAMS += apps/align_iter_length_filter
-#bin_PROGRAMS += apps/align_length_filter
-#bin_PROGRAMS += apps/align_length_filter_noalign
-#bin_PROGRAMS += apps/align_pairs
-#bin_PROGRAMS += apps/align_tree
-#bin_PROGRAMS += apps/align_tree_noalign
-#bin_PROGRAMS += apps/align_tree_dumb_noalign
-#bin_PROGRAMS += apps/align_tree_dup
-#bin_PROGRAMS += apps/align_tree_dynamic
-#bin_PROGRAMS += apps/align_tree_dynamic_dup
-#bin_PROGRAMS += apps/align_tree_dynamic_callback
-#bin_PROGRAMS += apps/align_tree_dynamic_callback_dup
-#bin_PROGRAMS += apps/ccd
-#bin_PROGRAMS += apps/ccd2
-#bin_PROGRAMS += apps/pairs
-
-if HAVE_ARMCI
-#bin_PROGRAMS += apps/align_counter
-#bin_PROGRAMS += apps/align_counter_length_filter
-#bin_PROGRAMS += apps/align_tree_hybrid
-#bin_PROGRAMS += apps/align_tree_hybrid_noalign
-#bin_PROGRAMS += apps/align_tree_hybrid_sorted
-#bin_PROGRAMS += apps/align_tree_hybrid_sorted_noalign
-#bin_PROGRAMS += apps/align_tree_hybrid_dup
-#bin_PROGRAMS += apps/align_tree_hybrid_callback
-#bin_PROGRAMS += apps/align_tree_hybrid_callback_sorted
-#bin_PROGRAMS += apps/align_tree_hybrid_callback_sorted_noalign
-#bin_PROGRAMS += apps/align_tree_hybrid_callback_dup
-#bin_PROGRAMS += apps/align_tree_hybrid2
-endif
+apps_align_SOURCES = apps/align.cpp
 
 if HAVE_SSE2
-#bin_PROGRAMS += apps/align_ssw
-#bin_PROGRAMS += apps/align_iter_ssw
-#bin_PROGRAMS += apps/align_tree_ssw
-if HAVE_ARMCI
-#bin_PROGRAMS += apps/align_counter_ssw
-endif
 if HAVE_ZLIB
 bin_PROGRAMS += apps/ssw_test
 endif
 endif
-
-noinst_PROGRAMS =
-#noinst_PROGRAMS += sandbox/blast
-#noinst_PROGRAMS += sandbox/brute_force
-#if HAVE_ARMCI
-#noinst_PROGRAMS += sandbox/brute_force_armci
-#endif
-#noinst_PROGRAMS += sandbox/brute_force_binning
-#noinst_PROGRAMS += sandbox/brute_force_costs
-#noinst_PROGRAMS += sandbox/brute_force_multiple
-#noinst_PROGRAMS += sandbox/brute_force_pairs
-#noinst_PROGRAMS += sandbox/brute_force_rr
-#noinst_PROGRAMS += sandbox/brute_force_rr_sorted
-#noinst_PROGRAMS += sandbox/brute_force_rr_sorted_seq
-#noinst_PROGRAMS += sandbox/brute_force_serial
-#noinst_PROGRAMS += sandbox/brute_force_sorted
-#noinst_PROGRAMS += sandbox/brute_force_sorted_seq
-#noinst_PROGRAMS += sandbox/forest
-#noinst_PROGRAMS += sandbox/sort_pairs
-#noinst_PROGRAMS += sandbox/unique_pairs
-##noinst_PROGRAMS += sandbox/io_into_shared_memory
-noinst_PROGRAMS += tests/test_align
-noinst_PROGRAMS += tests/test_combinations
-noinst_PROGRAMS += tests/test_dynamic
-noinst_PROGRAMS += tests/test_kcombo2
-noinst_PROGRAMS += tests/test_parser
-noinst_PROGRAMS += tests/test_read
-noinst_PROGRAMS += tests/test_read_fasta
-noinst_PROGRAMS += tests/test_read_serial
-noinst_PROGRAMS += tests/test_stl_container_performance
-
-if HAVE_SSE2
-if HAVE_ARMCI
-noinst_PROGRAMS += tests/test_ssw
-endif
-endif
-
-apps_align_SOURCES = apps/align.cpp
-apps_align_counter_SOURCES = apps/align_counter.cpp
-apps_align_counter_length_filter_SOURCES = apps/align_counter.cpp
-apps_align_garray_SOURCES = apps/align.cpp
-apps_align_iter_SOURCES = apps/align.cpp
-apps_align_iter_length_filter_SOURCES = apps/align.cpp
-apps_align_length_filter_SOURCES = apps/align.cpp
-apps_align_length_filter_noalign_SOURCES = apps/align.cpp
-apps_align_pairs_SOURCES = apps/align_pairs.cpp
-apps_align_tree_SOURCES = apps/align_tree.cpp
-apps_align_tree_noalign_SOURCES = apps/align_tree.cpp
-apps_align_tree_dumb_noalign_SOURCES = apps/align_tree.cpp
-apps_align_tree_dup_SOURCES = apps/align_tree.cpp
-apps_align_tree_dynamic_SOURCES = apps/align_tree_dynamic.cpp
-apps_align_tree_dynamic_dup_SOURCES = apps/align_tree_dynamic.cpp
-apps_align_tree_dynamic_callback_SOURCES = apps/align_tree_dynamic.cpp
-apps_align_tree_dynamic_callback_dup_SOURCES = apps/align_tree_dynamic.cpp
-apps_align_tree_hybrid_SOURCES = apps/align_tree_hybrid.cpp
-apps_align_tree_hybrid_noalign_SOURCES = apps/align_tree_hybrid.cpp
-apps_align_tree_hybrid_sorted_SOURCES = apps/align_tree_hybrid.cpp
-apps_align_tree_hybrid_sorted_noalign_SOURCES = apps/align_tree_hybrid.cpp
-apps_align_tree_hybrid_dup_SOURCES = apps/align_tree_hybrid.cpp
-apps_align_tree_hybrid_callback_SOURCES = apps/align_tree_hybrid.cpp
-apps_align_tree_hybrid_callback_sorted_SOURCES = apps/align_tree_hybrid.cpp
-apps_align_tree_hybrid_callback_sorted_noalign_SOURCES = apps/align_tree_hybrid.cpp
-apps_align_tree_hybrid_callback_dup_SOURCES = apps/align_tree_hybrid.cpp
-apps_align_tree_hybrid2_SOURCES = apps/align_tree_hybrid2.cpp
-apps_ccd_SOURCES = apps/ccd.cpp
-apps_ccd2_SOURCES = apps/ccd2.cpp
-apps_pairs_SOURCES = apps/pairs.cpp
-apps_align_ssw_SOURCES = apps/align.cpp
-apps_align_counter_ssw_SOURCES = apps/align_counter.cpp
-apps_align_iter_ssw_SOURCES = apps/align.cpp
-apps_align_tree_ssw_SOURCES = apps/align_tree.cpp
 apps_ssw_test_SOURCES =
 apps_ssw_test_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/main.c
 apps_ssw_test_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/kseq.h
-
-apps_align_iter_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_ITER
-apps_align_iter_length_filter_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_ITER -DLENGTH_FILTER
-apps_align_length_filter_CPPFLAGS = $(AM_CPPFLAGS) -DLENGTH_FILTER
-apps_align_length_filter_noalign_CPPFLAGS = $(AM_CPPFLAGS) -DLENGTH_FILTER -DNOALIGN
-apps_align_garray_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_GARRAY
-apps_align_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
-apps_align_counter_length_filter_CPPFLAGS = $(AM_CPPFLAGS) -DLENGTH_FILTER
-apps_align_counter_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
-apps_align_iter_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
-apps_align_tree_noalign_CPPFLAGS = $(AM_CPPFLAGS) -DNOALIGN
-apps_align_tree_dumb_noalign_CPPFLAGS = $(AM_CPPFLAGS) -DNOALIGN -DDUMB
-apps_align_tree_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
-apps_align_tree_dup_CPPFLAGS = $(AM_CPPFLAGS) -DGLOBAL_DUPLICATES
-apps_align_tree_dynamic_dup_CPPFLAGS = $(AM_CPPFLAGS) -DGLOBAL_DUPLICATES
-apps_align_tree_dynamic_callback_CPPFLAGS = $(AM_CPPFLAGS) -DCALLBACK
-apps_align_tree_dynamic_callback_dup_CPPFLAGS = $(AM_CPPFLAGS) -DCALLBACK -DGLOBAL_DUPLICATES
-apps_align_tree_hybrid_noalign_CPPFLAGS = $(AM_CPPFLAGS) -DNOALIGN
-apps_align_tree_hybrid_sorted_CPPFLAGS = $(AM_CPPFLAGS) -DSORT_BUCKETS
-apps_align_tree_hybrid_sorted_noalign_CPPFLAGS = $(AM_CPPFLAGS) -DNOALIGN -DSORT_BUCKETS
-apps_align_tree_hybrid_dup_CPPFLAGS = $(AM_CPPFLAGS) -DGLOBAL_DUPLICATES
-apps_align_tree_hybrid_callback_CPPFLAGS = $(AM_CPPFLAGS) -DCALLBACK
-apps_align_tree_hybrid_callback_sorted_CPPFLAGS = $(AM_CPPFLAGS) -DCALLBACK -DSORT_BUCKETS
-apps_align_tree_hybrid_callback_sorted_noalign_CPPFLAGS = $(AM_CPPFLAGS) -DNOALIGN -DCALLBACK -DSORT_BUCKETS
-apps_align_tree_hybrid_callback_dup_CPPFLAGS = $(AM_CPPFLAGS) -DCALLBACK -DGLOBAL_DUPLICATES
-
 apps_ssw_test_LDFLAGS = $(ZLIB_LDFLAGS) $(AM_LDFLAGS)
 
-apps_ssw_test_LDADD = $(LDADD) $(ZLIB_LIBS) $(LIBS)
+apps_ssw_test_LDADD = $(LDADD) $(ZLIB_LIBS)
 
-#sandbox_blast_SOURCES                      = sandbox/blast.cpp
-#sandbox_brute_force_SOURCES                = sandbox/brute_force.cpp
-#sandbox_brute_force_armci_SOURCES          = sandbox/brute_force_armci.cpp
-#sandbox_brute_force_binning_SOURCES        = sandbox/brute_force_binning.cpp
-#sandbox_brute_force_costs_SOURCES          = sandbox/brute_force.cpp
-#sandbox_brute_force_iter_SOURCES           = sandbox/brute_force_iter.cpp
-#sandbox_brute_force_multiple_SOURCES       = sandbox/brute_force.cpp
-#sandbox_brute_force_pairs_SOURCES          = sandbox/brute_force_pairs.cpp
-#sandbox_brute_force_rr_SOURCES             = sandbox/brute_force.cpp
-#sandbox_brute_force_rr_sorted_SOURCES      = sandbox/brute_force.cpp
-#sandbox_brute_force_rr_sorted_seq_SOURCES  = sandbox/brute_force.cpp
-#sandbox_brute_force_serial_SOURCES         = sandbox/brute_force_serial.cpp
-#sandbox_brute_force_sorted_SOURCES         = sandbox/brute_force.cpp
-#sandbox_brute_force_sorted_seq_SOURCES     = sandbox/brute_force.cpp
-#sandbox_forest_SOURCES                     = sandbox/forest.cpp
-#sandbox_sort_pairs_SOURCES                 = sandbox/sort_pairs.cpp
-#sandbox_unique_pairs_SOURCES               = sandbox/unique_pairs.cpp
-##sandbox_io_into_shared_memory_SOURCES      = sandbox/io_into_shared_memory.c
-tests_test_align_SOURCES                   = tests/test_align.cpp
+
+noinst_PROGRAMS += tests/test_combinations
+noinst_PROGRAMS += tests/test_parser
+noinst_PROGRAMS += tests/test_stl_container_performance
+
 tests_test_combinations_SOURCES            = tests/test_combinations.cpp
-tests_test_dynamic_SOURCES                 = tests/test_dynamic.cpp
-tests_test_kcombo2_SOURCES                 = tests/test_kcombo2.cpp
 tests_test_parser_SOURCES                  = tests/test_parser.cpp
-tests_test_read_SOURCES                    = tests/test_read.cpp
-tests_test_read_fasta_SOURCES              = tests/test_read_fasta.cpp
-tests_test_read_serial_SOURCES             = tests/test_read_serial.cpp
 tests_test_stl_container_performance_SOURCES = tests/test_stl_container_performance.cpp
-tests_test_ssw_SOURCES                     = tests/test_ssw.cpp
-#
-#sandbox_brute_force_costs_CPPFLAGS         = $(AM_CPPFLAGS) -DDUMP_COSTS=1
-#sandbox_brute_force_multiple_CPPFLAGS      = $(AM_CPPFLAGS) -DMULTIPLE_PAIRS_PER_TASK=1
-#sandbox_brute_force_rr_CPPFLAGS            = $(AM_CPPFLAGS) -DROUND_ROBIN_SEQUENCE_PAIRS=1
-#sandbox_brute_force_rr_sorted_CPPFLAGS     = $(AM_CPPFLAGS) -DROUND_ROBIN_SEQUENCE_PAIRS=1 -DSORT_TASKS_LOCALLY=1
-#sandbox_brute_force_rr_sorted_seq_CPPFLAGS = $(AM_CPPFLAGS) -DROUND_ROBIN_SEQUENCE_PAIRS=1 -DSORT_SEQUENCES=1
-#sandbox_brute_force_sorted_CPPFLAGS        = $(AM_CPPFLAGS) -DSORT_TASKS_LOCALLY=1
-#sandbox_brute_force_sorted_seq_CPPFLAGS    = $(AM_CPPFLAGS) -DSORT_SEQUENCES=1
 
-check_LIBRARIES =
 check_LIBRARIES += libgtest.a
 libgtest_a_SOURCES = contrib/gtest-1.7.0/src/gtest-all.cc
 
@@ -396,9 +222,6 @@ libpgtest_a_SOURCES += tests/MpiEnvironment.hpp
 libpgtest_a_SOURCES += tests/StreamPrettyPrinter.cpp
 libpgtest_a_SOURCES += tests/StreamPrettyPrinter.hpp
 
-check_PROGRAMS =
 check_PROGRAMS += tests/test_mpi
-
 tests_test_mpi_SOURCES = tests/test_mpi.cpp
-
-tests_test_mpi_LDADD = $(LDADD) libpgtest.a libgtest.a $(LIBS)
+tests_test_mpi_LDADD = $(LDADD) libpgtest.a libgtest.a

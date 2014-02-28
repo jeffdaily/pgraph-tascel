@@ -79,6 +79,11 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+bin_PROGRAMS = apps/align$(EXEEXT) $(am__EXEEXT_1)
+noinst_PROGRAMS = tests/test_combinations$(EXEEXT) \
+	tests/test_parser$(EXEEXT) \
+	tests/test_stl_container_performance$(EXEEXT)
+check_PROGRAMS = tests/test_mpi$(EXEEXT)
 @HAVE_SSE2_TRUE@am__append_1 = -I$(top_srcdir)/contrib/Complete-Striped-Smith-Waterman-Library/src
 @HAVE_ARMCI_TRUE@am__append_2 = src/SuffixBucketsArmci.cpp \
 @HAVE_ARMCI_TRUE@	src/SuffixBucketsArmci.hpp \
@@ -88,51 +93,7 @@ host_triplet = @host@
 @HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.h \
 @HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.cpp \
 @HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h
-bin_PROGRAMS = apps/align$(EXEEXT) $(am__EXEEXT_1)
-#bin_PROGRAMS += apps/align_garray
-#bin_PROGRAMS += apps/align_iter
-#bin_PROGRAMS += apps/align_iter_length_filter
-#bin_PROGRAMS += apps/align_length_filter
-#bin_PROGRAMS += apps/align_length_filter_noalign
-#bin_PROGRAMS += apps/align_pairs
-#bin_PROGRAMS += apps/align_tree
-#bin_PROGRAMS += apps/align_tree_noalign
-#bin_PROGRAMS += apps/align_tree_dumb_noalign
-#bin_PROGRAMS += apps/align_tree_dup
-#bin_PROGRAMS += apps/align_tree_dynamic
-#bin_PROGRAMS += apps/align_tree_dynamic_dup
-#bin_PROGRAMS += apps/align_tree_dynamic_callback
-#bin_PROGRAMS += apps/align_tree_dynamic_callback_dup
-#bin_PROGRAMS += apps/ccd
-#bin_PROGRAMS += apps/ccd2
-#bin_PROGRAMS += apps/pairs
-
-#bin_PROGRAMS += apps/align_counter
-#bin_PROGRAMS += apps/align_counter_length_filter
-#bin_PROGRAMS += apps/align_tree_hybrid
-#bin_PROGRAMS += apps/align_tree_hybrid_noalign
-#bin_PROGRAMS += apps/align_tree_hybrid_sorted
-#bin_PROGRAMS += apps/align_tree_hybrid_sorted_noalign
-#bin_PROGRAMS += apps/align_tree_hybrid_dup
-#bin_PROGRAMS += apps/align_tree_hybrid_callback
-#bin_PROGRAMS += apps/align_tree_hybrid_callback_sorted
-#bin_PROGRAMS += apps/align_tree_hybrid_callback_sorted_noalign
-#bin_PROGRAMS += apps/align_tree_hybrid_callback_dup
-#bin_PROGRAMS += apps/align_tree_hybrid2
-
-#bin_PROGRAMS += apps/align_ssw
-#bin_PROGRAMS += apps/align_iter_ssw
-#bin_PROGRAMS += apps/align_tree_ssw
-#bin_PROGRAMS += apps/align_counter_ssw
 @HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@am__append_4 = apps/ssw_test
-noinst_PROGRAMS = tests/test_align$(EXEEXT) \
-	tests/test_combinations$(EXEEXT) tests/test_dynamic$(EXEEXT) \
-	tests/test_kcombo2$(EXEEXT) tests/test_parser$(EXEEXT) \
-	tests/test_read$(EXEEXT) tests/test_read_fasta$(EXEEXT) \
-	tests/test_read_serial$(EXEEXT) \
-	tests/test_stl_container_performance$(EXEEXT) $(am__EXEEXT_2)
-@HAVE_ARMCI_TRUE@@HAVE_SSE2_TRUE@am__append_5 = tests/test_ssw
-check_PROGRAMS = tests/test_mpi$(EXEEXT)
 subdir = .
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) \
@@ -202,96 +163,7 @@ am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.c \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.h \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.cpp \
-	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/anchor.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/binary.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/contrib/anchordict.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/contrib/graphbuilder.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/dll.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/emitfromevents.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/emitterdef.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/emitter.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/emittermanip.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/eventhandler.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/exceptions.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/mark.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/convert.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/bool_type.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/impl.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/iterator_fwd.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/iterator.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/memory.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/node_data.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/node.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/node_iterator.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/detail/node_ref.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/emit.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/impl.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/iterator.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/node.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/parse.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/ptr.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/node/type.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/noncopyable.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/null.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/ostream_wrapper.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/parser.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/stlemitter.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/traits.h \
-	contrib/yaml-cpp-0.5.1/include/yaml-cpp/yaml.h \
-	contrib/yaml-cpp-0.5.1/src/binary.cpp \
-	contrib/yaml-cpp-0.5.1/src/collectionstack.h \
-	contrib/yaml-cpp-0.5.1/src/contrib/graphbuilderadapter.cpp \
-	contrib/yaml-cpp-0.5.1/src/contrib/graphbuilderadapter.h \
-	contrib/yaml-cpp-0.5.1/src/contrib/graphbuilder.cpp \
-	contrib/yaml-cpp-0.5.1/src/convert.cpp \
-	contrib/yaml-cpp-0.5.1/src/directives.cpp \
-	contrib/yaml-cpp-0.5.1/src/directives.h \
-	contrib/yaml-cpp-0.5.1/src/emit.cpp \
-	contrib/yaml-cpp-0.5.1/src/emitfromevents.cpp \
-	contrib/yaml-cpp-0.5.1/src/emitter.cpp \
-	contrib/yaml-cpp-0.5.1/src/emitterstate.cpp \
-	contrib/yaml-cpp-0.5.1/src/emitterstate.h \
-	contrib/yaml-cpp-0.5.1/src/emitterutils.cpp \
-	contrib/yaml-cpp-0.5.1/src/emitterutils.h \
-	contrib/yaml-cpp-0.5.1/src/exp.cpp \
-	contrib/yaml-cpp-0.5.1/src/exp.h \
-	contrib/yaml-cpp-0.5.1/src/indentation.h \
-	contrib/yaml-cpp-0.5.1/src/memory.cpp \
-	contrib/yaml-cpp-0.5.1/src/nodebuilder.cpp \
-	contrib/yaml-cpp-0.5.1/src/nodebuilder.h \
-	contrib/yaml-cpp-0.5.1/src/node.cpp \
-	contrib/yaml-cpp-0.5.1/src/node_data.cpp \
-	contrib/yaml-cpp-0.5.1/src/nodeevents.cpp \
-	contrib/yaml-cpp-0.5.1/src/nodeevents.h \
-	contrib/yaml-cpp-0.5.1/src/null.cpp \
-	contrib/yaml-cpp-0.5.1/src/ostream_wrapper.cpp \
-	contrib/yaml-cpp-0.5.1/src/parse.cpp \
-	contrib/yaml-cpp-0.5.1/src/parser.cpp \
-	contrib/yaml-cpp-0.5.1/src/ptr_stack.h \
-	contrib/yaml-cpp-0.5.1/src/ptr_vector.h \
-	contrib/yaml-cpp-0.5.1/src/regex.cpp \
-	contrib/yaml-cpp-0.5.1/src/regex.h \
-	contrib/yaml-cpp-0.5.1/src/regeximpl.h \
-	contrib/yaml-cpp-0.5.1/src/scanner.cpp \
-	contrib/yaml-cpp-0.5.1/src/scanner.h \
-	contrib/yaml-cpp-0.5.1/src/scanscalar.cpp \
-	contrib/yaml-cpp-0.5.1/src/scanscalar.h \
-	contrib/yaml-cpp-0.5.1/src/scantag.cpp \
-	contrib/yaml-cpp-0.5.1/src/scantag.h \
-	contrib/yaml-cpp-0.5.1/src/scantoken.cpp \
-	contrib/yaml-cpp-0.5.1/src/setting.h \
-	contrib/yaml-cpp-0.5.1/src/simplekey.cpp \
-	contrib/yaml-cpp-0.5.1/src/singledocparser.cpp \
-	contrib/yaml-cpp-0.5.1/src/singledocparser.h \
-	contrib/yaml-cpp-0.5.1/src/streamcharsource.h \
-	contrib/yaml-cpp-0.5.1/src/stream.cpp \
-	contrib/yaml-cpp-0.5.1/src/stream.h \
-	contrib/yaml-cpp-0.5.1/src/stringsource.h \
-	contrib/yaml-cpp-0.5.1/src/tag.cpp \
-	contrib/yaml-cpp-0.5.1/src/tag.h \
-	contrib/yaml-cpp-0.5.1/src/token.h
+	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h
 @HAVE_ARMCI_TRUE@am__objects_1 = src/SuffixBucketsArmci.lo \
 @HAVE_ARMCI_TRUE@	src/SequenceDatabaseArmci.lo
 @HAVE_SSE2_TRUE@am__objects_2 = contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.lo \
@@ -300,8 +172,14 @@ am_libpgraph_la_OBJECTS = src/alignment.lo src/Bootstrap.lo \
 	src/combinations.lo src/mpix.lo src/Parameters.lo \
 	src/Sequence.lo src/SequenceDatabaseReplicated.lo \
 	src/SuffixBuckets.lo src/SuffixBucketsTascel.lo \
-	src/SuffixTree.lo $(am__objects_1) $(am__objects_2) \
-	contrib/yaml-cpp-0.5.1/src/binary.lo \
+	src/SuffixTree.lo $(am__objects_1) $(am__objects_2)
+libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+am__v_lt_1 = 
+libyaml_cpp_la_LIBADD =
+am_libyaml_cpp_la_OBJECTS = contrib/yaml-cpp-0.5.1/src/binary.lo \
 	contrib/yaml-cpp-0.5.1/src/contrib/graphbuilderadapter.lo \
 	contrib/yaml-cpp-0.5.1/src/contrib/graphbuilder.lo \
 	contrib/yaml-cpp-0.5.1/src/convert.lo \
@@ -330,15 +208,9 @@ am_libpgraph_la_OBJECTS = src/alignment.lo src/Bootstrap.lo \
 	contrib/yaml-cpp-0.5.1/src/singledocparser.lo \
 	contrib/yaml-cpp-0.5.1/src/stream.lo \
 	contrib/yaml-cpp-0.5.1/src/tag.lo
-libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
-AM_V_lt = $(am__v_lt_@AM_V@)
-am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
-am__v_lt_0 = --silent
-am__v_lt_1 = 
+libyaml_cpp_la_OBJECTS = $(am_libyaml_cpp_la_OBJECTS)
 @HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@am__EXEEXT_1 = apps/ssw_test$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)"
-@HAVE_ARMCI_TRUE@@HAVE_SSE2_TRUE@am__EXEEXT_2 =  \
-@HAVE_ARMCI_TRUE@@HAVE_SSE2_TRUE@	tests/test_ssw$(EXEEXT)
 PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
 am_apps_align_OBJECTS = apps/align.$(OBJEXT)
 apps_align_OBJECTS = $(am_apps_align_OBJECTS)
@@ -346,23 +218,17 @@ apps_align_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
 apps_align_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) libyaml-cpp.la
 am_apps_ssw_test_OBJECTS = contrib/Complete-Striped-Smith-Waterman-Library/src/main.$(OBJEXT)
 apps_ssw_test_OBJECTS = $(am_apps_ssw_test_OBJECTS)
 am__DEPENDENCIES_2 = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) libyaml-cpp.la
 apps_ssw_test_DEPENDENCIES = $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1)
 apps_ssw_test_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(apps_ssw_test_LDFLAGS) $(LDFLAGS) -o $@
-am_tests_test_align_OBJECTS = tests/test_align.$(OBJEXT)
-tests_test_align_OBJECTS = $(am_tests_test_align_OBJECTS)
-tests_test_align_LDADD = $(LDADD)
-tests_test_align_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
 am_tests_test_combinations_OBJECTS =  \
 	tests/test_combinations.$(OBJEXT)
 tests_test_combinations_OBJECTS =  \
@@ -370,53 +236,17 @@ tests_test_combinations_OBJECTS =  \
 tests_test_combinations_LDADD = $(LDADD)
 tests_test_combinations_DEPENDENCIES = libpgraph.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_tests_test_dynamic_OBJECTS = tests/test_dynamic.$(OBJEXT)
-tests_test_dynamic_OBJECTS = $(am_tests_test_dynamic_OBJECTS)
-tests_test_dynamic_LDADD = $(LDADD)
-tests_test_dynamic_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am_tests_test_kcombo2_OBJECTS = tests/test_kcombo2.$(OBJEXT)
-tests_test_kcombo2_OBJECTS = $(am_tests_test_kcombo2_OBJECTS)
-tests_test_kcombo2_LDADD = $(LDADD)
-tests_test_kcombo2_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) libyaml-cpp.la
 am_tests_test_mpi_OBJECTS = tests/test_mpi.$(OBJEXT)
 tests_test_mpi_OBJECTS = $(am_tests_test_mpi_OBJECTS)
 tests_test_mpi_DEPENDENCIES = $(am__DEPENDENCIES_2) libpgtest.a \
-	libgtest.a $(am__DEPENDENCIES_1)
+	libgtest.a
 am_tests_test_parser_OBJECTS = tests/test_parser.$(OBJEXT)
 tests_test_parser_OBJECTS = $(am_tests_test_parser_OBJECTS)
 tests_test_parser_LDADD = $(LDADD)
 tests_test_parser_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am_tests_test_read_OBJECTS = tests/test_read.$(OBJEXT)
-tests_test_read_OBJECTS = $(am_tests_test_read_OBJECTS)
-tests_test_read_LDADD = $(LDADD)
-tests_test_read_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am_tests_test_read_fasta_OBJECTS = tests/test_read_fasta.$(OBJEXT)
-tests_test_read_fasta_OBJECTS = $(am_tests_test_read_fasta_OBJECTS)
-tests_test_read_fasta_LDADD = $(LDADD)
-tests_test_read_fasta_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_tests_test_read_serial_OBJECTS = tests/test_read_serial.$(OBJEXT)
-tests_test_read_serial_OBJECTS = $(am_tests_test_read_serial_OBJECTS)
-tests_test_read_serial_LDADD = $(LDADD)
-tests_test_read_serial_DEPENDENCIES = libpgraph.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_tests_test_ssw_OBJECTS = tests/test_ssw.$(OBJEXT)
-tests_test_ssw_OBJECTS = $(am_tests_test_ssw_OBJECTS)
-tests_test_ssw_LDADD = $(LDADD)
-tests_test_ssw_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) libyaml-cpp.la
 am_tests_test_stl_container_performance_OBJECTS =  \
 	tests/test_stl_container_performance.$(OBJEXT)
 tests_test_stl_container_performance_OBJECTS =  \
@@ -424,7 +254,7 @@ tests_test_stl_container_performance_OBJECTS =  \
 tests_test_stl_container_performance_LDADD = $(LDADD)
 tests_test_stl_container_performance_DEPENDENCIES = libpgraph.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) libyaml-cpp.la
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -478,22 +308,16 @@ am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
-	$(libpgraph_la_SOURCES) $(apps_align_SOURCES) \
-	$(apps_ssw_test_SOURCES) $(tests_test_align_SOURCES) \
-	$(tests_test_combinations_SOURCES) \
-	$(tests_test_dynamic_SOURCES) $(tests_test_kcombo2_SOURCES) \
-	$(tests_test_mpi_SOURCES) $(tests_test_parser_SOURCES) \
-	$(tests_test_read_SOURCES) $(tests_test_read_fasta_SOURCES) \
-	$(tests_test_read_serial_SOURCES) $(tests_test_ssw_SOURCES) \
+	$(libpgraph_la_SOURCES) $(libyaml_cpp_la_SOURCES) \
+	$(apps_align_SOURCES) $(apps_ssw_test_SOURCES) \
+	$(tests_test_combinations_SOURCES) $(tests_test_mpi_SOURCES) \
+	$(tests_test_parser_SOURCES) \
 	$(tests_test_stl_container_performance_SOURCES)
 DIST_SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
-	$(am__libpgraph_la_SOURCES_DIST) $(apps_align_SOURCES) \
-	$(apps_ssw_test_SOURCES) $(tests_test_align_SOURCES) \
-	$(tests_test_combinations_SOURCES) \
-	$(tests_test_dynamic_SOURCES) $(tests_test_kcombo2_SOURCES) \
-	$(tests_test_mpi_SOURCES) $(tests_test_parser_SOURCES) \
-	$(tests_test_read_SOURCES) $(tests_test_read_fasta_SOURCES) \
-	$(tests_test_read_serial_SOURCES) $(tests_test_ssw_SOURCES) \
+	$(am__libpgraph_la_SOURCES_DIST) $(libyaml_cpp_la_SOURCES) \
+	$(apps_align_SOURCES) $(apps_ssw_test_SOURCES) \
+	$(tests_test_combinations_SOURCES) $(tests_test_mpi_SOURCES) \
+	$(tests_test_parser_SOURCES) \
 	$(tests_test_stl_container_performance_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
@@ -677,6 +501,8 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I m4
+noinst_LTLIBRARIES = libpgraph.la libyaml-cpp.la
+check_LIBRARIES = libgtest.a libpgtest.a
 AM_CFLAGS = 
 AM_CXXFLAGS = 
 #AM_CPPFLAGS += $(GA_CPPFLAGS)
@@ -690,24 +516,9 @@ AM_CPPFLAGS = $(TASCEL_CPPFLAGS) $(ARMCI_CPPFLAGS) $(PT_MPI_CPPFLAGS) \
 AM_LDFLAGS = $(TASCEL_LDFLAGS) $(ARMCI_LDFLAGS) $(PT_MPI_LDFLAGS) \
 	$(GMP_LDFLAGS)
 #LDADD += $(GA_LIBS)
-LDADD = libpgraph.la $(TASCEL_LIBS) $(ARMCI_LIBS) $(PT_MPI_LIBS) \
-	$(GMP_LIBS)
 #LDADD += $(GA_FLIBS)
-noinst_LTLIBRARIES = libpgraph.la
-#libpgraph_la_SOURCES += src/bucket.cpp
-#libpgraph_la_SOURCES += src/bucket.hpp
-#libpgraph_la_SOURCES += src/constants.h
-#libpgraph_la_SOURCES += src/csequence.c
-#libpgraph_la_SOURCES += src/csequence.h
-#libpgraph_la_SOURCES += src/fadd.hpp
-#libpgraph_la_SOURCES += src/io.cpp
-#libpgraph_la_SOURCES += src/io.hpp
-#libpgraph_la_SOURCES += src/param.cpp
-#libpgraph_la_SOURCES += src/param.hpp
-#libpgraph_la_SOURCES += src/PairCheckGlobal.cpp
-#libpgraph_la_SOURCES += src/PairCheckGlobal.hpp
-#libpgraph_la_SOURCES += src/stree.cpp
-#libpgraph_la_SOURCES += src/stree.hpp
+LDADD = libpgraph.la $(TASCEL_LIBS) $(ARMCI_LIBS) $(PT_MPI_LIBS) \
+	$(GMP_LIBS) libyaml-cpp.la
 libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
 	src/alignment_defs.hpp src/AlignStats.hpp \
 	src/blosum/blosum40.h src/blosum/blosum45.h \
@@ -724,7 +535,8 @@ libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
 	src/SuffixBuckets.hpp src/SuffixBucketsTascel.cpp \
 	src/SuffixBucketsTascel.hpp src/SuffixTree.cpp \
 	src/SuffixTree.hpp src/tascelx.hpp src/timer.h \
-	src/TreeStats.hpp $(am__append_2) $(am__append_3) \
+	src/TreeStats.hpp $(am__append_2) $(am__append_3)
+libyaml_cpp_la_SOURCES =  \
 	contrib/yaml-cpp-0.5.1/include/yaml-cpp/anchor.h \
 	contrib/yaml-cpp-0.5.1/include/yaml-cpp/binary.h \
 	contrib/yaml-cpp-0.5.1/include/yaml-cpp/contrib/anchordict.h \
@@ -815,111 +627,20 @@ libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
 	contrib/yaml-cpp-0.5.1/src/tag.h \
 	contrib/yaml-cpp-0.5.1/src/token.h
 apps_align_SOURCES = apps/align.cpp
-apps_align_counter_SOURCES = apps/align_counter.cpp
-apps_align_counter_length_filter_SOURCES = apps/align_counter.cpp
-apps_align_garray_SOURCES = apps/align.cpp
-apps_align_iter_SOURCES = apps/align.cpp
-apps_align_iter_length_filter_SOURCES = apps/align.cpp
-apps_align_length_filter_SOURCES = apps/align.cpp
-apps_align_length_filter_noalign_SOURCES = apps/align.cpp
-apps_align_pairs_SOURCES = apps/align_pairs.cpp
-apps_align_tree_SOURCES = apps/align_tree.cpp
-apps_align_tree_noalign_SOURCES = apps/align_tree.cpp
-apps_align_tree_dumb_noalign_SOURCES = apps/align_tree.cpp
-apps_align_tree_dup_SOURCES = apps/align_tree.cpp
-apps_align_tree_dynamic_SOURCES = apps/align_tree_dynamic.cpp
-apps_align_tree_dynamic_dup_SOURCES = apps/align_tree_dynamic.cpp
-apps_align_tree_dynamic_callback_SOURCES = apps/align_tree_dynamic.cpp
-apps_align_tree_dynamic_callback_dup_SOURCES = apps/align_tree_dynamic.cpp
-apps_align_tree_hybrid_SOURCES = apps/align_tree_hybrid.cpp
-apps_align_tree_hybrid_noalign_SOURCES = apps/align_tree_hybrid.cpp
-apps_align_tree_hybrid_sorted_SOURCES = apps/align_tree_hybrid.cpp
-apps_align_tree_hybrid_sorted_noalign_SOURCES = apps/align_tree_hybrid.cpp
-apps_align_tree_hybrid_dup_SOURCES = apps/align_tree_hybrid.cpp
-apps_align_tree_hybrid_callback_SOURCES = apps/align_tree_hybrid.cpp
-apps_align_tree_hybrid_callback_sorted_SOURCES = apps/align_tree_hybrid.cpp
-apps_align_tree_hybrid_callback_sorted_noalign_SOURCES = apps/align_tree_hybrid.cpp
-apps_align_tree_hybrid_callback_dup_SOURCES = apps/align_tree_hybrid.cpp
-apps_align_tree_hybrid2_SOURCES = apps/align_tree_hybrid2.cpp
-apps_ccd_SOURCES = apps/ccd.cpp
-apps_ccd2_SOURCES = apps/ccd2.cpp
-apps_pairs_SOURCES = apps/pairs.cpp
-apps_align_ssw_SOURCES = apps/align.cpp
-apps_align_counter_ssw_SOURCES = apps/align_counter.cpp
-apps_align_iter_ssw_SOURCES = apps/align.cpp
-apps_align_tree_ssw_SOURCES = apps/align_tree.cpp
 apps_ssw_test_SOURCES =  \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/main.c \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/kseq.h
-apps_align_iter_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_ITER
-apps_align_iter_length_filter_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_ITER -DLENGTH_FILTER
-apps_align_length_filter_CPPFLAGS = $(AM_CPPFLAGS) -DLENGTH_FILTER
-apps_align_length_filter_noalign_CPPFLAGS = $(AM_CPPFLAGS) -DLENGTH_FILTER -DNOALIGN
-apps_align_garray_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_GARRAY
-apps_align_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
-apps_align_counter_length_filter_CPPFLAGS = $(AM_CPPFLAGS) -DLENGTH_FILTER
-apps_align_counter_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
-apps_align_iter_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
-apps_align_tree_noalign_CPPFLAGS = $(AM_CPPFLAGS) -DNOALIGN
-apps_align_tree_dumb_noalign_CPPFLAGS = $(AM_CPPFLAGS) -DNOALIGN -DDUMB
-apps_align_tree_ssw_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_SSW
-apps_align_tree_dup_CPPFLAGS = $(AM_CPPFLAGS) -DGLOBAL_DUPLICATES
-apps_align_tree_dynamic_dup_CPPFLAGS = $(AM_CPPFLAGS) -DGLOBAL_DUPLICATES
-apps_align_tree_dynamic_callback_CPPFLAGS = $(AM_CPPFLAGS) -DCALLBACK
-apps_align_tree_dynamic_callback_dup_CPPFLAGS = $(AM_CPPFLAGS) -DCALLBACK -DGLOBAL_DUPLICATES
-apps_align_tree_hybrid_noalign_CPPFLAGS = $(AM_CPPFLAGS) -DNOALIGN
-apps_align_tree_hybrid_sorted_CPPFLAGS = $(AM_CPPFLAGS) -DSORT_BUCKETS
-apps_align_tree_hybrid_sorted_noalign_CPPFLAGS = $(AM_CPPFLAGS) -DNOALIGN -DSORT_BUCKETS
-apps_align_tree_hybrid_dup_CPPFLAGS = $(AM_CPPFLAGS) -DGLOBAL_DUPLICATES
-apps_align_tree_hybrid_callback_CPPFLAGS = $(AM_CPPFLAGS) -DCALLBACK
-apps_align_tree_hybrid_callback_sorted_CPPFLAGS = $(AM_CPPFLAGS) -DCALLBACK -DSORT_BUCKETS
-apps_align_tree_hybrid_callback_sorted_noalign_CPPFLAGS = $(AM_CPPFLAGS) -DNOALIGN -DCALLBACK -DSORT_BUCKETS
-apps_align_tree_hybrid_callback_dup_CPPFLAGS = $(AM_CPPFLAGS) -DCALLBACK -DGLOBAL_DUPLICATES
 apps_ssw_test_LDFLAGS = $(ZLIB_LDFLAGS) $(AM_LDFLAGS)
-apps_ssw_test_LDADD = $(LDADD) $(ZLIB_LIBS) $(LIBS)
-
-#sandbox_blast_SOURCES                      = sandbox/blast.cpp
-#sandbox_brute_force_SOURCES                = sandbox/brute_force.cpp
-#sandbox_brute_force_armci_SOURCES          = sandbox/brute_force_armci.cpp
-#sandbox_brute_force_binning_SOURCES        = sandbox/brute_force_binning.cpp
-#sandbox_brute_force_costs_SOURCES          = sandbox/brute_force.cpp
-#sandbox_brute_force_iter_SOURCES           = sandbox/brute_force_iter.cpp
-#sandbox_brute_force_multiple_SOURCES       = sandbox/brute_force.cpp
-#sandbox_brute_force_pairs_SOURCES          = sandbox/brute_force_pairs.cpp
-#sandbox_brute_force_rr_SOURCES             = sandbox/brute_force.cpp
-#sandbox_brute_force_rr_sorted_SOURCES      = sandbox/brute_force.cpp
-#sandbox_brute_force_rr_sorted_seq_SOURCES  = sandbox/brute_force.cpp
-#sandbox_brute_force_serial_SOURCES         = sandbox/brute_force_serial.cpp
-#sandbox_brute_force_sorted_SOURCES         = sandbox/brute_force.cpp
-#sandbox_brute_force_sorted_seq_SOURCES     = sandbox/brute_force.cpp
-#sandbox_forest_SOURCES                     = sandbox/forest.cpp
-#sandbox_sort_pairs_SOURCES                 = sandbox/sort_pairs.cpp
-#sandbox_unique_pairs_SOURCES               = sandbox/unique_pairs.cpp
-tests_test_align_SOURCES = tests/test_align.cpp
+apps_ssw_test_LDADD = $(LDADD) $(ZLIB_LIBS)
 tests_test_combinations_SOURCES = tests/test_combinations.cpp
-tests_test_dynamic_SOURCES = tests/test_dynamic.cpp
-tests_test_kcombo2_SOURCES = tests/test_kcombo2.cpp
 tests_test_parser_SOURCES = tests/test_parser.cpp
-tests_test_read_SOURCES = tests/test_read.cpp
-tests_test_read_fasta_SOURCES = tests/test_read_fasta.cpp
-tests_test_read_serial_SOURCES = tests/test_read_serial.cpp
 tests_test_stl_container_performance_SOURCES = tests/test_stl_container_performance.cpp
-tests_test_ssw_SOURCES = tests/test_ssw.cpp
-#
-#sandbox_brute_force_costs_CPPFLAGS         = $(AM_CPPFLAGS) -DDUMP_COSTS=1
-#sandbox_brute_force_multiple_CPPFLAGS      = $(AM_CPPFLAGS) -DMULTIPLE_PAIRS_PER_TASK=1
-#sandbox_brute_force_rr_CPPFLAGS            = $(AM_CPPFLAGS) -DROUND_ROBIN_SEQUENCE_PAIRS=1
-#sandbox_brute_force_rr_sorted_CPPFLAGS     = $(AM_CPPFLAGS) -DROUND_ROBIN_SEQUENCE_PAIRS=1 -DSORT_TASKS_LOCALLY=1
-#sandbox_brute_force_rr_sorted_seq_CPPFLAGS = $(AM_CPPFLAGS) -DROUND_ROBIN_SEQUENCE_PAIRS=1 -DSORT_SEQUENCES=1
-#sandbox_brute_force_sorted_CPPFLAGS        = $(AM_CPPFLAGS) -DSORT_TASKS_LOCALLY=1
-#sandbox_brute_force_sorted_seq_CPPFLAGS    = $(AM_CPPFLAGS) -DSORT_SEQUENCES=1
-check_LIBRARIES = libgtest.a libpgtest.a
 libgtest_a_SOURCES = contrib/gtest-1.7.0/src/gtest-all.cc
 libpgtest_a_SOURCES = tests/MpiEnvironment.cpp \
 	tests/MpiEnvironment.hpp tests/StreamPrettyPrinter.cpp \
 	tests/StreamPrettyPrinter.hpp
 tests_test_mpi_SOURCES = tests/test_mpi.cpp
-tests_test_mpi_LDADD = $(LDADD) libpgtest.a libgtest.a $(LIBS)
+tests_test_mpi_LDADD = $(LDADD) libpgtest.a libgtest.a
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -1050,6 +771,9 @@ contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.lo: contrib/Complete-Str
 	contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/$(am__dirstamp)
 contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.lo: contrib/Complete-Striped-Smith-Waterman-Library/src/$(am__dirstamp) \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/$(am__dirstamp)
+
+libpgraph.la: $(libpgraph_la_OBJECTS) $(libpgraph_la_DEPENDENCIES) $(EXTRA_libpgraph_la_DEPENDENCIES) 
+	$(AM_V_CXXLD)$(CXXLINK)  $(libpgraph_la_OBJECTS) $(libpgraph_la_LIBADD) $(LIBS)
 contrib/yaml-cpp-0.5.1/src/$(am__dirstamp):
 	@$(MKDIR_P) contrib/yaml-cpp-0.5.1/src
 	@: > contrib/yaml-cpp-0.5.1/src/$(am__dirstamp)
@@ -1150,8 +874,8 @@ contrib/yaml-cpp-0.5.1/src/tag.lo:  \
 	contrib/yaml-cpp-0.5.1/src/$(am__dirstamp) \
 	contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
 
-libpgraph.la: $(libpgraph_la_OBJECTS) $(libpgraph_la_DEPENDENCIES) $(EXTRA_libpgraph_la_DEPENDENCIES) 
-	$(AM_V_CXXLD)$(CXXLINK)  $(libpgraph_la_OBJECTS) $(libpgraph_la_LIBADD) $(LIBS)
+libyaml-cpp.la: $(libyaml_cpp_la_OBJECTS) $(libyaml_cpp_la_DEPENDENCIES) $(EXTRA_libyaml_cpp_la_DEPENDENCIES) 
+	$(AM_V_CXXLD)$(CXXLINK)  $(libyaml_cpp_la_OBJECTS) $(libyaml_cpp_la_LIBADD) $(LIBS)
 install-binPROGRAMS: $(bin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	@list='$(bin_PROGRAMS)'; test -n "$(bindir)" || list=; \
@@ -1237,30 +961,12 @@ contrib/Complete-Striped-Smith-Waterman-Library/src/main.$(OBJEXT): contrib/Comp
 apps/ssw_test$(EXEEXT): $(apps_ssw_test_OBJECTS) $(apps_ssw_test_DEPENDENCIES) $(EXTRA_apps_ssw_test_DEPENDENCIES) apps/$(am__dirstamp)
 	@rm -f apps/ssw_test$(EXEEXT)
 	$(AM_V_CCLD)$(apps_ssw_test_LINK) $(apps_ssw_test_OBJECTS) $(apps_ssw_test_LDADD) $(LIBS)
-tests/test_align.$(OBJEXT): tests/$(am__dirstamp) \
-	tests/$(DEPDIR)/$(am__dirstamp)
-
-tests/test_align$(EXEEXT): $(tests_test_align_OBJECTS) $(tests_test_align_DEPENDENCIES) $(EXTRA_tests_test_align_DEPENDENCIES) tests/$(am__dirstamp)
-	@rm -f tests/test_align$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_align_OBJECTS) $(tests_test_align_LDADD) $(LIBS)
 tests/test_combinations.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 
 tests/test_combinations$(EXEEXT): $(tests_test_combinations_OBJECTS) $(tests_test_combinations_DEPENDENCIES) $(EXTRA_tests_test_combinations_DEPENDENCIES) tests/$(am__dirstamp)
 	@rm -f tests/test_combinations$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_combinations_OBJECTS) $(tests_test_combinations_LDADD) $(LIBS)
-tests/test_dynamic.$(OBJEXT): tests/$(am__dirstamp) \
-	tests/$(DEPDIR)/$(am__dirstamp)
-
-tests/test_dynamic$(EXEEXT): $(tests_test_dynamic_OBJECTS) $(tests_test_dynamic_DEPENDENCIES) $(EXTRA_tests_test_dynamic_DEPENDENCIES) tests/$(am__dirstamp)
-	@rm -f tests/test_dynamic$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_dynamic_OBJECTS) $(tests_test_dynamic_LDADD) $(LIBS)
-tests/test_kcombo2.$(OBJEXT): tests/$(am__dirstamp) \
-	tests/$(DEPDIR)/$(am__dirstamp)
-
-tests/test_kcombo2$(EXEEXT): $(tests_test_kcombo2_OBJECTS) $(tests_test_kcombo2_DEPENDENCIES) $(EXTRA_tests_test_kcombo2_DEPENDENCIES) tests/$(am__dirstamp)
-	@rm -f tests/test_kcombo2$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_kcombo2_OBJECTS) $(tests_test_kcombo2_LDADD) $(LIBS)
 tests/test_mpi.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 
@@ -1273,30 +979,6 @@ tests/test_parser.$(OBJEXT): tests/$(am__dirstamp) \
 tests/test_parser$(EXEEXT): $(tests_test_parser_OBJECTS) $(tests_test_parser_DEPENDENCIES) $(EXTRA_tests_test_parser_DEPENDENCIES) tests/$(am__dirstamp)
 	@rm -f tests/test_parser$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_parser_OBJECTS) $(tests_test_parser_LDADD) $(LIBS)
-tests/test_read.$(OBJEXT): tests/$(am__dirstamp) \
-	tests/$(DEPDIR)/$(am__dirstamp)
-
-tests/test_read$(EXEEXT): $(tests_test_read_OBJECTS) $(tests_test_read_DEPENDENCIES) $(EXTRA_tests_test_read_DEPENDENCIES) tests/$(am__dirstamp)
-	@rm -f tests/test_read$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_read_OBJECTS) $(tests_test_read_LDADD) $(LIBS)
-tests/test_read_fasta.$(OBJEXT): tests/$(am__dirstamp) \
-	tests/$(DEPDIR)/$(am__dirstamp)
-
-tests/test_read_fasta$(EXEEXT): $(tests_test_read_fasta_OBJECTS) $(tests_test_read_fasta_DEPENDENCIES) $(EXTRA_tests_test_read_fasta_DEPENDENCIES) tests/$(am__dirstamp)
-	@rm -f tests/test_read_fasta$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_read_fasta_OBJECTS) $(tests_test_read_fasta_LDADD) $(LIBS)
-tests/test_read_serial.$(OBJEXT): tests/$(am__dirstamp) \
-	tests/$(DEPDIR)/$(am__dirstamp)
-
-tests/test_read_serial$(EXEEXT): $(tests_test_read_serial_OBJECTS) $(tests_test_read_serial_DEPENDENCIES) $(EXTRA_tests_test_read_serial_DEPENDENCIES) tests/$(am__dirstamp)
-	@rm -f tests/test_read_serial$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_read_serial_OBJECTS) $(tests_test_read_serial_LDADD) $(LIBS)
-tests/test_ssw.$(OBJEXT): tests/$(am__dirstamp) \
-	tests/$(DEPDIR)/$(am__dirstamp)
-
-tests/test_ssw$(EXEEXT): $(tests_test_ssw_OBJECTS) $(tests_test_ssw_DEPENDENCIES) $(EXTRA_tests_test_ssw_DEPENDENCIES) tests/$(am__dirstamp)
-	@rm -f tests/test_ssw$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_ssw_OBJECTS) $(tests_test_ssw_LDADD) $(LIBS)
 tests/test_stl_container_performance.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 
@@ -1369,16 +1051,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/mpix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/MpiEnvironment.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/StreamPrettyPrinter.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_combinations.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_dynamic.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_kcombo2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_mpi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_parser.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_read.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_read_fasta.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_read_serial.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_ssw.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_stl_container_performance.Po@am__quote@
 
 .c.o:
