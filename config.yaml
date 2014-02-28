@@ -1,0 +1,17 @@
+AlignOverLongerSequence: 80
+MatchSimilarity: 40
+OptimalScoreOverSelfScore: 30
+ExactMatchLength: 4
+SlideWindowSize: 3
+Open: -10
+Gap: -1
+MemoryWorker: 536870912
+MemorySequences: 2147483648
+OutputAll: false
+OutputToDisk: false
+DistributeSequences: false
+UseLengthFilter: true
+UseIterator: false
+UseTree: false
+UseTreeDynamic: false
+UseTreeHybrid: false
