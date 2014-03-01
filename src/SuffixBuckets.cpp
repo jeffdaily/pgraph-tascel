@@ -34,6 +34,10 @@ using ::std::numeric_limits;
 using ::std::size_t;
 using ::std::vector;
 
+#ifndef SIZE_MAX
+#define SIZE_MAX (size_t(-1))
+#endif
+
 namespace pgraph {
 
 const size_t SuffixBuckets::npos(-1);

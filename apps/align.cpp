@@ -748,6 +748,7 @@ static void align(
     }
     else {
         stats[thd].work_skipped += s1Len * s2Len;
+        stats[thd].align_skipped += 1;
     }
 
     tt = MPI_Wtime() - tt;
@@ -917,14 +918,22 @@ unsigned long populate_tasks(
         int worker)
 {
     int wrank = trank(worker);
+    int wsize = nprocs*NUM_WORKERS;
     unsigned long lower_limit = wrank*tasks_per_worker;
-    unsigned long upper_limit = lower_limit + tasks_per_worker;
-    unsigned long remainder = ntasks % (nprocs*NUM_WORKERS);
+    unsigned long upper_limit = (wrank+1)*tasks_per_worker;
+    unsigned long remainder = ntasks % wsize;
     double t;
 
-    /* if I'm the last worker, add the remainder of the tasks */
-    if (wrank == nprocs*NUM_WORKERS-1) {
+    if (wrank < remainder) {
+        lower_limit += wrank;
+        upper_limit += wrank+1;
+    }
+    else {
+        lower_limit += remainder;
         upper_limit += remainder;
+    }
+    if (upper_limit > ntasks) {
+        upper_limit = ntasks;
     }
 
     task_description_two desc;
