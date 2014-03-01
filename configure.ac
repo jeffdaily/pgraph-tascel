@@ -100,6 +100,21 @@ GA_CHECK_PACKAGE([zlib], [zlib.h], [z], [gzread])
 # Checks for header files.
 
 # Checks for typedefs, structures, and compiler characteristics.
+AC_CHECK_SIZEOF([void*])
+AC_CHECK_SIZEOF([bool])
+AC_CHECK_SIZEOF([char])
+AC_CHECK_SIZEOF([short])
+AC_CHECK_SIZEOF([int])
+AC_CHECK_SIZEOF([long])
+AC_CHECK_SIZEOF([long long])
+AC_CHECK_SIZEOF([float])
+AC_CHECK_SIZEOF([double])
+AC_CHECK_SIZEOF([long double])
+AC_CHECK_SIZEOF([unsigned char])
+AC_CHECK_SIZEOF([unsigned short])
+AC_CHECK_SIZEOF([unsigned int])
+AC_CHECK_SIZEOF([unsigned long])
+AC_CHECK_SIZEOF([unsigned long long])
 dnl AX_CXX_COMPILE_STDCXX_11([],[optional])
 PT_CXX_UNORDERED_SET
 
