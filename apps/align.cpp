@@ -324,7 +324,7 @@ int main(int argc, char **argv)
     if (parameters->use_tree
             || parameters->use_tree_dynamic
             || parameters->use_tree_hybrid) {
-#if HAVE_ARMCI
+#if HAVE_ARMCI && 0
         suffix_buckets = new SuffixBucketsArmci(sequences, *parameters, pgraph::comm);
 #else
         suffix_buckets = new SuffixBucketsTascel(sequences, *parameters, pgraph::comm);
@@ -655,7 +655,16 @@ int main(int argc, char **argv)
     delete [] stats_align;
     delete [] stats_tree;
     delete [] edge_results;
+    if (parameters->use_tree
+            || parameters->use_tree_dynamic
+            || parameters->use_tree_hybrid) {
+        int limit = parameters->dup_smp ? 1 : NUM_WORKERS;
+        for (int worker=0; worker<limit; ++worker) {
+            delete pair_check[worker];
+        }
+    }
     delete [] pair_check;
+    delete suffix_buckets;
     delete parameters;
     delete sequences;
     delete [] local_data->tbl;
@@ -975,6 +984,7 @@ static unsigned long populate_tasks_tree(
         if ((i%size_t(NUM_WORKERS)) == size_t(worker)) {
             Bucket *bucket = suffix_buckets->get(my_buckets[i]);
             count += process_tree(bucket, local_data, worker);
+            local_data->suffix_buckets->rem(bucket);
         }
     }
 
@@ -1002,6 +1012,7 @@ static unsigned long populate_tasks_tree_dynamic(
                 utcs[worker]->addTask2(&desc, sizeof(desc));
                 ++count;
             }
+            local_data->suffix_buckets->rem(bucket);
         }
     }
 
@@ -1030,6 +1041,7 @@ static unsigned long populate_tasks_tree_hybrid(
                 utcs[worker]->addTask(&desc, sizeof(desc));
                 ++count;
             }
+            local_data->suffix_buckets->rem(bucket);
         }
     }
 

@@ -354,7 +354,7 @@ Bucket* SuffixBucketsTascel::get(size_t bid)
             remoteReq = RmaRequest::construct();
             Suffix *remote_suffixes = new Suffix[remote_bucket->size];
             theRma().get(remote_suffixes,
-                    RmaPtr(aid_suffixes, remote_bucket->offset),
+                    RmaPtr(aid_suffixes, sizeof(Suffix)*remote_bucket->offset),
                     sizeof(Suffix)*remote_bucket->size,
                     owner, localReq, remoteReq);
             while(!remoteReq->test()) {

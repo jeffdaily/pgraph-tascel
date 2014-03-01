@@ -316,6 +316,7 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
     mpix_bcast(gap, 0, comm);
     mpix_bcast(memory_worker, 0, comm);
     mpix_bcast(memory_sequences, 0, comm);
+    mpix_bcast(skip_prefixes, 0, comm);
     mpix_bcast(output_all, 0, comm);
     mpix_bcast(output_to_disk, 0, comm);
     mpix_bcast(distribute_sequences, 0, comm);
@@ -329,9 +330,9 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
     mpix_bcast(alphabet, 0, comm);
     mpix_bcast(alphabet_begin, 0, comm);
     mpix_bcast(alphabet_dollar, 0, comm);
-    mpix_bcast(skip_prefixes, 0, comm);
     mpix_bcast(dup_local, 0, comm);
     mpix_bcast(dup_semilocal, 0, comm);
+    mpix_bcast(dup_smp, 0, comm);
     mpix_bcast(dup_global, 0, comm);
 }
 
