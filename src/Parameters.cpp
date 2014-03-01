@@ -50,6 +50,7 @@ const string Parameters::KEY_OUTPUT_TO_DISK("OutputToDisk");
 const string Parameters::KEY_DISTRIBUTE_SEQUENCES("DistributeSequences");
 const string Parameters::KEY_USE_LENGTH_FILTER("UseLengthFilter");
 const string Parameters::KEY_USE_ITERATOR("UseIterator");
+const string Parameters::KEY_USE_COUNTER("UseCounter");
 const string Parameters::KEY_USE_TREE("UseTree");
 const string Parameters::KEY_USE_TREE_DYNAMIC("UseTreeDynamic");
 const string Parameters::KEY_USE_TREE_HYBRID("UseTreeHybrid");
@@ -77,6 +78,7 @@ const bool Parameters::DEF_OUTPUT_TO_DISK(true);
 const bool Parameters::DEF_DISTRIBUTE_SEQUENCES(false);
 const bool Parameters::DEF_USE_LENGTH_FILTER(true);
 const bool Parameters::DEF_USE_ITERATOR(false);
+const bool Parameters::DEF_USE_COUNTER(false);
 const bool Parameters::DEF_USE_TREE(false);
 const bool Parameters::DEF_USE_TREE_DYNAMIC(false);
 const bool Parameters::DEF_USE_TREE_HYBRID(false);
@@ -163,6 +165,7 @@ Parameters::Parameters()
     , distribute_sequences(DEF_DISTRIBUTE_SEQUENCES)
     , use_length_filter(DEF_USE_LENGTH_FILTER)
     , use_iterator(DEF_USE_ITERATOR)
+    , use_counter(DEF_USE_COUNTER)
     , use_tree(DEF_USE_TREE)
     , use_tree_dynamic(DEF_USE_TREE_DYNAMIC)
     , use_tree_hybrid(DEF_USE_TREE_HYBRID)
@@ -194,6 +197,7 @@ Parameters::Parameters(const char *parameters_file, MPI_Comm comm)
     , distribute_sequences(DEF_DISTRIBUTE_SEQUENCES)
     , use_length_filter(DEF_USE_LENGTH_FILTER)
     , use_iterator(DEF_USE_ITERATOR)
+    , use_counter(DEF_USE_COUNTER)
     , use_tree(DEF_USE_TREE)
     , use_tree_dynamic(DEF_USE_TREE_DYNAMIC)
     , use_tree_hybrid(DEF_USE_TREE_HYBRID)
@@ -250,6 +254,8 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
                     DEF_USE_LENGTH_FILTER);
             use_iterator = config[KEY_USE_ITERATOR].as<bool>(
                     DEF_USE_ITERATOR);
+            use_counter = config[KEY_USE_COUNTER].as<bool>(
+                    DEF_USE_COUNTER);
             use_tree = config[KEY_USE_TREE].as<bool>(
                     DEF_USE_TREE);
             use_tree_dynamic = config[KEY_USE_TREE_DYNAMIC].as<bool>(
@@ -315,6 +321,7 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
     mpix_bcast(distribute_sequences, 0, comm);
     mpix_bcast(use_length_filter, 0, comm);
     mpix_bcast(use_iterator, 0, comm);
+    mpix_bcast(use_counter, 0, comm);
     mpix_bcast(use_tree, 0, comm);
     mpix_bcast(use_tree_dynamic, 0, comm);
     mpix_bcast(use_tree_hybrid, 0, comm);
@@ -350,6 +357,7 @@ ostream& operator<< (ostream &os, const Parameters &p)
     out << YAML::Key << Parameters::KEY_DISTRIBUTE_SEQUENCES << YAML::Value << p.distribute_sequences;
     out << YAML::Key << Parameters::KEY_USE_LENGTH_FILTER << YAML::Value << p.use_length_filter;
     out << YAML::Key << Parameters::KEY_USE_ITERATOR << YAML::Value << p.use_iterator;
+    out << YAML::Key << Parameters::KEY_USE_COUNTER << YAML::Value << p.use_counter;
     out << YAML::Key << Parameters::KEY_USE_TREE << YAML::Value << p.use_tree;
     out << YAML::Key << Parameters::KEY_USE_TREE_DYNAMIC << YAML::Value << p.use_tree_dynamic;
     out << YAML::Key << Parameters::KEY_USE_TREE_HYBRID << YAML::Value << p.use_tree_hybrid;

@@ -95,9 +95,58 @@ typedef struct {
 } local_data_t;
 
 
+class DynamicTaskCounter {
+    private:
+        int rank_world;
+        int size_world;
+        unsigned long limit;
+        local_data_t *local_data;
+        void (*function)(unsigned long, local_data_t*, int);
+        long **counter;
+    public:
+        DynamicTaskCounter(
+                int rank_world, int size_world,
+                unsigned long limit, local_data_t *local_data,
+                void (*function)(unsigned long, local_data_t*, int))
+            :   rank_world(rank_world)
+            ,   size_world(size_world)
+            ,   limit(limit)
+            ,   local_data(local_data)
+            ,   function(function)
+            ,   counter(NULL)
+        {
+            initialize_armci();
+        }
+        void process() {
+            long task_id = rank_world;
+            long bytes = (0 == rank_world) ? sizeof(long) : 0;
+            long **counter = new long*[size_world];
+            int retval = ARMCI_Malloc((void**)counter, bytes);
+            assert(0 == retval);
+            ARMCI_Barrier();
+            if (0 == rank_world) {
+                counter[0][0] = size_world; /* init counter */
+            }
+            ARMCI_Barrier();
+            // TODO TAKS COUNTER AND ALIGNMENT LOOP
+            while ((unsigned long)(task_id) < limit) {
+                function((unsigned long)(task_id), local_data, 0);
+                // next task
+                retval = ARMCI_Rmw(ARMCI_FETCH_AND_ADD_LONG, &task_id, counter[0], 1, 0);
+                assert(0 == retval);
+            }
+            retval = ARMCI_Free(counter[rank_world]);
+            delete [] counter;
+        }
+        
+};
+
+
 static int trank(int thd);
 static string get_edges_filename(int rank);
 static void align(unsigned long seq_id[2], local_data_t *local_data, int thd);
+static void alignment_task_iter_pre(
+        unsigned long id, local_data_t *local_data, int thd);
 static void alignment_task_iter(
         UniformTaskCollection * /*utc*/,
         void *bigd, int /*bigd_len*/,
@@ -373,6 +422,8 @@ int main(int argc, char **argv)
             populate_time[worker] = MPI_Wtime() - populate_time[worker];
         }
     }
+    else if (parameters->use_counter) {
+    }
     else {
         TslFuncRegTbl *frt = new TslFuncRegTbl;
         TslFunc tf = frt->add(alignment_task);
@@ -439,21 +490,26 @@ int main(int argc, char **argv)
 
     amBarrier();
 
-#if THREADED
-    allocate_threads();
-    initialize_threads(utcs);
-#endif
-
-    double mytimer = MPI_Wtime();
-    utcs[0]->process();
-    mytimer = MPI_Wtime() - mytimer;
-    if (0 == trank(0)) {
-        cout << "mytimer=" << mytimer << endl;
+    if (parameters->use_counter) {
+        DynamicTaskCounter counter(
+                rank, nprocs, ntasks, local_data, alignment_task_iter_pre);
+        counter.process();
     }
-
+    else {
 #if THREADED
-    finalize_threads();
+        allocate_threads();
+        initialize_threads(utcs);
 #endif
+        double mytimer = MPI_Wtime();
+        utcs[0]->process();
+        mytimer = MPI_Wtime() - mytimer;
+        if (0 == trank(0)) {
+            cout << "mytimer=" << mytimer << endl;
+        }
+#if THREADED
+        finalize_threads();
+#endif
+    }
 
     amBarrier();
     MPI_Barrier(pgraph::comm);
@@ -508,7 +564,7 @@ int main(int argc, char **argv)
         delete [] rstats;
     }
 
-    if (parameters->print_stats) {
+    if (suffix_buckets && parameters->print_stats) {
         TreeStats * rstats = new TreeStats[NUM_WORKERS*nprocs];
         MPI_Gather(stats_tree, sizeof(TreeStats)*NUM_WORKERS, MPI_CHAR, 
                 rstats, sizeof(TreeStats)*NUM_WORKERS, MPI_CHAR, 
@@ -542,7 +598,7 @@ int main(int argc, char **argv)
         delete [] rstats;
     }
 
-    if (parameters->print_stats) {
+    if (!parameters->use_counter && parameters->print_stats) {
         StealingStats *stt = new StealingStats[NUM_WORKERS];
         StealingStats * rstt = new StealingStats[NUM_WORKERS*nprocs];
 
@@ -585,7 +641,9 @@ int main(int argc, char **argv)
 
     /* clean up */
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
-        delete utcs[worker];
+        if (!parameters->use_counter) {
+            delete utcs[worker];
+        }
         free_cell_table(local_data->tbl[worker], 2);
         free_int_table(local_data->del[worker], 2);
         free_int_table(local_data->ins[worker], 2);
@@ -691,6 +749,22 @@ static void align(
 }
 
 
+static void alignment_task_iter_pre(
+        unsigned long id, local_data_t *local_data, int thd)
+{
+    unsigned long seq_id[2];
+    AlignStats *stats= local_data->stats_align;
+    double t = 0;
+
+    t = MPI_Wtime();
+    k_combination2(id, seq_id);
+    t = MPI_Wtime() - t;
+    stats[thd].time_kcomb += t;
+
+    align(seq_id, local_data, thd);
+}
+
+
 static void alignment_task_iter(
         UniformTaskCollection * /*utc*/,
         void *bigd, int /*bigd_len*/,
@@ -700,16 +774,7 @@ static void alignment_task_iter(
 {
     task_description_one *desc = (task_description_one*)bigd;
     local_data_t *local_data = (local_data_t*)pldata;
-    unsigned long seq_id[2];
-    AlignStats *stats= local_data->stats_align;
-    double t = 0;
-
-    t = MPI_Wtime();
-    k_combination2(desc->id, seq_id);
-    t = MPI_Wtime() - t;
-    stats[thd].time_kcomb += t;
-
-    align(seq_id, local_data, thd);
+    alignment_task_iter_pre(desc->id, local_data, thd);
 }
 
 
