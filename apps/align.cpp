@@ -592,6 +592,9 @@ int main(int argc, char **argv)
             cout << right << setw(14) << "name";
             cout << Stats::header() << endl;
             cout << cumulative << endl;
+            cout << "first tree" << setw(25) << cumulative.time_first << endl;
+            cout << " last tree" << setw(25) << cumulative.time_last << endl;
+            cout << "      diff" << setw(25) << cumulative.time_last - cumulative.time_first << endl;
             cout.precision(p);
             cout << string(79, '-') << endl;
         }
@@ -742,6 +745,9 @@ static void align(
         }
         t = MPI_Wtime() - t;
         stats[thd].time_align.push_back(t);
+    }
+    else {
+        stats[thd].work_skipped += s1Len * s2Len;
     }
 
     tt = MPI_Wtime() - tt;
