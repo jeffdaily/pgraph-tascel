@@ -52,7 +52,8 @@
 #include "SuffixTree.hpp"
 #include "TreeStats.hpp"
 
-#if HAVE_ARMCI
+#define ENABLE_ARMCI 0
+#if HAVE_ARMCI && ENABLE_ARMCI
 #include "SequenceDatabaseArmci.hpp"
 #include "SuffixBucketsArmci.hpp"
 #endif
@@ -95,6 +96,7 @@ typedef struct {
 } local_data_t;
 
 
+#if HAVE_ARMCI && ENABLE_ARMCI
 class DynamicTaskCounter {
     private:
         int rank_world;
@@ -123,7 +125,6 @@ class DynamicTaskCounter {
             long **counter = new long*[size_world];
             int retval = ARMCI_Malloc((void**)counter, bytes);
             assert(0 == retval);
-            ARMCI_Barrier();
             if (0 == rank_world) {
                 counter[0][0] = size_world; /* init counter */
             }
@@ -140,6 +141,7 @@ class DynamicTaskCounter {
         }
         
 };
+#endif
 
 
 static int trank(int thd);
@@ -293,7 +295,7 @@ int main(int argc, char **argv)
     }
 
     if (parameters->distribute_sequences) {
-#if HAVE_ARMCI
+#if HAVE_ARMCI && ENABLE_ARMCI
         sequences = new SequenceDatabaseArmci(all_argv[1],
                 parameters->memory_sequences, pgraph::comm, delimiter);
 #else
@@ -324,7 +326,7 @@ int main(int argc, char **argv)
     if (parameters->use_tree
             || parameters->use_tree_dynamic
             || parameters->use_tree_hybrid) {
-#if HAVE_ARMCI && 0
+#if HAVE_ARMCI && ENABLE_ARMCI
         suffix_buckets = new SuffixBucketsArmci(sequences, *parameters, pgraph::comm);
 #else
         suffix_buckets = new SuffixBucketsTascel(sequences, *parameters, pgraph::comm);
@@ -491,9 +493,19 @@ int main(int argc, char **argv)
     amBarrier();
 
     if (parameters->use_counter) {
+#if HAVE_ARMCI && ENABLE_ARMCI
         DynamicTaskCounter counter(
                 rank, nprocs, ntasks, local_data, alignment_task_iter_pre);
         counter.process();
+#else
+        if (0 == rank) {
+            cerr << "config file specified to use task counter, "
+                "but no implementation exists" << endl;
+        }
+        TascelConfig::finalize();
+        pgraph::finalize();
+        return 1;
+#endif
     }
     else {
 #if THREADED
