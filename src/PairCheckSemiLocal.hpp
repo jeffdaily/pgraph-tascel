@@ -15,8 +15,10 @@
 
 #include "PairCheck.hpp"
 
+using ::std::distance;
 using ::std::inserter;
 using ::std::set_difference;
+using ::std::unique;
 
 namespace pgraph {
 
@@ -31,28 +33,38 @@ class PairCheckSemiLocal : public PairCheck
             SetPair ret_pairs;
             (void)set_difference(
                     new_pairs.begin(), new_pairs.end(),
-                    pairs.begin(), pairs.end(),
+                    s_pairs.begin(), s_pairs.end(),
                     inserter(ret_pairs, ret_pairs.end()));
-            pairs.insert(ret_pairs.begin(), ret_pairs.end());
+            s_pairs.insert(ret_pairs.begin(), ret_pairs.end());
             time.push_back(MPI_Wtime() - t);
             return ret_pairs;
         }
 
         virtual VecPair check(const VecPair &new_pairs) {
             double t = MPI_Wtime();
-            VecPair ret_pairs(new_pairs.size());
-            VecPair::iterator it = set_difference(
-                    new_pairs.begin(), new_pairs.end(),
-                    pairs.begin(), pairs.end(),
+            /* sort and unique-ify the incoming pairs */
+            VecPair ret_pairs(new_pairs);
+            sort(ret_pairs.begin(), ret_pairs.end());
+            VecPair::iterator it_u = unique(ret_pairs.begin(), ret_pairs.end());
+            ret_pairs.resize(distance(ret_pairs.begin(), it_u));
+            /* set difference with already sorted local pairs */
+            VecPair::iterator it_d = set_difference(
+                    ret_pairs.begin(), ret_pairs.end(),
+                    v_pairs.begin(), v_pairs.end(),
                     ret_pairs.begin());
-            ret_pairs.resize(it-ret_pairs.begin());
-            pairs.insert(ret_pairs.begin(), ret_pairs.end());
+            ret_pairs.resize(distance(ret_pairs.begin(), it_d));
+            /* append, sort, and unique-ify new pairs */
+            v_pairs.insert(v_pairs.end(), ret_pairs.begin(), ret_pairs.end());
+            sort(v_pairs.begin(), v_pairs.end());
+            it_u = unique(v_pairs.begin(), v_pairs.end());
+            v_pairs.resize(distance(v_pairs.begin(), it_u));
             time.push_back(MPI_Wtime() - t);
             return ret_pairs;
         }
 
     private:
-        SetPair pairs;
+        SetPair s_pairs;
+        VecPair v_pairs;
 };
 
 }; /* namespace pgraph */

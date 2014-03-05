@@ -74,6 +74,23 @@ size_t SuffixBuckets::bucket_index(const char *kmer)
 }
 
 
+string SuffixBuckets::bucket_kmer(size_t bid)
+{
+    string ret;
+
+    for (int i = param.window_size-1; i >= 0; --i) {
+        size_t tmp = powz(SIGMA,i);
+        size_t quo = bid / tmp;
+        size_t rem = bid % tmp;
+        assert(quo <= param.alphabet.size());
+        ret += param.alphabet[quo];
+        bid = rem;
+    }
+
+    return ret;
+}
+
+
 bool SuffixBuckets::filter_out(const char *kmer)
 {
     bool result = false;
@@ -90,7 +107,10 @@ bool SuffixBuckets::filter_out(const char *kmer)
 
         retval = regexec(&preq, str.c_str(), 0, NULL, 0);
         result = result || (0 == retval);
-        if (result) break;
+        if (result) {
+            //cout << "filter_out " << str << endl;
+            break;
+        }
     }
 #endif
 

@@ -208,7 +208,7 @@ MPI_Offset mpix_get_file_size(const string &file_name, MPI_Comm comm)
         retval = stat(file_name.c_str(), &statbuf);
         if (-1 == retval) {
             perror("stat");
-            printf("unable to stat sequence file\n");
+            printf("unable to stat file '%s'\n", file_name.c_str());
             MPI_Abort(comm, 1);
         }
         file_size = statbuf.st_size;

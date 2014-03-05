@@ -161,7 +161,7 @@ static void alignment_task(
         void *pldata, int /*pldata_len*/,
         vector<void *> /*data_bufs*/,
         int thd);
-static unsigned long process_tree(Bucket *bucket, local_data_t *local_data, int thd);
+static unsigned long process_tree(unsigned long bid, Bucket *bucket, local_data_t *local_data, int thd);
 static void tree_task(
         UniformTaskCollection * /*utc*/,
         void *bigd, int /*bigd_len*/,
@@ -823,7 +823,7 @@ static void alignment_task(
 }
 
 
-static unsigned long process_tree(Bucket *bucket, local_data_t *local_data, int worker)
+static unsigned long process_tree(unsigned long bid, Bucket *bucket, local_data_t *local_data, int worker)
 {
     unsigned long count = 0;
     SequenceDatabase *sequences = local_data->sequences;
@@ -859,9 +859,17 @@ static unsigned long process_tree(Bucket *bucket, local_data_t *local_data, int 
         /* generate pairs */
         t = MPI_Wtime();
         tree->generate_pairs(local_pairs);
+        size_t orig_size = local_pairs.size();
+        stats[worker].pairs.push_back(orig_size);
         stats[worker].time_process.push_back(MPI_Wtime() - t);
         delete tree;
         local_pairs = pair_check[worker]->check(local_pairs);
+        size_t new_size = local_pairs.size();
+#if 0
+        cout << bid << "=" << local_data->suffix_buckets->bucket_kmer(bid)
+            << "\t" << orig_size << "-" << new_size << "=" << (orig_size-new_size)
+            << "\t" << utcs[worker]->size() << endl;
+#endif
 
         /* populate task queue */
         for (set<pair<size_t,size_t> >::iterator it=local_pairs.begin();
@@ -891,7 +899,7 @@ static void tree_task(
     local_data_t *local_data = (local_data_t*)pldata;
     unsigned long i = tree_desc->id;
     Bucket *bucket = local_data->suffix_buckets->get(i);
-    process_tree(bucket, local_data, thd);
+    process_tree(i, bucket, local_data, thd);
     local_data->suffix_buckets->rem(bucket);
 }
 
@@ -995,7 +1003,7 @@ static unsigned long populate_tasks_tree(
     for (size_t i=0; i<my_buckets.size(); ++i) {
         if ((i%size_t(NUM_WORKERS)) == size_t(worker)) {
             Bucket *bucket = suffix_buckets->get(my_buckets[i]);
-            count += process_tree(bucket, local_data, worker);
+            count += process_tree(my_buckets[i], bucket, local_data, worker);
             local_data->suffix_buckets->rem(bucket);
         }
     }

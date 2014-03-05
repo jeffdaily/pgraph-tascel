@@ -2,6 +2,7 @@
 #define _PGRAPH_SIGSEGV_HANDLER_
 
 #include <csignal>
+#include <cstdlib>
 
 static void (*SigSegvOrig)(int) = NULL;
 

@@ -114,8 +114,10 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
 
         for (size_t j = 0; j <= stop_index; ++j) {
             if (filter_out(sequence_data + j)) {
+#if 0
                 printf("[%zu] filtered out '%s'\n",
                         comm_rank, string(sequence_data+j,param.window_size).c_str());
+#endif
             } else {
                 size_t bid = bucket_index(sequence_data + j);
                 assert(bid < n_buckets);

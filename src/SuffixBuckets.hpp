@@ -12,9 +12,11 @@
 #include <mpi.h>
 
 #include <cstddef>
+#include <string>
 #include <vector>
 
 using ::std::size_t;
+using ::std::string;
 using ::std::vector;
 
 namespace pgraph {
@@ -120,7 +122,6 @@ class SuffixBuckets
          */
         virtual size_t size_nonempty() const = 0;
 
-    protected:
         /**
          * Returns Bucket index for the given Suffix string.
          *
@@ -129,11 +130,21 @@ class SuffixBuckets
          * size as indicated by the stored Parameters instance. This
          * suffix prefix is calculated as a 0-based bucket index.
          *
+         * @see bucket_kmer(size_t bid)
          * @param[in] kmer address of of k-mer (suffix) string
          * @return the Bucket index
          */
         size_t bucket_index(const char *kmer);
 
+        /**
+         * Returns kmer for a given Bucket index.
+         * @see bucket_index(const char*)
+         * @param[in] bid bucket ID
+         * @return string representing kmer
+         */
+        string bucket_kmer(size_t bid);
+
+    protected:
         /**
          * Compare kmer against user-supplied prefix filters.
          *

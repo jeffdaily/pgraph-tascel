@@ -63,9 +63,9 @@ const string Parameters::KEY_DUPLICATES_SEMILOCAL("DuplicatesSemiLocal");
 const string Parameters::KEY_DUPLICATES_SMP("DuplicatesSmp");
 const string Parameters::KEY_DUPLICATES_GLOBAL("DuplicatesGlobal");
 /* Defaults */
-const int Parameters::DEF_ALIGN_OVER_LONGER_SEQUENCE(8);
-const int Parameters::DEF_MATCH_SIMILARITY(4);
-const int Parameters::DEF_OPTIMAL_SCORE_OVER_SELF_SCORE(3);
+const int Parameters::DEF_ALIGN_OVER_LONGER_SEQUENCE(80);
+const int Parameters::DEF_MATCH_SIMILARITY(40);
+const int Parameters::DEF_OPTIMAL_SCORE_OVER_SELF_SCORE(30);
 const int Parameters::DEF_EXACT_MATCH_LENGTH(4);
 const int Parameters::DEF_SLIDE_WINDOW_SIZE(3);
 const int Parameters::DEF_OPEN(-10);
@@ -218,94 +218,93 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
 {
     int comm_rank = 0;  /* rank 0 will open the file */
     int status = 0;     /* for MPI routine return codes */
+    char *file_buffer = NULL;
+    MPI_Offset file_size = 0;
+    long chunk_size = 1073741824;
 
-    status = MPI_Comm_rank(comm, &comm_rank);
-    MPI_CHECK_IERR(status, comm_rank, comm);
+    comm_rank = mpix_rank(comm);
 
     if (!ends_with(parameters_file, ".yaml")) {
         cerr << "unrecognized config file format, expecting *.yaml" << endl;
         MPI_Abort(comm, -1);
     }
 
-    if (0 == comm_rank) {
-        try {
-            const YAML::Node config = YAML::LoadFile(parameters_file);
-            AOL = config[KEY_ALIGN_OVER_LONGER_SEQUENCE].as<int>(
-                    DEF_ALIGN_OVER_LONGER_SEQUENCE);
-            SIM = config[KEY_MATCH_SIMILARITY].as<int>(
-                    DEF_MATCH_SIMILARITY);
-            OS = config[KEY_OPTIMAL_SCORE_OVER_SELF_SCORE].as<int>(
-                    DEF_OPTIMAL_SCORE_OVER_SELF_SCORE);
-            exact_match_length = config[KEY_EXACT_MATCH_LENGTH].as<int>(
-                    DEF_EXACT_MATCH_LENGTH);
-            window_size = config[KEY_SLIDE_WINDOW_SIZE].as<int>(
-                    DEF_SLIDE_WINDOW_SIZE);
-            open = config[KEY_OPEN].as<int>(
-                    DEF_OPEN);
-            gap = config[KEY_GAP].as<int>(
-                    DEF_GAP);
-            output_all = config[KEY_OUTPUT_ALL].as<bool>(
-                    DEF_OUTPUT_ALL);
-            output_to_disk = config[KEY_OUTPUT_TO_DISK].as<bool>(
-                    DEF_OUTPUT_TO_DISK);
-            distribute_sequences = config[KEY_DISTRIBUTE_SEQUENCES].as<bool>(
-                    DEF_DISTRIBUTE_SEQUENCES);
-            use_length_filter = config[KEY_USE_LENGTH_FILTER].as<bool>(
-                    DEF_USE_LENGTH_FILTER);
-            use_iterator = config[KEY_USE_ITERATOR].as<bool>(
-                    DEF_USE_ITERATOR);
-            use_counter = config[KEY_USE_COUNTER].as<bool>(
-                    DEF_USE_COUNTER);
-            use_tree = config[KEY_USE_TREE].as<bool>(
-                    DEF_USE_TREE);
-            use_tree_dynamic = config[KEY_USE_TREE_DYNAMIC].as<bool>(
-                    DEF_USE_TREE_DYNAMIC);
-            use_tree_hybrid = config[KEY_USE_TREE_HYBRID].as<bool>(
-                    DEF_USE_TREE_HYBRID);
-            print_stats = config[KEY_PRINT_STATS].as<bool>(
-                    DEF_PRINT_STATS);
-            dup_local = config[KEY_DUPLICATES_LOCAL].as<bool>(
-                    DEF_DUPLICATES_LOCAL);
-            dup_semilocal = config[KEY_DUPLICATES_SEMILOCAL].as<bool>(
-                    DEF_DUPLICATES_SEMILOCAL);
-            dup_smp = config[KEY_DUPLICATES_SMP].as<bool>(
-                    DEF_DUPLICATES_SMP);
-            dup_global = config[KEY_DUPLICATES_GLOBAL].as<bool>(
-                    DEF_DUPLICATES_GLOBAL);
+    mpix_read_file_bcast(parameters_file, file_buffer, file_size, chunk_size, comm);
 
-            string val;
-            val = config[KEY_MEMORY_WORKER].as<string>("");
-            if (val.empty()) {
-                memory_worker = DEF_MEMORY_WORKER;
-            }
-            else {
-                memory_worker = parse_memory_budget(val);
-            }
+    try {
+        const YAML::Node config = YAML::Load(file_buffer);
+        AOL = config[KEY_ALIGN_OVER_LONGER_SEQUENCE].as<int>(
+                DEF_ALIGN_OVER_LONGER_SEQUENCE);
+        SIM = config[KEY_MATCH_SIMILARITY].as<int>(
+                DEF_MATCH_SIMILARITY);
+        OS = config[KEY_OPTIMAL_SCORE_OVER_SELF_SCORE].as<int>(
+                DEF_OPTIMAL_SCORE_OVER_SELF_SCORE);
+        exact_match_length = config[KEY_EXACT_MATCH_LENGTH].as<int>(
+                DEF_EXACT_MATCH_LENGTH);
+        window_size = config[KEY_SLIDE_WINDOW_SIZE].as<int>(
+                DEF_SLIDE_WINDOW_SIZE);
+        open = config[KEY_OPEN].as<int>(
+                DEF_OPEN);
+        gap = config[KEY_GAP].as<int>(
+                DEF_GAP);
+        output_all = config[KEY_OUTPUT_ALL].as<bool>(
+                DEF_OUTPUT_ALL);
+        output_to_disk = config[KEY_OUTPUT_TO_DISK].as<bool>(
+                DEF_OUTPUT_TO_DISK);
+        distribute_sequences = config[KEY_DISTRIBUTE_SEQUENCES].as<bool>(
+                DEF_DISTRIBUTE_SEQUENCES);
+        use_length_filter = config[KEY_USE_LENGTH_FILTER].as<bool>(
+                DEF_USE_LENGTH_FILTER);
+        use_iterator = config[KEY_USE_ITERATOR].as<bool>(
+                DEF_USE_ITERATOR);
+        use_counter = config[KEY_USE_COUNTER].as<bool>(
+                DEF_USE_COUNTER);
+        use_tree = config[KEY_USE_TREE].as<bool>(
+                DEF_USE_TREE);
+        use_tree_dynamic = config[KEY_USE_TREE_DYNAMIC].as<bool>(
+                DEF_USE_TREE_DYNAMIC);
+        use_tree_hybrid = config[KEY_USE_TREE_HYBRID].as<bool>(
+                DEF_USE_TREE_HYBRID);
+        print_stats = config[KEY_PRINT_STATS].as<bool>(
+                DEF_PRINT_STATS);
+        dup_local = config[KEY_DUPLICATES_LOCAL].as<bool>(
+                DEF_DUPLICATES_LOCAL);
+        dup_semilocal = config[KEY_DUPLICATES_SEMILOCAL].as<bool>(
+                DEF_DUPLICATES_SEMILOCAL);
+        dup_smp = config[KEY_DUPLICATES_SMP].as<bool>(
+                DEF_DUPLICATES_SMP);
+        dup_global = config[KEY_DUPLICATES_GLOBAL].as<bool>(
+                DEF_DUPLICATES_GLOBAL);
 
-            val = config[KEY_MEMORY_SEQUENCES].as<string>("");
-            if (val.empty()) {
-                memory_sequences = DEF_MEMORY_SEQUENCES;
-            }
-            else {
-                memory_sequences = parse_memory_budget(val);
-            }
-
-            const YAML::Node filter_node = config[KEY_SKIP_PREFIXES];
-            for (size_t i=0; i<filter_node.size(); ++i) {
-                const string filter = filter_node[i].as<string>();
-                if (filter.size() != ((unsigned)window_size)) {
-                    cerr << "skip prefix length must match slide window size" << endl;
-                    cerr << "'" << filter << "' len=" << filter.size() << " SlideWindowSize=" << window_size << endl;
-                    MPI_Abort(comm, -1);
-                }
-                skip_prefixes.push_back(filter);
-            }
-        } catch (YAML::Exception &e) {
-            cerr << "unable to parse YAML file" << endl;
-            MPI_Abort(comm, -1);
+        string val;
+        val = config[KEY_MEMORY_WORKER].as<string>("");
+        if (val.empty()) {
+            memory_worker = DEF_MEMORY_WORKER;
         }
+        else {
+            memory_worker = parse_memory_budget(val);
+        }
+
+        val = config[KEY_MEMORY_SEQUENCES].as<string>("");
+        if (val.empty()) {
+            memory_sequences = DEF_MEMORY_SEQUENCES;
+        }
+        else {
+            memory_sequences = parse_memory_budget(val);
+        }
+
+        const YAML::Node filter_node = config[KEY_SKIP_PREFIXES];
+        for (size_t i=0; i<filter_node.size(); ++i) {
+            const string filter = filter_node[i].as<string>();
+            skip_prefixes.push_back(filter);
+        }
+    } catch (YAML::Exception &e) {
+        cerr << "unable to parse YAML file" << endl;
+        cerr << e.what() << endl;
+        MPI_Abort(comm, -1);
     }
 
+#if 0
     /* slow, but correct */
     mpix_bcast(AOL, 0, comm);
     mpix_bcast(SIM, 0, comm);
@@ -334,6 +333,7 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
     mpix_bcast(dup_semilocal, 0, comm);
     mpix_bcast(dup_smp, 0, comm);
     mpix_bcast(dup_global, 0, comm);
+#endif
 }
 
 
