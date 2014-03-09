@@ -467,8 +467,8 @@ int main(int argc, char **argv)
     }
 
     if (parameters->print_stats) {
-        mpix::gather(populate_time, 0, pgraph::comm);
-        mpix::gather(populate_count, 0, pgraph::comm);
+        populate_time = mpix::gather(populate_time, 0, pgraph::comm);
+        populate_count = mpix::gather(populate_count, 0, pgraph::comm);
         if (0 == rank) {
             Stats times;
             Stats counts;

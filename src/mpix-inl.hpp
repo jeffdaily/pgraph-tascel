@@ -54,6 +54,12 @@ inline void type_commit(MPI_Datatype &type)
 }
 
 template <typename T>
+inline MPI_Datatype build_mpi_datatype(const T& object)
+{
+    return MPI_DATATYPE_NULL;
+}
+
+template <typename T>
 inline MPI_Datatype get_mpi_datatype(const T& object)
 {
     static MPI_Datatype type = build_mpi_datatype(object);
@@ -230,7 +236,7 @@ inline void bcast(T *object, int size, int root, MPI_Comm comm)
 template <>
 inline void bcast<string>(string &object, int root, MPI_Comm comm)
 {
-    typedef typename string::size_type size_type;
+    typedef string::size_type size_type;
     size_type size = object.size();
 
     bcast(size, root, comm);
@@ -249,7 +255,7 @@ inline void bcast<string>(string &object, int root, MPI_Comm comm)
 template <>
 inline void bcast<string>(vector<string> &object, int root, MPI_Comm comm)
 {
-    typedef typename vector<string>::size_type size_type;
+    typedef vector<string>::size_type size_type;
     size_type size = object.size();
 
     bcast(size, root, comm);
@@ -295,7 +301,7 @@ inline void reduce(T &object, MPI_Op op, int root, MPI_Comm comm)
 template <typename T>
 inline void reduce(vector<T> &object, MPI_Op op, int root, MPI_Comm comm)
 {
-    MPI_Datatype datatype = get_mpi_datatype(object);
+    MPI_Datatype datatype = get_mpi_datatype(object[0]);
 
     if (root == comm_rank(comm)) {
         check(MPI_Reduce(MPI_IN_PLACE, &object[0], object.size(),
@@ -311,7 +317,7 @@ inline void reduce(vector<T> &object, MPI_Op op, int root, MPI_Comm comm)
 template <typename T>
 inline void reduce(T *object, int size, MPI_Op op, int root, MPI_Comm comm)
 {
-    MPI_Datatype datatype = get_mpi_datatype(object);
+    MPI_Datatype datatype = get_mpi_datatype(*object);
 
     if (root == comm_rank(comm)) {
         check(MPI_Reduce(MPI_IN_PLACE, object, size, datatype, op, root, comm));
@@ -335,7 +341,7 @@ inline void allreduce(T &object, MPI_Op op, MPI_Comm comm)
 template <typename T>
 inline void allreduce(vector<T> &object, MPI_Op op, MPI_Comm comm)
 {
-    MPI_Datatype datatype = get_mpi_datatype(object);
+    MPI_Datatype datatype = get_mpi_datatype(object[0]);
     check(MPI_Allreduce(MPI_IN_PLACE, &object[0], object.size(),
                 datatype, op, comm));
 }
@@ -344,7 +350,7 @@ inline void allreduce(vector<T> &object, MPI_Op op, MPI_Comm comm)
 template <typename T>
 inline void allreduce(T *object, int size, MPI_Op op, MPI_Comm comm)
 {
-    MPI_Datatype datatype = get_mpi_datatype(object);
+    MPI_Datatype datatype = get_mpi_datatype(*object);
     check(MPI_Allreduce(MPI_IN_PLACE, object, size, datatype, op, comm));
 }
 
@@ -432,7 +438,7 @@ inline vector<T> gather(const vector<T> &object, int root, MPI_Comm comm)
     if (comm_rank(comm) == root) {
         result.resize(comm_size(comm) * object.size());
         check(MPI_Gather(&object[0], object.size(), datatype,
-                    &result[0], result.size(), datatype, root, comm));
+                    &result[0], object.size(), datatype, root, comm));
     }
     else {
         check(MPI_Gather(&object[0], object.size(), datatype,
@@ -447,12 +453,12 @@ template <typename T>
 inline vector<T> gather(const T *object, int size, int root, MPI_Comm comm)
 {
     vector<T> result;
-    MPI_Datatype datatype = get_mpi_datatype(object[0]);
+    MPI_Datatype datatype = get_mpi_datatype(*object);
 
     if (comm_rank(comm) == root) {
         result.resize(comm_size(comm) * size);
         check(MPI_Gather(object, size, datatype,
-                    &result[0], result.size(), datatype, root, comm));
+                    &result[0], size, datatype, root, comm));
     }
     else {
         check(MPI_Gather(object, size, datatype,
