@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <functional>
 #include <iterator>
 #include <list>
 #include <set>
@@ -21,11 +22,15 @@ using std::unordered_set;
 #include <tr1/unordered_set>
 using std::tr1::unordered_set;
 #endif
+
 #if HAVE_CXX_UNORDERED_SET || HAVE_CXX_TR1_UNORDERED_SET
 typedef std::pair<long,long> MyType;
-namespace std { namespace tr1
-{
-    template <> struct hash<MyType> : public unary_function<MyType, size_t>
+namespace std {
+#if HAVE_CXX_TR1_UNORDERED_SET
+namespace tr1 {
+#endif
+    template <>
+    struct hash<MyType>
     {
         size_t operator()(const MyType& v) const
         {
@@ -35,7 +40,10 @@ namespace std { namespace tr1
             return seed;
         }
     };
-}}
+#if HAVE_CXX_TR1_UNORDERED_SET
+}
+#endif
+}
 #endif
 
 using namespace std;

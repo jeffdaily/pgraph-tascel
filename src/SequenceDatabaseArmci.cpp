@@ -80,20 +80,16 @@ SequenceDatabaseArmci::SequenceDatabaseArmci(
     ,   mutex()
     ,   max_seq_size(0)
 {
-    int ierr = 0;
-
     ARMCI_Init();
 
     /* rank and size */
-    ierr = MPI_Comm_rank(comm_orig, &comm_orig_rank);
-    MPI_CHECK_IERR(ierr, comm_orig_rank, comm_orig);
-    ierr = MPI_Comm_size(comm_orig, &comm_orig_size);
-    MPI_CHECK_IERR(ierr, comm_orig_rank, comm_orig);
+    comm_orig_rank = mpix::comm_rank(comm_orig);
+    comm_orig_size = mpix::comm_size(comm_orig);
 
     /* create ARMCI parent group -- I hope this works */
     vector<int> pid_list(comm_orig_size, 0);
     pid_list[comm_orig_rank] = comm_orig_rank;
-    mpix_allreduce(pid_list, MPI_MAX, comm_orig);
+    mpix::allreduce(pid_list, MPI_MAX, comm_orig);
     ARMCI_Group_create(comm_orig_size, &pid_list[0], &armci_group_orig);
     {
         int armci_rank = 0;
@@ -151,16 +147,16 @@ void SequenceDatabaseArmci::read_and_parse_fasta()
         ierr = MPI_File_open(MPI_COMM_SELF,
                 const_cast<char *>(file_name.c_str()),
                 MPI_MODE_RDONLY, MPI_INFO_NULL, &in);
-        MPI_CHECK_IERR(ierr, comm_orig_rank, comm_orig);
+        mpix::check(ierr);
         ierr = MPI_File_get_size(in, &file_size);
-        MPI_CHECK_IERR(ierr, comm_orig_rank, comm_orig);
+        mpix::check(ierr);
         ierr = MPI_File_close(&in);
-        MPI_CHECK_IERR(ierr, comm_orig_rank, comm_orig);
+        mpix::check(ierr);
     }
-    mpix_bcast(file_size, 0, comm_orig);
+    mpix::bcast(file_size, 0, comm_orig);
 
-    mpix_print_zero("memory budget", budget, comm_orig);
-    mpix_print_zero("file size", file_size, comm_orig);
+    mpix::print_zero("memory budget", budget, comm_orig);
+    mpix::print_zero("file size", file_size, comm_orig);
     
     if (budget >= file_size) {
         is_replicated = true;
@@ -172,7 +168,7 @@ void SequenceDatabaseArmci::read_and_parse_fasta()
         ierr = MPI_File_open(MPI_COMM_SELF,
                 const_cast<char *>(file_name.c_str()),
                 MPI_MODE_RDONLY, MPI_INFO_NULL, &in);
-        MPI_CHECK_IERR(ierr, comm_orig_rank, comm_orig);
+        mpix::check(ierr);
         read_and_parse_fasta_himem(in, file_size);
 #else
         read_and_parse_fasta_himem(MPI_FILE_NULL, file_size);
@@ -186,24 +182,24 @@ void SequenceDatabaseArmci::read_and_parse_fasta()
         is_replicated = false;
         /* split comm_orig based on budget memory domains */
         ranks_per_domain = file_size / budget + (file_size%budget ? 1 : 0);
-        mpix_print_zero("ranks_per_domain", ranks_per_domain, comm_orig);
+        mpix::print_zero("ranks_per_domain", ranks_per_domain, comm_orig);
         domain_count = comm_orig_size / ranks_per_domain;
-        mpix_print_zero("domain_count", domain_count, comm_orig);
+        mpix::print_zero("domain_count", domain_count, comm_orig);
         color = comm_orig_rank / ranks_per_domain;
         assert(color <= domain_count);
         if (color == domain_count) {
             color -= 1;
         }
-        //mpix_print_sync("color", color, comm_orig);
+        //mpix::print_sync("color", color, comm_orig);
         ierr = MPI_Comm_split(comm_orig, color, comm_orig_rank, &comm);
-        MPI_CHECK_IERR(ierr, comm_orig_rank, comm_orig);
+        mpix::check(ierr);
         ierr = MPI_Comm_rank(comm, &comm_rank);
-        MPI_CHECK_IERR(ierr, comm_rank, comm);
+        mpix::check(ierr);
         ierr = MPI_Comm_size(comm, &comm_size);
-        MPI_CHECK_IERR(ierr, comm_rank, comm);
+        mpix::check(ierr);
         vector<int> pid_list(comm_size, 0);
         pid_list[comm_rank] = comm_orig_rank;
-        mpix_allreduce(pid_list, MPI_MAX, comm);
+        mpix::allreduce(pid_list, MPI_MAX, comm);
         ARMCI_Group_create_child(comm_size, &pid_list[0], &armci_group, &armci_group_orig);
         {
             int armci_rank = 0;
@@ -216,7 +212,7 @@ void SequenceDatabaseArmci::read_and_parse_fasta()
         ierr = MPI_File_open(comm,
                 const_cast<char *>(file_name.c_str()),
                 MPI_MODE_RDONLY, MPI_INFO_NULL, &in);
-        MPI_CHECK_IERR(ierr, comm_orig_rank, comm_orig);
+        mpix::check(ierr);
         read_and_parse_fasta_lomem(in, file_size);
     }
 }
@@ -258,12 +254,12 @@ void SequenceDatabaseArmci::read_and_parse_fasta_lomem(MPI_File in,
     /* everyone reads in their part */
     ierr = MPI_File_read_at_all(in, start, file_buffer, local_size,
                                 MPI_CHAR, MPI_STATUS_IGNORE);
-    MPI_CHECK_IERR(ierr, comm_rank, comm);
+    mpix::check(ierr);
     file_buffer[local_size] = '\0';
 
     /* everyone can close the file now */
     ierr = MPI_File_close(&in);
-    MPI_CHECK_IERR(ierr, comm_rank, comm);
+    mpix::check(ierr);
 
     /* locate first '>' indicating start of a sequence ID */
     /* also count how many '>' on each process so we can determine which proc
@@ -277,40 +273,40 @@ void SequenceDatabaseArmci::read_and_parse_fasta_lomem(MPI_File in,
             }
         }
     }
-    mpix_allreduce(counts, MPI_MAX, comm);
+    mpix::allreduce(counts, MPI_MAX, comm);
 
     /* send broken chunks left */
     if (comm_size > 0) {
         if (0 == comm_rank) {
             ierr = MPI_Recv(&first_index_other, 1, MPI_INT,
                     1, TAG, comm, MPI_STATUS_IGNORE);
-            MPI_CHECK_IERR(ierr, comm_rank, comm);
+            mpix::check(ierr);
             extra_buffer = new char[first_index_other+1];
             ierr = MPI_Recv(extra_buffer, first_index_other, MPI_CHAR,
                     1, TAG, comm, MPI_STATUS_IGNORE);
-            MPI_CHECK_IERR(ierr, comm_rank, comm);
+            mpix::check(ierr);
         }
         else if (comm_size == comm_rank+1) {
             ierr = MPI_Send(&first_index_mine, 1, MPI_INT,
                     comm_rank-1, TAG, comm);
-            MPI_CHECK_IERR(ierr, comm_rank, comm);
+            mpix::check(ierr);
             extra_buffer = new char[1];
             ierr = MPI_Send(file_buffer, first_index_mine, MPI_CHAR,
                     comm_rank-1, TAG, comm);
-            MPI_CHECK_IERR(ierr, comm_rank, comm);
+            mpix::check(ierr);
         }
         else {
             ierr = MPI_Sendrecv(&first_index_mine, 1, MPI_INT,
                     comm_rank-1, TAG,
                     &first_index_other, 1, MPI_INT,
                     comm_rank+1, TAG, comm, MPI_STATUS_IGNORE);
-            MPI_CHECK_IERR(ierr, comm_rank, comm);
+            mpix::check(ierr);
             extra_buffer = new char[first_index_other+1];
             ierr = MPI_Sendrecv(file_buffer, first_index_mine, MPI_CHAR,
                     comm_rank-1, TAG,
                     extra_buffer, first_index_other, MPI_CHAR,
                     comm_rank+1, TAG, comm, MPI_STATUS_IGNORE);
-            MPI_CHECK_IERR(ierr, comm_rank, comm);
+            mpix::check(ierr);
         }
         extra_buffer[first_index_other] = '\0';
     }
@@ -322,7 +318,7 @@ void SequenceDatabaseArmci::read_and_parse_fasta_lomem(MPI_File in,
     ptr_arr = new char*[comm_size];
     (void)ARMCI_Malloc_group((void**)ptr_arr, local_cache_size+1, &armci_group);
     local_data = ptr_arr[comm_rank];
-    //mpix_print_sync("local_data", (void*)local_data, comm);
+    //mpix::print_sync("local_data", (void*)local_data, comm);
     if (comm_size > 0) {
         if (0 == comm_rank) {
             (void)memcpy(ptr_arr[comm_rank],
@@ -358,8 +354,8 @@ void SequenceDatabaseArmci::read_and_parse_fasta_lomem(MPI_File in,
 
     pack_and_index_fasta(ptr_arr[comm_rank], local_cache_size,
             delimiter, first_id, new_size);
-    mpix_allreduce(global_size, MPI_SUM, comm);
-    //mpix_print_sync("global_size", global_size, comm);
+    mpix::allreduce(global_size, MPI_SUM, comm);
+    //mpix::print_sync("global_size", global_size, comm);
 
     exchange_local_cache();
 }
@@ -378,18 +374,18 @@ void SequenceDatabaseArmci::read_and_parse_fasta_himem(MPI_File in,
     local_data[file_size+1] = '\0';
 
     if (in == MPI_FILE_NULL) {
-        mpix_read_file_bcast(file_name, local_data, file_size_verify);
+        mpix::read_file_bcast(file_name, local_data, file_size_verify, comm_orig);
         assert(file_size == file_size_verify);
     }
     else {
         /* everyone reads in their part */
         ierr = MPI_File_read_at_all(in, 0, local_data, file_size,
                 MPI_CHAR, MPI_STATUS_IGNORE);
-        MPI_CHECK_IERR(ierr, comm_rank, comm);
+        mpix::check(ierr);
 
         /* everyone can close the file now */
         ierr = MPI_File_close(&in);
-        MPI_CHECK_IERR(ierr, comm_rank, comm);
+        mpix::check(ierr);
     }
 
     /* pack and index the fasta buffer */
@@ -400,7 +396,7 @@ void SequenceDatabaseArmci::read_and_parse_fasta_himem(MPI_File in,
     assert(local_cache.size() > 0);
 
     global_count = local_cache.size();
-    //mpix_print_sync("global_size", global_size, comm);
+    //mpix::print_sync("global_size", global_size, comm);
 }
 
 
@@ -495,9 +491,9 @@ void SequenceDatabaseArmci::pack_and_index_fasta(char *buffer,
 
     new_size = w;
 
-    mpix_allreduce(max_seq_size, MPI_MAX, comm);
-    mpix_print_zero("max_seq_size", max_seq_size, comm);
-    //mpix_print_sync("local_size", local_size, comm);
+    mpix::allreduce(max_seq_size, MPI_MAX, comm);
+    mpix::print_zero("max_seq_size", max_seq_size, comm);
+    //mpix::print_sync("local_size", local_size, comm);
     global_size = local_size;
 }
 
@@ -574,7 +570,7 @@ void SequenceDatabaseArmci::exchange_local_cache()
     vector<ptrdiff_t> offsets;
 
     global_count = local_cache.size();
-    mpix_allreduce(global_count, MPI_SUM, comm);
+    mpix::allreduce(global_count, MPI_SUM, comm);
 
     owners.assign(global_count, 0);
     addresses.assign(global_count, 0);
@@ -600,12 +596,12 @@ void SequenceDatabaseArmci::exchange_local_cache()
         //    << "'" << endl;
     }
 
-    mpix_allreduce(owners, MPI_SUM, comm);
-    mpix_allreduce(offsets, MPI_SUM, comm);
-    mpix_allreduce(sizes, MPI_SUM, comm);
-    //mpix_print_sync("owners", vec_to_string(owners), comm);
-    //mpix_print_sync("offsets", vec_to_string(offsets), comm);
-    //mpix_print_sync("sizes", vec_to_string(sizes), comm);
+    mpix::allreduce(owners, MPI_SUM, comm);
+    mpix::allreduce(offsets, MPI_SUM, comm);
+    mpix::allreduce(sizes, MPI_SUM, comm);
+    //mpix::print_sync("owners", vec_to_string(owners), comm);
+    //mpix::print_sync("offsets", vec_to_string(offsets), comm);
+    //mpix::print_sync("sizes", vec_to_string(sizes), comm);
 
     /* ARMCI is screwey. If the MPI ranks are on the same SMP node, the
      * addresses returned in the ptr_arr are different than the addresses on
@@ -615,7 +611,7 @@ void SequenceDatabaseArmci::exchange_local_cache()
     for (size_t i=0; i<global_count; ++i) {
         addresses[i] = &ptr_arr[owners[i]][offsets[i]];
     }
-    //mpix_print_sync("addresses", vec_to_string(addresses), comm);
+    //mpix::print_sync("addresses", vec_to_string(addresses), comm);
 }
 
 

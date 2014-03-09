@@ -46,7 +46,13 @@ volatile bool serverEnabled = true;
  *
  * @param[in] the core to bind pthread_self() to.
  */
-static void set_affinity(const unsigned int rank)
+static void set_affinity(
+#if defined(SET_AFFINITY)
+        const unsigned int rank
+#else
+        const unsigned int
+#endif
+        )
 {
 #if defined(SET_AFFINITY)
     cpu_set_t cpuset;
@@ -217,6 +223,11 @@ static void finalize_threads()
     pthread_barrier_wait(&serverEnd);
     amBarrier();
     pthread_join(threadHandles[NUM_WORKERS], NULL);
+
+    pthread_barrier_destroy(&workersStart);
+    pthread_barrier_destroy(&workersEnd);
+    pthread_barrier_destroy(&serverStart);
+    pthread_barrier_destroy(&serverEnd);
 
     delete [] threadHandles;
     delete [] threadRanks;

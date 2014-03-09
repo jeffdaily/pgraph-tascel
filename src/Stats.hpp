@@ -22,6 +22,13 @@ namespace pgraph {
 class Stats
 {
     public:
+        unsigned long _n;
+        double _mean;
+        double _M2;
+        double _sum;
+        double _min;
+        double _max;
+
         Stats()
             : _n(0UL)
             , _mean(0.0)
@@ -122,14 +129,6 @@ class Stats
 
             return os.str();
         }
-        
-    protected:
-        unsigned long _n;
-        double _mean;
-        double _M2;
-        double _sum;
-        double _min;
-        double _max;
 };
 
 inline ::std::ostream& operator << (::std::ostream &os, const Stats &obj)

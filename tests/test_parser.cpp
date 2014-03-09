@@ -15,7 +15,7 @@ int main(int argc, char **argv)
 {
     Parameters parameters;
 
-    pgraph::initialize(&argc, &argv);
+    pgraph::initialize(argc, argv);
 
     cout << parameters << endl;
 

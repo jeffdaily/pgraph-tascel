@@ -40,7 +40,7 @@ SequenceDatabaseReplicated::SequenceDatabaseReplicated(
     ,   comm(comm)
     ,   comm_rank(0)
     ,   comm_size(0)
-    ,   delimiter(delimiter)
+    //,   delimiter(delimiter)
     ,   file_name(file_name)
     ,   local_data(NULL)
     ,   local_cache()
@@ -52,9 +52,9 @@ SequenceDatabaseReplicated::SequenceDatabaseReplicated(
     size_t new_size = 0;
 
     /* rank and size */
-    comm_rank = mpix_rank(comm);
-    comm_size = mpix_size(comm);
-    file_size = mpix_get_file_size(file_name, comm);
+    comm_rank = mpix::comm_rank(comm);
+    comm_size = mpix::comm_size(comm);
+    file_size = mpix::get_file_size(file_name, comm);
 
     if (0 == comm_rank) {
         cout << "sequence file size is " << file_size << endl;
@@ -66,7 +66,7 @@ SequenceDatabaseReplicated::SequenceDatabaseReplicated(
     local_data[file_size] = delimiter;
     local_data[file_size+1] = '\0';
 
-    mpix_read_file(file_name, local_data, file_size_out, 1073741824, comm);
+    mpix::read_file(file_name, local_data, file_size_out, comm);
     assert(file_size == file_size_out);
 
     /* pack and index the fasta buffer */

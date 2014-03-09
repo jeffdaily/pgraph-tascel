@@ -122,8 +122,8 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
                              const Parameters &param,
                              MPI_Comm comm)
     :   comm(comm)
-    ,   comm_rank(mpix_rank(comm))
-    ,   comm_size(mpix_size(comm))
+    ,   comm_rank(mpix::comm_rank(comm))
+    ,   comm_size(mpix::comm_size(comm))
     ,   n_buckets(powz(param.alphabet.size(), param.window_size))
     ,   sequences(sequences)
     ,   param(param)

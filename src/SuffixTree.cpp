@@ -46,7 +46,7 @@ const size_t SuffixTree::npos(-1);
 SuffixTree::SuffixTree(
         SequenceDatabase *sequences, Bucket *bucket, const Parameters &param)
     :   sequences(sequences)
-    ,   bucket(bucket)
+    //,   bucket(bucket)
     ,   param(param)
     ,   SIGMA(param.alphabet.size())
     ,   DOLLAR(param.alphabet_dollar)
@@ -107,7 +107,7 @@ SuffixTree::SuffixTree(
         suffix_length_stats.push_back(len);
     }
 
-    build_tree_recursive(bucket->suffixes, param.window_size - 1);
+    build_tree_recursive(bucket->suffixes, window_size - 1);
 }
 
 

@@ -216,20 +216,15 @@ Parameters::Parameters(const char *parameters_file, MPI_Comm comm)
 
 void Parameters::parse(const char *parameters_file, MPI_Comm comm)
 {
-    int comm_rank = 0;  /* rank 0 will open the file */
-    int status = 0;     /* for MPI routine return codes */
     char *file_buffer = NULL;
     MPI_Offset file_size = 0;
-    long chunk_size = 1073741824;
-
-    comm_rank = mpix_rank(comm);
 
     if (!ends_with(parameters_file, ".yaml")) {
         cerr << "unrecognized config file format, expecting *.yaml" << endl;
         MPI_Abort(comm, -1);
     }
 
-    mpix_read_file_bcast(parameters_file, file_buffer, file_size, chunk_size, comm);
+    mpix::read_file_bcast(parameters_file, file_buffer, file_size, comm);
 
     try {
         const YAML::Node config = YAML::Load(file_buffer);
@@ -303,37 +298,6 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
         cerr << e.what() << endl;
         MPI_Abort(comm, -1);
     }
-
-#if 0
-    /* slow, but correct */
-    mpix_bcast(AOL, 0, comm);
-    mpix_bcast(SIM, 0, comm);
-    mpix_bcast(OS, 0, comm);
-    mpix_bcast(exact_match_length, 0, comm);
-    mpix_bcast(window_size, 0, comm);
-    mpix_bcast(open, 0, comm);
-    mpix_bcast(gap, 0, comm);
-    mpix_bcast(memory_worker, 0, comm);
-    mpix_bcast(memory_sequences, 0, comm);
-    mpix_bcast(skip_prefixes, 0, comm);
-    mpix_bcast(output_all, 0, comm);
-    mpix_bcast(output_to_disk, 0, comm);
-    mpix_bcast(distribute_sequences, 0, comm);
-    mpix_bcast(use_length_filter, 0, comm);
-    mpix_bcast(use_iterator, 0, comm);
-    mpix_bcast(use_counter, 0, comm);
-    mpix_bcast(use_tree, 0, comm);
-    mpix_bcast(use_tree_dynamic, 0, comm);
-    mpix_bcast(use_tree_hybrid, 0, comm);
-    mpix_bcast(print_stats, 0, comm);
-    mpix_bcast(alphabet, 0, comm);
-    mpix_bcast(alphabet_begin, 0, comm);
-    mpix_bcast(alphabet_dollar, 0, comm);
-    mpix_bcast(dup_local, 0, comm);
-    mpix_bcast(dup_semilocal, 0, comm);
-    mpix_bcast(dup_smp, 0, comm);
-    mpix_bcast(dup_global, 0, comm);
-#endif
 }
 
 

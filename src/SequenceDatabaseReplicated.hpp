@@ -112,7 +112,7 @@ class SequenceDatabaseReplicated : public SequenceDatabase
         MPI_Comm comm;      /**< sub communicator for smaller domain */
         int comm_rank;      /**< communicator rank */
         int comm_size;      /**< communicator size */
-        char delimiter;     /**< delimiter to separate sequences */
+        //char delimiter;     /**< delimiter to separate sequences */
         string file_name;   /**< fasta file name */
         char *local_data;   /**< memory allocated for local sequences */
         map<size_t, Sequence*> local_cache; /**< TODO */

@@ -20,6 +20,7 @@
 #include <tascel.h>
 
 #include "mpix.hpp"
+#include "mpix-types.hpp"
 #include "Parameters.hpp"
 #include "SequenceDatabase.hpp"
 #include "SuffixBuckets.hpp"
@@ -66,9 +67,9 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
         - sequences->size() * param.window_size;
 
 #if DEBUG || 1
-    mpix_print_zero("n_buckets", n_buckets, comm);
-    mpix_print_sync("buckets_size", buckets_size, comm);
-    mpix_print_zero("n_suffixes", n_suffixes, comm);
+    mpix::print_zero("n_buckets", n_buckets, comm);
+    mpix::print_sync("buckets_size", buckets_size, comm);
+    mpix::print_zero("n_suffixes", n_suffixes, comm);
 #endif
 
     /* each MPI rank gets a contiguous range of sequences to bucket */
@@ -89,10 +90,10 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
         stop = sequences->size();
     }
 #if DEBUG || 1
-    mpix_print_sync("n_seq", n_seq, comm);
-    mpix_print_sync("remainder", remainder, comm);
-    mpix_print_sync("start", start, comm);
-    mpix_print_sync("stop", stop, comm);
+    mpix::print_sync("n_seq", n_seq, comm);
+    mpix::print_sync("remainder", remainder, comm);
+    mpix::print_sync("start", start, comm);
+    mpix::print_sync("stop", stop, comm);
 #endif
 
     size_t initial_suffixes_size = 0;
@@ -132,7 +133,7 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
     initial_suffixes.resize(suffix_index);
 
 #if DEBUG || 1
-    mpix_print_sync("suffix_index", suffix_index, comm);
+    mpix::print_sync("suffix_index", suffix_index, comm);
 #endif
 
     // Note: bucket owner is calculated as bucket ID % comm_size
@@ -150,14 +151,14 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
             desitinations += 1;
         }
     }
-    mpix_print_sync("desitinations", desitinations, comm);
+    mpix::print_sync("desitinations", desitinations, comm);
 #endif
 #if DEBUG
-    mpix_print_sync("amount_to_send", vec_to_string(amount_to_send), comm);
+    mpix::print_sync("amount_to_send", vec_to_string(amount_to_send), comm);
 #endif
-    mpix_alltoall(amount_to_send, amount_to_recv, comm);
+    mpix::alltoall(amount_to_send, amount_to_recv, comm);
 #if DEBUG
-    mpix_print_sync("amount_to_recv", vec_to_string(amount_to_recv), comm);
+    mpix::print_sync("amount_to_recv", vec_to_string(amount_to_recv), comm);
 #endif
 
     int total_amount_to_send = 0;
@@ -166,8 +167,8 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
         total_amount_to_send += amount_to_send[i];
         total_amount_to_recv += amount_to_recv[i];
     }
-    mpix_print_sync("total_amount_to_send", total_amount_to_send, comm);
-    mpix_print_sync("total_amount_to_recv", total_amount_to_recv, comm);
+    mpix::print_sync("total_amount_to_send", total_amount_to_send, comm);
+    mpix::print_sync("total_amount_to_recv", total_amount_to_recv, comm);
     suffixes_size = total_amount_to_recv;
 
     /* We are preparing for the all to all, so we sort the suffixes.
@@ -180,12 +181,12 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
     aid_suffixes = theRma().allocColl(sizeof(Suffix)*suffixes_size);
     suffixes = reinterpret_cast<Suffix*>(
             theRma().lookupPointer(RmaPtr(aid_suffixes)));
-    mpix_print_sync("suffixes_size", suffixes_size, comm);
+    mpix::print_sync("suffixes_size", suffixes_size, comm);
 
     aid_meta = theRma().allocColl(sizeof(BucketMeta)*buckets_size);
     buckets = reinterpret_cast<BucketMeta*>(
             theRma().lookupPointer(RmaPtr(aid_meta)));
-    mpix_print_sync("buckets_size", buckets_size, comm);
+    mpix::print_sync("buckets_size", buckets_size, comm);
     for (size_t i=0; i<buckets_size; ++i) {
         size_t bid = i*comm_size + comm_rank;
         buckets[i].offset = 0;
@@ -202,30 +203,14 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
         recv_displacements[i] = recv_displacements[i-1] + amount_to_recv[i-1];
     }
 #if DEBUG
-    mpix_print_sync("send_displacements", vec_to_string(send_displacements), comm);
-    mpix_print_sync("recv_displacements", vec_to_string(recv_displacements), comm);
+    mpix::print_sync("send_displacements", vec_to_string(send_displacements), comm);
+    mpix::print_sync("recv_displacements", vec_to_string(recv_displacements), comm);
 #endif
 
     /* need to alltoallv the buckets to the owning processes */
-    MPI_Datatype SuffixType;
-    MPI_Datatype type[4] = {
-        mpix_get_mpi_datatype(initial_suffixes[0].sid),
-        mpix_get_mpi_datatype(initial_suffixes[0].pid),
-        mpix_get_mpi_datatype(initial_suffixes[0].bid),
-        MPI_UNSIGNED_LONG /* void* */
-    };
-    int blocklen[4] = {1,1,1,1};
-    MPI_Aint disp[4];
-    disp[0] = MPI_Aint(&initial_suffixes[0].sid) - MPI_Aint(&initial_suffixes[0]);
-    disp[1] = MPI_Aint(&initial_suffixes[0].pid) - MPI_Aint(&initial_suffixes[0]);
-    disp[2] = MPI_Aint(&initial_suffixes[0].bid) - MPI_Aint(&initial_suffixes[0]);
-    disp[3] = MPI_Aint(&initial_suffixes[0].next)- MPI_Aint(&initial_suffixes[0]);
-    ierr = MPI_Type_create_struct(4, blocklen, disp, type, &SuffixType);
-    assert(MPI_SUCCESS == ierr);
-    ierr = MPI_Type_commit(&SuffixType);
-    assert(MPI_SUCCESS == ierr);
+    MPI_Datatype SuffixType = mpix::get_mpi_datatype<Suffix>(initial_suffixes[0]);
 #if DEBUG
-    mpix_print_sync("initial_suffixes", vec_to_string(initial_suffixes), comm);
+    mpix::print_sync("initial_suffixes", vec_to_string(initial_suffixes), comm);
 #endif
     ierr = MPI_Alltoallv(
             &initial_suffixes[0], &amount_to_send[0],
@@ -234,7 +219,7 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
             &recv_displacements[0], SuffixType, comm);
     assert(MPI_SUCCESS == ierr);
 #if DEBUG
-    mpix_print_sync("suffixes", arr_to_string(suffixes, total_amount_to_recv), comm);
+    mpix::print_sync("suffixes", arr_to_string(suffixes, total_amount_to_recv), comm);
 #endif
 
     size_t bucket_size_total = 0;
@@ -283,9 +268,9 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
         }
     }
 
-    mpix_allreduce(n_nonempty, MPI_SUM, comm);
+    mpix::allreduce(n_nonempty, MPI_SUM, comm);
 #if 1
-    mpix_print_sync("bucket_size_total", bucket_size_total, comm);
+    mpix::print_sync("bucket_size_total", bucket_size_total, comm);
 #endif
 }
 

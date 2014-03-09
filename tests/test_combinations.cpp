@@ -106,7 +106,7 @@ int test(unsigned long k, unsigned long step, unsigned long limit)
     return 0;
 }
 
-int main(int argc, char **argv)
+int main(void)
 {
     int retcode;
 

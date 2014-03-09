@@ -5,12 +5,12 @@
 
 namespace pgraph {
     extern MPI_Comm comm;
-    extern int rank;
-    extern int nprocs;
+    extern int comm_rank;
+    extern int comm_size;
     extern int *argc_;
     extern char ***argv_;
     extern bool is_armci_initialized;
-    void initialize(int *argc, char ***argv);
+    void initialize(int &argc, char **&argv);
     void finalize();
 
     void initialize_armci();

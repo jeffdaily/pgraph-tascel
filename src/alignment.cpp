@@ -16,7 +16,6 @@
 #include <iostream>
 
 #include "alignment.hpp"
-#include "alignment_defs.hpp"
 #include "blosum/blosum40.h"
 #include "blosum/blosum45.h"
 #include "blosum/blosum50.h"
@@ -27,6 +26,12 @@
 #if HAVE_EMMINTRIN_H
 #include "ssw.h"
 #endif
+
+/** mapping from BLOSUM alphabet to BLOSUM index; use as BLOSUM[map[ch-'A']] */
+static int MAP_BLOSUM[] = {
+    0,  20,   4,   3,   6,  13,   7,   8,   9,  23,
+    11,  10,  12,   2,  24,  14,   5,   1,  15,  16,
+    25,  19,  17,  22,  18,  21 };
 
 #define CROW(i) ((i)%2)
 #define PROW(i) ((i-1)%2)

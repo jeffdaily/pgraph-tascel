@@ -96,11 +96,13 @@ static int pthread_barrier_destroy(pthread_barrier_t *barrier)
 
 #endif  // defined(PTHREAD_BARRIER_SERIAL_THREAD)
 
+#if 0
 static int pthread_yield(void)
 {
     sched_yield();
     return 0;
 }
+#endif
 
 //}  // namespace
 #ifdef __cplusplus

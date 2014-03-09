@@ -144,7 +144,7 @@ class SuffixTree
         bool proc_node(size_t sIndex, size_t eIndex, Callback callback);
 
         SequenceDatabase *sequences;
-        Bucket *bucket;
+        //Bucket *bucket;
         const Parameters &param;/**< user parameters */
         const size_t SIGMA;     /**< alphabet size */
         const char DOLLAR;      /**< terminal character */

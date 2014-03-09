@@ -10,14 +10,18 @@
 #ifndef _MPIX_TYPES_H_
 #define _MPIX_TYPES_H_
 
-#include <tascel.h>
+#include <tascel/Counter.h>
+#include <tascel/StealingStats.h>
+#include <tascel/Timer.h>
 
 #include "AlignStats.hpp"
 #include "Stats.hpp"
+#include "Suffix.hpp"
 #include "TreeStats.hpp"
 
 using ::pgraph::AlignStats;
 using ::pgraph::Stats;
+using ::pgraph::Suffix;
 using ::pgraph::TreeStats;
 
 using ::tascel::Counter;
@@ -160,6 +164,28 @@ inline MPI_Datatype build_mpi_datatype<AlignStats>(const AlignStats &object)
         MPI_Aint(&object.work_skipped) - MPI_Aint(&object)
     };
     result = type_create_struct(8, blocklen, disp, type);
+    type_commit(result);
+    return result;
+}
+
+template <>
+inline MPI_Datatype build_mpi_datatype<Suffix>(const Suffix &object)
+{
+    MPI_Datatype result;
+    MPI_Datatype type[4] = {
+        get_mpi_datatype(object.sid),
+        get_mpi_datatype(object.pid),
+        get_mpi_datatype(object.bid),
+        MPI_UNSIGNED_LONG /* void* */
+    };
+    int blocklen[4] = {1,1,1,1};
+    MPI_Aint disp[4] = {
+        MPI_Aint(&object.sid) - MPI_Aint(&object),
+        MPI_Aint(&object.pid) - MPI_Aint(&object),
+        MPI_Aint(&object.bid) - MPI_Aint(&object),
+        MPI_Aint(&object.next) - MPI_Aint(&object)
+    };
+    result = type_create_struct(4, blocklen, disp, type);
     type_commit(result);
     return result;
 }

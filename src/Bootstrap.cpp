@@ -1,5 +1,7 @@
 #include "config.h"
 
+#include <unistd.h>
+
 #include <cassert>
 
 #include <mpi.h>
@@ -22,46 +24,41 @@ extern "C" {
 namespace pgraph {
 
 MPI_Comm comm = MPI_COMM_NULL;
-int rank = 0;
-int nprocs = 0;
+int comm_rank = 0;
+int comm_size = 0;
 int *argc_ = NULL;
 char ***argv_ = NULL;
 bool is_armci_initialized = false;
 
-void initialize(int *argc, char ***argv)
+void initialize(int &argc, char **&argv)
 {
 #ifdef PAUSE_ON_ERROR
     TrapSigSegv();
 #endif
 
-    argc_ = argc;
-    argv_ = argv;
+    argc_ = &argc;
+    argv_ = &argv;
     is_armci_initialized = false;
 
     /* initialize MPI */
 #if defined(THREADED)
-    {
-        int provided;
-        MPI_CHECK(MPI_Init_thread(argc, argv,
-                    MPI_THREAD_MULTIPLE, &provided));
-        assert(provided == MPI_THREAD_MULTIPLE);
-    }
+    mpix::init_thread(argc, argv, MPI_THREAD_MULTIPLE);
 #else
-    MPI_CHECK(MPI_Init(argc, argv));
+    mpix::init(argc, argv);
 #endif
 
-    /* get rank and nprocs */
-    MPI_CHECK(MPI_Comm_dup(MPI_COMM_WORLD, &comm));
-    MPI_CHECK(MPI_Comm_rank(comm, &rank));
-    MPI_CHECK(MPI_Comm_size(comm, &nprocs));
+    /* get comm rank and size */
+    comm = mpix::comm_dup(MPI_COMM_WORLD);
+    comm_rank = mpix::comm_rank(comm);
+    comm_size = mpix::comm_size(comm);
 }
 
 
 void finalize()
 {
     finalize_armci();
-    MPI_CHECK(MPI_Comm_free(&comm));
-    MPI_CHECK(MPI_Finalize());
+    mpix::comm_free(comm);
+    mpix::finalize();
 }
 
 

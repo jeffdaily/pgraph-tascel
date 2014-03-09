@@ -37,6 +37,7 @@
 #include "combinations.h"
 #include "EdgeResult.hpp"
 #include "mpix.hpp"
+#include "mpix-types.hpp"
 #include "PairCheck.hpp"
 #include "PairCheckGlobal.hpp"
 #include "PairCheckLocal.hpp"
@@ -82,6 +83,8 @@ typedef struct {
 
 
 typedef struct {
+    int rank;
+    int nprocs;
     UniformTaskCollection **utcs;
     AlignStats *stats_align;
     TreeStats *stats_tree;
@@ -177,11 +180,11 @@ static void hybrid_task(
 static unsigned long populate_tasks_iter(
         UniformTaskCollection **utcs, const TaskCollProps &props,
         unsigned long ntasks, unsigned long tasks_per_worker,
-        int worker);
+        local_data_t *local_data, int worker);
 static unsigned long populate_tasks(
         UniformTaskCollection **utcs, const TaskCollProps &props,
-        unsigned long ntasks, unsigned long tasks_per_worker, AlignStats *stats,
-        int worker);
+        unsigned long ntasks, unsigned long tasks_per_worker,
+        local_data_t *local_data, int worker);
 static unsigned long populate_tasks_tree(
         UniformTaskCollection **utcs, const TaskCollProps &props,
         local_data_t *local_data, int worker);
@@ -195,6 +198,8 @@ static unsigned long populate_tasks_tree_hybrid(
 
 int main(int argc, char **argv)
 {
+    int rank;
+    int nprocs;
     vector<string> all_argv;
     UniformTaskCollection **utcs = NULL;
     AlignStats *stats_align = NULL;
@@ -207,7 +212,9 @@ int main(int argc, char **argv)
     local_data_t *local_data = NULL;
     char delimiter = '\0';
 
-    pgraph::initialize(&argc, &argv);
+    pgraph::initialize(argc, argv);
+    rank = mpix::comm_rank(pgraph::comm);
+    nprocs = mpix::comm_size(pgraph::comm);
 
     /* initialize tascel */
     TascelConfig::initialize(NUM_WORKERS_DEFAULT, pgraph::comm);
@@ -220,6 +227,8 @@ int main(int argc, char **argv)
     pair_check = new PairCheck*[NUM_WORKERS];
     parameters = new Parameters;
     local_data = new local_data_t;
+    local_data->rank = rank;
+    local_data->nprocs = nprocs;
     local_data->utcs = utcs;
     local_data->stats_align = stats_align;
     local_data->stats_tree = stats_tree;
@@ -228,7 +237,7 @@ int main(int argc, char **argv)
     local_data->parameters = parameters;
 
     /* MPI standard does not guarantee all procs receive argc and argv */
-    mpix_bcast_argv(argc, argv, all_argv, pgraph::comm);
+    all_argv = mpix::bcast(argc, argv, pgraph::comm);
 
     /* print the command line arguments */
     if (0 == rank) {
@@ -242,7 +251,7 @@ int main(int argc, char **argv)
     }
 
     /* sanity check that we got the correct number of arguments */
-    if (all_argv.size() <= 2 || all_argv.size() >= 4) {
+    if (all_argv.size() <= 1 || all_argv.size() >= 4) {
         if (0 == rank) {
             if (all_argv.size() <= 1) {
                 cout << "missing input file" << endl;
@@ -258,6 +267,9 @@ int main(int argc, char **argv)
     }
     else if (all_argv.size() >= 3) {
         parameters->parse(all_argv[2].c_str(), pgraph::comm);
+    }
+    else if (all_argv.size() >= 2) {
+        /* do nothing */
     }
 
     /* print parameters */
@@ -372,7 +384,7 @@ int main(int argc, char **argv)
         for (int worker=0; worker<NUM_WORKERS; ++worker) {
             populate_time[worker] = MPI_Wtime();
             populate_count[worker] = populate_tasks_iter(
-                    utcs, props, ntasks, tasks_per_worker, worker);
+                    utcs, props, ntasks, tasks_per_worker, local_data, worker);
             populate_time[worker] = MPI_Wtime() - populate_time[worker];
         }
     }
@@ -437,7 +449,7 @@ int main(int argc, char **argv)
         for (int worker=0; worker<NUM_WORKERS; ++worker) {
             populate_time[worker] = MPI_Wtime();
             populate_count[worker] = populate_tasks(
-                    utcs, props, ntasks, tasks_per_worker, stats_align, worker);
+                    utcs, props, ntasks, tasks_per_worker, local_data, worker);
             populate_time[worker] = MPI_Wtime() - populate_time[worker];
         }
     }
@@ -455,8 +467,8 @@ int main(int argc, char **argv)
     }
 
     if (parameters->print_stats) {
-        mpix_gather(populate_time, 0, pgraph::comm);
-        mpix_gather(populate_count, 0, pgraph::comm);
+        mpix::gather(populate_time, 0, pgraph::comm);
+        mpix::gather(populate_count, 0, pgraph::comm);
         if (0 == rank) {
             Stats times;
             Stats counts;
@@ -527,10 +539,7 @@ int main(int argc, char **argv)
     MPI_Barrier(pgraph::comm);
 
     if (parameters->print_stats) {
-        AlignStats * rstats = new AlignStats[NUM_WORKERS*nprocs];
-        MPI_Gather(stats_align, sizeof(AlignStats)*NUM_WORKERS, MPI_CHAR, 
-                rstats, sizeof(AlignStats)*NUM_WORKERS, MPI_CHAR, 
-                0, pgraph::comm);
+        vector<AlignStats> rstats = mpix::gather(stats_align, NUM_WORKERS, 0, pgraph::comm);
         /* synchronously print alignment stats all from process 0 */
         if (0 == rank) {
             Stats edge_counts;
@@ -573,14 +582,10 @@ int main(int argc, char **argv)
             cout << string(79, '-') << endl;
             cout.precision(p);
         }
-        delete [] rstats;
     }
 
     if (suffix_buckets && parameters->print_stats) {
-        TreeStats * rstats = new TreeStats[NUM_WORKERS*nprocs];
-        MPI_Gather(stats_tree, sizeof(TreeStats)*NUM_WORKERS, MPI_CHAR, 
-                rstats, sizeof(TreeStats)*NUM_WORKERS, MPI_CHAR, 
-                0, pgraph::comm);
+        vector<TreeStats> rstats = mpix::gather(stats_tree, NUM_WORKERS, 0, pgraph::comm);
         /* synchronously print alignment stats all from process 0 */
         if (0 == rank) {
             TreeStats cumulative;
@@ -610,21 +615,16 @@ int main(int argc, char **argv)
             cout.precision(p);
             cout << string(79, '-') << endl;
         }
-        delete [] rstats;
     }
 
     if (!parameters->use_counter && parameters->print_stats) {
-        StealingStats *stt = new StealingStats[NUM_WORKERS];
-        StealingStats * rstt = new StealingStats[NUM_WORKERS*nprocs];
+        vector<StealingStats> stt(NUM_WORKERS);
+        vector<StealingStats> rstt(NUM_WORKERS*nprocs);
 
         for(int i=0; i<NUM_WORKERS; i++) {
             stt[i] = utcs[i]->getStats();
         }
-
-        MPI_Gather(stt, sizeof(StealingStats)*NUM_WORKERS, MPI_CHAR, 
-                rstt, sizeof(StealingStats)*NUM_WORKERS, MPI_CHAR, 
-                0, pgraph::comm);
-
+        rstt = mpix::gather(stt, 0, pgraph::comm);
         /* synchronously print stealing stats all from process 0 */
         if (0 == rank) {
             StealingStats tstt;
@@ -636,9 +636,6 @@ int main(int argc, char **argv)
             cout << string(79, '=') << endl;
             cout<<"TOT "<<tstt<<endl;
         }
-
-        delete [] rstt;
-        delete [] stt;
     }
 
     amBarrier();
@@ -823,7 +820,7 @@ static void alignment_task(
 }
 
 
-static unsigned long process_tree(unsigned long bid, Bucket *bucket, local_data_t *local_data, int worker)
+static unsigned long process_tree(unsigned long /*bid*/, Bucket *bucket, local_data_t *local_data, int worker)
 {
     unsigned long count = 0;
     SequenceDatabase *sequences = local_data->sequences;
@@ -864,8 +861,8 @@ static unsigned long process_tree(unsigned long bid, Bucket *bucket, local_data_
         stats[worker].time_process.push_back(MPI_Wtime() - t);
         delete tree;
         local_pairs = pair_check[worker]->check(local_pairs);
-        size_t new_size = local_pairs.size();
 #if 0
+        size_t new_size = local_pairs.size();
         cout << bid << "=" << local_data->suffix_buckets->bucket_kmer(bid)
             << "\t" << orig_size << "-" << new_size << "=" << (orig_size-new_size)
             << "\t" << utcs[worker]->size() << endl;
@@ -923,15 +920,16 @@ static void hybrid_task(
 
 unsigned long populate_tasks_iter(
         UniformTaskCollection **utcs, const TaskCollProps &props,
-        unsigned long ntasks, unsigned long tasks_per_worker, int worker)
+        unsigned long ntasks, unsigned long tasks_per_worker,
+        local_data_t *local_data, int worker)
 {
     int wrank = trank(worker);
     unsigned long lower_limit = wrank*tasks_per_worker;
     unsigned long upper_limit = lower_limit + tasks_per_worker;
-    unsigned long remainder = ntasks % (nprocs*NUM_WORKERS);
+    unsigned long remainder = ntasks % (local_data->nprocs*NUM_WORKERS);
 
     /* if I'm the last worker, add the remainder of the tasks */
-    if (wrank == nprocs*NUM_WORKERS-1) {
+    if (wrank == local_data->nprocs*NUM_WORKERS-1) {
         upper_limit += remainder;
     }
 
@@ -943,17 +941,18 @@ unsigned long populate_tasks_iter(
 
 unsigned long populate_tasks(
         UniformTaskCollection **utcs, const TaskCollProps &props,
-        unsigned long ntasks, unsigned long tasks_per_worker, AlignStats *stats,
-        int worker)
+        unsigned long ntasks, unsigned long tasks_per_worker,
+        local_data_t *local_data, int worker)
 {
+    AlignStats *stats = local_data->stats_align;
     int wrank = trank(worker);
-    int wsize = nprocs*NUM_WORKERS;
+    int wsize = local_data->nprocs*NUM_WORKERS;
     unsigned long lower_limit = wrank*tasks_per_worker;
     unsigned long upper_limit = (wrank+1)*tasks_per_worker;
     unsigned long remainder = ntasks % wsize;
     double t;
 
-    if (wrank < remainder) {
+    if (unsigned(wrank) < remainder) {
         lower_limit += wrank;
         upper_limit += wrank+1;
     }

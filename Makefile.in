@@ -142,16 +142,16 @@ libpgtest_a_OBJECTS = $(am_libpgtest_a_OBJECTS)
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libpgraph_la_LIBADD =
 am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
-	src/alignment_defs.hpp src/AlignStats.hpp \
-	src/blosum/blosum40.h src/blosum/blosum45.h \
+	src/AlignStats.hpp src/blosum/blosum40.h src/blosum/blosum45.h \
 	src/blosum/blosum50.h src/blosum/blosum62.h \
 	src/blosum/blosum75.h src/blosum/blosum80.h src/Bootstrap.cpp \
 	src/Bootstrap.hpp src/combinations.c src/combinations.h \
-	src/EdgeResult.hpp src/mpix.cpp src/mpix.hpp src/PairCheck.hpp \
-	src/PairCheckLocal.hpp src/PairCheckSemiLocal.hpp \
-	src/PairCheckSmp.hpp src/Parameters.cpp src/Parameters.hpp \
-	src/pthread_fixes.h src/Sequence.cpp src/Sequence.hpp \
-	src/SequenceDatabase.hpp src/SequenceDatabaseReplicated.cpp \
+	src/EdgeResult.hpp src/mpix.hpp src/mpix-inl.hpp \
+	src/mpix-types.hpp src/PairCheck.hpp src/PairCheckLocal.hpp \
+	src/PairCheckSemiLocal.hpp src/PairCheckSmp.hpp \
+	src/Parameters.cpp src/Parameters.hpp src/pthread_fixes.h \
+	src/Sequence.cpp src/Sequence.hpp src/SequenceDatabase.hpp \
+	src/SequenceDatabaseReplicated.cpp \
 	src/SequenceDatabaseReplicated.hpp src/SigSegvHandler.hpp \
 	src/Stats.hpp src/Suffix.hpp src/SuffixBuckets.cpp \
 	src/SuffixBuckets.hpp src/SuffixBucketsTascel.cpp \
@@ -169,10 +169,10 @@ am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
 @HAVE_SSE2_TRUE@am__objects_2 = contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.lo \
 @HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.lo
 am_libpgraph_la_OBJECTS = src/alignment.lo src/Bootstrap.lo \
-	src/combinations.lo src/mpix.lo src/Parameters.lo \
-	src/Sequence.lo src/SequenceDatabaseReplicated.lo \
-	src/SuffixBuckets.lo src/SuffixBucketsTascel.lo \
-	src/SuffixTree.lo $(am__objects_1) $(am__objects_2)
+	src/combinations.lo src/Parameters.lo src/Sequence.lo \
+	src/SequenceDatabaseReplicated.lo src/SuffixBuckets.lo \
+	src/SuffixBucketsTascel.lo src/SuffixTree.lo $(am__objects_1) \
+	$(am__objects_2)
 libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -520,16 +520,16 @@ AM_LDFLAGS = $(TASCEL_LDFLAGS) $(ARMCI_LDFLAGS) $(PT_MPI_LDFLAGS) \
 LDADD = libpgraph.la $(TASCEL_LIBS) $(ARMCI_LIBS) $(PT_MPI_LIBS) \
 	$(GMP_LIBS) libyaml-cpp.la
 libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
-	src/alignment_defs.hpp src/AlignStats.hpp \
-	src/blosum/blosum40.h src/blosum/blosum45.h \
+	src/AlignStats.hpp src/blosum/blosum40.h src/blosum/blosum45.h \
 	src/blosum/blosum50.h src/blosum/blosum62.h \
 	src/blosum/blosum75.h src/blosum/blosum80.h src/Bootstrap.cpp \
 	src/Bootstrap.hpp src/combinations.c src/combinations.h \
-	src/EdgeResult.hpp src/mpix.cpp src/mpix.hpp src/PairCheck.hpp \
-	src/PairCheckLocal.hpp src/PairCheckSemiLocal.hpp \
-	src/PairCheckSmp.hpp src/Parameters.cpp src/Parameters.hpp \
-	src/pthread_fixes.h src/Sequence.cpp src/Sequence.hpp \
-	src/SequenceDatabase.hpp src/SequenceDatabaseReplicated.cpp \
+	src/EdgeResult.hpp src/mpix.hpp src/mpix-inl.hpp \
+	src/mpix-types.hpp src/PairCheck.hpp src/PairCheckLocal.hpp \
+	src/PairCheckSemiLocal.hpp src/PairCheckSmp.hpp \
+	src/Parameters.cpp src/Parameters.hpp src/pthread_fixes.h \
+	src/Sequence.cpp src/Sequence.hpp src/SequenceDatabase.hpp \
+	src/SequenceDatabaseReplicated.cpp \
 	src/SequenceDatabaseReplicated.hpp src/SigSegvHandler.hpp \
 	src/Stats.hpp src/Suffix.hpp src/SuffixBuckets.cpp \
 	src/SuffixBuckets.hpp src/SuffixBucketsTascel.cpp \
@@ -747,7 +747,6 @@ src/$(DEPDIR)/$(am__dirstamp):
 src/alignment.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/Bootstrap.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/combinations.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
-src/mpix.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/Parameters.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/Sequence.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/SequenceDatabaseReplicated.lo: src/$(am__dirstamp) \
@@ -1048,7 +1047,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SuffixTree.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/alignment.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/combinations.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/mpix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/MpiEnvironment.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/StreamPrettyPrinter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_combinations.Po@am__quote@
