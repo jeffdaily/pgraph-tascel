@@ -54,7 +54,7 @@ inline void type_commit(MPI_Datatype &type)
 }
 
 template <typename T>
-inline MPI_Datatype build_mpi_datatype(const T& object)
+inline MPI_Datatype build_mpi_datatype(const T&)
 {
     return MPI_DATATYPE_NULL;
 }
