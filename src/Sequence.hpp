@@ -237,6 +237,9 @@ class Sequence
             return buffer[sequence_offset+i];
         }
 
+        void uses_delimiter(bool value) { has_delimiter = value; }
+        bool uses_delimiter() const { return has_delimiter; }
+
         /** overload of string cast */
         operator string() const {
             assert(NULL != buffer);
@@ -248,6 +251,7 @@ class Sequence
 
     private:
         bool is_owner;  /**< whether this instance should delete the data */
+        bool has_delimiter; /**< whether last char is a special delimiter */
         const char *buffer;   /**< all data, possibly containing ID */
         size_t id_offset;   /**< offset into data for start of ID */
         size_t id_length;   /**< length of ID */

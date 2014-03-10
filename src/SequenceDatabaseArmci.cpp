@@ -56,7 +56,7 @@ SequenceDatabaseArmci::SequenceDatabaseArmci(
         size_t budget,
         MPI_Comm comm,
         char delimiter)
-    :   SequenceDatabase()
+    :   SequenceDatabase(delimiter)
     ,   comm_orig(comm)
     ,   comm_orig_rank(0)
     ,   comm_orig_size(0)
@@ -65,7 +65,6 @@ SequenceDatabaseArmci::SequenceDatabaseArmci(
     ,   comm_size(0)
     ,   is_replicated(false)
     ,   budget(budget)
-    ,   delimiter(delimiter)
     ,   file_name(file_name)
     ,   local_data(NULL)
     ,   local_cache()
@@ -352,8 +351,7 @@ void SequenceDatabaseArmci::read_and_parse_fasta_lomem(MPI_File in,
         first_id += counts[i];
     }
 
-    pack_and_index_fasta(ptr_arr[comm_rank], local_cache_size,
-            delimiter, first_id, new_size);
+    pack_and_index_fasta(ptr_arr[comm_rank], local_cache_size, first_id, new_size);
     mpix::allreduce(global_size, MPI_SUM, comm);
     //mpix::print_sync("global_size", global_size, comm);
 
@@ -389,7 +387,7 @@ void SequenceDatabaseArmci::read_and_parse_fasta_himem(MPI_File in,
     }
 
     /* pack and index the fasta buffer */
-    pack_and_index_fasta(local_data, file_size, delimiter, 0, new_size);
+    pack_and_index_fasta(local_data, file_size, 0, new_size);
     local_data[new_size] = delimiter;
     local_data[new_size+1] = '\0';
     assert(!local_cache.empty());
@@ -402,7 +400,6 @@ void SequenceDatabaseArmci::read_and_parse_fasta_himem(MPI_File in,
 
 void SequenceDatabaseArmci::pack_and_index_fasta(char *buffer,
                                             size_t size,
-                                            char delimiter,
                                             size_t id,
                                             size_t &new_size)
 {

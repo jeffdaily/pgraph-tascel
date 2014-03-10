@@ -27,7 +27,7 @@ class SequenceDatabase
          * Creates a sequence database from the given file with the given
          * memory budget.
          */
-        SequenceDatabase() {}
+        SequenceDatabase(char delimiter) : delimiter(delimiter) {}
 
         /**
          * Destroys the SequenceDatabase.
@@ -70,6 +70,15 @@ class SequenceDatabase
          * @return the Sequence reference (owned by this SequenceDatabase)
          */
         virtual Sequence &operator[](size_t i) = 0;
+
+        /**
+         * Returns the delimiter appended to each Sequence, if not the null
+         * byte.
+         */
+        virtual char get_delimiter() const { return delimiter; }
+
+    protected:
+        char delimiter;
 
 };
 

@@ -45,7 +45,7 @@ class SequenceDatabaseReplicated : public SequenceDatabase
         SequenceDatabaseReplicated(const string &filename,
                               size_t budget,
                               MPI_Comm comm,
-                              char delimiter='$');
+                              char delimiter='\0');
 
         /**
          * Destroys the SequenceDatabaseReplicated.
@@ -106,13 +106,12 @@ class SequenceDatabaseReplicated : public SequenceDatabase
          * @param[in] index of first sequence
          * @param[out] new_size of the packed buffer
          */
-        void pack_and_index_fasta(char *buffer, size_t size, char delimiter,
+        void pack_and_index_fasta(char *buffer, size_t size,
                                   size_t index, size_t &new_size);
 
         MPI_Comm comm;      /**< sub communicator for smaller domain */
         int comm_rank;      /**< communicator rank */
         int comm_size;      /**< communicator size */
-        //char delimiter;     /**< delimiter to separate sequences */
         string file_name;   /**< fasta file name */
         char *local_data;   /**< memory allocated for local sequences */
         map<size_t, Sequence*> local_cache; /**< TODO */

@@ -55,7 +55,7 @@ class SequenceDatabaseArmci : public SequenceDatabase
         SequenceDatabaseArmci(const string &filename,
                               size_t budget,
                               MPI_Comm comm,
-                              char delimiter='$');
+                              char delimiter='\0');
 
         /**
          * Destroys the SequenceDatabaseArmci.
@@ -113,11 +113,10 @@ class SequenceDatabaseArmci : public SequenceDatabase
          *
          * @param[in] buffer the fasta file buffer
          * @param[in] size of the fasta file buffer
-         * @param[in] delimiter to append to each sequence (can be '\0')
          * @param[in] index of first sequence
          * @param[out] new_size of the packed buffer
          */
-        void pack_and_index_fasta(char *buffer, size_t size, char delimiter,
+        void pack_and_index_fasta(char *buffer, size_t size,
                                   size_t index, size_t &new_size);
 
         /**
@@ -135,7 +134,6 @@ class SequenceDatabaseArmci : public SequenceDatabase
         ARMCI_Group armci_group;/**< ARMCI group corresponding to comm_orig */
         bool is_replicated; /**< is budget sufficient to hold entire file? */
         size_t budget;      /**< max amount of memory to use */
-        char delimiter;     /**< delimiter to separate sequences */
         string file_name;   /**< fasta file name */
         char *local_data;   /**< memory allocated for local sequences */
         map<size_t, Sequence*> local_cache; /**< TODO */

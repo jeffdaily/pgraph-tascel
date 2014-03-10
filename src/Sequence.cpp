@@ -27,6 +27,7 @@ namespace pgraph {
 
 Sequence::Sequence()
     :   is_owner(false)
+    ,   has_delimiter(false)
     ,   buffer(NULL)
     ,   id_offset(0)
     ,   id_length(0)
@@ -38,6 +39,7 @@ Sequence::Sequence()
 
 Sequence::Sequence(const Sequence &that)
     :   is_owner(false)
+    ,   has_delimiter(false)
     ,   buffer(that.buffer)
     ,   id_offset(that.id_offset)
     ,   id_length(that.id_length)
@@ -49,6 +51,7 @@ Sequence::Sequence(const Sequence &that)
 
 Sequence::Sequence(const char *data, const bool &owns)
     :   is_owner(owns)
+    ,   has_delimiter(false)
     ,   buffer(data)
     ,   id_offset(0)
     ,   id_length(0)
@@ -60,6 +63,7 @@ Sequence::Sequence(const char *data, const bool &owns)
 
 Sequence::Sequence(const char *data, const size_t &length, const bool &owns)
     :   is_owner(owns)
+    ,   has_delimiter(false)
     ,   buffer(data)
     ,   id_offset(0)
     ,   id_length(0)
@@ -76,6 +80,7 @@ Sequence::Sequence(const char *data,
                    const size_t &sequence_length,
                    const bool &owns)
     :   is_owner(owns)
+    ,   has_delimiter(false)
     ,   buffer(data)
     ,   id_offset(id_offset)
     ,   id_length(id_length)
@@ -108,7 +113,9 @@ cell_t align_global_affine(
         int * const restrict * const restrict del,
         int * const restrict * const restrict ins)
 {
-    return align_global_affine(s1.data(), s1.size(), s2.data(), s2.size(),
+    size_t s1_size = s1.uses_delimiter() ? s1.size()-1 : s1.size();
+    size_t s2_size = s2.uses_delimiter() ? s2.size()-1 : s2.size();
+    return align_global_affine(s1.data(), s1_size, s2.data(), s2_size,
             match, open, gap, tbl, del, ins);
 }
 
@@ -123,7 +130,9 @@ cell_t align_global_affine(
         int * const restrict * const restrict del,
         int * const restrict * const restrict ins)
 {
-    return align_global_affine(s1.data(), s1.size(), s2.data(), s2.size(),
+    size_t s1_size = s1.uses_delimiter() ? s1.size()-1 : s1.size();
+    size_t s2_size = s2.uses_delimiter() ? s2.size()-1 : s2.size();
+    return align_global_affine(s1.data(), s1_size, s2.data(), s2_size,
             sub, map, first, open, gap, tbl, del, ins);
 }
 
@@ -137,7 +146,9 @@ cell_t align_global_affine(
         int * const restrict * const restrict del,
         int * const restrict * const restrict ins)
 {
-    return align_global_affine(s1.data(), s1.size(), s2.data(), s2.size(),
+    size_t s1_size = s1.uses_delimiter() ? s1.size()-1 : s1.size();
+    size_t s2_size = s2.uses_delimiter() ? s2.size()-1 : s2.size();
+    return align_global_affine(s1.data(), s1_size, s2.data(), s2_size,
             match, mismatch, open, gap, tbl, del, ins);
 }
 
@@ -150,7 +161,9 @@ cell_t align_global_affine(
         int * const restrict * const restrict del,
         int * const restrict * const restrict ins)
 {
-    return align_global_affine(s1.data(), s1.size(), s2.data(), s2.size(),
+    size_t s1_size = s1.uses_delimiter() ? s1.size()-1 : s1.size();
+    size_t s2_size = s2.uses_delimiter() ? s2.size()-1 : s2.size();
+    return align_global_affine(s1.data(), s1_size, s2.data(), s2_size,
             open, gap, tbl, del, ins);
 }
 
@@ -164,7 +177,9 @@ cell_t align_semi_affine(
         int * const restrict * const restrict del,
         int * const restrict * const restrict ins)
 {
-    return align_semi_affine(s1.data(), s1.size(), s2.data(), s2.size(),
+    size_t s1_size = s1.uses_delimiter() ? s1.size()-1 : s1.size();
+    size_t s2_size = s2.uses_delimiter() ? s2.size()-1 : s2.size();
+    return align_semi_affine(s1.data(), s1_size, s2.data(), s2_size,
             match, open, gap, tbl, del, ins);
 }
 
@@ -179,7 +194,9 @@ cell_t align_semi_affine(
         int * const restrict * const restrict del,
         int * const restrict * const restrict ins)
 {
-    return align_semi_affine(s1.data(), s1.size(), s2.data(), s2.size(),
+    size_t s1_size = s1.uses_delimiter() ? s1.size()-1 : s1.size();
+    size_t s2_size = s2.uses_delimiter() ? s2.size()-1 : s2.size();
+    return align_semi_affine(s1.data(), s1_size, s2.data(), s2_size,
             sub, map, first, open, gap, tbl, del, ins);
 }
 
@@ -193,7 +210,9 @@ cell_t align_semi_affine(
         int * const restrict * const restrict del,
         int * const restrict * const restrict ins)
 {
-    return align_semi_affine(s1.data(), s1.size(), s2.data(), s2.size(),
+    size_t s1_size = s1.uses_delimiter() ? s1.size()-1 : s1.size();
+    size_t s2_size = s2.uses_delimiter() ? s2.size()-1 : s2.size();
+    return align_semi_affine(s1.data(), s1_size, s2.data(), s2_size,
             match, mismatch, open, gap, tbl, del, ins);
 }
 
@@ -206,7 +225,9 @@ cell_t align_semi_affine(
         int * const restrict * const restrict del,
         int * const restrict * const restrict ins)
 {
-    return align_semi_affine(s1.data(), s1.size(), s2.data(), s2.size(),
+    size_t s1_size = s1.uses_delimiter() ? s1.size()-1 : s1.size();
+    size_t s2_size = s2.uses_delimiter() ? s2.size()-1 : s2.size();
+    return align_semi_affine(s1.data(), s1_size, s2.data(), s2_size,
             open, gap, tbl, del, ins);
 }
 
@@ -220,7 +241,9 @@ cell_t align_local_affine(
         int * const restrict * const restrict del,
         int * const restrict * const restrict ins)
 {
-    return align_local_affine(s1.data(), s1.size(), s2.data(), s2.size(),
+    size_t s1_size = s1.uses_delimiter() ? s1.size()-1 : s1.size();
+    size_t s2_size = s2.uses_delimiter() ? s2.size()-1 : s2.size();
+    return align_local_affine(s1.data(), s1_size, s2.data(), s2_size,
             match, open, gap, tbl, del, ins);
 }
 
@@ -235,7 +258,9 @@ cell_t align_local_affine(
         int * const restrict * const restrict del,
         int * const restrict * const restrict ins)
 {
-    return align_local_affine(s1.data(), s1.size(), s2.data(), s2.size(),
+    size_t s1_size = s1.uses_delimiter() ? s1.size()-1 : s1.size();
+    size_t s2_size = s2.uses_delimiter() ? s2.size()-1 : s2.size();
+    return align_local_affine(s1.data(), s1_size, s2.data(), s2_size,
             sub, map, first, open, gap, tbl, del, ins);
 }
 
@@ -249,7 +274,9 @@ cell_t align_local_affine(
         int * const restrict * const restrict del,
         int * const restrict * const restrict ins)
 {
-    return align_local_affine(s1.data(), s1.size(), s2.data(), s2.size(),
+    size_t s1_size = s1.uses_delimiter() ? s1.size()-1 : s1.size();
+    size_t s2_size = s2.uses_delimiter() ? s2.size()-1 : s2.size();
+    return align_local_affine(s1.data(), s1_size, s2.data(), s2_size,
             match, mismatch, open, gap, tbl, del, ins);
 }
 
@@ -262,7 +289,9 @@ cell_t align_local_affine(
         int * const restrict * const restrict del,
         int * const restrict * const restrict ins)
 {
-    return align_local_affine(s1.data(), s1.size(), s2.data(), s2.size(),
+    size_t s1_size = s1.uses_delimiter() ? s1.size()-1 : s1.size();
+    size_t s2_size = s2.uses_delimiter() ? s2.size()-1 : s2.size();
+    return align_local_affine(s1.data(), s1_size, s2.data(), s2_size,
             open, gap, tbl, del, ins);
 }
 
@@ -279,7 +308,9 @@ bool is_edge(
         const int ** const restrict sub,
         const int * const restrict map, char first)
 {
-    return is_edge(result, s1.data(), s1.size(), s2.data(), s2.size(),
+    size_t s1_size = s1.uses_delimiter() ? s1.size()-1 : s1.size();
+    size_t s2_size = s2.uses_delimiter() ? s2.size()-1 : s2.size();
+    return is_edge(result, s1.data(), s1_size, s2.data(), s2_size,
             AOL, SIM, OS, self_score, max_len, sub, map, first);
 }
 
@@ -295,7 +326,9 @@ bool is_edge(
         size_t &max_len,
         match_t match)
 {
-    return is_edge(result, s1.data(), s1.size(), s2.data(), s2.size(),
+    size_t s1_size = s1.uses_delimiter() ? s1.size()-1 : s1.size();
+    size_t s2_size = s2.uses_delimiter() ? s2.size()-1 : s2.size();
+    return is_edge(result, s1.data(), s1_size, s2.data(), s2_size,
             AOL, SIM, OS, self_score, max_len, match);
 }
 
@@ -311,7 +344,9 @@ bool is_edge(
         size_t &max_len,
         int match)
 {
-    return is_edge(result, s1.data(), s1.size(), s2.data(), s2.size(),
+    size_t s1_size = s1.uses_delimiter() ? s1.size()-1 : s1.size();
+    size_t s2_size = s2.uses_delimiter() ? s2.size()-1 : s2.size();
+    return is_edge(result, s1.data(), s1_size, s2.data(), s2_size,
             AOL, SIM, OS, self_score, max_len, match);
 }
 
@@ -326,7 +361,9 @@ bool is_edge(
         int &self_score,
         size_t &max_len)
 {
-    return is_edge(result, s1.data(), s1.size(), s2.data(), s2.size(),
+    size_t s1_size = s1.uses_delimiter() ? s1.size()-1 : s1.size();
+    size_t s2_size = s2.uses_delimiter() ? s2.size()-1 : s2.size();
+    return is_edge(result, s1.data(), s1_size, s2.data(), s2_size,
             AOL, SIM, OS, self_score, max_len);
 }
 

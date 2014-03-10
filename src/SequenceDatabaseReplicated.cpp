@@ -36,11 +36,10 @@ SequenceDatabaseReplicated::SequenceDatabaseReplicated(
         size_t budget,
         MPI_Comm comm,
         char delimiter)
-    :   SequenceDatabase()
+    :   SequenceDatabase(delimiter)
     ,   comm(comm)
     ,   comm_rank(0)
     ,   comm_size(0)
-    //,   delimiter(delimiter)
     ,   file_name(file_name)
     ,   local_data(NULL)
     ,   local_cache()
@@ -70,7 +69,7 @@ SequenceDatabaseReplicated::SequenceDatabaseReplicated(
     assert(file_size == file_size_out);
 
     /* pack and index the fasta buffer */
-    pack_and_index_fasta(local_data, file_size, delimiter, 0, new_size);
+    pack_and_index_fasta(local_data, file_size, 0, new_size);
     local_data[new_size] = delimiter;
     local_data[new_size+1] = '\0';
     assert(!local_cache.empty());
@@ -96,7 +95,6 @@ SequenceDatabaseReplicated::~SequenceDatabaseReplicated()
 
 void SequenceDatabaseReplicated::pack_and_index_fasta(char *buffer,
                                             size_t size,
-                                            char delimiter,
                                             size_t id,
                                             size_t &new_size)
 {
@@ -144,12 +142,13 @@ void SequenceDatabaseReplicated::pack_and_index_fasta(char *buffer,
                 if (delimiter == '\0') {
                     sequence_length -= 1;
                 }
-                local_cache[id++] =
-                    new Sequence(&buffer[last_gt],
+                Sequence *sequence = new Sequence(&buffer[last_gt],
                             id_offset,
                             id_length,
                             sequence_offset,
                             sequence_length);
+                sequence->uses_delimiter(delimiter != '\0');
+                local_cache[id++] = sequence;
                 assert(!local_cache.empty());
                 size_t l = local_cache[id-1]->get_sequence_length();
                 _longest = l > _longest ? l : _longest;
