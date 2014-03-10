@@ -226,6 +226,7 @@ int main (int argc, char * const argv[]) {
 	int8_t* num = (int8_t*)malloc(s2), *num_rc = 0;
 	char* read_rc = 0;
 
+#if 0
 	int8_t mat50[] = {
 	//  A   R   N   D   C   Q   E   G   H   I   L   K   M   F   P   S   T   W   Y   V   B   Z   X   *   
      	5, -2, -1, -2, -1, -1, -1,  0, -2, -1, -2, -1, -1, -3, -1,  1,  0, -3, -2,  0, -2, -1, -1, -5,	// A
@@ -253,6 +254,7 @@ int main (int argc, char * const argv[]) {
        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -5, 	// X
        -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5, -5,  1 	// *
 	};	
+#endif
 
     int8_t mat62[] = {
         /*       A   R   N   D   C   Q   E   G   H   I   L   K   M   F   P   S   T   W   Y   V   B   Z   X   * */
