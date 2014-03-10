@@ -10,9 +10,8 @@
 
 #include <mpi.h>
 
-#if HAVE_REGEX_H
+#include <sys/types.h>
 #include <regex.h>
-#endif
 
 #include <cassert>
 #include <cstddef>
@@ -95,24 +94,17 @@ bool SuffixBuckets::filter_out(const char *kmer)
 {
     bool result = false;
 
-#if HAVE_REGEX_H
     string str(kmer, param.window_size);
 
-    for (size_t i=0; i<param.skip_prefixes.size(); ++i) {
-        regex_t preq;
-        int retval = 0;
-        
-        retval = regcomp(&preq, param.skip_prefixes[i].c_str(), REG_NOSUB);
-        assert(0 == retval);
-
-        retval = regexec(&preq, str.c_str(), 0, NULL, 0);
+    for (size_t i=0; i<param.re.size(); ++i) {
+        regex_t *preq = param.re[i];
+        int retval = regexec(preq, str.c_str(), 0, NULL, 0);
         result = result || (0 == retval);
         if (result) {
             //cout << "filter_out " << str << endl;
             break;
         }
     }
-#endif
 
     return result;
 }

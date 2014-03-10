@@ -10,6 +10,9 @@
 #ifndef _PGRAPH_PARAMETERS_H_
 #define _PGRAPH_PARAMETERS_H_
 
+#include <sys/types.h>
+#include <regex.h>
+
 #include <ostream>
 #include <string>
 #include <vector>
@@ -100,6 +103,12 @@ public:
     Parameters(const char *parameters_file, MPI_Comm comm);
 
     ~Parameters() {
+        for (size_t i=0; i<re.size(); ++i) {
+            regfree(re[i]);
+            delete re[i];
+            re[i] = NULL;
+        }
+        re.clear();
         skip_prefixes.clear();
     }
 
@@ -120,6 +129,7 @@ public:
     size_t memory_worker; /**< memory budget per worker task pool */
     size_t memory_sequences; /**< memory budget for sequence database */
     vector<string> skip_prefixes; /**< buckets to skip */
+    vector<regex_t*> re; /**< regex(s) of buckets to skip */
     bool output_all;    /**< whether to output all results instead of only edges */
     bool output_to_disk;/**< whether to write results to disk (no==debugging) */
     bool distribute_sequences;/**< whether to allow sequence DB to distribute */

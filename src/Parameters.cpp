@@ -160,6 +160,7 @@ Parameters::Parameters()
     , memory_worker(DEF_MEMORY_WORKER)
     , memory_sequences(DEF_MEMORY_SEQUENCES)
     , skip_prefixes()
+    , re()
     , output_all(DEF_OUTPUT_ALL)
     , output_to_disk(DEF_OUTPUT_TO_DISK)
     , distribute_sequences(DEF_DISTRIBUTE_SEQUENCES)
@@ -192,6 +193,7 @@ Parameters::Parameters(const char *parameters_file, MPI_Comm comm)
     , memory_worker(DEF_MEMORY_WORKER)
     , memory_sequences(DEF_MEMORY_SEQUENCES)
     , skip_prefixes()
+    , re()
     , output_all(DEF_OUTPUT_ALL)
     , output_to_disk(DEF_OUTPUT_TO_DISK)
     , distribute_sequences(DEF_DISTRIBUTE_SEQUENCES)
@@ -291,6 +293,10 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
         const YAML::Node filter_node = config[KEY_SKIP_PREFIXES];
         for (size_t i=0; i<filter_node.size(); ++i) {
             const string filter = filter_node[i].as<string>();
+            regex_t *regex = new regex_t;
+            int retval = regcomp(regex, filter.c_str(), REG_NOSUB);
+            assert(0 == retval);
+            re.push_back(regex);
             skip_prefixes.push_back(filter);
         }
     } catch (YAML::Exception &e) {
