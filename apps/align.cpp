@@ -538,6 +538,42 @@ int main(int argc, char **argv)
     amBarrier();
     MPI_Barrier(pgraph::comm);
 
+    if (suffix_buckets && parameters->print_stats) {
+        vector<TreeStats> rstats = mpix::gather(stats_tree, NUM_WORKERS, 0, pgraph::comm);
+        /* synchronously print tree stats all from process 0 */
+        if (0 == rank) {
+            TreeStats cumulative;
+            Stats trees_per_worker;
+            ostringstream header;
+            int p = cout.precision();
+
+            header.fill('-');
+            header << left << setw(79) << "--- Tree Stats ";
+            cout << header.str() << endl;
+            cout << setprecision(2);
+            Stats::width(13);
+            for(int i=0; i<nprocs*NUM_WORKERS; i++) {
+                cout << right << setw(5) << i;
+                cout << right << setw(14) << "name";
+                cout << Stats::header() << endl;
+                cumulative += rstats[i];
+                trees_per_worker.push_back(rstats[i].trees);
+                cout << rstats[i] << endl;
+            }
+            cout << string(79, '=') << endl;
+            cout << right << setw(5) << "TOTAL";
+            cout << right << setw(14) << "name";
+            cout << Stats::header() << endl;
+            cout << cumulative;
+            cout << right << setw(19) << "TreesPerWorker" << trees_per_worker << endl;
+            cout << "first tree" << setw(25) << cumulative.time_first << endl;
+            cout << " last tree" << setw(25) << cumulative.time_last << endl;
+            cout << "      diff" << setw(25) << cumulative.time_last - cumulative.time_first << endl;
+            cout.precision(p);
+            cout << string(79, '-') << endl;
+        }
+    }
+
     if (parameters->print_stats) {
         vector<AlignStats> rstats = mpix::gather(stats_align, NUM_WORKERS, 0, pgraph::comm);
         /* synchronously print alignment stats all from process 0 */
@@ -555,6 +591,7 @@ int main(int argc, char **argv)
 
             header.fill('-');
             header << left << setw(79) << "--- Align Stats ";
+            Stats::width(11);
             cout << header.str() << endl;
             cout << setprecision(2);
             cout << right << setw(5) << "pid" << AlignStats::header() << endl;
@@ -569,6 +606,7 @@ int main(int argc, char **argv)
                 work_skipped.push_back(rstats[i].work_skipped);
                 cout << right << setw(5) << i << rstats[i] << endl;
             }
+            Stats::width(21);
             cout << setprecision(1);
             cout << string(79, '=') << endl;
             cout << "           " << Stats::header() << endl;
@@ -581,39 +619,6 @@ int main(int argc, char **argv)
             cout << "WorkSkipped" << work_skipped << endl;
             cout << string(79, '-') << endl;
             cout.precision(p);
-        }
-    }
-
-    if (suffix_buckets && parameters->print_stats) {
-        vector<TreeStats> rstats = mpix::gather(stats_tree, NUM_WORKERS, 0, pgraph::comm);
-        /* synchronously print alignment stats all from process 0 */
-        if (0 == rank) {
-            TreeStats cumulative;
-            ostringstream header;
-            int p = cout.precision();
-
-            header.fill('-');
-            header << left << setw(79) << "--- Tree Stats ";
-            cout << header.str() << endl;
-            cout << setprecision(2);
-            for(int i=0; i<nprocs*NUM_WORKERS; i++) {
-                cout << right << setw(5) << i;
-                cout << right << setw(14) << "name";
-                cout << Stats::header() << endl;
-                cumulative += rstats[i];
-                cout << rstats[i] << endl;
-            }
-            cout << setprecision(1);
-            cout << string(79, '=') << endl;
-            cout << right << setw(5) << "TOTAL";
-            cout << right << setw(14) << "name";
-            cout << Stats::header() << endl;
-            cout << cumulative << endl;
-            cout << "first tree" << setw(25) << cumulative.time_first << endl;
-            cout << " last tree" << setw(25) << cumulative.time_last << endl;
-            cout << "      diff" << setw(25) << cumulative.time_last - cumulative.time_first << endl;
-            cout.precision(p);
-            cout << string(79, '-') << endl;
         }
     }
 
@@ -751,12 +756,14 @@ static void align(
         if (parameters->output_to_disk
                 && (is_edge_answer || parameters->output_all))
         {
-            edge_results[thd].push_back(EdgeResult(
+            edge_results[thd].push_back(
+                    EdgeResult(
                         seq_id[0], seq_id[1],
                         1.0*result.length/max_len,
                         1.0*result.matches/result.length,
                         1.0*result.score/sscore,
-                        is_edge_answer));
+                        is_edge_answer)
+                    );
         }
         if (is_edge_answer) {
             ++stats[thd].edge_counts;

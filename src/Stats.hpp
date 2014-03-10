@@ -11,10 +11,20 @@
 #include <cmath>
 #include <iomanip>
 #include <iostream>
+#include <ostream>
 #include <sstream>
 #include <string>
 
-#define WIDTH 15
+using ::std::ostream;
+using ::std::pow;
+using ::std::string;
+using ::std::ostringstream;
+using ::std::right;
+using ::std::setw;
+using ::std::streamsize;
+using ::std::ios_base;
+using ::std::fixed;
+using ::std::showpoint;
 
 namespace pgraph {
 
@@ -95,64 +105,75 @@ class Stats
         double mean() const { return _mean; }
         double M2() const { return _M2; }
         double variance() const { return _M2/(_n-1); }
-        double stddev() const { return ::std::pow(variance(),0.5); }
+        double stddev() const { return pow(variance(),0.5); }
         double sum() const { return _sum; }
         double min() const { return _min; }
         double max() const { return _max; }
 
-        friend ::std::ostream& operator << (::std::ostream &os, const Stats &obj);
+        friend ostream& operator << (ostream &os, const Stats &obj);
 
-        static ::std::string header(const ::std::string &prefix="") {
-            ::std::ostringstream os;
+        static string header(const string &prefix="") {
+            ostringstream os;
+            const int WIDTH = width();
 
-            //os << ::std::right;
-            //os << ::std::setw(WIDTH);
+            //os << right;
+            //os << setw(WIDTH);
             //os << prefix + "Size";
-            os << ::std::right;
-            os << ::std::setw(WIDTH);
+            os << right;
+            os << setw(WIDTH);
             os << prefix + "Mean";
-            //os << ::std::right;
-            //os << ::std::setw(WIDTH);
+            //os << right;
+            //os << setw(WIDTH);
             //os << prefix + "Variance";
-            os << ::std::right;
-            os << ::std::setw(WIDTH);
-            os << prefix + "StdDev";
-            os << ::std::right;
-            os << ::std::setw(WIDTH);
+            os << right;
+            os << setw(WIDTH);
+            os << prefix + "SDev";
+            os << right;
+            os << setw(WIDTH);
             os << prefix + "Sum";
-            os << ::std::right;
-            os << ::std::setw(WIDTH);
+            os << right;
+            os << setw(WIDTH);
             os << prefix + "Min";
-            os << ::std::right;
-            os << ::std::setw(WIDTH);
+            os << right;
+            os << setw(WIDTH);
             os << prefix + "Max";
 
             return os.str();
         }
+
+        static int width(const int &value=-1) {
+            static int _width_ = 15;
+            if (value >= 0) {
+                _width_ = value;
+            }
+            return _width_;
+        }
 };
 
-inline ::std::ostream& operator << (::std::ostream &os, const Stats &obj)
+
+inline ostream& operator << (ostream &os, const Stats &obj)
 {
-    ::std::streamsize width = os.width();
-    ::std::ios_base::fmtflags flags = os.flags();
+    const int WIDTH = Stats::width();
+    streamsize width = os.width();
+    ios_base::fmtflags flags = os.flags();
 
-    os << ::std::fixed;
-    os << ::std::showpoint;
-    os << ::std::right;
+    os << fixed;
+    os << showpoint;
+    os << right;
 
-    //os << ::std::setw(WIDTH);
+    //os << setw(WIDTH);
     //os << obj.n();
-    os << ::std::setw(WIDTH);
+    os << setw(WIDTH);
     os << obj.mean();
-    //os << ::std::setw(WIDTH);
+    //os << setw(WIDTH);
     //os << obj.variance();
-    os << ::std::setw(WIDTH);
+    os << setw(WIDTH);
     os << obj.stddev();
-    os << ::std::setw(WIDTH);
+    os << setw(WIDTH);
     os << obj.sum();
-    os << ::std::setw(WIDTH);
+    os << setw(WIDTH);
     os << obj.min();
-    os << ::std::setw(WIDTH);
+    os << setw(WIDTH);
     os << obj.max();
 
     os.width(width);

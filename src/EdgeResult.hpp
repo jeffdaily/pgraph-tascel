@@ -5,6 +5,8 @@
 
 using std::ostream;
 
+namespace pgraph {
+
 class EdgeResult {
     public:
         static const char * SEP;
@@ -18,7 +20,7 @@ class EdgeResult {
 
         EdgeResult(
                 unsigned long id1, unsigned long id2,
-                double a, double b, double c, bool is_edge=true)
+                double a, double b, double c, bool is_edge)
             : id1(id1)
             , id2(id2)
             , a(a)
@@ -40,5 +42,7 @@ class EdgeResult {
 };
 
 const char * EdgeResult::SEP = ",";
+
+} /* namespace pgraph */
 
 #endif /* _PGRAPH_EDGERESULT_H_ */

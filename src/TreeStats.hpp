@@ -14,21 +14,16 @@
 
 #include "Stats.hpp"
 
-using ::std::fixed;
 using ::std::ostream;
 using ::std::setw;
-using ::std::showpoint;
 using ::std::string;
-
-#define MIN(x, y) (((x)<(y))? (x) : (y))
-#define MAX(x, y) (((x)>(y))? (x) : (y))
 
 namespace pgraph {
 
 class TreeStats
 {
     public:
-        double trees;
+        unsigned long trees;
         Stats suffixes;
         Stats size;
         Stats size_internal;
@@ -42,7 +37,7 @@ class TreeStats
         double time_last;
 
         TreeStats()
-            : trees(0.0)
+            : trees(0U)
             , suffixes()
             , size()
             , size_internal()
@@ -74,8 +69,6 @@ class TreeStats
         }
 
         friend ostream &operator << (ostream &os, const TreeStats &stats) {
-            int p = os.precision();
-            os.precision(1);
             os << setw(19) << right << "Suffixes" << stats.suffixes << endl;
             os << setw(19) << right << "Nodes" << stats.size << endl;
             os << setw(19) << right << "InternalNodes" << stats.size_internal << endl;
@@ -85,13 +78,12 @@ class TreeStats
             os << setw(19) << right << "Pairs" << stats.pairs << endl;
             os << setw(19) << right << "TimeBuild" << stats.time_build << endl;
             os << setw(19) << right << "TimeProcess" << stats.time_process << endl;
-            os << setw(19) << right << "Trees" << setw(15) << stats.trees << endl;
-            os.precision(p); // undo state change
+            os << setw(19) << right << "Trees" << setw(Stats::width()) << stats.trees << endl;
             return os;
         }
 
         TreeStats& operator += (const TreeStats &stats) {
-            if (trees == 0.0) {
+            if (trees == 0U) {
                 *this = stats;
             }
             else {
@@ -114,8 +106,5 @@ class TreeStats
 };
 
 }; /* namespace pgraph */
-
-#undef MIN
-#undef MAX
 
 #endif /* TREESTATS_H_ */
