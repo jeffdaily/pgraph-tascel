@@ -12,10 +12,11 @@
 
 #include "PairCheck.hpp"
 
+using ::tascel::AllocId;
 using ::tascel::AmArg;
 using ::tascel::AmContext;
 using ::tascel::AmHandle;
-using ::tascel::Dispatcher;
+using ::tascel::RmaPtr;
 using ::tascel::PthreadMutex;
 
 namespace pgraph {
@@ -23,82 +24,33 @@ namespace pgraph {
 class PairCheckGlobal : public PairCheck
 {
     public:
-        PairCheckGlobal(int thread_rank);
+        PairCheckGlobal();
         virtual ~PairCheckGlobal();
 
         virtual SetPair check(const SetPair &pairs);
         virtual VecPair check(const VecPair &pairs);
 
     protected:
-        struct TryCheck : public AmArg {
-            int id;
-            int proc;
-            int thd;
-            size_t a;
-            size_t b;
-            bool result;
-
-            TryCheck()
-                :   id(-1)
-                    ,   proc(-1)
-                    ,   thd(-1)
-                    ,   a(0)
-                    ,   b(0)
-                    ,   result(false)
-            {}
+        struct PairCheckArg : public AmArg {
+            const RmaPtr ptr;
+            PairCheckArg(const RmaPtr& p) : AmArg(), ptr(p) {}
         };
 
-#if 0
-        template <class Container>
-        void _check(const Container &new_pairs);
-#endif
+        bool send_check_message(const pair<size_t,size_t> &pair);
+        bool do_check(size_t s_pair[2]);
 
-        void send_check_message(const pair<size_t,size_t> &pair);
+        static void amLocalClient(const AmContext * const context);
+        static void amPostPutServer(const AmContext * const context);
+        static void amRemoteClient(const AmContext * const context);
+        static void amLocalServer(const AmContext * const context);
+        static void amPrePutServer(const AmContext * const context);
 
-        static void am_try_check_function(const AmContext * const context);
-        static void am_complete_check_function(const AmContext * const context);
-        static void am_complete_check_local_function(const AmContext * const context);
-
-        void do_try_check_function(const TryCheck &try_check);
-        void do_complete_check_function(const TryCheck &try_check);
-        void do_complete_check_local_function(const TryCheck &try_check);
-
-        SetPair pairs;
-        int thread_rank;
-        int check_id;
-        AmHandle try_check;
-        AmHandle complete_check;
-        PthreadMutex server_mutex;
-        Dispatcher<PthreadMutex> dispatcher;
-        volatile int check_response;
-        SetPair s_pairs_response;
-        VecPair v_pairs_response;
+        PthreadMutex mutex;
+        AllocId alloc_id;
+        AmHandle am_handle;
+        SetPair s_pairs;
+        VecPair v_pairs;
 };
-
-
-#if 0
-template <class Container>
-void PairCheckGlobal::_check(const Container &new_pairs)
-{
-    typename Container::const_iterator;
-
-    assert(check_response == 0);
-
-    for (Container::const_iterator it=new_pairs.begin();
-            it!=new_pairs.end(); ++it) {
-        send_check_message(*it);
-    }
-
-    while (check_response > 0) {
-#if !defined(THREADED)
-        AmListenObjCodelet<NullMutex>* listenCodelet;
-        if ((listenCodelet = theAm().amListeners[0]->progress()) != NULL) {
-            listenCodelet->execute();
-        }
-#endif
-    }
-}
-#endif
 
 }; /* namespace pgraph */
 

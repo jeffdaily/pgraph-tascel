@@ -291,6 +291,12 @@ int main(int argc, char **argv)
                 pair_check[worker] = pair_check[0];
             }
         }
+        else if (parameters->dup_global) {
+            pair_check[0] = new PairCheckGlobal;
+            for (int worker=1; worker<NUM_WORKERS; ++worker) {
+                pair_check[worker] = pair_check[0];
+            }
+        }
         else {
             for (int worker=0; worker<NUM_WORKERS; ++worker) {
                 if (parameters->dup_local) {

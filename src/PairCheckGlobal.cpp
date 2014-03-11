@@ -2,6 +2,10 @@
 
 #include <tascel.h>
 
+#include <iostream>
+using ::std::cout;
+using ::std::endl;
+
 #include "combinations.h"
 #include "PairCheckGlobal.hpp"
 
@@ -14,21 +18,25 @@ namespace pgraph {
 #define NEXT_ID (747274)
 
 
-PairCheckGlobal::PairCheckGlobal(int thread_rank)
-    :   pairs()
-    ,   thread_rank(thread_rank)
-    ,   check_id(NEXT_ID + thread_rank)
-    ,   try_check()
-    ,   complete_check()
-    ,   server_mutex()
-    ,   dispatcher()
-    ,   check_response(0)
+PairCheckGlobal::PairCheckGlobal()
+    :   PairCheck()
+    ,   mutex()
+    ,   alloc_id()
+    ,   am_handle()
+    ,   s_pairs()
+    ,   v_pairs()
 {
-    theRegistry().addEntry(check_id, this);
-    try_check = theAm().amRegister(0, am_try_check_function, 0, 0, 0);
-    complete_check = theAm().amRegister(
-            am_complete_check_local_function,
-            am_complete_check_function, 0, 0, 0);
+    am_handle = theAm().amRegister(
+            amLocalClient,
+            amPostPutServer,
+            NULL/*amRemoteClient*/,
+            NULL/*amLocalServer*/,
+            amPrePutServer);
+    alloc_id = theRma().allocColl(sizeof(SetPair*));
+    SetPair **ptr = reinterpret_cast<SetPair**>(
+            theRma().lookupPointer(RmaPtr(alloc_id)));
+    *ptr = &s_pairs;
+    theRegistry().addEntry(NEXT_ID, this);
 }
 
 
@@ -37,40 +45,33 @@ PairCheckGlobal::~PairCheckGlobal()
 }
 
 
-void PairCheckGlobal::send_check_message(const pair<size_t,size_t> &_pair)
+bool PairCheckGlobal::send_check_message(const pair<size_t,size_t> &_pair)
 {
-    TryCheck msg;
-    AmRequest *lReq = AmRequest::construct();
-    unsigned long kpair[] = {_pair.first,_pair.second};
+    cout << "PairCheckGlobal::send_check_message("
+        << _pair.first
+        << ","
+        << _pair.second
+        << ")" << endl;
+    bool payload = false;
+    RmaRequest *localReq = RmaRequest::construct();
+    RmaRequest *remoteReq = RmaRequest::construct();
+    size_t spair[2] = {_pair.first,_pair.second};
+    unsigned long kpair[2] = {_pair.first,_pair.second};
     unsigned long index = k_combination2_inv(kpair);
-    ProcRank owner = index % (theTwoSided().numProcRanks().toInt()*NUM_WORKERS);
-    msg.id = NEXT_ID + index % NUM_WORKERS;
-    msg.proc = theTwoSided().getProcRank().toInt(); /* my rank */
-    msg.thd = thread_rank; /* my thread rank */
-    msg.a = _pair.first;
-    msg.b = _pair.second;
-    msg.result = false; /* not used */
-    theAm().amPut(owner / NUM_WORKERS, msg, try_check, lReq);
-    dispatcher.registerCodelet(lReq);
-
-    {
-#if defined(THREADED)
-        LockGuard<PthreadMutex> guard(server_mutex);
-#endif
-        check_response += 1;
+    ProcRank owner = index % (theTwoSided().numProcRanks().toInt());
+    PairCheckArg &arg = *(new PairCheckArg(RmaPtr(alloc_id)));
+    arg.data = spair;
+    arg.dlen = 2*sizeof(size_t);
+    arg.rdata = &payload;
+    arg.rdlen = sizeof(bool);
+    theAm().amGet(owner, arg, am_handle, localReq, remoteReq);
+    while (!localReq->test() || !remoteReq->test()) {
+        AmListenObjCodelet<NullMutex>* lcodelet;
+        if ((lcodelet=theAm().amListeners[0]->progress()) != NULL) {
+            lcodelet->execute();
+        }
     }
-
-    Codelet* codelet;
-    if ((codelet = dispatcher.progress()) != NULL) {
-        codelet->execute();
-        delete reinterpret_cast<AmRequest*>(codelet);
-    }
-#if !defined(THREADED)
-    AmListenObjCodelet<NullMutex> *lcodelet;
-    if ((lcodelet = theAm().amListeners[0]->progress()) != NULL) {
-        lcodelet->execute();
-    }
-#endif
+    return payload;
 }
 
 
@@ -78,27 +79,11 @@ PairCheck::SetPair PairCheckGlobal::check(const PairCheck::SetPair &new_pairs)
 {
     PairCheck::SetPair ret;
 
-    assert(check_response == 0);
-    assert(s_pairs_response.empty());
-    assert(v_pairs_response.empty());
-
     for (PairCheck::SetPair::const_iterator it=new_pairs.begin();
             it!=new_pairs.end(); ++it) {
-        send_check_message(*it);
-    }
-
-    while (check_response > 0) {
-        Codelet* codelet;
-        if ((codelet = dispatcher.progress()) != NULL) {
-            codelet->execute();
-            delete reinterpret_cast<AmRequest*>(codelet);
+        if (send_check_message(*it)) {
+            ret.insert(*it);
         }
-#if !defined(THREADED)
-        AmListenObjCodelet<NullMutex>* listenCodelet;
-        if ((listenCodelet = theAm().amListeners[0]->progress()) != NULL) {
-            listenCodelet->execute();
-        }
-#endif
     }
     
     return ret;
@@ -107,67 +92,66 @@ PairCheck::SetPair PairCheckGlobal::check(const PairCheck::SetPair &new_pairs)
 
 PairCheck::VecPair PairCheckGlobal::check(const PairCheck::VecPair &new_pairs)
 {
-    assert(check_response == 0);
-
+    assert(0);
     return PairCheck::VecPair();
 }
 
 
-void PairCheckGlobal::am_try_check_function(const AmContext * const context)
+void PairCheckGlobal::amLocalClient(const AmContext * const context)
 {
-    TryCheck &tc = *reinterpret_cast<TryCheck*>(context->arg);
-    PairCheckGlobal &check = *theRegistry().lookup<PairCheckGlobal*>(tc.id);
-    check.do_try_check_function(tc);
+    cout << "PairCheckGlobal::amLocalClient" << endl;
+    PairCheckArg& arg = *reinterpret_cast<PairCheckArg*>(context->arg);
+    delete &arg;
 }
 
 
-void PairCheckGlobal::do_try_check_function(const TryCheck &tc)
+bool PairCheckGlobal::do_check(size_t s_pair[2])
 {
-#if defined(THREADED)
-    LockGuard<PthreadMutex> guard(server_mutex);
-#endif
-
-    TryCheck &msg = *new TryCheck;
-    AmRequest *lReq = AmRequest::construct();
-    msg.proc = tc.proc;
-    msg.id = NEXT_ID + tc.thd;
-    msg.thd = tc.thd;
-    msg.a = tc.a;
-    msg.b = tc.b;
-    msg.result = pairs.find(make_pair(tc.a,tc.b)) == pairs.end();
-    theAm().amPut(tc.proc, msg, complete_check, lReq);
-#if defined(THREADED)
-    serverDispatcher.registerCodelet(lReq);
-#else
-    dispatcher.registerCodelet(lReq);
-#endif
+    LockGuard<PthreadMutex> guard(mutex);
+    pair<SetPair::iterator,bool> result;
+    result = s_pairs.insert(make_pair(s_pair[0],s_pair[1]));
+    return result.second;
 }
 
 
-void PairCheckGlobal::am_complete_check_function(const AmContext * const context)
+void PairCheckGlobal::amPostPutServer(const AmContext * const context)
 {
-    TryCheck &tc = *reinterpret_cast<TryCheck*>(context->arg);
-    PairCheckGlobal &check = *theRegistry().lookup<PairCheckGlobal*>(tc.id);
-    check.do_complete_check_function(tc);
+    PairCheckArg& arg = *reinterpret_cast<PairCheckArg*>(context->arg);
+    SetPair **ptr = reinterpret_cast<SetPair**>(
+            theRma().lookupPointer(arg.ptr));
+    SetPair *the_set = *ptr;
+    size_t *kpair = reinterpret_cast<size_t*>(arg.data);
+    PairCheckGlobal *checker = theRegistry().lookup<PairCheckGlobal*>(NEXT_ID);
+    bool result = checker->do_check(kpair);
+    cout << "PairCheckGlobal::amPostPutServer "
+        << kpair[0] << "," << kpair[1]
+        << "=" << result << endl;
+    theAm().amResponse(*context->arg, &result, sizeof(bool));
+    // Data points to a temporary buffer
+    delete [] reinterpret_cast<char*>(arg.data);
 }
 
 
-void PairCheckGlobal::do_complete_check_function(const TryCheck &tc)
+void PairCheckGlobal::amRemoteClient(const AmContext * const context)
 {
+    cout << "PairCheckGlobal::amRemoteClient" << endl;
 }
 
 
-void PairCheckGlobal::am_complete_check_local_function(const AmContext * const context)
+void PairCheckGlobal::amLocalServer(const AmContext * const context)
 {
-    TryCheck &tc = *reinterpret_cast<TryCheck*>(context->arg);
-    PairCheckGlobal &check = *theRegistry().lookup<PairCheckGlobal*>(tc.id);
-    check.do_complete_check_local_function(tc);
+    cout << "PairCheckGlobal::amLocalServer" << endl;
 }
 
 
-void PairCheckGlobal::do_complete_check_local_function(const TryCheck &tc)
+void PairCheckGlobal::amPrePutServer(const AmContext * const context)
 {
+    cout << "PairCheckGlobal::amPrePutServer" << endl;
+    PairCheckArg& arg = *reinterpret_cast<PairCheckArg*>(context->arg);
+    // Store into temporary buffer to apply operator later
+    assert(arg.dlen.toInt() == 2*sizeof(unsigned long));
+    theAm().amResponsePrePut(*context->arg,
+            new char[arg.dlen.toInt()], arg.dlen);
 }
-
 
 }; /* namespace pgraph */

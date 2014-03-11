@@ -147,7 +147,8 @@ am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
 	src/blosum/blosum75.h src/blosum/blosum80.h src/Bootstrap.cpp \
 	src/Bootstrap.hpp src/combinations.c src/combinations.h \
 	src/EdgeResult.hpp src/mpix.hpp src/mpix-inl.hpp \
-	src/mpix-types.hpp src/PairCheck.hpp src/PairCheckLocal.hpp \
+	src/mpix-types.hpp src/PairCheck.hpp src/PairCheckGlobal.cpp \
+	src/PairCheckGlobal.hpp src/PairCheckLocal.hpp \
 	src/PairCheckSemiLocal.hpp src/PairCheckSmp.hpp \
 	src/Parameters.cpp src/Parameters.hpp src/pthread_fixes.h \
 	src/Sequence.cpp src/Sequence.hpp src/SequenceDatabase.hpp \
@@ -169,10 +170,10 @@ am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
 @HAVE_SSE2_TRUE@am__objects_2 = contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.lo \
 @HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.lo
 am_libpgraph_la_OBJECTS = src/alignment.lo src/Bootstrap.lo \
-	src/combinations.lo src/Parameters.lo src/Sequence.lo \
-	src/SequenceDatabaseReplicated.lo src/SuffixBuckets.lo \
-	src/SuffixBucketsTascel.lo src/SuffixTree.lo $(am__objects_1) \
-	$(am__objects_2)
+	src/combinations.lo src/PairCheckGlobal.lo src/Parameters.lo \
+	src/Sequence.lo src/SequenceDatabaseReplicated.lo \
+	src/SuffixBuckets.lo src/SuffixBucketsTascel.lo \
+	src/SuffixTree.lo $(am__objects_1) $(am__objects_2)
 libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -525,7 +526,8 @@ libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
 	src/blosum/blosum75.h src/blosum/blosum80.h src/Bootstrap.cpp \
 	src/Bootstrap.hpp src/combinations.c src/combinations.h \
 	src/EdgeResult.hpp src/mpix.hpp src/mpix-inl.hpp \
-	src/mpix-types.hpp src/PairCheck.hpp src/PairCheckLocal.hpp \
+	src/mpix-types.hpp src/PairCheck.hpp src/PairCheckGlobal.cpp \
+	src/PairCheckGlobal.hpp src/PairCheckLocal.hpp \
 	src/PairCheckSemiLocal.hpp src/PairCheckSmp.hpp \
 	src/Parameters.cpp src/Parameters.hpp src/pthread_fixes.h \
 	src/Sequence.cpp src/Sequence.hpp src/SequenceDatabase.hpp \
@@ -747,6 +749,8 @@ src/$(DEPDIR)/$(am__dirstamp):
 src/alignment.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/Bootstrap.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/combinations.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/PairCheckGlobal.lo: src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
 src/Parameters.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/Sequence.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/SequenceDatabaseReplicated.lo: src/$(am__dirstamp) \
@@ -1037,6 +1041,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR)/graphbuilder.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR)/graphbuilderadapter.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Bootstrap.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/PairCheckGlobal.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Parameters.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Sequence.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabaseArmci.Plo@am__quote@
