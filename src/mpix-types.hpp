@@ -15,11 +15,13 @@
 #include <tascel/Timer.h>
 
 #include "AlignStats.hpp"
+#include "DupStats.hpp"
 #include "Stats.hpp"
 #include "Suffix.hpp"
 #include "TreeStats.hpp"
 
 using ::pgraph::AlignStats;
+using ::pgraph::DupStats;
 using ::pgraph::Stats;
 using ::pgraph::Suffix;
 using ::pgraph::TreeStats;
@@ -39,7 +41,9 @@ inline MPI_Datatype get_mpi_datatype<Counter>(const Counter&)
 template <>
 inline MPI_Datatype build_mpi_datatype<Timer>(const Timer&)
 {
-    return type_contiguous(2, MPI_DOUBLE);
+    MPI_Datatype result = type_contiguous(2, MPI_DOUBLE);
+    type_commit(result);
+    return result;
 }
 
 template <>
@@ -134,6 +138,30 @@ inline MPI_Datatype build_mpi_datatype<TreeStats>(const TreeStats &object)
         MPI_Aint(&object.time_last) - MPI_Aint(&object)
     };
     result = type_create_struct(12, blocklen, disp, type);
+    type_commit(result);
+    return result;
+}
+
+template <>
+inline MPI_Datatype build_mpi_datatype<DupStats>(const DupStats &object)
+{
+    MPI_Datatype result;
+#if 0
+    MPI_Datatype type[3] = {
+        get_mpi_datatype(object.time),
+        get_mpi_datatype(object.checked),
+        get_mpi_datatype(object.returned)
+    };
+    int blocklen[3] = {1,1,1};
+    MPI_Aint disp[3] = {
+        MPI_Aint(&object.time) - MPI_Aint(&object),
+        MPI_Aint(&object.checked - MPI_Aint(&object)),
+        MPI_Aint(&object.returned) - MPI_Aint(&object)
+    };
+    result = type_create_struct(3, blocklen, disp, type);
+#else
+    result = type_contiguous(3, get_mpi_datatype(object.time));
+#endif
     type_commit(result);
     return result;
 }

@@ -11,8 +11,6 @@
 #include <algorithm>
 #include <iterator>
 
-#include <mpi.h> /* for MPI_Wtime() */
-
 #include <tascel.h>
 
 #include "PairCheck.hpp"
@@ -31,7 +29,6 @@ class PairCheckSmp : public PairCheck
         virtual ~PairCheckSmp() {}
 
         virtual SetPair check(const SetPair &new_pairs) {
-            double t = MPI_Wtime();
             LockGuard<PthreadMutex> guard(mutex);
             SetPair ret_pairs;
             (void)set_difference(
@@ -39,12 +36,10 @@ class PairCheckSmp : public PairCheck
                     s_pairs.begin(), s_pairs.end(),
                     inserter(ret_pairs, ret_pairs.end()));
             s_pairs.insert(ret_pairs.begin(), ret_pairs.end());
-            time.push_back(MPI_Wtime() - t);
             return ret_pairs;
         }
 
         virtual VecPair check(const VecPair &new_pairs) {
-            double t = MPI_Wtime();
             LockGuard<PthreadMutex> guard(mutex);
             /* sort and unique-ify the incoming pairs */
             VecPair ret_pairs(new_pairs);
@@ -62,7 +57,6 @@ class PairCheckSmp : public PairCheck
             sort(v_pairs.begin(), v_pairs.end());
             it_u = unique(v_pairs.begin(), v_pairs.end());
             v_pairs.resize(distance(v_pairs.begin(), it_u));
-            time.push_back(MPI_Wtime() - t);
             return ret_pairs;
         }
 

@@ -88,6 +88,7 @@ typedef struct {
     UniformTaskCollection **utcs;
     AlignStats *stats_align;
     TreeStats *stats_tree;
+    DupStats *stats_dup;
     SequenceDatabase *sequences;
     vector<EdgeResult> *edge_results;
     Parameters *parameters;
@@ -204,6 +205,7 @@ int main(int argc, char **argv)
     UniformTaskCollection **utcs = NULL;
     AlignStats *stats_align = NULL;
     TreeStats *stats_tree = NULL;
+    DupStats *stats_dup = NULL;
     SequenceDatabase *sequences = NULL;
     vector<EdgeResult> *edge_results = NULL;
     PairCheck **pair_check = NULL;
@@ -223,6 +225,7 @@ int main(int argc, char **argv)
     utcs = new UniformTaskCollection*[NUM_WORKERS];
     stats_align = new AlignStats[NUM_WORKERS];
     stats_tree = new TreeStats[NUM_WORKERS];
+    stats_dup = new DupStats[NUM_WORKERS];
     edge_results = new vector<EdgeResult>[NUM_WORKERS];
     pair_check = new PairCheck*[NUM_WORKERS];
     parameters = new Parameters;
@@ -232,6 +235,7 @@ int main(int argc, char **argv)
     local_data->utcs = utcs;
     local_data->stats_align = stats_align;
     local_data->stats_tree = stats_tree;
+    local_data->stats_dup = stats_dup;
     local_data->edge_results = edge_results;
     local_data->pair_check = pair_check;
     local_data->parameters = parameters;
@@ -291,12 +295,6 @@ int main(int argc, char **argv)
                 pair_check[worker] = pair_check[0];
             }
         }
-        else if (parameters->dup_global) {
-            pair_check[0] = new PairCheckGlobal;
-            for (int worker=1; worker<NUM_WORKERS; ++worker) {
-                pair_check[worker] = pair_check[0];
-            }
-        }
         else {
             for (int worker=0; worker<NUM_WORKERS; ++worker) {
                 if (parameters->dup_local) {
@@ -304,6 +302,9 @@ int main(int argc, char **argv)
                 }
                 else if (parameters->dup_semilocal) {
                     pair_check[worker] = new PairCheckSemiLocal;
+                }
+                else if (parameters->dup_global) {
+                    pair_check[worker] = new PairCheckGlobal(worker);
                 }
                 else {
                     assert(0);
@@ -580,6 +581,33 @@ int main(int argc, char **argv)
         }
     }
 
+    if (suffix_buckets && parameters->print_stats) {
+        vector<DupStats> rstats = mpix::gather(stats_dup, NUM_WORKERS, 0, pgraph::comm);
+        /* synchronously print tree stats all from process 0 */
+        if (0 == rank) {
+            DupStats cumulative;
+            ostringstream header;
+            header.fill('-');
+            header << left << setw(79) << "--- Duplicate Pair Stats ";
+            cout << header.str() << endl;
+            cout << setprecision(2);
+            Stats::width(13);
+            for(int i=0; i<nprocs*NUM_WORKERS; i++) {
+                cout << right << setw(5) << i;
+                cout << right << setw(14) << "name";
+                cout << Stats::header() << endl;
+                cumulative += rstats[i];
+                cout << rstats[i] << endl;
+            }
+            cout << string(79, '=') << endl;
+            cout << right << setw(5) << "TOTAL";
+            cout << right << setw(14) << "name";
+            cout << Stats::header() << endl;
+            cout << cumulative;
+            cout << string(79, '-') << endl;
+        }
+    }
+
     if (parameters->print_stats) {
         vector<AlignStats> rstats = mpix::gather(stats_align, NUM_WORKERS, 0, pgraph::comm);
         /* synchronously print alignment stats all from process 0 */
@@ -674,6 +702,7 @@ int main(int argc, char **argv)
     delete [] utcs;
     delete [] stats_align;
     delete [] stats_tree;
+    delete [] stats_dup;
     delete [] edge_results;
     if (parameters->use_tree
             || parameters->use_tree_dynamic
@@ -839,7 +868,8 @@ static unsigned long process_tree(unsigned long /*bid*/, Bucket *bucket, local_d
     SequenceDatabase *sequences = local_data->sequences;
     UniformTaskCollection **utcs = local_data->utcs;
     Parameters *parameters = local_data->parameters;
-    TreeStats *stats = local_data->stats_tree;
+    TreeStats *stats_tree = local_data->stats_tree;
+    DupStats *stats_dup = local_data->stats_dup;
     PairCheck **pair_check = local_data->pair_check;
 
     if (NULL != bucket->suffixes) {
@@ -848,32 +878,37 @@ static unsigned long process_tree(unsigned long /*bid*/, Bucket *bucket, local_d
 
         assert(bucket->size > 0);
 
-        if (stats[worker].time_first == 0.0) {
-            stats[worker].time_first = MPI_Wtime();
+        if (stats_tree[worker].time_first == 0.0) {
+            stats_tree[worker].time_first = MPI_Wtime();
         }
 
         /* construct tree */
         t = MPI_Wtime();
         SuffixTree *tree = new SuffixTree(sequences, bucket, *parameters);
-        stats[worker].time_build.push_back(MPI_Wtime() - t);
+        stats_tree[worker].time_build.push_back(MPI_Wtime() - t);
 
-        /* gather stats */
-        stats[worker].trees++;
-        stats[worker].suffixes.push_back(bucket->size);
-        stats[worker].size.push_back(tree->get_size());
-        stats[worker].size_internal.push_back(tree->get_size_internal());
-        stats[worker].fanout.push_back(tree->get_fanout());
-        stats[worker].depth.push_back(tree->get_depth());
-        stats[worker].suffix_length.push_back(tree->get_suffix_length());
+        /* gather stats_tree */
+        stats_tree[worker].trees++;
+        stats_tree[worker].suffixes.push_back(bucket->size);
+        stats_tree[worker].size.push_back(tree->get_size());
+        stats_tree[worker].size_internal.push_back(tree->get_size_internal());
+        stats_tree[worker].fanout.push_back(tree->get_fanout());
+        stats_tree[worker].depth.push_back(tree->get_depth());
+        stats_tree[worker].suffix_length.push_back(tree->get_suffix_length());
 
         /* generate pairs */
         t = MPI_Wtime();
         tree->generate_pairs(local_pairs);
         size_t orig_size = local_pairs.size();
-        stats[worker].pairs.push_back(orig_size);
-        stats[worker].time_process.push_back(MPI_Wtime() - t);
+        stats_tree[worker].pairs.push_back(orig_size);
+        stats_tree[worker].time_process.push_back(MPI_Wtime() - t);
         delete tree;
+        stats_dup[worker].checked.push_back(orig_size);
+        t = MPI_Wtime();
         local_pairs = pair_check[worker]->check(local_pairs);
+        stats_dup[worker].time.push_back(MPI_Wtime() - t);
+        stats_dup[worker].returned.push_back(local_pairs.size());
+
 #if 0
         size_t new_size = local_pairs.size();
         cout << bid << "=" << local_data->suffix_buckets->bucket_kmer(bid)
@@ -891,7 +926,7 @@ static unsigned long process_tree(unsigned long /*bid*/, Bucket *bucket, local_d
             ++count;
         }
 
-        stats[worker].time_last = MPI_Wtime();
+        stats_tree[worker].time_last = MPI_Wtime();
     }
 
     return count;

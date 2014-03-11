@@ -18,8 +18,12 @@ class PairCheckLocal : public PairCheck
         PairCheckLocal() {}
         virtual ~PairCheckLocal() {}
 
-        virtual SetPair check(const SetPair &pairs) { return pairs; }
-        virtual VecPair check(const VecPair &pairs) { return pairs; }
+        virtual SetPair check(const SetPair &pairs) {
+            return pairs;
+        }
+        virtual VecPair check(const VecPair &pairs) {
+            return pairs;
+        }
 };
 
 }; /* namespace pgraph */

@@ -55,6 +55,7 @@ libpgraph_la_SOURCES += src/Bootstrap.cpp
 libpgraph_la_SOURCES += src/Bootstrap.hpp
 libpgraph_la_SOURCES += src/combinations.c
 libpgraph_la_SOURCES += src/combinations.h
+libpgraph_la_SOURCES += src/DupStats.hpp
 libpgraph_la_SOURCES += src/EdgeResult.hpp
 libpgraph_la_SOURCES += src/mpix.hpp
 libpgraph_la_SOURCES += src/mpix-inl.hpp

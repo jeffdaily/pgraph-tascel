@@ -16,7 +16,7 @@ using ::tascel::AllocId;
 using ::tascel::AmArg;
 using ::tascel::AmContext;
 using ::tascel::AmHandle;
-using ::tascel::RmaPtr;
+using ::tascel::Dispatcher;
 using ::tascel::PthreadMutex;
 
 namespace pgraph {
@@ -24,32 +24,30 @@ namespace pgraph {
 class PairCheckGlobal : public PairCheck
 {
     public:
-        PairCheckGlobal();
+        PairCheckGlobal(int thd);
         virtual ~PairCheckGlobal();
 
         virtual SetPair check(const SetPair &pairs);
         virtual VecPair check(const VecPair &pairs);
 
-    protected:
-        struct PairCheckArg : public AmArg {
-            const RmaPtr ptr;
-            PairCheckArg(const RmaPtr& p) : AmArg(), ptr(p) {}
-        };
-
+    //protected:
+    public:
         bool send_check_message(const pair<size_t,size_t> &pair);
-        bool do_check(size_t s_pair[2]);
 
-        static void amLocalClient(const AmContext * const context);
-        static void amPostPutServer(const AmContext * const context);
-        static void amRemoteClient(const AmContext * const context);
-        static void amLocalServer(const AmContext * const context);
-        static void amPrePutServer(const AmContext * const context);
+        static void try_check_function(const AmContext * const context);
+        static void check_complete_function(const AmContext * const context);
+        static void check_complete_local_function(const AmContext * const context);
 
         PthreadMutex mutex;
+        int thd;
         AllocId alloc_id;
-        AmHandle am_handle;
+        AmHandle try_check;
+        AmHandle check_complete;
         SetPair s_pairs;
         VecPair v_pairs;
+        volatile bool check_answer;
+        volatile bool check_response;
+        Dispatcher<PthreadMutex> dispatcher;
 };
 
 }; /* namespace pgraph */

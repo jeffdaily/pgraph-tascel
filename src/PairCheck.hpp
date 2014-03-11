@@ -28,17 +28,12 @@ class PairCheck
         typedef set<pair<size_t,size_t> > SetPair;
         typedef vector<pair<size_t,size_t> > VecPair;
 
-        Stats time;
-
     public:
-        PairCheck() : time() {}
+        PairCheck() {}
         virtual ~PairCheck() {}
 
         virtual SetPair check(const SetPair &pairs) = 0;
         virtual VecPair check(const VecPair &pairs) = 0;
-
-        const Stats& get_time_stats() const { return time; }
-
 };
 
 }; /* namespace pgraph */

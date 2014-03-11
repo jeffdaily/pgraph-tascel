@@ -63,6 +63,7 @@ template <typename T>
 inline MPI_Datatype get_mpi_datatype(const T& object)
 {
     static MPI_Datatype type = build_mpi_datatype(object);
+    assert(type != MPI_DATATYPE_NULL);
     return type;
 }
 
@@ -70,7 +71,9 @@ inline MPI_Datatype get_mpi_datatype(const T& object)
 #define MPIX_GET_MPI_DATATYPE_IMPL(CTYPE,MTYPE)         \
 template <>                                             \
 inline MPI_Datatype                                     \
-get_mpi_datatype<CTYPE>(const CTYPE&) { return MTYPE; }
+get_mpi_datatype<CTYPE>(const CTYPE&) {                 \
+    return MTYPE;                                       \
+}
 
 MPIX_GET_MPI_DATATYPE_IMPL(char, MPI_CHAR);
 MPIX_GET_MPI_DATATYPE_IMPL(short, MPI_SHORT);
@@ -199,6 +202,12 @@ inline int comm_size(MPI_Comm comm)
     int result = 0;
     check(MPI_Comm_size(comm, &result));
     return result;
+}
+
+
+inline void barrier(MPI_Comm comm)
+{
+    check(MPI_Barrier(comm));
 }
 
 
@@ -434,14 +443,15 @@ inline vector<T> gather(const vector<T> &object, int root, MPI_Comm comm)
 {
     vector<T> result;
     MPI_Datatype datatype = get_mpi_datatype(object[0]);
+    int size = int(object.size());
 
     if (comm_rank(comm) == root) {
-        result.resize(comm_size(comm) * object.size());
-        check(MPI_Gather(&object[0], object.size(), datatype,
-                    &result[0], object.size(), datatype, root, comm));
+        result.resize(comm_size(comm) * size);
+        check(MPI_Gather(&object[0], size, datatype,
+                    &result[0], size, datatype, root, comm));
     }
     else {
-        check(MPI_Gather(&object[0], object.size(), datatype,
+        check(MPI_Gather(&object[0], size, datatype,
                     NULL, 0, datatype, root, comm));
     }
 
@@ -462,7 +472,7 @@ inline vector<T> gather(const T *object, int size, int root, MPI_Comm comm)
     }
     else {
         check(MPI_Gather(object, size, datatype,
-                    NULL, 0, datatype, root, comm));
+                    NULL, size, datatype, root, comm));
     }
 
     return result;
@@ -501,6 +511,34 @@ inline vector<string> gather<string>(const string &object, int root, MPI_Comm co
 }
 
 
+template <typename T>
+inline void gather(const T *sendbuf, int size, T *recvbuf, int root, MPI_Comm comm)
+{
+    MPI_Datatype datatype = get_mpi_datatype(sendbuf[0]);
+
+    check(MPI_Gather(sendbuf, size, datatype,
+                recvbuf, size, datatype, root, comm));
+}
+
+
+template <typename T>
+inline void gather(const vector<T> &sendbuf, vector<T> &recvbuf, int root, MPI_Comm comm)
+{
+    MPI_Datatype datatype = get_mpi_datatype(sendbuf[0]);
+    int size = int(sendbuf.size());
+
+    if (comm_rank(comm) == root) {
+        recvbuf.resize(comm_size(comm) * size);
+    }
+    else {
+        recvbuf.clear();
+    }
+
+    check(MPI_Gather(&sendbuf[0], size, datatype,
+                &recvbuf[0], size, datatype, root, comm));
+}
+
+
 /* synchronous printing */
 template <class T>
 inline void print_sync(const string &name, const T &what, MPI_Comm comm)
@@ -513,7 +551,7 @@ inline void print_sync(const string &name, const T &what, MPI_Comm comm)
         }
     }
 
-    MPI_Barrier(comm);
+    barrier(comm);
 }
 
 
@@ -533,7 +571,7 @@ inline void print_sync(const string &name, const vector<T> &what, MPI_Comm comm)
         }
     }
 
-    MPI_Barrier(comm);
+    barrier(comm);
 }
 
 
@@ -553,7 +591,7 @@ inline void print_sync(const string &name, const T *what, int size_, MPI_Comm co
         }
     }
 
-    MPI_Barrier(comm);
+    barrier(comm);
 }
 
 
@@ -563,7 +601,7 @@ inline void print_zero(const string &name, const T &what, MPI_Comm comm)
     if (0 == comm_rank(comm)) {
         cout << name << "=" << what << endl;
     }
-    MPI_Barrier(comm);
+    barrier(comm);
 }
 
 
@@ -581,7 +619,7 @@ inline void print_zero(const string &name, const vector<T> &what, MPI_Comm comm)
         cout << "}" << endl;
     }
 
-    MPI_Barrier(comm);
+    barrier(comm);
 }
 
 
@@ -597,7 +635,7 @@ inline void print_zero(const string &name, const T *what, int size, MPI_Comm com
         cout << "}" << endl;
     }
 
-    MPI_Barrier(comm);
+    barrier(comm);
 }
 
 

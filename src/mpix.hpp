@@ -34,6 +34,7 @@ inline MPI_Comm comm_dup(MPI_Comm comm);
 inline void comm_free(MPI_Comm &comm);
 inline int comm_rank(MPI_Comm comm);
 inline int comm_size(MPI_Comm comm);
+inline void barrier(MPI_Comm comm);
 
 /* broadcast */
 template <typename T> inline void           bcast(T &object, int root, MPI_Comm comm);
@@ -62,6 +63,9 @@ template <typename T> inline vector<T>      gather(const T &object, int root, MP
 template <typename T> inline vector<T>      gather(const vector<T> &object, int root, MPI_Comm comm);
 template <typename T> inline vector<T>      gather(const T *object, int size, int root, MPI_Comm comm);
 template <>           inline vector<string> gather<string>(const string &object, int root, MPI_Comm comm);
+
+template <typename T> inline void           gather(const T *sendbuf, int size, T *recvbuf, int root, MPI_Comm comm);
+template <typename T> inline void           gather(const vector<T> &sendbuf, vector<T> &recvbuf, int root, MPI_Comm comm);
 
 /* synchronous printing */
 template <typename T> inline void print_sync(const string &label, const T &object, MPI_Comm comm);

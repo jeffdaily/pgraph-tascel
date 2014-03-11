@@ -91,13 +91,12 @@ class Stats
                 double X_mean = (A.n()*A.mean() + B.n()*B.mean()) / X_n;
                 double X_M2 = A.M2() + B.M2() + delta*delta*A.n()*B.n()/X_n;
 
-                this->_sum += B.sum();
-                this->_min = this->_min < B.min() ? this->_min : B.min();
-                this->_max = this->_max > B.max() ? this->_max : B.max();
                 this->_n = X_n;
                 this->_mean = X_mean;
                 this->_M2 = X_M2;
                 this->_sum += B.sum();
+                this->_min = this->_min < B.min() ? this->_min : B.min();
+                this->_max = this->_max > B.max() ? this->_max : B.max();
             }
         }
 

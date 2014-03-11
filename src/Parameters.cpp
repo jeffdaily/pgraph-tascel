@@ -226,7 +226,10 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
         MPI_Abort(comm, -1);
     }
 
+    file_size = mpix::get_file_size(parameters_file, comm);
+    file_buffer = new char[file_size+1];
     mpix::read_file_bcast(parameters_file, file_buffer, file_size, comm);
+    file_buffer[file_size] = '\0';
 
     try {
         const YAML::Node config = YAML::Load(file_buffer);
@@ -304,6 +307,7 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
         cerr << e.what() << endl;
         MPI_Abort(comm, -1);
     }
+    delete [] file_buffer;
 }
 
 
