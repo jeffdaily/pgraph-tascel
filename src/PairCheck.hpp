@@ -22,12 +22,12 @@ using ::std::vector;
 
 namespace pgraph {
 
+typedef pair<size_t,size_t> Pair;
+typedef set<Pair> SetPair;
+typedef vector<Pair> VecPair;
+
 class PairCheck
 {
-    protected:
-        typedef set<pair<size_t,size_t> > SetPair;
-        typedef vector<pair<size_t,size_t> > VecPair;
-
     public:
         PairCheck() {}
         virtual ~PairCheck() {}

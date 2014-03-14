@@ -309,6 +309,7 @@ Bucket* SuffixBucketsTascel::get(size_t bid)
     }
     else {
         /* get remote bucket info */
+        Dispatcher<NullMutex> dispatcher;
         RmaRequest *localReq = RmaRequest::construct();
         RmaRequest *remoteReq = RmaRequest::construct();
         BucketMeta *remote_bucket = new BucketMeta;
@@ -316,19 +317,21 @@ Bucket* SuffixBucketsTascel::get(size_t bid)
                 RmaPtr(aid_meta, bucket_index*sizeof(BucketMeta)),
                 sizeof(BucketMeta),
                 owner, localReq, remoteReq);
-        while(!remoteReq->test()) {
+        dispatcher.registerCodelet(localReq);
+        dispatcher.registerCodelet(remoteReq);
+        while (!dispatcher.empty()) {
+            Codelet* codelet;
+            if ((codelet = dispatcher.progress()) != NULL) {
+                codelet->execute();
+            }
+#if !defined(THREADED)
             AmListenObjCodelet<NullMutex>* lcodelet;
             if((lcodelet=theAm().amListeners[0]->progress()) != NULL) {
                 lcodelet->execute();
             }
+#endif
         }
         delete remoteReq;
-        while(!localReq->test()) {
-            AmListenObjCodelet<NullMutex>* lcodelet;
-            if((lcodelet=theAm().amListeners[0]->progress()) != NULL) {
-                lcodelet->execute();
-            }
-        }
         delete localReq;
         assert(remote_bucket->bid == bid);
 
@@ -344,19 +347,21 @@ Bucket* SuffixBucketsTascel::get(size_t bid)
                     RmaPtr(aid_suffixes, sizeof(Suffix)*remote_bucket->offset),
                     sizeof(Suffix)*remote_bucket->size,
                     owner, localReq, remoteReq);
-            while(!remoteReq->test()) {
+            dispatcher.registerCodelet(localReq);
+            dispatcher.registerCodelet(remoteReq);
+            while (!dispatcher.empty()) {
+                Codelet* codelet;
+                if ((codelet = dispatcher.progress()) != NULL) {
+                    codelet->execute();
+                }
+#if !defined(THREADED)
                 AmListenObjCodelet<NullMutex>* lcodelet;
                 if((lcodelet=theAm().amListeners[0]->progress()) != NULL) {
                     lcodelet->execute();
                 }
+#endif
             }
             delete remoteReq;
-            while(!localReq->test()) {
-                AmListenObjCodelet<NullMutex>* lcodelet;
-                if((lcodelet=theAm().amListeners[0]->progress()) != NULL) {
-                    lcodelet->execute();
-                }
-            }
             delete localReq;
 
             for (size_t i=0; i<remote_bucket->size-1; ++i) {

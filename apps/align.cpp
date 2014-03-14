@@ -582,10 +582,18 @@ int main(int argc, char **argv)
     }
 
     if (suffix_buckets && parameters->print_stats) {
-        vector<DupStats> rstats = mpix::gather(stats_dup, NUM_WORKERS, 0, pgraph::comm);
+        //vector<DupStats> rstats = mpix::gather(stats_dup, NUM_WORKERS, 0, pgraph::comm);
         /* synchronously print tree stats all from process 0 */
         if (0 == rank) {
+            DupStats *rstats = new DupStats[nprocs*NUM_WORKERS];
+            mpix::check(MPI_Gather(
+                        stats_dup, sizeof(DupStats)*NUM_WORKERS, MPI_CHAR,
+                        rstats, sizeof(DupStats)*NUM_WORKERS, MPI_CHAR,
+                        0, pgraph::comm));
             DupStats cumulative;
+            Stats time_per_worker;
+            Stats checked_per_worker;
+            Stats returned_per_worker;
             ostringstream header;
             header.fill('-');
             header << left << setw(79) << "--- Duplicate Pair Stats ";
@@ -597,6 +605,9 @@ int main(int argc, char **argv)
                 cout << right << setw(14) << "name";
                 cout << Stats::header() << endl;
                 cumulative += rstats[i];
+                time_per_worker.push_back(rstats[i].time.sum());
+                checked_per_worker.push_back(rstats[i].checked.sum());
+                returned_per_worker.push_back(rstats[i].returned.sum());
                 cout << rstats[i] << endl;
             }
             cout << string(79, '=') << endl;
@@ -604,7 +615,17 @@ int main(int argc, char **argv)
             cout << right << setw(14) << "name";
             cout << Stats::header() << endl;
             cout << cumulative;
+            cout << right << setw(19) << "TimePerWorker" << time_per_worker << endl;
+            cout << right << setw(19) << "CheckedPerWorker" << checked_per_worker << endl;
+            cout << right << setw(19) << "ReturnedPerWorker" << returned_per_worker << endl;
             cout << string(79, '-') << endl;
+            delete [] rstats;
+        }
+        else {
+            mpix::check(MPI_Gather(
+                        stats_dup, sizeof(DupStats)*NUM_WORKERS, MPI_CHAR,
+                        NULL, sizeof(DupStats)*NUM_WORKERS, MPI_CHAR,
+                        0, pgraph::comm));
         }
     }
 

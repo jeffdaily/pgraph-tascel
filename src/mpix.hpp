@@ -11,11 +11,13 @@
 #define _MPIX_H_
 
 #include <cstddef>
+#include <map>
 #include <string>
 #include <vector>
 
 #include <mpi.h>
 
+using ::std::map;
 using ::std::size_t;
 using ::std::string;
 using ::std::vector;
@@ -86,8 +88,12 @@ inline void read_file_mpiio(const string &file_name, char *&file_buffer, MPI_Off
 inline MPI_Datatype type_contiguous(int count, MPI_Datatype oldtype);
 inline MPI_Datatype type_create_struct(int count, const int blocklengths[], const MPI_Aint displacements[], const MPI_Datatype types[]);
 inline void type_commit(MPI_Datatype &type);
+inline void type_free(MPI_Datatype &type);
 template <typename T> inline MPI_Datatype build_mpi_datatype(const T& object);
 template <typename T> inline MPI_Datatype get_mpi_datatype(const T& object);
+inline map<string,MPI_Datatype>& get_custom_mpi_datatypes();
+inline void add_custom_mpi_datatype(const string &name, MPI_Datatype type);
+
 
 } /* namespace mpix */
 

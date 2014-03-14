@@ -43,6 +43,7 @@ inline MPI_Datatype build_mpi_datatype<Timer>(const Timer&)
 {
     MPI_Datatype result = type_contiguous(2, MPI_DOUBLE);
     type_commit(result);
+    add_custom_mpi_datatype(typeid(Timer).name(), result);
     return result;
 }
 
@@ -75,6 +76,7 @@ inline MPI_Datatype build_mpi_datatype<StealingStats>(const StealingStats &objec
     };
     result = type_create_struct(9, blocklen, disp, type);
     type_commit(result);
+    add_custom_mpi_datatype(typeid(StealingStats).name(), result);
     return result;
 }
 
@@ -101,6 +103,7 @@ inline MPI_Datatype build_mpi_datatype<Stats>(const Stats &object)
     };
     result = type_create_struct(6, blocklen, disp, type);
     type_commit(result);
+    add_custom_mpi_datatype(typeid(Stats).name(), result);
     return result;
 }
 
@@ -139,6 +142,7 @@ inline MPI_Datatype build_mpi_datatype<TreeStats>(const TreeStats &object)
     };
     result = type_create_struct(12, blocklen, disp, type);
     type_commit(result);
+    add_custom_mpi_datatype(typeid(TreeStats).name(), result);
     return result;
 }
 
@@ -163,6 +167,7 @@ inline MPI_Datatype build_mpi_datatype<DupStats>(const DupStats &object)
     result = type_contiguous(3, get_mpi_datatype(object.time));
 #endif
     type_commit(result);
+    add_custom_mpi_datatype(typeid(DupStats).name(), result);
     return result;
 }
 
@@ -193,6 +198,7 @@ inline MPI_Datatype build_mpi_datatype<AlignStats>(const AlignStats &object)
     };
     result = type_create_struct(8, blocklen, disp, type);
     type_commit(result);
+    add_custom_mpi_datatype(typeid(AlignStats).name(), result);
     return result;
 }
 
@@ -215,6 +221,7 @@ inline MPI_Datatype build_mpi_datatype<Suffix>(const Suffix &object)
     };
     result = type_create_struct(4, blocklen, disp, type);
     type_commit(result);
+    add_custom_mpi_datatype(typeid(Suffix).name(), result);
     return result;
 }
 

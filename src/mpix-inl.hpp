@@ -14,9 +14,11 @@
 
 #include <cstddef>
 #include <iostream>
+#include <map>
 #include <numeric>
 #include <sstream>
 #include <string>
+#include <typeinfo>
 #include <utility>
 #include <vector>
 
@@ -26,6 +28,7 @@ using ::std::accumulate;
 using ::std::cerr;
 using ::std::cout;
 using ::std::endl;
+using ::std::map;
 using ::std::ostringstream;
 using ::std::pair;
 using ::std::size_t;
@@ -53,9 +56,15 @@ inline void type_commit(MPI_Datatype &type)
     check(MPI_Type_commit(&type));
 }
 
-template <typename T>
-inline MPI_Datatype build_mpi_datatype(const T&)
+inline void type_free(MPI_Datatype &type)
 {
+    check(MPI_Type_free(&type));
+}
+
+template <typename T>
+inline MPI_Datatype build_mpi_datatype(const T &object)
+{
+    add_custom_mpi_datatype(typeid(object).name(), MPI_DATATYPE_NULL);
     return MPI_DATATYPE_NULL;
 }
 
@@ -114,6 +123,21 @@ MPIX_GET_MPI_DATATYPE_IMPL(bool, MPI_INT);
 #endif
 
 
+inline map<string,MPI_Datatype>& get_custom_mpi_datatypes()
+{
+    static map<string,MPI_Datatype> the_datatypes;
+    return the_datatypes;
+}
+
+
+inline void add_custom_mpi_datatype(const string &name, MPI_Datatype type)
+{
+    map<string,MPI_Datatype> &the_datatypes = get_custom_mpi_datatypes();
+    assert(the_datatypes.count(name) == 0);
+    the_datatypes[name] = type;
+}
+
+
 inline void init(int &argc, char **&argv)
 {
     check(MPI_Init(&argc,&argv));
@@ -137,6 +161,13 @@ inline void init_thread(int &argc, char **&argv, int requested)
 
 inline void finalize()
 {
+    /* dallocate any custom data types */
+    map<string,MPI_Datatype> &the_datatypes = get_custom_mpi_datatypes();
+    for (map<string,MPI_Datatype>::iterator it=the_datatypes.begin();
+            it!=the_datatypes.end(); ++it) {
+        type_free(it->second);
+    }
+
     check(MPI_Finalize());
 }
 
@@ -714,6 +745,7 @@ inline void read_file_bcast(
     }
 
     if (0 == rank) {
+        int retval = 0;
         FILE *file = NULL;
         size_t read_count = 0;
 
@@ -730,6 +762,12 @@ inline void read_file_bcast(
             MPI_Abort(comm, 1);
         }
 
+        retval = fclose(file);
+        if (0 != retval) {
+            perror("fclose");
+            printf("unable to close file on process 0\n");
+            MPI_Abort(comm, 1);
+        }
     }
 
     if (file_size > chunk_size) {
