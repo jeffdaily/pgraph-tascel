@@ -32,7 +32,8 @@ class PairCheckGlobal : public PairCheck
         virtual ~PairCheckGlobal();
 
         virtual SetPair check(const SetPair &pairs);
-        virtual VecPair check(const VecPair &pairs);
+
+        virtual size_t size();
 
     //protected:
     public:
@@ -55,7 +56,6 @@ class PairCheckGlobal : public PairCheck
         AmHandle bulk_try_check;
         AmHandle bulk_check_complete;
         SetPair s_pairs;
-        VecPair v_pairs;
         Dispatcher<NullMutex> dispatcher;
 };
 

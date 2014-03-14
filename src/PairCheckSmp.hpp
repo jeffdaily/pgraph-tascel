@@ -39,30 +39,13 @@ class PairCheckSmp : public PairCheck
             return ret_pairs;
         }
 
-        virtual VecPair check(const VecPair &new_pairs) {
+        virtual size_t size() {
             LockGuard<PthreadMutex> guard(mutex);
-            /* sort and unique-ify the incoming pairs */
-            VecPair ret_pairs(new_pairs);
-            sort(ret_pairs.begin(), ret_pairs.end());
-            VecPair::iterator it_u = unique(ret_pairs.begin(), ret_pairs.end());
-            ret_pairs.resize(distance(ret_pairs.begin(), it_u));
-            /* set difference with already sorted local pairs */
-            VecPair::iterator it_d = set_difference(
-                    ret_pairs.begin(), ret_pairs.end(),
-                    v_pairs.begin(), v_pairs.end(),
-                    ret_pairs.begin());
-            ret_pairs.resize(distance(ret_pairs.begin(), it_d));
-            /* append, sort, and unique-ify new pairs */
-            v_pairs.insert(v_pairs.end(), ret_pairs.begin(), ret_pairs.end());
-            sort(v_pairs.begin(), v_pairs.end());
-            it_u = unique(v_pairs.begin(), v_pairs.end());
-            v_pairs.resize(distance(v_pairs.begin(), it_u));
-            return ret_pairs;
+            return s_pairs.size();
         }
 
     private:
         SetPair s_pairs;
-        VecPair v_pairs;
         PthreadMutex mutex;
 };
 

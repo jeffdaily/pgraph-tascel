@@ -199,6 +199,7 @@ static unsigned long populate_tasks_tree_hybrid(
 
 int main(int argc, char **argv)
 {
+    double time_main;
     int rank;
     int nprocs;
     vector<string> all_argv;
@@ -217,6 +218,7 @@ int main(int argc, char **argv)
     pgraph::initialize(argc, argv);
     rank = mpix::comm_rank(pgraph::comm);
     nprocs = mpix::comm_size(pgraph::comm);
+    time_main = MPI_Wtime();
 
     /* initialize tascel */
     TascelConfig::initialize(NUM_WORKERS_DEFAULT, pgraph::comm);
@@ -461,6 +463,12 @@ int main(int argc, char **argv)
         }
     }
 
+    if (parameters->print_stats) {
+        if (0 == rank) {
+            cout << "utcs capacity = " << utcs[0]->capacity() << endl;
+        }
+    }
+
     if (suffix_buckets && parameters->print_stats) {
         if (0 == rank) {
             char f = cout.fill();
@@ -590,7 +598,17 @@ int main(int argc, char **argv)
                         stats_dup, sizeof(DupStats)*NUM_WORKERS, MPI_CHAR,
                         rstats, sizeof(DupStats)*NUM_WORKERS, MPI_CHAR,
                         0, pgraph::comm));
+            size_t *size = new size_t[NUM_WORKERS];
+            size_t *sizes = new size_t[nprocs*NUM_WORKERS];
+            for (int i=0; i<NUM_WORKERS; ++i) {
+                size[i] = pair_check[i]->size();
+            }
+            mpix::check(MPI_Gather(
+                        size, sizeof(size_t)*NUM_WORKERS, MPI_CHAR,
+                        sizes, sizeof(size_t)*NUM_WORKERS, MPI_CHAR,
+                        0, pgraph::comm));
             DupStats cumulative;
+            Stats all_sizes;
             Stats time_per_worker;
             Stats checked_per_worker;
             Stats returned_per_worker;
@@ -608,7 +626,9 @@ int main(int argc, char **argv)
                 time_per_worker.push_back(rstats[i].time.sum());
                 checked_per_worker.push_back(rstats[i].checked.sum());
                 returned_per_worker.push_back(rstats[i].returned.sum());
-                cout << rstats[i] << endl;
+                cout << rstats[i];
+                cout << right << setw(19) << "Size" << setw(13) << sizes[i] << endl;
+                all_sizes.push_back(sizes[i]);
             }
             cout << string(79, '=') << endl;
             cout << right << setw(5) << "TOTAL";
@@ -618,14 +638,26 @@ int main(int argc, char **argv)
             cout << right << setw(19) << "TimePerWorker" << time_per_worker << endl;
             cout << right << setw(19) << "CheckedPerWorker" << checked_per_worker << endl;
             cout << right << setw(19) << "ReturnedPerWorker" << returned_per_worker << endl;
+            cout << right << setw(19) << "AllSizes" << all_sizes << endl;
             cout << string(79, '-') << endl;
             delete [] rstats;
+            delete [] size;
+            delete [] sizes;
         }
         else {
             mpix::check(MPI_Gather(
                         stats_dup, sizeof(DupStats)*NUM_WORKERS, MPI_CHAR,
                         NULL, sizeof(DupStats)*NUM_WORKERS, MPI_CHAR,
                         0, pgraph::comm));
+            size_t *size = new size_t[NUM_WORKERS];
+            for (int i=0; i<NUM_WORKERS; ++i) {
+                size[i] = pair_check[i]->size();
+            }
+            mpix::check(MPI_Gather(
+                        size, sizeof(size_t)*NUM_WORKERS, MPI_CHAR,
+                        NULL, sizeof(size_t)*NUM_WORKERS, MPI_CHAR,
+                        0, pgraph::comm));
+            delete [] size;
         }
     }
 
@@ -702,6 +734,7 @@ int main(int argc, char **argv)
     MPI_Barrier(pgraph::comm);
 
     if (parameters->output_to_disk) {
+        double time = MPI_Wtime();
         ofstream edge_out(get_edges_filename(rank).c_str());
         for (int worker=0; worker<NUM_WORKERS; ++worker) {
             for (size_t i=0,limit=edge_results[worker].size(); i<limit; ++i) {
@@ -709,6 +742,24 @@ int main(int argc, char **argv)
             }
         }
         edge_out.close();
+        time = MPI_Wtime() - time;
+        if (0 == rank) {
+            ostringstream header;
+            header.fill('-');
+            header << left << setw(79) << "--- Disk Output Stats ";
+            Stats::width(11);
+            cout << header.str() << endl;
+            cout << Stats::header() << endl;
+            vector<double> times = mpix::gather(time, 0, pgraph::comm);
+            Stats ts;
+            for (int i=0; i<nprocs; ++i ) {
+                ts.push_back(times[i]);
+            }
+            cout << ts << endl;
+        }
+        else {
+            (void)mpix::gather(time, 0, pgraph::comm);
+        }
     }
 
     /* clean up */
@@ -742,6 +793,10 @@ int main(int argc, char **argv)
     delete [] local_data->ins;
     delete local_data;
 
+    time_main = MPI_Wtime() - time_main;
+    if (0 == rank) {
+        cout << "time_main " << time_main << " seconds" << endl;
+    }
     TascelConfig::finalize();
     pgraph::finalize();
 
@@ -936,6 +991,8 @@ static unsigned long process_tree(unsigned long /*bid*/, Bucket *bucket, local_d
             << "\t" << orig_size << "-" << new_size << "=" << (orig_size-new_size)
             << "\t" << utcs[worker]->size() << endl;
 #endif
+        /* assert we haven't run out of room in the task queue! */
+        assert(local_pairs.size()<((unsigned long)(utcs[worker]->capacity()-utcs[worker]->size())));
 
         /* populate task queue */
         for (set<pair<size_t,size_t> >::iterator it=local_pairs.begin();

@@ -8,10 +8,21 @@ Gap: -1
 MemoryWorker: 536870912
 MemorySequences: 2147483648
 OutputAll: false
-OutputToDisk: false
+OutputToDisk: true
 DistributeSequences: false
 UseLengthFilter: true
 UseIterator: false
+UseCounter: false
 UseTree: false
 UseTreeDynamic: false
-UseTreeHybrid: false
+UseTreeHybrid: true
+PrintStats: true
+Alphabet: ABCDEFGHIJKLMNOPQRSTUVWXYZ
+AlphabetBegin: O
+AlphabetDollar: U
+SkipPrefixes:
+    - X\{2,3\}
+DuplicatesLocal: false
+DuplicatesSemiLocal: false
+DuplicatesSmp: false
+DuplicatesGlobal: true

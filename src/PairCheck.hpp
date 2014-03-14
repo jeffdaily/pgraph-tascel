@@ -33,7 +33,7 @@ class PairCheck
         virtual ~PairCheck() {}
 
         virtual SetPair check(const SetPair &pairs) = 0;
-        virtual VecPair check(const VecPair &pairs) = 0;
+        virtual size_t size() = 0;
 };
 
 }; /* namespace pgraph */
