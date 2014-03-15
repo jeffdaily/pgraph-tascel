@@ -68,7 +68,11 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
 
 #if DEBUG || 1
     mpix::print_zero("n_buckets", n_buckets, comm);
+#endif
+#if DEBUG
     mpix::print_sync("buckets_size", buckets_size, comm);
+#endif
+#if DEBUG || 1
     mpix::print_zero("n_suffixes", n_suffixes, comm);
 #endif
 
@@ -89,7 +93,7 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
     if (stop > sequences->size()) {
         stop = sequences->size();
     }
-#if DEBUG || 1
+#if DEBUG
     mpix::print_sync("n_seq", n_seq, comm);
     mpix::print_sync("remainder", remainder, comm);
     mpix::print_sync("start", start, comm);
@@ -132,7 +136,7 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
     }
     initial_suffixes.resize(suffix_index);
 
-#if DEBUG || 1
+#if DEBUG
     mpix::print_sync("suffix_index", suffix_index, comm);
 #endif
 
@@ -144,7 +148,7 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
         size_t owner = initial_suffixes[i].bid % comm_size;
         amount_to_send[owner] += 1;
     }
-#if DEBUG || 1
+#if DEBUG
     size_t desitinations = 0;
     for (size_t i=0; i<comm_size; ++i) {
         if (amount_to_send[i] > 0) {
@@ -167,8 +171,10 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
         total_amount_to_send += amount_to_send[i];
         total_amount_to_recv += amount_to_recv[i];
     }
+#if DEBUG
     mpix::print_sync("total_amount_to_send", total_amount_to_send, comm);
     mpix::print_sync("total_amount_to_recv", total_amount_to_recv, comm);
+#endif
     suffixes_size = total_amount_to_recv;
 
     /* We are preparing for the all to all, so we sort the suffixes.
@@ -181,12 +187,16 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
     aid_suffixes = theRma().allocColl(sizeof(Suffix)*suffixes_size);
     suffixes = reinterpret_cast<Suffix*>(
             theRma().lookupPointer(RmaPtr(aid_suffixes)));
+#if DEBUG
     mpix::print_sync("suffixes_size", suffixes_size, comm);
+#endif
 
     aid_meta = theRma().allocColl(sizeof(BucketMeta)*buckets_size);
     buckets = reinterpret_cast<BucketMeta*>(
             theRma().lookupPointer(RmaPtr(aid_meta)));
+#if DEBUG
     mpix::print_sync("buckets_size", buckets_size, comm);
+#endif
     for (size_t i=0; i<buckets_size; ++i) {
         size_t bid = i*comm_size + comm_rank;
         buckets[i].offset = 0;
@@ -269,7 +279,7 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
     }
 
     mpix::allreduce(n_nonempty, MPI_SUM, comm);
-#if 1
+#if DEBUG
     mpix::print_sync("bucket_size_total", bucket_size_total, comm);
 #endif
 }
