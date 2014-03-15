@@ -1,17 +1,21 @@
-#include <utility>
+/**
+ * @file PairCheckGlobal.cpp
+ *
+ * @author jeff.daily@pnnl.gov
+ *
+ * Copyright 2010 Washington State University. All rights reserved.
+ * Copyright 2012 Pacific Northwest National Laboratory. All rights reserved.
+ */
+#include "config.h"
 
 #include <tascel.h>
 
-#include <algorithm>
-#include <iostream>
+//#include <algorithm>
 #include <map>
 
 #include "combinations.h"
 #include "PairCheckGlobal.hpp"
 
-using ::std::cout;
-using ::std::endl;
-using ::std::make_pair;
 using ::std::map;
 using namespace tascel;
 
@@ -21,10 +25,15 @@ namespace pgraph {
 #define NEXT_ID (747274)
 
 
+#if DEBUG
+#include <iostream>
+using ::std::cout;
+using ::std::endl;
 static int trank(int thd)
 {
     return (theTwoSided().getProcRank().toInt() * NUM_WORKERS) + thd;
 }
+#endif
 
 
 struct BulkPairCheckArg : public AmArg {
@@ -232,8 +241,8 @@ void PairCheckGlobal::bulk_try_check_function(const AmContext * const context)
 void PairCheckGlobal::bulk_try_check_local_function(const AmContext * const context)
 {
     BulkPairCheckArg &arg = *reinterpret_cast<BulkPairCheckArg*>(context->arg);
-    PairCheckGlobal &checker = *theRegistry().lookup<PairCheckGlobal*>(arg.queueID);
 #if 0 && defined(THREADED)
+    PairCheckGlobal &checker = *theRegistry().lookup<PairCheckGlobal*>(arg.queueID);
     LockGuard<PthreadMutex> guard(checker.mutex);
 #endif
 #if DEBUG
@@ -282,8 +291,8 @@ void PairCheckGlobal::bulk_check_complete_function(const AmContext * const conte
 void PairCheckGlobal::bulk_check_complete_local_function(const AmContext * const context)
 {
     BulkPairCheckArg &arg = *reinterpret_cast<BulkPairCheckArg*>(context->arg);
-    PairCheckGlobal &checker = *theRegistry().lookup<PairCheckGlobal*>(arg.queueID);
 #if 0 && defined(THREADED)
+    PairCheckGlobal &checker = *theRegistry().lookup<PairCheckGlobal*>(arg.queueID);
     LockGuard<PthreadMutex> guard(checker.mutex);
 #endif
 #if DEBUG
