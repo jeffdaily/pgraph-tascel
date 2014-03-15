@@ -2,6 +2,7 @@
 
 #include <tascel.h>
 
+#include <algorithm>
 #include <iostream>
 #include <map>
 
@@ -20,44 +21,23 @@ namespace pgraph {
 #define NEXT_ID (747274)
 
 
-struct PairCheckArg : public AmArg {
-    int queueID;
-    int proc;
-    int thd;
-    size_t id1;
-    size_t id2;
-    bool answer;
-    volatile bool *ptr_answer;
-    volatile bool *ptr_response;
-
-    PairCheckArg()
-        :   queueID(-1)
-        ,   proc(-1)
-        ,   thd(-1)
-        ,   id1(-1)
-        ,   id2(-1)
-        ,   answer(false)
-        ,   ptr_answer(NULL)
-        ,   ptr_response(NULL)
-    {}
-};
+static int trank(int thd)
+{
+    return (theTwoSided().getProcRank().toInt() * NUM_WORKERS) + thd;
+}
 
 
 struct BulkPairCheckArg : public AmArg {
     int queueID;
     int proc;
     int thd;
-    SetPair *ptr_pairs;
-    volatile int *ptr_response;
-    VecPair *ptr_local_pairs;
+    SetPair *pairs;
 
     BulkPairCheckArg()
         :   queueID(-1)
         ,   proc(-1)
         ,   thd(-1)
-        ,   ptr_pairs(NULL)
-        ,   ptr_response(NULL)
-        ,   ptr_local_pairs(NULL)
+        ,   pairs(NULL)
     {}
 };
 
@@ -66,28 +46,14 @@ PairCheckGlobal::PairCheckGlobal(int thd)
     :   PairCheck()
     ,   mutex()
     ,   thd(thd)
-    ,   alloc_id()
-    ,   try_check()
-    ,   check_complete()
     ,   bulk_try_check()
     ,   bulk_check_complete()
     ,   s_pairs()
     ,   dispatcher()
+    ,   server_response(0)
 {
-    try_check = theAm().amRegister(
-            NULL,
-            try_check_function,
-            NULL,
-            NULL,
-            NULL);
-    check_complete = theAm().amRegister(
-            check_complete_local_function,
-            check_complete_function,
-            NULL,
-            NULL,
-            NULL);
     bulk_try_check = theAm().amRegister(
-            NULL,
+            bulk_try_check_local_function,
             bulk_try_check_function,
             NULL,
             NULL,
@@ -107,54 +73,22 @@ PairCheckGlobal::~PairCheckGlobal()
 }
 
 
-bool PairCheckGlobal::send_check_message(const pair<size_t,size_t> &_pair)
+SetPair PairCheckGlobal::check(const SetPair &new_pairs)
 {
-    volatile bool check_response = false;
-    volatile bool check_answer = false;
-
-    PairCheckArg msg;
-    unsigned long k_pair[2] = {_pair.first,_pair.second};
-    unsigned long index = k_combination2_inv(k_pair);
-    int owner = index % (theTwoSided().numProcRanks().toInt()*NUM_WORKERS);
-    AmRequest *lReq = AmRequest::construct();
-    msg.queueID = NEXT_ID + owner % NUM_WORKERS;
-    msg.proc = theTwoSided().getProcRank().toInt();
-    msg.thd = thd;
-    msg.id1 = _pair.first;
-    msg.id2 = _pair.second;
-    msg.answer = false;
-    msg.ptr_answer = &check_answer;
-    msg.ptr_response = &check_response;
-    theAm().amPut(owner / NUM_WORKERS, msg, try_check, lReq);
-    dispatcher.registerCodelet(lReq);
-
-    while (!check_response || !dispatcher.empty()) {
-        Codelet* codelet;
-        if ((codelet = dispatcher.progress()) != NULL) {
-            codelet->execute();
-            delete reinterpret_cast<AmRequest*>(codelet);
-        }
-#if !defined(THREADED)
-        AmListenObjCodelet<NullMutex>* listenCodelet;
-        if ((listenCodelet = theAm().amListeners[0]->progress()) != NULL) {
-            listenCodelet->execute();
-        }
-#endif
-    }
-
-    return check_answer;
-}
-
-
-void PairCheckGlobal::bulk_send_check_message(
-         const SetPair &new_pairs,
-         SetPair &result)
-{
-    volatile int bulk_check_response = 0;
-
-    /* sort the pairs into buckets based on their worker rank */
+    SetPair ret;
     int proc = theTwoSided().getProcRank().toInt();
     int nworkers = theTwoSided().numProcRanks().toInt()*NUM_WORKERS;
+
+#if DEBUG
+    cout << "PairCheckGlobal::check begin"
+        << " rank=" << proc
+        << " thd=" << thd
+        << " trank=" << trank(thd)
+        << endl;
+#endif
+    assert(server_response == 0);
+
+    /* sort the pairs into buckets based on their worker rank */
     map<int,VecPair> pairs_parted;
     for (SetPair::const_iterator it=new_pairs.begin();
             it!=new_pairs.end(); ++it) {
@@ -166,29 +100,42 @@ void PairCheckGlobal::bulk_send_check_message(
 
     map<int,VecPair>::iterator it;
     for (it=pairs_parted.begin(); it!=pairs_parted.end(); ++it) {
-        BulkPairCheckArg msg;
+        BulkPairCheckArg &msg = *new BulkPairCheckArg;
         const int &owner = it->first;
         VecPair &the_pairs = it->second;
+        //Pair *copy_pairs = new Pair[the_pairs.size()];
+        //::std::copy(the_pairs.begin(), the_pairs.end(), copy_pairs);
         AmRequest *lReq = AmRequest::construct();
         msg.queueID = NEXT_ID + owner % NUM_WORKERS;
         msg.proc = proc;
         msg.thd = thd;
+        //msg.data = copy_pairs;
         msg.data = &the_pairs[0];
         msg.dlen = sizeof(Pair)*the_pairs.size();
-        msg.ptr_pairs = &result;
-        msg.ptr_response = &bulk_check_response;
-        msg.ptr_local_pairs = NULL;
-        bulk_check_response += 1;
+        msg.pairs = &ret;
+        server_response += 1;
         theAm().amPut(owner / NUM_WORKERS, msg, bulk_try_check, lReq);
         dispatcher.registerCodelet(lReq);
+#if DEBUG
+        cout << "PairCheckGlobal::check send"
+            << " rank=" << proc
+            << " thd=" << thd
+            << " trank=" << trank(thd)
+            << " server_response=" << server_response
+            << " dest=" << owner/NUM_WORKERS
+            << " queueID=" << msg.queueID-NEXT_ID
+            << endl;
+#endif
     }
 
-    while (bulk_check_response>0 || !dispatcher.empty()) {
-        Codelet* codelet;
-        if ((codelet = dispatcher.progress()) != NULL) {
-            codelet->execute();
-            delete reinterpret_cast<AmRequest*>(codelet);
-        }
+#if DEBUG
+    cout << "PairCheckGlobal::check waiting"
+        << " rank=" << proc
+        << " thd=" << thd
+        << " trank=" << trank(thd)
+        << endl;
+#endif
+    while (server_response>0) {
 #if !defined(THREADED)
         AmListenObjCodelet<NullMutex>* listenCodelet;
         if ((listenCodelet = theAm().amListeners[0]->progress()) != NULL) {
@@ -196,25 +143,22 @@ void PairCheckGlobal::bulk_send_check_message(
         }
 #endif
     }
-    assert(bulk_check_response == 0);
-}
-
-
-SetPair PairCheckGlobal::check(const SetPair &new_pairs)
-{
-    SetPair ret;
-
-#if 0
-    for (SetPair::const_iterator it=new_pairs.begin();
-            it!=new_pairs.end(); ++it) {
-        if (send_check_message(*it)) {
-            ret.insert(*it);
+    while (!dispatcher.empty()) {
+        Codelet* codelet;
+        if ((codelet = dispatcher.progress()) != NULL) {
+            codelet->execute();
+            delete reinterpret_cast<AmRequest*>(codelet);
         }
     }
-#else
-    bulk_send_check_message(new_pairs, ret);
-#endif
+    assert(server_response == 0);
     
+#if DEBUG
+    cout << "PairCheckGlobal::check end"
+        << " rank=" << proc
+        << " thd=" << thd
+        << " trank=" << trank(thd)
+        << endl;
+#endif
     return ret;
 }
 
@@ -228,70 +172,33 @@ size_t PairCheckGlobal::size()
 }
 
 
-void PairCheckGlobal::try_check_function(const AmContext * const context)
-{
-    PairCheckArg &arg = *reinterpret_cast<PairCheckArg*>(context->arg);
-    PairCheckGlobal &checker = *theRegistry().lookup<PairCheckGlobal*>(arg.queueID);
-
-    PairCheckArg &msg = *new PairCheckArg;
-    AmRequest *lReq = AmRequest::construct();
-    msg.queueID = arg.queueID;
-    msg.proc = arg.proc;
-    msg.thd = arg.thd;
-    msg.id1 = arg.id1;
-    msg.id2 = arg.id2;
-    msg.ptr_answer = arg.ptr_answer;
-    msg.ptr_response = arg.ptr_response;
-    {
-#if defined(THREADED)
-        LockGuard<PthreadMutex> guard(checker.mutex);
-#endif
-        pair<SetPair::iterator,bool> result = checker.s_pairs.insert(
-                make_pair(arg.id1,arg.id2));
-        msg.answer = result.second;
-    }
-    theAm().amPut(arg.proc, msg, checker.check_complete, lReq);
-#if defined(THREADED)
-    serverDispatcher.registerCodelet(lReq);
-#else
-    checker.dispatcher.registerCodelet(lReq);
-#endif
-}
-
-
-void PairCheckGlobal::check_complete_function(const AmContext * const context)
-{
-    PairCheckArg &arg = *reinterpret_cast<PairCheckArg*>(context->arg);
-    *(arg.ptr_answer) = arg.answer;
-    *(arg.ptr_response) = true;
-}
-
-
-void PairCheckGlobal::check_complete_local_function(const AmContext * const context)
-{
-    PairCheckArg &arg = *reinterpret_cast<PairCheckArg*>(context->arg);
-    delete &arg;
-}
-
-
 void PairCheckGlobal::bulk_try_check_function(const AmContext * const context)
 {
     BulkPairCheckArg &arg = *reinterpret_cast<BulkPairCheckArg*>(context->arg);
     PairCheckGlobal &checker = *theRegistry().lookup<PairCheckGlobal*>(arg.queueID);
+#if 0 && defined(THREADED)
+    LockGuard<PthreadMutex> guard(checker.mutex);
+#endif
+#if DEBUG
+    cout << "PairCheckGlobal::bulk_try_check_function"
+        << " trank=" << trank(checker.thd)
+        << " arg.proc=" << arg.proc
+        << " arg.thd=" << arg.thd
+        << endl;
+#endif
 
     BulkPairCheckArg &msg = *new BulkPairCheckArg;
     AmRequest *lReq = AmRequest::construct();
-    msg.queueID = arg.queueID;
+    msg.queueID = NEXT_ID + arg.thd;
     msg.proc = arg.proc;
     msg.thd = arg.thd;
-    msg.ptr_pairs = arg.ptr_pairs;
-    msg.ptr_response = arg.ptr_response;
-    msg.ptr_local_pairs = new VecPair;
+    msg.pairs = arg.pairs;
 
     Pair *pairs_to_check = reinterpret_cast<Pair*>(arg.data);
     int n = arg.dlen.toInt() / sizeof(Pair);
-    VecPair &pairs_to_return = *msg.ptr_local_pairs;
     assert(arg.dlen % sizeof(Pair) == 0);
+    Pair *pairs_to_return = new Pair[n];
+    int size = 0;
     {
 #if defined(THREADED)
         LockGuard<PthreadMutex> guard(checker.mutex);
@@ -300,15 +207,16 @@ void PairCheckGlobal::bulk_try_check_function(const AmContext * const context)
             pair<SetPair::iterator,bool> result =
                 checker.s_pairs.insert(pairs_to_check[i]);
             if (result.second) {
-                pairs_to_return.push_back(pairs_to_check[i]);
+                pairs_to_return[size++] = pairs_to_check[i];
             }
         }
     }
-    if (pairs_to_return.size() > 0) {
-        msg.data = &pairs_to_return[0];
-        msg.dlen = sizeof(Pair) * pairs_to_return.size();
+    if (size > 0) {
+        msg.data = pairs_to_return;
+        msg.dlen = sizeof(Pair) * size;
     }
     else {
+        delete [] pairs_to_return;
         msg.data = NullPtr;
         msg.dlen = 0;
     }
@@ -321,22 +229,70 @@ void PairCheckGlobal::bulk_try_check_function(const AmContext * const context)
 }
 
 
+void PairCheckGlobal::bulk_try_check_local_function(const AmContext * const context)
+{
+    BulkPairCheckArg &arg = *reinterpret_cast<BulkPairCheckArg*>(context->arg);
+    PairCheckGlobal &checker = *theRegistry().lookup<PairCheckGlobal*>(arg.queueID);
+#if 0 && defined(THREADED)
+    LockGuard<PthreadMutex> guard(checker.mutex);
+#endif
+#if DEBUG
+    cout << "PairCheckGlobal::bulk_try_check_local_function " << trank(checker.thd) << endl;
+#endif
+    /* don't delete the data since it is internal to a vector */
+#if 0
+    if (arg.data != NullPtr) {
+        assert(arg.dlen > 0);
+        Pair *pairs_that_were_sent_to_check = reinterpret_cast<Pair*>(arg.data);
+        delete [] pairs_that_were_sent_to_check;
+        arg.data = NullPtr;
+    }
+    else {
+        assert(arg.data == NullPtr);
+        assert(arg.dlen == 0);
+    }
+#endif
+    delete &arg;
+}
+
+
 void PairCheckGlobal::bulk_check_complete_function(const AmContext * const context)
 {
     BulkPairCheckArg &arg = *reinterpret_cast<BulkPairCheckArg*>(context->arg);
+    PairCheckGlobal &checker = *theRegistry().lookup<PairCheckGlobal*>(arg.queueID);
+#if 0 && defined(THREADED)
+    LockGuard<PthreadMutex> guard(checker.mutex);
+#endif
+#if DEBUG
+    cout << "PairCheckGlobal::bulk_check_complete_function " << trank(checker.thd) << endl;
+#endif
     Pair *pairs_to_insert = reinterpret_cast<Pair*>(arg.data);
     int n = arg.dlen.toInt() / sizeof(Pair);
     assert(arg.dlen % sizeof(Pair) == 0);
-    (*(arg.ptr_pairs)).insert(pairs_to_insert, pairs_to_insert+n);
-    *(arg.ptr_response) -= 1;
+    arg.pairs->insert(pairs_to_insert, pairs_to_insert+n);
+    checker.server_response -= 1;
+#if DEBUG
+    cout << "PairCheckGlobal::bulk_check_complete_function " << trank(checker.thd)
+        << " server_response=" << checker.server_response << endl;
+#endif
+    assert(checker.server_response >= 0);
 }
 
 
 void PairCheckGlobal::bulk_check_complete_local_function(const AmContext * const context)
 {
     BulkPairCheckArg &arg = *reinterpret_cast<BulkPairCheckArg*>(context->arg);
-    if (arg.ptr_local_pairs != NullPtr) {
-        delete arg.ptr_local_pairs;
+    PairCheckGlobal &checker = *theRegistry().lookup<PairCheckGlobal*>(arg.queueID);
+#if 0 && defined(THREADED)
+    LockGuard<PthreadMutex> guard(checker.mutex);
+#endif
+#if DEBUG
+    cout << "PairCheckGlobal::bulk_check_complete_local_function " << trank(checker.thd) << endl;
+#endif
+    if (arg.data != NullPtr) {
+        assert(arg.dlen > 0);
+        Pair *pairs_to_return = reinterpret_cast<Pair*>(arg.data);
+        delete [] pairs_to_return;
     }
     else {
         assert(arg.data == NullPtr);

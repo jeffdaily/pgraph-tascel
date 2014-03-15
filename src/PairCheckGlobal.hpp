@@ -37,26 +37,20 @@ class PairCheckGlobal : public PairCheck
 
     //protected:
     public:
-        bool send_check_message(const pair<size_t,size_t> &pair);
         void bulk_send_check_message(const SetPair &pairs, SetPair &result);
 
-        static void try_check_function(const AmContext * const context);
-        static void check_complete_function(const AmContext * const context);
-        static void check_complete_local_function(const AmContext * const context);
-
         static void bulk_try_check_function(const AmContext * const context);
+        static void bulk_try_check_local_function(const AmContext * const context);
         static void bulk_check_complete_function(const AmContext * const context);
         static void bulk_check_complete_local_function(const AmContext * const context);
 
         PthreadMutex mutex;
         int thd;
-        AllocId alloc_id;
-        AmHandle try_check;
-        AmHandle check_complete;
         AmHandle bulk_try_check;
         AmHandle bulk_check_complete;
         SetPair s_pairs;
         Dispatcher<NullMutex> dispatcher;
+        volatile int server_response;
 };
 
 }; /* namespace pgraph */
