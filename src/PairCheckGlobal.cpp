@@ -178,6 +178,14 @@ SetPair PairCheckGlobal::check(const SetPair &new_pairs)
 }
 
 
+VecPair PairCheckGlobal::check(const VecPair &new_pairs)
+{
+    SetPair new_pairs_as_set(new_pairs.begin(), new_pairs.end());
+    SetPair ret_pairs_as_set = check(new_pairs_as_set);
+    return VecPair(ret_pairs_as_set.begin(), ret_pairs_as_set.end());
+}
+
+
 size_t PairCheckGlobal::size()
 {
 #if defined(THREADED)

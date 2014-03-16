@@ -27,6 +27,7 @@ class PairCheckGlobal : public PairCheck
         virtual ~PairCheckGlobal();
 
         virtual SetPair check(const SetPair &pairs);
+        virtual VecPair check(const VecPair &pairs);
 
         virtual size_t size();
 

@@ -41,6 +41,19 @@ class PairCheckSmp : public PairCheck
             return ret_pairs;
         }
 
+        virtual VecPair check(const VecPair &new_pairs) {
+            LockGuard<PthreadMutex> guard(mutex);
+            VecPair ret_pairs;
+            for (VecPair::const_iterator it=new_pairs.begin();
+                    it!=new_pairs.end(); ++it) {
+                pair<SetPair::iterator,bool> result = s_pairs.insert(*it);
+                if (result.second) {
+                    (void)ret_pairs.push_back(*it);
+                }
+            }
+            return ret_pairs;
+        }
+
         virtual size_t size() {
             LockGuard<PthreadMutex> guard(mutex);
             return s_pairs.size();

@@ -36,6 +36,18 @@ class PairCheckSemiLocal : public PairCheck
             return ret_pairs;
         }
 
+        virtual VecPair check(const VecPair &new_pairs) {
+            VecPair ret_pairs;
+            for (VecPair::const_iterator it=new_pairs.begin();
+                    it!=new_pairs.end(); ++it) {
+                pair<SetPair::iterator,bool> result = s_pairs.insert(*it);
+                if (result.second) {
+                    ret_pairs.push_back(*it);
+                }
+            }
+            return ret_pairs;
+        }
+
         virtual size_t size() {
             return s_pairs.size();
         }

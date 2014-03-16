@@ -21,6 +21,9 @@ class PairCheckLocal : public PairCheck
         virtual SetPair check(const SetPair &pairs) {
             return pairs;
         }
+        virtual VecPair check(const VecPair &pairs) {
+            return pairs;
+        }
         virtual size_t size() {
             return 0;
         }
