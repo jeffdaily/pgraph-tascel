@@ -559,6 +559,7 @@ int main(int argc, char **argv)
         if (0 == rank) {
             TreeStats cumulative;
             Stats trees_per_worker;
+            Stats times_per_worker;
             ostringstream header;
             int p = cout.precision();
 
@@ -573,6 +574,9 @@ int main(int argc, char **argv)
                 cout << Stats::header() << endl;
                 cumulative += rstats[i];
                 trees_per_worker.push_back(rstats[i].trees);
+                times_per_worker.push_back(
+                        rstats[i].time_build.sum()+
+                        rstats[i].time_process.sum());
                 cout << rstats[i] << endl;
             }
             cout << string(79, '=') << endl;
@@ -581,6 +585,7 @@ int main(int argc, char **argv)
             cout << Stats::header() << endl;
             cout << cumulative;
             cout << right << setw(19) << "TreesPerWorker" << trees_per_worker << endl;
+            cout << right << setw(19) << "TimesPerWorker" << times_per_worker << endl;
             cout << "first tree" << setw(25) << cumulative.time_first << endl;
             cout << " last tree" << setw(25) << cumulative.time_last << endl;
             cout << "      diff" << setw(25) << cumulative.time_last - cumulative.time_first << endl;

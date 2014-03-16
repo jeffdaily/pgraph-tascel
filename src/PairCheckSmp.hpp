@@ -31,11 +31,13 @@ class PairCheckSmp : public PairCheck
         virtual SetPair check(const SetPair &new_pairs) {
             LockGuard<PthreadMutex> guard(mutex);
             SetPair ret_pairs;
-            (void)set_difference(
-                    new_pairs.begin(), new_pairs.end(),
-                    s_pairs.begin(), s_pairs.end(),
-                    inserter(ret_pairs, ret_pairs.end()));
-            s_pairs.insert(ret_pairs.begin(), ret_pairs.end());
+            for (SetPair::const_iterator it=new_pairs.begin();
+                    it!=new_pairs.end(); ++it) {
+                pair<SetPair::iterator,bool> result = s_pairs.insert(*it);
+                if (result.second) {
+                    (void)ret_pairs.insert(*it);
+                }
+            }
             return ret_pairs;
         }
 

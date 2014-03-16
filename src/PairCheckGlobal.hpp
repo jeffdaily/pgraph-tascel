@@ -8,15 +8,10 @@
 #ifndef _PGRAPH_PAIRCHECKGLOBAL_H_
 #define _PGRAPH_PAIRCHECKGLOBAL_H_
 
-#include <vector>
-
 #include <tascel.h>
 
 #include "PairCheck.hpp"
 
-using ::std::vector;
-using ::tascel::AllocId;
-using ::tascel::AmArg;
 using ::tascel::AmContext;
 using ::tascel::AmHandle;
 using ::tascel::Dispatcher;

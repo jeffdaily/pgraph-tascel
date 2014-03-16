@@ -25,6 +25,7 @@ namespace pgraph {
 #define NEXT_ID (747274)
 
 
+#define DEBUG 0
 #if DEBUG
 #include <iostream>
 using ::std::cout;
@@ -115,14 +116,19 @@ SetPair PairCheckGlobal::check(const SetPair &new_pairs)
         //Pair *copy_pairs = new Pair[the_pairs.size()];
         //::std::copy(the_pairs.begin(), the_pairs.end(), copy_pairs);
         AmRequest *lReq = AmRequest::construct();
-        msg.queueID = NEXT_ID + owner % NUM_WORKERS;
+        msg.queueID = owner % NUM_WORKERS;
         msg.proc = proc;
         msg.thd = thd;
         //msg.data = copy_pairs;
         msg.data = &the_pairs[0];
         msg.dlen = sizeof(Pair)*the_pairs.size();
         msg.pairs = &ret;
-        server_response += 1;
+#if defined(THREADED)
+        {
+            LockGuard<PthreadMutex> guard(mutex);
+            server_response += 1;
+        }
+#endif
         theAm().amPut(owner / NUM_WORKERS, msg, bulk_try_check, lReq);
         dispatcher.registerCodelet(lReq);
 #if DEBUG
@@ -132,7 +138,7 @@ SetPair PairCheckGlobal::check(const SetPair &new_pairs)
             << " trank=" << trank(thd)
             << " server_response=" << server_response
             << " dest=" << owner/NUM_WORKERS
-            << " queueID=" << msg.queueID-NEXT_ID
+            << " queueID=" << msg.queueID
             << endl;
 #endif
     }
@@ -184,10 +190,7 @@ size_t PairCheckGlobal::size()
 void PairCheckGlobal::bulk_try_check_function(const AmContext * const context)
 {
     BulkPairCheckArg &arg = *reinterpret_cast<BulkPairCheckArg*>(context->arg);
-    PairCheckGlobal &checker = *theRegistry().lookup<PairCheckGlobal*>(arg.queueID);
-#if 0 && defined(THREADED)
-    LockGuard<PthreadMutex> guard(checker.mutex);
-#endif
+    PairCheckGlobal &checker = *theRegistry().lookup<PairCheckGlobal*>(NEXT_ID+arg.queueID);
 #if DEBUG
     cout << "PairCheckGlobal::bulk_try_check_function"
         << " trank=" << trank(checker.thd)
@@ -198,7 +201,7 @@ void PairCheckGlobal::bulk_try_check_function(const AmContext * const context)
 
     BulkPairCheckArg &msg = *new BulkPairCheckArg;
     AmRequest *lReq = AmRequest::construct();
-    msg.queueID = NEXT_ID + arg.thd;
+    msg.queueID = arg.thd;
     msg.proc = arg.proc;
     msg.thd = arg.thd;
     msg.pairs = arg.pairs;
@@ -241,11 +244,8 @@ void PairCheckGlobal::bulk_try_check_function(const AmContext * const context)
 void PairCheckGlobal::bulk_try_check_local_function(const AmContext * const context)
 {
     BulkPairCheckArg &arg = *reinterpret_cast<BulkPairCheckArg*>(context->arg);
-#if 0 && defined(THREADED)
-    PairCheckGlobal &checker = *theRegistry().lookup<PairCheckGlobal*>(arg.queueID);
-    LockGuard<PthreadMutex> guard(checker.mutex);
-#endif
 #if DEBUG
+    PairCheckGlobal &checker = *theRegistry().lookup<PairCheckGlobal*>(NEXT_ID+arg.queueID);
     cout << "PairCheckGlobal::bulk_try_check_local_function " << trank(checker.thd) << endl;
 #endif
     /* don't delete the data since it is internal to a vector */
@@ -268,13 +268,14 @@ void PairCheckGlobal::bulk_try_check_local_function(const AmContext * const cont
 void PairCheckGlobal::bulk_check_complete_function(const AmContext * const context)
 {
     BulkPairCheckArg &arg = *reinterpret_cast<BulkPairCheckArg*>(context->arg);
-    PairCheckGlobal &checker = *theRegistry().lookup<PairCheckGlobal*>(arg.queueID);
-#if 0 && defined(THREADED)
+    PairCheckGlobal &checker = *theRegistry().lookup<PairCheckGlobal*>(NEXT_ID+arg.queueID);
+#if defined(THREADED)
     LockGuard<PthreadMutex> guard(checker.mutex);
 #endif
 #if DEBUG
     cout << "PairCheckGlobal::bulk_check_complete_function " << trank(checker.thd) << endl;
 #endif
+    assert(checker.server_response >= 1);
     Pair *pairs_to_insert = reinterpret_cast<Pair*>(arg.data);
     int n = arg.dlen.toInt() / sizeof(Pair);
     assert(arg.dlen % sizeof(Pair) == 0);
@@ -291,11 +292,8 @@ void PairCheckGlobal::bulk_check_complete_function(const AmContext * const conte
 void PairCheckGlobal::bulk_check_complete_local_function(const AmContext * const context)
 {
     BulkPairCheckArg &arg = *reinterpret_cast<BulkPairCheckArg*>(context->arg);
-#if 0 && defined(THREADED)
-    PairCheckGlobal &checker = *theRegistry().lookup<PairCheckGlobal*>(arg.queueID);
-    LockGuard<PthreadMutex> guard(checker.mutex);
-#endif
 #if DEBUG
+    PairCheckGlobal &checker = *theRegistry().lookup<PairCheckGlobal*>(NEXT_ID+arg.queueID);
     cout << "PairCheckGlobal::bulk_check_complete_local_function " << trank(checker.thd) << endl;
 #endif
     if (arg.data != NullPtr) {
