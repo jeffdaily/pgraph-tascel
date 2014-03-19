@@ -9,7 +9,7 @@
 #include "Bootstrap.hpp"
 #include "mpix.hpp"
 
-#define PAUSE_ON_ERROR 1
+#define PAUSE_ON_ERROR 0
 #ifdef PAUSE_ON_ERROR
 #include "SigSegvHandler.hpp"
 #endif
@@ -51,6 +51,7 @@ void initialize(int &argc, char **&argv)
     comm = mpix::comm_dup(MPI_COMM_WORLD);
     comm_rank = mpix::comm_rank(comm);
     comm_size = mpix::comm_size(comm);
+    ::std::cout << "Hello from " << comm_rank << " of " << comm_size << endl;
 }
 
 

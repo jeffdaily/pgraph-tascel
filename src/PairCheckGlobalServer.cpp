@@ -1,5 +1,5 @@
 /**
- * @file PairCheckGlobal.cpp
+ * @file PairCheckGlobalServer.cpp
  *
  * @author jeff.daily@pnnl.gov
  *
@@ -14,7 +14,7 @@
 #include <map>
 
 #include "combinations.h"
-#include "PairCheckGlobal.hpp"
+#include "PairCheckGlobalServer.hpp"
 
 using ::std::map;
 using namespace tascel;
@@ -41,6 +41,7 @@ struct BulkPairCheckArg : public AmArg {
     int queueID;
     int proc;
     int thd;
+    size_t last_size;
 #if USE_SET
     SetPair *pairs;
 #else
@@ -56,14 +57,14 @@ struct BulkPairCheckArg : public AmArg {
 };
 
 
-PairCheckGlobal::PairCheckGlobal(int thd)
+PairCheckGlobalServer::PairCheckGlobalServer(int thd)
     :   PairCheck()
     ,   mutex()
     ,   thd(thd)
     ,   bulk_try_check()
     ,   bulk_check_complete()
-    ,   s_pairs()
     ,   dispatcher()
+    ,   last_size(0)
     ,   server_response(0)
 {
     bulk_try_check = theAm().amRegister(
@@ -82,20 +83,21 @@ PairCheckGlobal::PairCheckGlobal(int thd)
 }
 
 
-PairCheckGlobal::~PairCheckGlobal()
+PairCheckGlobalServer::~PairCheckGlobalServer()
 {
 }
 
 
 #if USE_SET
-SetPair PairCheckGlobal::check(const SetPair &new_pairs)
+SetPair PairCheckGlobalServer::check(const SetPair &new_pairs)
 {
     SetPair ret;
     int proc = theTwoSided().getProcRank().toInt();
+    int nprocs = theTwoSided().numProcRanks().toInt();
     int nworkers = theTwoSided().numProcRanks().toInt()*NUM_WORKERS;
 
 #if DEBUG
-    cout << "PairCheckGlobal::check begin"
+    cout << "PairCheckGlobalServer::check begin"
         << " rank=" << proc
         << " thd=" << thd
         << " trank=" << trank(thd)
@@ -109,7 +111,7 @@ SetPair PairCheckGlobal::check(const SetPair &new_pairs)
             it!=new_pairs.end(); ++it) {
         unsigned long k_pair[2] = {it->first,it->second};
         unsigned long index = k_combination2_inv(k_pair);
-        int owner = index % nworkers;
+        int owner = index % nprocs;
         pairs_parted[owner].push_back(*it);
     }
 
@@ -134,10 +136,10 @@ SetPair PairCheckGlobal::check(const SetPair &new_pairs)
             server_response += 1;
         }
 #endif
-        theAm().amPut(owner / NUM_WORKERS, msg, bulk_try_check, lReq);
+        theAm().amPut(owner, msg, bulk_try_check, lReq);
         dispatcher.registerCodelet(lReq);
 #if DEBUG
-        cout << "PairCheckGlobal::check send"
+        cout << "PairCheckGlobalServer::check send"
             << " rank=" << proc
             << " thd=" << thd
             << " trank=" << trank(thd)
@@ -149,7 +151,7 @@ SetPair PairCheckGlobal::check(const SetPair &new_pairs)
     }
 
 #if DEBUG
-    cout << "PairCheckGlobal::check waiting"
+    cout << "PairCheckGlobalServer::check waiting"
         << " rank=" << proc
         << " thd=" << thd
         << " trank=" << trank(thd)
@@ -173,7 +175,7 @@ SetPair PairCheckGlobal::check(const SetPair &new_pairs)
     assert(server_response == 0);
     
 #if DEBUG
-    cout << "PairCheckGlobal::check end"
+    cout << "PairCheckGlobalServer::check end"
         << " rank=" << proc
         << " thd=" << thd
         << " trank=" << trank(thd)
@@ -182,7 +184,7 @@ SetPair PairCheckGlobal::check(const SetPair &new_pairs)
     return ret;
 }
 #else
-SetPair PairCheckGlobal::check(const SetPair &new_pairs)
+SetPair PairCheckGlobalServer::check(const SetPair &new_pairs)
 {
     VecPair new_pairs_as_vec(new_pairs.begin(), new_pairs.end());
     VecPair ret_pairs_as_vec = check(new_pairs_as_vec);
@@ -192,21 +194,22 @@ SetPair PairCheckGlobal::check(const SetPair &new_pairs)
 
 
 #if USE_SET
-VecPair PairCheckGlobal::check(const VecPair &new_pairs)
+VecPair PairCheckGlobalServer::check(const VecPair &new_pairs)
 {
     SetPair new_pairs_as_set(new_pairs.begin(), new_pairs.end());
     SetPair ret_pairs_as_set = check(new_pairs_as_set);
     return VecPair(ret_pairs_as_set.begin(), ret_pairs_as_set.end());
 }
 #else
-VecPair PairCheckGlobal::check(const VecPair &new_pairs)
+VecPair PairCheckGlobalServer::check(const VecPair &new_pairs)
 {
     VecPair ret;
     int proc = theTwoSided().getProcRank().toInt();
+    int nprocs = theTwoSided().numProcRanks().toInt();
     int nworkers = theTwoSided().numProcRanks().toInt()*NUM_WORKERS;
 
 #if DEBUG
-    cout << "PairCheckGlobal::check begin"
+    cout << "PairCheckGlobalServer::check begin"
         << " rank=" << proc
         << " thd=" << thd
         << " trank=" << trank(thd)
@@ -220,7 +223,7 @@ VecPair PairCheckGlobal::check(const VecPair &new_pairs)
             it!=new_pairs.end(); ++it) {
         unsigned long k_pair[2] = {it->first,it->second};
         unsigned long index = k_combination2_inv(k_pair);
-        int owner = index % nworkers;
+        int owner = index % nprocs;
         pairs_parted[owner].push_back(*it);
     }
 
@@ -245,10 +248,10 @@ VecPair PairCheckGlobal::check(const VecPair &new_pairs)
             server_response += 1;
         }
 #endif
-        theAm().amPut(owner / NUM_WORKERS, msg, bulk_try_check, lReq);
+        theAm().amPut(owner, msg, bulk_try_check, lReq);
         dispatcher.registerCodelet(lReq);
 #if DEBUG
-        cout << "PairCheckGlobal::check send"
+        cout << "PairCheckGlobalServer::check send"
             << " rank=" << proc
             << " thd=" << thd
             << " trank=" << trank(thd)
@@ -260,7 +263,7 @@ VecPair PairCheckGlobal::check(const VecPair &new_pairs)
     }
 
 #if DEBUG
-    cout << "PairCheckGlobal::check waiting"
+    cout << "PairCheckGlobalServer::check waiting"
         << " rank=" << proc
         << " thd=" << thd
         << " trank=" << trank(thd)
@@ -284,7 +287,7 @@ VecPair PairCheckGlobal::check(const VecPair &new_pairs)
     assert(server_response == 0);
     
 #if DEBUG
-    cout << "PairCheckGlobal::check end"
+    cout << "PairCheckGlobalServer::check end"
         << " rank=" << proc
         << " thd=" << thd
         << " trank=" << trank(thd)
@@ -295,21 +298,22 @@ VecPair PairCheckGlobal::check(const VecPair &new_pairs)
 #endif
 
 
-size_t PairCheckGlobal::size()
+size_t PairCheckGlobalServer::size()
 {
 #if defined(THREADED)
     LockGuard<PthreadMutex> guard(mutex);
 #endif
-    return s_pairs.size();
+    return last_size;
 }
 
 
-void PairCheckGlobal::bulk_try_check_function(const AmContext * const context)
+void PairCheckGlobalServer::bulk_try_check_function(const AmContext * const context)
 {
+    static SetPair s_pairs;
     BulkPairCheckArg &arg = *reinterpret_cast<BulkPairCheckArg*>(context->arg);
-    PairCheckGlobal &checker = *theRegistry().lookup<PairCheckGlobal*>(NEXT_ID+arg.queueID);
+    PairCheckGlobalServer &checker = *theRegistry().lookup<PairCheckGlobalServer*>(NEXT_ID+arg.queueID);
 #if DEBUG
-    cout << "PairCheckGlobal::bulk_try_check_function"
+    cout << "PairCheckGlobalServer::bulk_try_check_function"
         << " trank=" << trank(checker.thd)
         << " arg.proc=" << arg.proc
         << " arg.thd=" << arg.thd
@@ -328,18 +332,14 @@ void PairCheckGlobal::bulk_try_check_function(const AmContext * const context)
     assert(arg.dlen % sizeof(Pair) == 0);
     Pair *pairs_to_return = new Pair[n];
     int size = 0;
-    {
-#if defined(THREADED)
-        LockGuard<PthreadMutex> guard(checker.mutex);
-#endif
-        for (int i=0; i<n; ++i) {
-            pair<SetPair::iterator,bool> result =
-                checker.s_pairs.insert(pairs_to_check[i]);
-            if (result.second) {
-                pairs_to_return[size++] = pairs_to_check[i];
-            }
+    for (int i=0; i<n; ++i) {
+        pair<SetPair::iterator,bool> result =
+            s_pairs.insert(pairs_to_check[i]);
+        if (result.second) {
+            pairs_to_return[size++] = pairs_to_check[i];
         }
     }
+    msg.last_size = s_pairs.size();
     if (size > 0) {
         msg.data = pairs_to_return;
         msg.dlen = sizeof(Pair) * size;
@@ -358,12 +358,12 @@ void PairCheckGlobal::bulk_try_check_function(const AmContext * const context)
 }
 
 
-void PairCheckGlobal::bulk_try_check_local_function(const AmContext * const context)
+void PairCheckGlobalServer::bulk_try_check_local_function(const AmContext * const context)
 {
     BulkPairCheckArg &arg = *reinterpret_cast<BulkPairCheckArg*>(context->arg);
 #if DEBUG
-    PairCheckGlobal &checker = *theRegistry().lookup<PairCheckGlobal*>(NEXT_ID+arg.queueID);
-    cout << "PairCheckGlobal::bulk_try_check_local_function " << trank(checker.thd) << endl;
+    PairCheckGlobalServer &checker = *theRegistry().lookup<PairCheckGlobalServer*>(NEXT_ID+arg.queueID);
+    cout << "PairCheckGlobalServer::bulk_try_check_local_function " << trank(checker.thd) << endl;
 #endif
     /* don't delete the data since it is internal to a vector */
 #if 0
@@ -382,15 +382,15 @@ void PairCheckGlobal::bulk_try_check_local_function(const AmContext * const cont
 }
 
 
-void PairCheckGlobal::bulk_check_complete_function(const AmContext * const context)
+void PairCheckGlobalServer::bulk_check_complete_function(const AmContext * const context)
 {
     BulkPairCheckArg &arg = *reinterpret_cast<BulkPairCheckArg*>(context->arg);
-    PairCheckGlobal &checker = *theRegistry().lookup<PairCheckGlobal*>(NEXT_ID+arg.queueID);
+    PairCheckGlobalServer &checker = *theRegistry().lookup<PairCheckGlobalServer*>(NEXT_ID+arg.queueID);
 #if defined(THREADED)
     LockGuard<PthreadMutex> guard(checker.mutex);
 #endif
 #if DEBUG
-    cout << "PairCheckGlobal::bulk_check_complete_function " << trank(checker.thd) << endl;
+    cout << "PairCheckGlobalServer::bulk_check_complete_function " << trank(checker.thd) << endl;
 #endif
     assert(checker.server_response >= 1);
     Pair *pairs_to_insert = reinterpret_cast<Pair*>(arg.data);
@@ -401,21 +401,22 @@ void PairCheckGlobal::bulk_check_complete_function(const AmContext * const conte
 #else
     arg.pairs->insert(arg.pairs->end(), pairs_to_insert, pairs_to_insert+n);
 #endif
+    checker.last_size = arg.last_size;
     checker.server_response -= 1;
 #if DEBUG
-    cout << "PairCheckGlobal::bulk_check_complete_function " << trank(checker.thd)
+    cout << "PairCheckGlobalServer::bulk_check_complete_function " << trank(checker.thd)
         << " server_response=" << checker.server_response << endl;
 #endif
     assert(checker.server_response >= 0);
 }
 
 
-void PairCheckGlobal::bulk_check_complete_local_function(const AmContext * const context)
+void PairCheckGlobalServer::bulk_check_complete_local_function(const AmContext * const context)
 {
     BulkPairCheckArg &arg = *reinterpret_cast<BulkPairCheckArg*>(context->arg);
 #if DEBUG
-    PairCheckGlobal &checker = *theRegistry().lookup<PairCheckGlobal*>(NEXT_ID+arg.queueID);
-    cout << "PairCheckGlobal::bulk_check_complete_local_function " << trank(checker.thd) << endl;
+    PairCheckGlobalServer &checker = *theRegistry().lookup<PairCheckGlobalServer*>(NEXT_ID+arg.queueID);
+    cout << "PairCheckGlobalServer::bulk_check_complete_local_function " << trank(checker.thd) << endl;
 #endif
     if (arg.data != NullPtr) {
         assert(arg.dlen > 0);

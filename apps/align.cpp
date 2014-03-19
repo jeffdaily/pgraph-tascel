@@ -40,6 +40,7 @@
 #include "mpix-types.hpp"
 #include "PairCheck.hpp"
 #include "PairCheckGlobal.hpp"
+#include "PairCheckGlobalServer.hpp"
 #include "PairCheckLocal.hpp"
 #include "PairCheckSemiLocal.hpp"
 #include "PairCheckSmp.hpp"
@@ -306,7 +307,7 @@ int main(int argc, char **argv)
                     pair_check[worker] = new PairCheckSemiLocal;
                 }
                 else if (parameters->dup_global) {
-                    pair_check[worker] = new PairCheckGlobal(worker);
+                    pair_check[worker] = new PairCheckGlobalServer(worker);
                 }
                 else {
                     assert(0);
@@ -315,6 +316,7 @@ int main(int argc, char **argv)
         }
     }
 
+    double time_seq = MPI_Wtime();
     if (parameters->distribute_sequences) {
 #if HAVE_ARMCI && ENABLE_ARMCI
         sequences = new SequenceDatabaseArmci(all_argv[1],
@@ -333,6 +335,10 @@ int main(int argc, char **argv)
         sequences = new SequenceDatabaseReplicated(all_argv[1],
                 parameters->memory_sequences, pgraph::comm, delimiter);
     }
+    time_seq = MPI_Wtime() - time_seq;
+    if (0 == rank) {
+        cout << "time sequence db open " << time_seq << endl;
+    }
 
     local_data->sequences = sequences;
     local_data->tbl = new cell_t**[NUM_WORKERS];
@@ -347,12 +353,17 @@ int main(int argc, char **argv)
     if (parameters->use_tree
             || parameters->use_tree_dynamic
             || parameters->use_tree_hybrid) {
+        double t = MPI_Wtime();
 #if HAVE_ARMCI && ENABLE_ARMCI
         suffix_buckets = new SuffixBucketsArmci(sequences, *parameters, pgraph::comm);
 #else
         suffix_buckets = new SuffixBucketsTascel(sequences, *parameters, pgraph::comm);
 #endif
         local_data->suffix_buckets = suffix_buckets;
+        t = MPI_Wtime() - t;
+        if (0 == rank) {
+            cout << "time suffix buckets creation " << t << endl;
+        }
     }
 
     /* how many combinations of sequences are there? */
@@ -955,7 +966,11 @@ static unsigned long process_tree(unsigned long /*bid*/, Bucket *bucket, local_d
 
     if (NULL != bucket->suffixes) {
         double t;
+#if USE_SET
         set<pair<size_t,size_t> > local_pairs;
+#else
+        vector<pair<size_t,size_t> > local_pairs;
+#endif
 
         assert(bucket->size > 0);
 
@@ -1000,8 +1015,12 @@ static unsigned long process_tree(unsigned long /*bid*/, Bucket *bucket, local_d
         assert(local_pairs.size()<((unsigned long)(utcs[worker]->capacity()-utcs[worker]->size())));
 
         /* populate task queue */
-        for (set<pair<size_t,size_t> >::iterator it=local_pairs.begin();
-                it!=local_pairs.end(); ++it) {
+#if USE_SET
+        set<pair<size_t,size_t> >::iterator it;
+#else
+        vector<pair<size_t,size_t> >::iterator it;
+#endif
+        for (it=local_pairs.begin(); it!=local_pairs.end(); ++it) {
             task_description_two desc;
             desc.id1 = it->first;
             desc.id2 = it->second;
