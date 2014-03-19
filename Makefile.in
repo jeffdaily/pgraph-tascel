@@ -80,11 +80,13 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = apps/align$(EXEEXT) $(am__EXEEXT_1)
-noinst_PROGRAMS = tests/test_combinations$(EXEEXT) \
+noinst_PROGRAMS = $(am__EXEEXT_2) tests/test_combinations$(EXEEXT) \
 	tests/test_parser$(EXEEXT) \
-	tests/test_stl_container_performance$(EXEEXT)
+	tests/test_stl_container_performance$(EXEEXT) $(am__EXEEXT_2)
 check_PROGRAMS = tests/test_mpi$(EXEEXT)
-@HAVE_SSE2_TRUE@am__append_1 = -I$(top_srcdir)/contrib/Complete-Striped-Smith-Waterman-Library/src
+@HAVE_SSE2_TRUE@am__append_1 = -I$(top_srcdir)/contrib/Complete-Striped-Smith-Waterman-Library/src \
+@HAVE_SSE2_TRUE@	-I$(top_srcdir)/contrib/fasta-36.3.6d/src \
+@HAVE_SSE2_TRUE@	-DSW_SSE2
 @HAVE_ARMCI_TRUE@am__append_2 = src/SuffixBucketsArmci.cpp \
 @HAVE_ARMCI_TRUE@	src/SuffixBucketsArmci.hpp \
 @HAVE_ARMCI_TRUE@	src/SequenceDatabaseArmci.cpp \
@@ -92,8 +94,21 @@ check_PROGRAMS = tests/test_mpi$(EXEEXT)
 @HAVE_SSE2_TRUE@am__append_3 = contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.c \
 @HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.h \
 @HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.cpp \
-@HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h
+@HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h \
+@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/aln_structs.h \
+@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/defs.h \
+@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/dropgsw2.h \
+@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/global_sse2.c \
+@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/global_sse2.h \
+@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/glocal_sse2.c \
+@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/glocal_sse2.h \
+@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/param.h \
+@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/rstruct.h \
+@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/smith_waterman_sse2.c \
+@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/smith_waterman_sse2.h
 @HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@am__append_4 = apps/ssw_test
+@HAVE_SSE2_TRUE@am__append_5 = tests/test_fasta_align
+@HAVE_SSE2_TRUE@am__append_6 = tests/test_fasta_align
 subdir = .
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) \
@@ -149,6 +164,7 @@ am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
 	src/DupStats.hpp src/EdgeResult.hpp src/mpix.hpp \
 	src/mpix-inl.hpp src/mpix-types.hpp src/PairCheck.hpp \
 	src/PairCheckGlobal.cpp src/PairCheckGlobal.hpp \
+	src/PairCheckGlobalServer.cpp src/PairCheckGlobalServer.hpp \
 	src/PairCheckLocal.hpp src/PairCheckSemiLocal.hpp \
 	src/PairCheckSmp.hpp src/Parameters.cpp src/Parameters.hpp \
 	src/pthread_fixes.h src/Sequence.cpp src/Sequence.hpp \
@@ -164,16 +180,31 @@ am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.c \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.h \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.cpp \
-	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h
+	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h \
+	contrib/fasta-36.3.6d/src/aln_structs.h \
+	contrib/fasta-36.3.6d/src/defs.h \
+	contrib/fasta-36.3.6d/src/dropgsw2.h \
+	contrib/fasta-36.3.6d/src/global_sse2.c \
+	contrib/fasta-36.3.6d/src/global_sse2.h \
+	contrib/fasta-36.3.6d/src/glocal_sse2.c \
+	contrib/fasta-36.3.6d/src/glocal_sse2.h \
+	contrib/fasta-36.3.6d/src/param.h \
+	contrib/fasta-36.3.6d/src/rstruct.h \
+	contrib/fasta-36.3.6d/src/smith_waterman_sse2.c \
+	contrib/fasta-36.3.6d/src/smith_waterman_sse2.h
 @HAVE_ARMCI_TRUE@am__objects_1 = src/SuffixBucketsArmci.lo \
 @HAVE_ARMCI_TRUE@	src/SequenceDatabaseArmci.lo
 @HAVE_SSE2_TRUE@am__objects_2 = contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.lo \
-@HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.lo
+@HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.lo \
+@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/global_sse2.lo \
+@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/glocal_sse2.lo \
+@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/smith_waterman_sse2.lo
 am_libpgraph_la_OBJECTS = src/alignment.lo src/Bootstrap.lo \
-	src/combinations.lo src/PairCheckGlobal.lo src/Parameters.lo \
-	src/Sequence.lo src/SequenceDatabaseReplicated.lo \
-	src/SuffixBuckets.lo src/SuffixBucketsTascel.lo \
-	src/SuffixTree.lo $(am__objects_1) $(am__objects_2)
+	src/combinations.lo src/PairCheckGlobal.lo \
+	src/PairCheckGlobalServer.lo src/Parameters.lo src/Sequence.lo \
+	src/SequenceDatabaseReplicated.lo src/SuffixBuckets.lo \
+	src/SuffixBucketsTascel.lo src/SuffixTree.lo $(am__objects_1) \
+	$(am__objects_2)
 libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -212,6 +243,7 @@ am_libyaml_cpp_la_OBJECTS = contrib/yaml-cpp-0.5.1/src/binary.lo \
 libyaml_cpp_la_OBJECTS = $(am_libyaml_cpp_la_OBJECTS)
 @HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@am__EXEEXT_1 = apps/ssw_test$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)"
+@HAVE_SSE2_TRUE@am__EXEEXT_2 = tests/test_fasta_align$(EXEEXT)
 PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
 am_apps_align_OBJECTS = apps/align.$(OBJEXT)
 apps_align_OBJECTS = $(am_apps_align_OBJECTS)
@@ -236,6 +268,12 @@ tests_test_combinations_OBJECTS =  \
 	$(am_tests_test_combinations_OBJECTS)
 tests_test_combinations_LDADD = $(LDADD)
 tests_test_combinations_DEPENDENCIES = libpgraph.la \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) libyaml-cpp.la
+am_tests_test_fasta_align_OBJECTS = tests/test_fasta_align.$(OBJEXT)
+tests_test_fasta_align_OBJECTS = $(am_tests_test_fasta_align_OBJECTS)
+tests_test_fasta_align_LDADD = $(LDADD)
+tests_test_fasta_align_DEPENDENCIES = libpgraph.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) libyaml-cpp.la
 am_tests_test_mpi_OBJECTS = tests/test_mpi.$(OBJEXT)
@@ -311,13 +349,15 @@ am__v_CXXLD_1 =
 SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
 	$(libpgraph_la_SOURCES) $(libyaml_cpp_la_SOURCES) \
 	$(apps_align_SOURCES) $(apps_ssw_test_SOURCES) \
-	$(tests_test_combinations_SOURCES) $(tests_test_mpi_SOURCES) \
+	$(tests_test_combinations_SOURCES) \
+	$(tests_test_fasta_align_SOURCES) $(tests_test_mpi_SOURCES) \
 	$(tests_test_parser_SOURCES) \
 	$(tests_test_stl_container_performance_SOURCES)
 DIST_SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
 	$(am__libpgraph_la_SOURCES_DIST) $(libyaml_cpp_la_SOURCES) \
 	$(apps_align_SOURCES) $(apps_ssw_test_SOURCES) \
-	$(tests_test_combinations_SOURCES) $(tests_test_mpi_SOURCES) \
+	$(tests_test_combinations_SOURCES) \
+	$(tests_test_fasta_align_SOURCES) $(tests_test_mpi_SOURCES) \
 	$(tests_test_parser_SOURCES) \
 	$(tests_test_stl_container_performance_SOURCES)
 am__can_run_installinfo = \
@@ -528,6 +568,7 @@ libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
 	src/DupStats.hpp src/EdgeResult.hpp src/mpix.hpp \
 	src/mpix-inl.hpp src/mpix-types.hpp src/PairCheck.hpp \
 	src/PairCheckGlobal.cpp src/PairCheckGlobal.hpp \
+	src/PairCheckGlobalServer.cpp src/PairCheckGlobalServer.hpp \
 	src/PairCheckLocal.hpp src/PairCheckSemiLocal.hpp \
 	src/PairCheckSmp.hpp src/Parameters.cpp src/Parameters.hpp \
 	src/pthread_fixes.h src/Sequence.cpp src/Sequence.hpp \
@@ -637,6 +678,7 @@ apps_ssw_test_LDADD = $(LDADD) $(ZLIB_LIBS)
 tests_test_combinations_SOURCES = tests/test_combinations.cpp
 tests_test_parser_SOURCES = tests/test_parser.cpp
 tests_test_stl_container_performance_SOURCES = tests/test_stl_container_performance.cpp
+tests_test_fasta_align_SOURCES = tests/test_fasta_align.cpp
 libgtest_a_SOURCES = contrib/gtest-1.7.0/src/gtest-all.cc
 libpgtest_a_SOURCES = tests/MpiEnvironment.cpp \
 	tests/MpiEnvironment.hpp tests/StreamPrettyPrinter.cpp \
@@ -751,6 +793,8 @@ src/Bootstrap.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/combinations.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/PairCheckGlobal.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
+src/PairCheckGlobalServer.lo: src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
 src/Parameters.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/Sequence.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/SequenceDatabaseReplicated.lo: src/$(am__dirstamp) \
@@ -774,6 +818,21 @@ contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.lo: contrib/Complete-Str
 	contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/$(am__dirstamp)
 contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.lo: contrib/Complete-Striped-Smith-Waterman-Library/src/$(am__dirstamp) \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/$(am__dirstamp)
+contrib/fasta-36.3.6d/src/$(am__dirstamp):
+	@$(MKDIR_P) contrib/fasta-36.3.6d/src
+	@: > contrib/fasta-36.3.6d/src/$(am__dirstamp)
+contrib/fasta-36.3.6d/src/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) contrib/fasta-36.3.6d/src/$(DEPDIR)
+	@: > contrib/fasta-36.3.6d/src/$(DEPDIR)/$(am__dirstamp)
+contrib/fasta-36.3.6d/src/global_sse2.lo:  \
+	contrib/fasta-36.3.6d/src/$(am__dirstamp) \
+	contrib/fasta-36.3.6d/src/$(DEPDIR)/$(am__dirstamp)
+contrib/fasta-36.3.6d/src/glocal_sse2.lo:  \
+	contrib/fasta-36.3.6d/src/$(am__dirstamp) \
+	contrib/fasta-36.3.6d/src/$(DEPDIR)/$(am__dirstamp)
+contrib/fasta-36.3.6d/src/smith_waterman_sse2.lo:  \
+	contrib/fasta-36.3.6d/src/$(am__dirstamp) \
+	contrib/fasta-36.3.6d/src/$(DEPDIR)/$(am__dirstamp)
 
 libpgraph.la: $(libpgraph_la_OBJECTS) $(libpgraph_la_DEPENDENCIES) $(EXTRA_libpgraph_la_DEPENDENCIES) 
 	$(AM_V_CXXLD)$(CXXLINK)  $(libpgraph_la_OBJECTS) $(libpgraph_la_LIBADD) $(LIBS)
@@ -970,6 +1029,12 @@ tests/test_combinations.$(OBJEXT): tests/$(am__dirstamp) \
 tests/test_combinations$(EXEEXT): $(tests_test_combinations_OBJECTS) $(tests_test_combinations_DEPENDENCIES) $(EXTRA_tests_test_combinations_DEPENDENCIES) tests/$(am__dirstamp)
 	@rm -f tests/test_combinations$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_combinations_OBJECTS) $(tests_test_combinations_LDADD) $(LIBS)
+tests/test_fasta_align.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+
+tests/test_fasta_align$(EXEEXT): $(tests_test_fasta_align_OBJECTS) $(tests_test_fasta_align_DEPENDENCIES) $(EXTRA_tests_test_fasta_align_DEPENDENCIES) tests/$(am__dirstamp)
+	@rm -f tests/test_fasta_align$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_fasta_align_OBJECTS) $(tests_test_fasta_align_LDADD) $(LIBS)
 tests/test_mpi.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 
@@ -994,6 +1059,8 @@ mostlyclean-compile:
 	-rm -f apps/*.$(OBJEXT)
 	-rm -f contrib/Complete-Striped-Smith-Waterman-Library/src/*.$(OBJEXT)
 	-rm -f contrib/Complete-Striped-Smith-Waterman-Library/src/*.lo
+	-rm -f contrib/fasta-36.3.6d/src/*.$(OBJEXT)
+	-rm -f contrib/fasta-36.3.6d/src/*.lo
 	-rm -f contrib/gtest-1.7.0/src/*.$(OBJEXT)
 	-rm -f contrib/yaml-cpp-0.5.1/src/*.$(OBJEXT)
 	-rm -f contrib/yaml-cpp-0.5.1/src/*.lo
@@ -1010,6 +1077,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/ssw.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/ssw_cpp.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/fasta-36.3.6d/src/$(DEPDIR)/global_sse2.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/fasta-36.3.6d/src/$(DEPDIR)/glocal_sse2.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/fasta-36.3.6d/src/$(DEPDIR)/smith_waterman_sse2.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/gtest-1.7.0/src/$(DEPDIR)/gtest-all.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/binary.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/convert.Plo@am__quote@
@@ -1042,6 +1112,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR)/graphbuilderadapter.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Bootstrap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/PairCheckGlobal.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/PairCheckGlobalServer.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Parameters.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/Sequence.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabaseArmci.Plo@am__quote@
@@ -1055,6 +1126,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/MpiEnvironment.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/StreamPrettyPrinter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_combinations.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_fasta_align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_mpi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_stl_container_performance.Po@am__quote@
@@ -1138,6 +1210,7 @@ clean-libtool:
 	-rm -rf .libs _libs
 	-rm -rf apps/.libs apps/_libs
 	-rm -rf contrib/Complete-Striped-Smith-Waterman-Library/src/.libs contrib/Complete-Striped-Smith-Waterman-Library/src/_libs
+	-rm -rf contrib/fasta-36.3.6d/src/.libs contrib/fasta-36.3.6d/src/_libs
 	-rm -rf contrib/yaml-cpp-0.5.1/src/.libs contrib/yaml-cpp-0.5.1/src/_libs
 	-rm -rf contrib/yaml-cpp-0.5.1/src/contrib/.libs contrib/yaml-cpp-0.5.1/src/contrib/_libs
 	-rm -rf src/.libs src/_libs
@@ -1399,6 +1472,8 @@ distclean-generic:
 	-rm -f apps/$(am__dirstamp)
 	-rm -f contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/$(am__dirstamp)
 	-rm -f contrib/Complete-Striped-Smith-Waterman-Library/src/$(am__dirstamp)
+	-rm -f contrib/fasta-36.3.6d/src/$(DEPDIR)/$(am__dirstamp)
+	-rm -f contrib/fasta-36.3.6d/src/$(am__dirstamp)
 	-rm -f contrib/gtest-1.7.0/src/$(DEPDIR)/$(am__dirstamp)
 	-rm -f contrib/gtest-1.7.0/src/$(am__dirstamp)
 	-rm -f contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
@@ -1421,7 +1496,7 @@ clean-am: clean-binPROGRAMS clean-checkLIBRARIES clean-checkPROGRAMS \
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf apps/$(DEPDIR) contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR) contrib/gtest-1.7.0/src/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf apps/$(DEPDIR) contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR) contrib/fasta-36.3.6d/src/$(DEPDIR) contrib/gtest-1.7.0/src/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -1469,7 +1544,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf apps/$(DEPDIR) contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR) contrib/gtest-1.7.0/src/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf apps/$(DEPDIR) contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR) contrib/fasta-36.3.6d/src/$(DEPDIR) contrib/gtest-1.7.0/src/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

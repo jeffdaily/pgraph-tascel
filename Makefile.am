@@ -19,6 +19,8 @@ AM_CPPFLAGS += $(GMP_CPPFLAGS)
 AM_CPPFLAGS += -I$(top_srcdir)/src
 if HAVE_SSE2
 AM_CPPFLAGS += -I$(top_srcdir)/contrib/Complete-Striped-Smith-Waterman-Library/src
+AM_CPPFLAGS += -I$(top_srcdir)/contrib/fasta-36.3.6d/src
+AM_CPPFLAGS += -DSW_SSE2
 endif
 AM_CPPFLAGS += -I$(top_srcdir)/contrib/boost_1_55_0
 AM_CPPFLAGS += -I$(top_srcdir)/contrib/gtest-1.7.0
@@ -63,6 +65,8 @@ libpgraph_la_SOURCES += src/mpix-types.hpp
 libpgraph_la_SOURCES += src/PairCheck.hpp
 libpgraph_la_SOURCES += src/PairCheckGlobal.cpp
 libpgraph_la_SOURCES += src/PairCheckGlobal.hpp
+libpgraph_la_SOURCES += src/PairCheckGlobalServer.cpp
+libpgraph_la_SOURCES += src/PairCheckGlobalServer.hpp
 libpgraph_la_SOURCES += src/PairCheckLocal.hpp
 libpgraph_la_SOURCES += src/PairCheckSemiLocal.hpp
 libpgraph_la_SOURCES += src/PairCheckSmp.hpp
@@ -97,6 +101,17 @@ libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.
 libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.h
 libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.cpp
 libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h
+libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/aln_structs.h
+libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/defs.h
+libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/dropgsw2.h
+libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/global_sse2.c
+libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/global_sse2.h
+libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/glocal_sse2.c
+libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/glocal_sse2.h
+libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/param.h
+libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/rstruct.h
+libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/smith_waterman_sse2.c
+libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/smith_waterman_sse2.h
 endif
 
 noinst_LTLIBRARIES += libyaml-cpp.la
@@ -198,6 +213,7 @@ if HAVE_SSE2
 if HAVE_ZLIB
 bin_PROGRAMS += apps/ssw_test
 endif
+noinst_PROGRAMS += tests/test_fasta_align
 endif
 apps_ssw_test_SOURCES =
 apps_ssw_test_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/main.c
@@ -210,10 +226,14 @@ apps_ssw_test_LDADD = $(LDADD) $(ZLIB_LIBS)
 noinst_PROGRAMS += tests/test_combinations
 noinst_PROGRAMS += tests/test_parser
 noinst_PROGRAMS += tests/test_stl_container_performance
+if HAVE_SSE2
+noinst_PROGRAMS += tests/test_fasta_align
+endif
 
 tests_test_combinations_SOURCES            = tests/test_combinations.cpp
 tests_test_parser_SOURCES                  = tests/test_parser.cpp
 tests_test_stl_container_performance_SOURCES = tests/test_stl_container_performance.cpp
+tests_test_fasta_align_SOURCES             = tests/test_fasta_align.cpp
 
 check_LIBRARIES += libgtest.a
 libgtest_a_SOURCES = contrib/gtest-1.7.0/src/gtest-all.cc
