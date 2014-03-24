@@ -954,7 +954,7 @@ static void alignment_task(
 }
 
 
-static unsigned long process_tree(unsigned long /*bid*/, Bucket *bucket, local_data_t *local_data, int worker)
+static unsigned long process_tree(unsigned long bid, Bucket *bucket, local_data_t *local_data, int worker)
 {
     unsigned long count = 0;
     SequenceDatabase *sequences = local_data->sequences;
@@ -963,6 +963,7 @@ static unsigned long process_tree(unsigned long /*bid*/, Bucket *bucket, local_d
     TreeStats *stats_tree = local_data->stats_tree;
     DupStats *stats_dup = local_data->stats_dup;
     PairCheck **pair_check = local_data->pair_check;
+    size_t cutoff = parameters->bucket_cutoff*local_data->suffix_buckets->stats_bucket_sizes().stddev();
 
     if (NULL != bucket->suffixes) {
         double t;
@@ -973,6 +974,16 @@ static unsigned long process_tree(unsigned long /*bid*/, Bucket *bucket, local_d
 #endif
 
         assert(bucket->size > 0);
+
+        if (bucket->size > cutoff) {
+            cout << "Skipping enormous tree "
+                << local_data->suffix_buckets->bucket_kmer(bid)
+                << " size=" << bucket->size
+                << " " << parameters->bucket_cutoff << "*"
+                << local_data->suffix_buckets->stats_bucket_sizes().stddev()
+                << "=" << cutoff << endl;
+            return 0;
+        }
 
         if (stats_tree[worker].time_first == 0.0) {
             stats_tree[worker].time_first = MPI_Wtime();

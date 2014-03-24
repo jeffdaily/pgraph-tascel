@@ -59,6 +59,7 @@ public:
     static const string KEY_DUPLICATES_SEMILOCAL;
     static const string KEY_DUPLICATES_SMP;
     static const string KEY_DUPLICATES_GLOBAL;
+    static const string KEY_BUCKET_CUTOFF;
 
     /* Defaults */
     static const int DEF_ALIGN_OVER_LONGER_SEQUENCE;
@@ -88,6 +89,7 @@ public:
     static const bool DEF_DUPLICATES_SEMILOCAL;
     static const bool DEF_DUPLICATES_SMP;
     static const bool DEF_DUPLICATES_GLOBAL;
+    static const size_t DEF_BUCKET_CUTOFF;
 
     /**
      * Constructs empty (default) parameters.
@@ -147,6 +149,7 @@ public:
     bool dup_semilocal; /**< whether to check for duplicate pairs across invocations */
     bool dup_smp;       /**< whether to check for duplicate pairs across invocations, thread safe*/
     bool dup_global;    /**< whether to check for duplicate pairs distributed */
+    size_t bucket_cutoff; /**< how many stddev above bucket size to discard */
 };
 
 ostream& operator<< (ostream &os, const Parameters &p);

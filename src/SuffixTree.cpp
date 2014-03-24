@@ -233,14 +233,12 @@ void SuffixTree::compute_lset(Suffix *suffixes, Suffix **lset)
         q = p->next;
         if (p->pid == 0) {
             lIndex = alphabet_table[BEGIN];
-            p->next = lset[lIndex];
-            lset[lIndex] = p;
         }
         else {
-            lIndex = (*sequences)[p->sid][p->pid - 1] - 'A';
-            p->next = lset[lIndex];
-            lset[lIndex] = p;
+            lIndex = alphabet_table[(*sequences)[p->sid][p->pid-1]];
         }
+        p->next = lset[lIndex];
+        lset[lIndex] = p;
     }
 }
 

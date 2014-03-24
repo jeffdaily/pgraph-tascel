@@ -15,6 +15,8 @@
 #include <string>
 #include <vector>
 
+#include "Stats.hpp"
+
 using ::std::size_t;
 using ::std::string;
 using ::std::vector;
@@ -121,6 +123,11 @@ class SuffixBuckets
          * @return the size of this SuffixBuckets instance
          */
         virtual size_t size_nonempty() const = 0;
+
+        /**
+         * Returns the (global) Stats for the bucket sizes.
+         */
+        virtual Stats stats_bucket_sizes() const = 0;
 
         /**
          * Returns Bucket index for the given Suffix string.

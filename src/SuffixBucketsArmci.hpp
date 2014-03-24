@@ -11,6 +11,7 @@
 
 #include <mpi.h>
 
+#include <cassert>
 #include <cstddef>
 
 #include <tascel.h>
@@ -53,6 +54,9 @@ class SuffixBucketsArmci : public SuffixBuckets
 
         /** @copydoc SuffixBuckets::size_nonempty() */
         virtual size_t size_nonempty() const { return n_nonempty; }
+
+        /** @copydoc SuffixBuckets::stats_bucket_sizes() */
+        virtual Stats stats_bucket_sizes() const { assert(0); }
 
     private:
         /** For indexing into locally-stored Suffix allocation. */

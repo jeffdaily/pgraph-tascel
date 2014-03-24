@@ -49,6 +49,7 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
     ,   owned_buckets()
 {
     size_t n_suffixes = 0;
+    size_t n_suffixes_skipped = 0;
     size_t suffix_index = 0;
     size_t n_seq = 0;
     size_t remainder = 0;
@@ -115,10 +116,14 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
         (*sequences)[i].get_sequence(sequence_data, sequence_length);
         stop_index = sequence_length - param.window_size - 1;
 
-        if (sequence_length <= ((unsigned)param.window_size)) continue;
+        if (sequence_length <= ((unsigned)param.window_size)) {
+            n_suffixes_skipped += 1;
+            continue;
+        }
 
         for (size_t j = 0; j <= stop_index; ++j) {
             if (filter_out(sequence_data + j)) {
+                n_suffixes_skipped += 1;
 #if 0
                 printf("[%zu] filtered out '%s'\n",
                         comm_rank, string(sequence_data+j,param.window_size).c_str());
@@ -135,6 +140,9 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
         }
     }
     initial_suffixes.resize(suffix_index);
+#if DEBUG || 1
+    mpix::print_sync("n_suffixes_skipped", n_suffixes_skipped, comm);
+#endif
 
 #if DEBUG
     mpix::print_sync("suffix_index", suffix_index, comm);
@@ -158,11 +166,11 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
     mpix::print_sync("desitinations", desitinations, comm);
 #endif
 #if DEBUG
-    mpix::print_sync("amount_to_send", vec_to_string(amount_to_send), comm);
+    mpix::print_sync("amount_to_send", amount_to_send, comm);
 #endif
     mpix::alltoall(amount_to_send, amount_to_recv, comm);
 #if DEBUG
-    mpix::print_sync("amount_to_recv", vec_to_string(amount_to_recv), comm);
+    mpix::print_sync("amount_to_recv", amount_to_recv, comm);
 #endif
 
     int total_amount_to_send = 0;
@@ -213,14 +221,14 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
         recv_displacements[i] = recv_displacements[i-1] + amount_to_recv[i-1];
     }
 #if DEBUG
-    mpix::print_sync("send_displacements", vec_to_string(send_displacements), comm);
-    mpix::print_sync("recv_displacements", vec_to_string(recv_displacements), comm);
+    mpix::print_sync("send_displacements", send_displacements, comm);
+    mpix::print_sync("recv_displacements", recv_displacements, comm);
 #endif
 
     /* need to alltoallv the buckets to the owning processes */
     MPI_Datatype SuffixType = mpix::get_mpi_datatype<Suffix>(initial_suffixes[0]);
 #if DEBUG
-    mpix::print_sync("initial_suffixes", vec_to_string(initial_suffixes), comm);
+    mpix::print_sync("initial_suffixes", initial_suffixes, comm);
 #endif
     ierr = MPI_Alltoallv(
             &initial_suffixes[0], &amount_to_send[0],
@@ -229,7 +237,7 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
             &recv_displacements[0], SuffixType, comm);
     assert(MPI_SUCCESS == ierr);
 #if DEBUG
-    mpix::print_sync("suffixes", arr_to_string(suffixes, total_amount_to_recv), comm);
+    mpix::print_sync("suffixes", suffixes, total_amount_to_recv, comm);
 #endif
 
     size_t bucket_size_total = 0;
@@ -282,6 +290,44 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
 #if DEBUG
     mpix::print_sync("bucket_size_total", bucket_size_total, comm);
 #endif
+#if DEBUG
+    mpix::print_sync("n_nonempty", n_nonempty, comm);
+#endif
+
+    /* bucket sizes stats */
+    for (size_t i=0; i<buckets_size; ++i) {
+        buckets_stats.push_back(buckets[i].size);
+    }
+    {
+        Stats *all_stats = new Stats[comm_size];
+        mpix::check(MPI_Gather(&buckets_stats, sizeof(Stats), MPI_CHAR,
+                    all_stats, sizeof(Stats), MPI_CHAR,
+                    0, comm));
+        if (0 == comm_rank) {
+            Stats combined_stats;
+            cout << Stats::header() << endl;
+            for (size_t i=0; i<comm_size; ++i) {
+                combined_stats.push_back(all_stats[i]);
+                cout << all_stats[i] << endl;
+            }
+            buckets_stats = combined_stats;
+        }
+        mpix::bcast(buckets_stats, 0, comm);
+        delete [] all_stats;
+    }
+    {
+        Stats *all_stats = new Stats[comm_size];
+        mpix::check(MPI_Gather(&buckets_stats, sizeof(Stats), MPI_CHAR,
+                    all_stats, sizeof(Stats), MPI_CHAR,
+                    0, comm));
+        if (0 == comm_rank) {
+            cout << Stats::header() << endl;
+            for (size_t i=0; i<comm_size; ++i) {
+                cout << all_stats[i] << endl;
+            }
+        }
+        delete [] all_stats;
+    }
 }
 
 

@@ -55,6 +55,9 @@ class SuffixBucketsTascel : public SuffixBuckets
         /** @copydoc SuffixBuckets::size_nonempty() */
         virtual size_t size_nonempty() const { return n_nonempty; }
 
+        /** @copydoc SuffixBuckets::stats_bucket_sizes() */
+        virtual Stats stats_bucket_sizes() const { return buckets_stats; }
+
     private:
         /** For indexing into locally-stored Suffix allocation. */
         struct BucketMeta {
@@ -89,6 +92,7 @@ class SuffixBucketsTascel : public SuffixBuckets
         BucketMeta *buckets;            /**< array of all local buckets */
         size_t buckets_size;            /**< size of local buckets array */
         size_t n_nonempty;              /**< global count of non-empty buckets */
+        Stats buckets_stats;            /**< stats for bucket sizes */
         size_t count_remote_buckets;
         size_t count_remote_suffixes;
         vector<size_t> owned_buckets;

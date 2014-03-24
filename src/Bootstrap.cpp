@@ -9,8 +9,8 @@
 #include "Bootstrap.hpp"
 #include "mpix.hpp"
 
-#define PAUSE_ON_ERROR 0
-#ifdef PAUSE_ON_ERROR
+#define PAUSE_ON_ERROR 1
+#if PAUSE_ON_ERROR
 #include "SigSegvHandler.hpp"
 #endif
 
@@ -32,7 +32,7 @@ bool is_armci_initialized = false;
 
 void initialize(int &argc, char **&argv)
 {
-#ifdef PAUSE_ON_ERROR
+#if PAUSE_ON_ERROR
     TrapSigSegv();
 #endif
 

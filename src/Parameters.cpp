@@ -62,6 +62,7 @@ const string Parameters::KEY_DUPLICATES_LOCAL("DuplicatesLocal");
 const string Parameters::KEY_DUPLICATES_SEMILOCAL("DuplicatesSemiLocal");
 const string Parameters::KEY_DUPLICATES_SMP("DuplicatesSmp");
 const string Parameters::KEY_DUPLICATES_GLOBAL("DuplicatesGlobal");
+const string Parameters::KEY_BUCKET_CUTOFF("BucketCutoff");
 /* Defaults */
 const int Parameters::DEF_ALIGN_OVER_LONGER_SEQUENCE(80);
 const int Parameters::DEF_MATCH_SIMILARITY(40);
@@ -90,6 +91,7 @@ const bool Parameters::DEF_DUPLICATES_LOCAL(true);
 const bool Parameters::DEF_DUPLICATES_SEMILOCAL(false);
 const bool Parameters::DEF_DUPLICATES_SMP(false);
 const bool Parameters::DEF_DUPLICATES_GLOBAL(false);
+const size_t Parameters::DEF_BUCKET_CUTOFF(30);
 
 
 static size_t parse_memory_budget(const string& value)
@@ -178,6 +180,7 @@ Parameters::Parameters()
     , dup_semilocal(DEF_DUPLICATES_SEMILOCAL)
     , dup_smp(DEF_DUPLICATES_SMP)
     , dup_global(DEF_DUPLICATES_GLOBAL)
+    , bucket_cutoff(DEF_BUCKET_CUTOFF)
 {
 }
 
@@ -211,6 +214,7 @@ Parameters::Parameters(const char *parameters_file, MPI_Comm comm)
     , dup_semilocal(DEF_DUPLICATES_SEMILOCAL)
     , dup_smp(DEF_DUPLICATES_SMP)
     , dup_global(DEF_DUPLICATES_GLOBAL)
+    , bucket_cutoff(DEF_BUCKET_CUTOFF)
 {
     parse(parameters_file, comm);
 }
@@ -275,6 +279,8 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
                 DEF_DUPLICATES_SMP);
         dup_global = config[KEY_DUPLICATES_GLOBAL].as<bool>(
                 DEF_DUPLICATES_GLOBAL);
+        bucket_cutoff = config[KEY_BUCKET_CUTOFF].as<size_t>(
+                DEF_BUCKET_CUTOFF);
 
         string val;
         val = config[KEY_MEMORY_WORKER].as<string>("");
@@ -344,6 +350,7 @@ ostream& operator<< (ostream &os, const Parameters &p)
     out << YAML::Key << Parameters::KEY_DUPLICATES_SEMILOCAL << YAML::Value << p.dup_semilocal;
     out << YAML::Key << Parameters::KEY_DUPLICATES_SMP << YAML::Value << p.dup_smp;
     out << YAML::Key << Parameters::KEY_DUPLICATES_GLOBAL << YAML::Value << p.dup_global;
+    out << YAML::Key << Parameters::KEY_BUCKET_CUTOFF << YAML::Value << p.bucket_cutoff;
     out << YAML::EndMap;
     os << out.c_str();
     return os;
