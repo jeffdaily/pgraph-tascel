@@ -392,7 +392,7 @@ cell_t align_local_affine(
 cell_t align_local_affine_ssw(
         const char * const restrict s1, size_t s1_len,
         const char * const restrict s2, size_t s2_len,
-        int open, int gap);
+        int open=-10, int gap=-1);
 
 
 /** @name Alignment Functions

@@ -5,6 +5,7 @@
 #include <cstring>
 #include <iostream>
 
+#include "alignment.hpp"
 #include "blosum/blosum62.h"
 
 /* from fasta36 */
@@ -60,9 +61,14 @@ int main(int argc, char **argv)
 
     /* call into ssw routines */
     the_s_profile = ssw_init(s1_num, s1_len, blosum62__, 24, 2);
-    result = ssw_align(the_s_profile, s2_num, s2_len, -10, -1, 2, 0, 0, s1_len/2);
+    result = ssw_align(the_s_profile, s2_num, s2_len, 10, 1, 2, 0, 0, s1_len/2);
     ::std::cout << result->score1 << ::std::endl;
 
+    ::pgraph::cell_t result_cell = ::pgraph::align_local_affine_ssw(s1, s1_len, s2, s2_len, -10, -1);
+    ::std::cout << result_cell.score
+        << " " << result_cell.matches
+        << " " << result_cell.length
+        << ::std::endl;
 #if 1
     int n0 = s1_len;
     int e;
