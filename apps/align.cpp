@@ -975,6 +975,7 @@ static unsigned long process_tree(unsigned long bid, Bucket *bucket, local_data_
 
         assert(bucket->size > 0);
 
+#if 0
         if (bucket->size > cutoff) {
             cout << "Skipping enormous tree "
                 << local_data->suffix_buckets->bucket_kmer(bid)
@@ -984,6 +985,7 @@ static unsigned long process_tree(unsigned long bid, Bucket *bucket, local_data_
                 << "=" << cutoff << endl;
             return 0;
         }
+#endif
 
         if (stats_tree[worker].time_first == 0.0) {
             stats_tree[worker].time_first = MPI_Wtime();
@@ -1210,6 +1212,29 @@ static unsigned long populate_tasks_tree_hybrid(
 
     utcs[worker] = new UniformTaskCollectionSplit(props, worker);
 
+#define SORT_BUCKETS 1
+#if SORT_BUCKETS
+    vector<pair<size_t,size_t> > size_and_bid;
+    for (size_t i=0; i<my_buckets.size(); ++i) {
+        if ((i%size_t(NUM_WORKERS)) == size_t(worker)) {
+            size_t bid = my_buckets[i];
+            Bucket *bucket = suffix_buckets->get(bid);
+            if (NULL != bucket->suffixes) {
+                size_and_bid.push_back(make_pair(bucket->size,bid));
+            }
+            local_data->suffix_buckets->rem(bucket);
+        }
+    }
+    ::std::sort(size_and_bid.begin(), size_and_bid.end());
+    for (vector<pair<size_t,size_t> >::iterator it=size_and_bid.begin();
+            it!=size_and_bid.end(); ++it) {
+        task_description_two desc;
+        desc.id1 = it->second;
+        desc.id2 = it->second;
+        utcs[worker]->addTask(&desc, sizeof(desc));
+        ++count;
+    }
+#else
     for (size_t i=0; i<my_buckets.size(); ++i) {
         if ((i%size_t(NUM_WORKERS)) == size_t(worker)) {
             size_t bid = my_buckets[i];
@@ -1224,6 +1249,7 @@ static unsigned long populate_tasks_tree_hybrid(
             local_data->suffix_buckets->rem(bucket);
         }
     }
+#endif
 
     return count;
 }
