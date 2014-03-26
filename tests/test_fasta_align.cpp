@@ -76,7 +76,6 @@ int main(int argc, char **argv)
     int i;
     int j;
     int nsq = 24;
-    int l;
     int data;
     int bias;
     unsigned char *  pc;
@@ -174,7 +173,7 @@ int main(int argc, char **argv)
                     if (i >= n0) {
                         data = -bias;
                     } else {
-                        data = blosum62[table[s1[i]]][f] - bias;
+                        data = blosum62[table[unsigned(s1[i])]][f] - bias;
                     }
                     if (data > 255) {
                         printf("Fatal error. data: %d bias: %d, position: %d/%d, "

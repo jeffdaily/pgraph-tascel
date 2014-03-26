@@ -94,7 +94,6 @@ SetPair PairCheckGlobalServer::check(const SetPair &new_pairs)
     SetPair ret;
     int proc = theTwoSided().getProcRank().toInt();
     int nprocs = theTwoSided().numProcRanks().toInt();
-    int nworkers = theTwoSided().numProcRanks().toInt()*NUM_WORKERS;
 
 #if DEBUG
     cout << "PairCheckGlobalServer::check begin"
@@ -135,6 +134,8 @@ SetPair PairCheckGlobalServer::check(const SetPair &new_pairs)
             LockGuard<PthreadMutex> guard(mutex);
             server_response += 1;
         }
+#else
+        server_response += 1;
 #endif
         theAm().amPut(owner, msg, bulk_try_check, lReq);
         dispatcher.registerCodelet(lReq);
@@ -173,6 +174,7 @@ SetPair PairCheckGlobalServer::check(const SetPair &new_pairs)
         }
     }
     assert(server_response == 0);
+    assert(dispatcher.empty());
     
 #if DEBUG
     cout << "PairCheckGlobalServer::check end"
@@ -206,7 +208,6 @@ VecPair PairCheckGlobalServer::check(const VecPair &new_pairs)
     VecPair ret;
     int proc = theTwoSided().getProcRank().toInt();
     int nprocs = theTwoSided().numProcRanks().toInt();
-    int nworkers = theTwoSided().numProcRanks().toInt()*NUM_WORKERS;
 
 #if DEBUG
     cout << "PairCheckGlobalServer::check begin"
@@ -247,6 +248,8 @@ VecPair PairCheckGlobalServer::check(const VecPair &new_pairs)
             LockGuard<PthreadMutex> guard(mutex);
             server_response += 1;
         }
+#else
+        server_response += 1;
 #endif
         theAm().amPut(owner, msg, bulk_try_check, lReq);
         dispatcher.registerCodelet(lReq);
@@ -285,6 +288,7 @@ VecPair PairCheckGlobalServer::check(const VecPair &new_pairs)
         }
     }
     assert(server_response == 0);
+    assert(dispatcher.empty());
     
 #if DEBUG
     cout << "PairCheckGlobalServer::check end"

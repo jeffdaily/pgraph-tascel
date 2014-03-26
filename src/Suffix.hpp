@@ -51,6 +51,8 @@ inline ::std::ostream& operator<<(::std::ostream &os, const Suffix &suffix)
     return os << "(" << suffix.sid
         << "," << suffix.pid
         << "," << suffix.bid
+        << "," << suffix.k
+        << "," << suffix.next
         << ")";
 }
 

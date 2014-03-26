@@ -488,7 +488,6 @@ int main(int argc, char **argv)
             cout << setw(79) << "--- SuffixBucket Statistics" << endl;
             cout << setfill(f);
             cout << "n_buckets " << suffix_buckets->size() << endl;
-            cout << "non-empty " << suffix_buckets->size_nonempty() << endl;
         }
     }
 
@@ -963,7 +962,9 @@ static unsigned long process_tree(Bucket *bucket, local_data_t *local_data, int 
     TreeStats *stats_tree = local_data->stats_tree;
     DupStats *stats_dup = local_data->stats_dup;
     PairCheck **pair_check = local_data->pair_check;
+#if 0
     size_t cutoff = parameters->bucket_cutoff*local_data->suffix_buckets->stats_bucket_sizes().stddev();
+#endif
 
     if (NULL != bucket->suffixes) {
         double t;

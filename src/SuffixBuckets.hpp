@@ -102,14 +102,6 @@ class SuffixBuckets
         virtual size_t size_local() const = 0;
 
         /**
-         * Returns the number of non-NULL buckets managed by this
-         * SuffixBuckets instance.
-         *
-         * @return the size of this SuffixBuckets instance
-         */
-        virtual size_t size_nonempty() const = 0;
-
-        /**
          * Returns the (global) Stats for the bucket sizes.
          */
         virtual Stats stats_bucket_sizes() const = 0;

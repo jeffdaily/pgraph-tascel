@@ -80,6 +80,9 @@ class SequenceDatabaseReplicated : public SequenceDatabase
          * @return the Sequence reference (owned by this SequenceDatabaseReplicated)
          */
         virtual Sequence &get_sequence(size_t i) {
+            if (local_cache.end() == local_cache.find(i)) {
+                std::cout << "get_sequence(" << i << ") failed" << std::endl;
+            }
             assert(local_cache.end() != local_cache.find(i));
             return *local_cache[i];
         }

@@ -63,7 +63,6 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
     ,   suffixes_size(0)
     ,   buckets(NULL)
     ,   buckets_size(0)
-    ,   n_nonempty(0)
     ,   count_remote_buckets(0)
     ,   count_remote_suffixes(0)
 {
@@ -115,7 +114,7 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
     size_t initial_suffixes_size = 0;
     for (size_t i = start; i < stop; ++i) {
         size_t sequence_length = (*sequences)[i].size();
-        if (sequence_length >= param.window_size) {
+        if (sequence_length >= size_t(param.window_size)) {
             initial_suffixes_size += sequence_length - param.window_size + 1;
         }
     }
@@ -128,11 +127,12 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
         size_t sequence_length = 0;
 
         (*sequences)[i].get_sequence(sequence_data, sequence_length);
-        if (sequence_length < ((unsigned)param.window_size)) {
+        if (sequence_length <= ((unsigned)param.window_size)) {
             n_suffixes_skipped += 1;
             continue;
         }
-        stop_index = sequence_length - param.window_size;
+        /* stop_index stops before the assumed DOLLAR terminal character */
+        stop_index = sequence_length - param.window_size - 1;
         for (size_t j = 0; j <= stop_index; ++j) {
             if (filter_out(sequence_data + j)) {
                 n_suffixes_skipped += 1;
@@ -240,21 +240,20 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
     assert(MPI_SUCCESS == ierr);
 
 #if DEBUG
-    mpix::print_sync("suffixes", suffixes, total_amount_to_recv, comm);
+    mpix::print_sync("suffixes", suffixes, suffixes_size, comm);
 #endif
 
     vector<BucketMeta> initial_buckets;
 
-    if (total_amount_to_recv > 0) {
+    if (suffixes_size > 0) {
         /* sort the received Suffix instances based on bucket ID */
-        std::sort(suffixes, suffixes+total_amount_to_recv,
-                SuffixBucketCompare);
+        std::sort(suffixes, suffixes+suffixes_size, SuffixBucketCompare);
         /* The suffixes contains sorted suffixes based on the buckets
          * they belong to. That means we can simply update the 'next'
          * links! */
         size_t last_id = sequences->size();
         size_t longest = sequences->longest();
-        for (size_t i=0; i<total_amount_to_recv; ++i) {
+        for (size_t i=0; i<suffixes_size; ++i) {
             assert(suffixes[i].sid < last_id);
             assert(suffixes[i].pid < longest);
             assert(suffixes[i].bid < n_buckets);
@@ -264,7 +263,6 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
             if (i == 0 || suffixes[i-1].bid != suffixes[i].bid) {
                 initial_buckets.push_back(BucketMeta(
                             i, 1, suffixes[i].bid, suffixes[i].k));
-                n_nonempty++;
             }
             else if (suffixes[i-1].bid == suffixes[i].bid) {
                 suffixes[i-1].next = &suffixes[i];
@@ -279,6 +277,13 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
     /* now that initial bucket are created, collect sizes stats */
     for (size_t i=0; i<initial_buckets.size(); ++i) {
         buckets_stats.push_back(initial_buckets[i].size);
+#if DEBUG
+        cout << "initial_buckets[" << i << "]=(" << initial_buckets[i].offset
+            << "," << initial_buckets[i].size
+            << "," << initial_buckets[i].bid
+            << "," << initial_buckets[i].k
+            << ")" << endl;
+#endif
     }
     {
         Stats *all_stats = new Stats[comm_size];
@@ -295,13 +300,11 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
             buckets_stats = combined_stats;
         }
         mpix::bcast(buckets_stats, 0, comm);
+        if (0 == comm_rank) {
+            cout << buckets_stats << endl;
+        }
         delete [] all_stats;
     }
-
-#if DEBUG || 1
-    mpix::print_zero(" stats header", Stats::header(), comm);
-    mpix::print_zero("buckets_stats", buckets_stats, comm);
-#endif
 
 #if DEBUG
     {
@@ -321,16 +324,43 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
 
     /* now that initial buckets are created, refine the big ones */
     bool done = false;
+    start = 0;
     while (!done) {
         done = true;
-        for (size_t i=0,limit=initial_buckets.size(); i<limit; ++i) {
+        vector<BucketMeta> new_buckets;
+        for (size_t i=start; i<initial_buckets.size(); ++i) {
             BucketMeta &bucket = initial_buckets[i];
-            if (bucket.size > 2*buckets_stats.stddev()
-                    && bucket.k < param.window_size) {
-                refine_bucket(bucket, initial_buckets);
+#if DEBUG
+            if (0 == comm_rank) {
+                ::std::cout << "bucket.size >? bucket_cutoff*buckets_stats.stddev() -- "
+                    << bucket.size << " >? " << param.bucket_cutoff*buckets_stats.stddev()
+                    << ::std::endl;
+                ::std::cout << "bucket.k <? param.exact_match_length -- "
+                    << bucket.k << " <? " << param.exact_match_length
+                    << ::std::endl;
+            }
+#endif
+            if (bucket.size > param.bucket_cutoff*buckets_stats.stddev()
+                    && bucket.k < param.exact_match_length) {
+                vector<BucketMeta> local_new_buckets;
+                refine_bucket(bucket, local_new_buckets);
                 done = false;
+#if DEBUG
+                ::std::cout << "created " << local_new_buckets.size()
+                    << " new buckets" << ::std::endl;
+#endif
+                new_buckets.insert(new_buckets.end(),
+                        local_new_buckets.begin(), local_new_buckets.end());
+                /* invalidate bucket since it was refined */
+                bucket.offset = npos;
+                bucket.size = 0;
+                bucket.bid = npos;
+                bucket.k = -1;
             }
         }
+        start = initial_buckets.size();
+        initial_buckets.insert(initial_buckets.end(),
+                new_buckets.begin(), new_buckets.end());
     }
     buckets_size = initial_buckets.size();
 
@@ -341,16 +371,70 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
     buckets = reinterpret_cast<BucketMeta*>(
             theRma().lookupPointer(RmaPtr(aid_meta)));
     ::std::copy(initial_buckets.begin(), initial_buckets.end(), buckets);
+#if DEBUG
+    for (size_t i=0; i<initial_buckets.size(); ++i) {
+        buckets[i] = initial_buckets[i];
+        cout << "initial_buckets[" << i << "]=(" << initial_buckets[i].offset
+            << "," << initial_buckets[i].size
+            << "," << initial_buckets[i].bid
+            << "," << initial_buckets[i].k
+            << ")" << endl;
+        cout << "buckets[" << i << "]=(" << buckets[i].offset
+            << "," << buckets[i].size
+            << "," << buckets[i].bid
+            << "," << buckets[i].k
+            << ")" << endl;
+    }
+#endif
 
     buckets_size_global = buckets_size;
     mpix::allreduce(buckets_size_global, MPI_SUM, comm);
 #if DEBUG || 1
-    mpix::print_sync("buckets_size_global", buckets_size_global, comm);
+    mpix::print_zero("buckets_size_global", buckets_size_global, comm);
 #endif
-    mpix::allreduce(n_nonempty, MPI_SUM, comm);
-#if DEBUG || 1
-    mpix::print_sync("n_nonempty", n_nonempty, comm);
+
+    /* now that bucket are refined, re-collect sizes stats */
+    buckets_stats.clear();
+    for (size_t i=0; i<initial_buckets.size(); ++i) {
+        buckets_stats.push_back(initial_buckets[i].size);
+    }
+    {
+        Stats *all_stats = new Stats[comm_size];
+        mpix::check(MPI_Gather(&buckets_stats, sizeof(Stats), MPI_CHAR,
+                    all_stats, sizeof(Stats), MPI_CHAR,
+                    0, comm));
+        if (0 == comm_rank) {
+            Stats combined_stats;
+            cout << Stats::header() << endl;
+            for (size_t i=0; i<comm_size; ++i) {
+                combined_stats.push_back(all_stats[i]);
+                cout << all_stats[i] << endl;
+            }
+            buckets_stats = combined_stats;
+        }
+        mpix::bcast(buckets_stats, 0, comm);
+        if (0 == comm_rank) {
+            cout << buckets_stats << endl;
+        }
+        delete [] all_stats;
+    }
+
+#if DEBUG
+    {
+        Stats *all_stats = new Stats[comm_size];
+        mpix::check(MPI_Gather(&buckets_stats, sizeof(Stats), MPI_CHAR,
+                    all_stats, sizeof(Stats), MPI_CHAR,
+                    0, comm));
+        if (0 == comm_rank) {
+            cout << Stats::header() << endl;
+            for (size_t i=0; i<comm_size; ++i) {
+                cout << all_stats[i] << endl;
+            }
+        }
+        delete [] all_stats;
+    }
 #endif
+
 }
 
 
@@ -365,12 +449,21 @@ Bucket* SuffixBucketsTascel::get(int owner, size_t bucket_index)
 {
     Bucket *bucket = new Bucket;
 
-    if (owner == comm_rank) {
+    //cout << "getting bucket (" << owner << "," << bucket_index << ")" << endl;
+    if (owner == int(comm_rank)) {
         /* already owned, just return it */
-        bucket->size = buckets[bucket_index].size;
-        bucket->bid = buckets[bucket_index].bid;
-        bucket->k = bucket[bucket_index].k;
+        BucketMeta &meta = buckets[bucket_index];
+#if DEBUG
+        cout << "owned bucket = (" << meta.offset
+            << "," << meta.size
+            << "," << meta.bid
+            << "," << meta.k << ")" << endl;
+#endif
+        bucket->size = meta.size;
+        bucket->bid = meta.bid;
+        bucket->k = meta.k;
         bucket->owner = owner;
+        //cout << "owner, size was " << bucket->size << endl;
         if (bucket->size > 0) {
             bucket->suffixes = &suffixes[buckets[bucket_index].offset];
         }
@@ -456,7 +549,9 @@ Bucket* SuffixBucketsTascel::get(int owner, size_t bucket_index)
 
 void SuffixBucketsTascel::rem(Bucket *bucket)
 {
-    if (bucket->owner != comm_rank && bucket->size > 0 && bucket->suffixes != NULL) {
+    if (bucket->owner != int(comm_rank)
+            && bucket->size > 0
+            && bucket->suffixes != NULL) {
         delete [] bucket->suffixes;
     }
     delete bucket;
@@ -464,30 +559,58 @@ void SuffixBucketsTascel::rem(Bucket *bucket)
 
 
 void SuffixBucketsTascel::refine_bucket(
-        BucketMeta &bucket,
-        vector<BucketMeta> &buckets)
+        BucketMeta bucket,
+        vector<BucketMeta> &result)
 {
     Suffix *local_suffixes = &suffixes[bucket.offset];
     size_t local_suffixes_size = bucket.size;
 
+#if DEBUG
+    ::std::cout << "refining bucket"
+        << " " << bucket.bid
+        << " " << bucket.k
+        << " " << bucket_kmer(bucket.bid, bucket.k)
+        << " " << bucket.offset
+        << " " << bucket.size
+        << ::std::endl;
+#endif
+
     for (size_t i=0; i<local_suffixes_size; ++i) {
         const char *sequence_data = NULL;
         size_t sequence_length = 0;
-        (*sequences)[suffixes[i].sid].get_sequence(sequence_data, sequence_length);
-        if (suffixes[i].pid + suffixes[i].k <= sequence_length) {
-            suffixes[i].bid = bucket_index(
-                    &sequence_data[suffixes[i].pid], suffixes[i].k+1);
-            suffixes[i].k += 1;
-            suffixes[i].next = NULL;
+        //cout << "suffixes[" << bucket.offset+i << "]=" << local_suffixes[i] << endl;
+        if (local_suffixes[i].bid != bucket.bid) {
+            cout << "suffixes[" << bucket.offset+i << "].bid=" << local_suffixes[i].bid
+                << " != bucket.bid=" << bucket.bid << endl;
+            MPI_Abort(comm, -1);
+        }
+        assert(local_suffixes[i].bid == bucket.bid);
+        assert(local_suffixes[i].bid != npos);
+        (*sequences)[local_suffixes[i].sid].get_sequence(sequence_data, sequence_length);
+        if (local_suffixes[i].pid + local_suffixes[i].k + 1 < sequence_length) {
+            size_t new_bid = bucket_index(
+                    &sequence_data[local_suffixes[i].pid], local_suffixes[i].k+1);
+#if DEBUG
+            cout << "suffixes[" << bucket.offset+i << "].bid = " << local_suffixes[i].bid
+                << " new_bid = " << new_bid
+                << endl;
+#endif
+            local_suffixes[i].bid = new_bid;
+            local_suffixes[i].k += 1;
+            local_suffixes[i].next = NULL;
         }
         else {
+#if DEBUG
+            cout << "suffixes[" << bucket.offset+i << "].bid = " << local_suffixes[i].bid
+                << " stepped off end of sequence" << endl;
+#endif
             /* adding 1 to kmer stepped past the end of the sequence */
             /* invalidate the suffix */
-            suffixes[i].sid = npos;
-            suffixes[i].pid = npos;
-            suffixes[i].bid = npos;
-            suffixes[i].k = -1;
-            suffixes[i].next = NULL;
+            local_suffixes[i].sid = npos;
+            local_suffixes[i].pid = npos;
+            local_suffixes[i].bid = npos;
+            local_suffixes[i].k = -1;
+            local_suffixes[i].next = NULL;
         }
     }
     
@@ -498,28 +621,26 @@ void SuffixBucketsTascel::refine_bucket(
     /* reindex suffixes and add new buckets to end */
     for (size_t i=0; i<local_suffixes_size; ++i) {
         /* skip invalid suffixes */
-        if (suffixes[i].bid == npos) {
+        if (local_suffixes[i].bid == npos) {
             continue;
         }
         /* first suffix or current suffix doesn't match previous */
-        if (i == 0 || suffixes[i].bid != suffixes[i-1].bid) {
-            buckets.push_back(BucketMeta(
-                        bucket.offset + i, 1, suffixes[i].bid, suffixes[i].k));
+        if (i == 0 || local_suffixes[i].bid != local_suffixes[i-1].bid) {
+            size_t offset_new = bucket.offset + i;
+            size_t size_new = 1;
+            size_t bid_new = local_suffixes[i].bid;
+            int k_new = local_suffixes[i].k;
+            result.push_back(BucketMeta(offset_new, size_new, bid_new, k_new));
+                        //bucket.offset + i, 1, local_suffixes[i].bid, local_suffixes[i].k));
         }
-        else if (suffixes[i].bid == suffixes[i-1].bid) {
-            suffixes[i-1].next = &suffixes[i];
-            buckets.back().size += 1;
+        else if (local_suffixes[i].bid == local_suffixes[i-1].bid) {
+            local_suffixes[i-1].next = &local_suffixes[i];
+            result.back().size += 1;
         }
         else {
             assert(0); /* this shouldn't be reached */
         }
     }
-
-    /* invalidate bucket */
-    bucket.offset = npos;
-    bucket.size = 0;
-    bucket.bid = npos;
-    bucket.k = -1;
 }
 
 }; /* namespace pgraph */

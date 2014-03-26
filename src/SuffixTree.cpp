@@ -65,7 +65,16 @@ SuffixTree::SuffixTree(
     size_t n_nodes = 2 * bucket->size;
     size_t i = 0;
 
-    //cout << "SuffixTree bid=" << bucket->bid << " size=" << bucket->size << endl;
+#if DEBUG
+    cout << "SuffixTree"
+        << " bid=" << bucket->bid
+        << " size=" << bucket->size
+        << " bucket->k=" << bucket->k
+        << " k=" << k
+        << " param.window_size=" << param.window_size
+        << " window_size=" << window_size
+        << endl;
+#endif
 
     for (i=0; i<SIGMA; ++i) {
         alphabet_table[(unsigned char)(param.alphabet[i])] = i;
@@ -268,7 +277,15 @@ int SuffixTree::next_diff_pos(Suffix *suffixes, int depth)
 
     while (1) {
         i++; /* step forward one more char for comparison */
-        //std::cout << "i+p->pid=" << i+p->pid << " <? p->sid.size=" << (*sequences)[p->sid].size() << std::endl;
+        if ((i + p->pid) >= (*sequences)[p->sid].size()) {
+            cout << "i=" << i
+                << " p->pid=" << p->pid
+                << " i+p->pid=" << i+p->pid
+                << " <? p->sid.size=" << (*sequences)[p->sid].size()
+                << endl;
+            cout << (*sequences)[p->sid];
+            cout << string(p->pid, 'X') << endl;;
+        }
         assert((i + p->pid) < (*sequences)[p->sid].size());
         pCh = (*sequences)[p->sid][p->pid + i];
 

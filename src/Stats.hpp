@@ -50,6 +50,15 @@ class Stats
 
         virtual ~Stats() {}
 
+        void clear() {
+            _n = 0UL;
+            _mean = 0.0;
+            _M2 = 0.0;
+            _sum = 0.0;
+            _min = 0.0;
+            _max = 0.0;
+        }
+
         void push_back(const double &x) {
             double delta = 0;
 
