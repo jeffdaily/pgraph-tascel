@@ -68,7 +68,7 @@ using namespace pgraph;
 
 
 typedef struct {
-    unsigned long id;
+    size_t id;
 } task_description_one;
 
 void createTaskFn(void *tsk, int tsk_size, TaskIndex tidx) {
@@ -78,8 +78,8 @@ void createTaskFn(void *tsk, int tsk_size, TaskIndex tidx) {
 
 
 typedef struct {
-    unsigned long id1;
-    unsigned long id2;
+    size_t id1;
+    size_t id2;
 } task_description_two;
 
 
@@ -166,7 +166,7 @@ static void alignment_task(
         void *pldata, int /*pldata_len*/,
         vector<void *> /*data_bufs*/,
         int thd);
-static unsigned long process_tree(unsigned long bid, Bucket *bucket, local_data_t *local_data, int thd);
+static unsigned long process_tree(Bucket *bucket, local_data_t *local_data, int thd);
 static void tree_task(
         UniformTaskCollection * /*utc*/,
         void *bigd, int /*bigd_len*/,
@@ -432,7 +432,7 @@ int main(int argc, char **argv)
             .taskSize(sizeof(task_description_two))
             .maxTasks(parameters->memory_worker / sizeof(task_description_two))
             .taskSize2(sizeof(task_description_one))
-            .maxTasks2(suffix_buckets->owns().size())
+            .maxTasks2(suffix_buckets->size_local())
             .localData(local_data, sizeof(void*));
         for (int worker=0; worker<NUM_WORKERS; ++worker) {
             populate_time[worker] = MPI_Wtime();
@@ -954,7 +954,7 @@ static void alignment_task(
 }
 
 
-static unsigned long process_tree(unsigned long bid, Bucket *bucket, local_data_t *local_data, int worker)
+static unsigned long process_tree(Bucket *bucket, local_data_t *local_data, int worker)
 {
     unsigned long count = 0;
     SequenceDatabase *sequences = local_data->sequences;
@@ -993,7 +993,7 @@ static unsigned long process_tree(unsigned long bid, Bucket *bucket, local_data_
 
         /* construct tree */
         t = MPI_Wtime();
-        SuffixTree *tree = new SuffixTree(sequences, bucket, *parameters);
+        SuffixTree *tree = new SuffixTree(sequences, bucket, *parameters, bucket->k);
         stats_tree[worker].time_build.push_back(MPI_Wtime() - t);
 
         /* gather stats_tree */
@@ -1058,8 +1058,8 @@ static void tree_task(
     task_description_one *tree_desc = (task_description_one*)bigd;
     local_data_t *local_data = (local_data_t*)pldata;
     unsigned long i = tree_desc->id;
-    Bucket *bucket = local_data->suffix_buckets->get(i);
-    process_tree(i, bucket, local_data, thd);
+    Bucket *bucket = local_data->suffix_buckets->get(local_data->rank, i);
+    process_tree(bucket, local_data, thd);
     local_data->suffix_buckets->rem(bucket);
 }
 
@@ -1073,10 +1073,19 @@ static void hybrid_task(
 {
     task_description_two *desc = (task_description_two*)bigd;
     if (desc->id1 == desc->id2) {
-        tree_task(utc, bigd, bigd_len, pldata, pldata_len, data_bufs, thd);
+        /* shouldn't happen now with new SuffixBuckets design */
+        assert(0);
     }
-    else {
+    else if (desc->id1 < desc->id2) {
         alignment_task(utc, bigd, bigd_len, pldata, pldata_len, data_bufs, thd);
+    }
+    else /* desc->id1 > desc->id2 */ {
+        local_data_t *local_data = (local_data_t*)pldata;
+        int owner = int(SuffixBuckets::npos - desc->id1);
+        size_t index = desc->id2;
+        Bucket *bucket = local_data->suffix_buckets->get(owner, index);
+        process_tree(bucket, local_data, thd);
+        local_data->suffix_buckets->rem(bucket);
     }
 }
 
@@ -1158,15 +1167,14 @@ static unsigned long populate_tasks_tree(
 {
     SuffixBuckets *suffix_buckets = local_data->suffix_buckets;
     unsigned long count=0;
-    const vector<size_t> &my_buckets = suffix_buckets->owns();
 
     utcs[worker] = new UniformTaskCollectionSplit(props, worker);
 
-    for (size_t i=0; i<my_buckets.size(); ++i) {
+    for (size_t i=0; i<suffix_buckets->size_local(); ++i) {
         if ((i%size_t(NUM_WORKERS)) == size_t(worker)) {
-            Bucket *bucket = suffix_buckets->get(my_buckets[i]);
-            count += process_tree(my_buckets[i], bucket, local_data, worker);
-            local_data->suffix_buckets->rem(bucket);
+            Bucket *bucket = suffix_buckets->get(local_data->rank, i);
+            count += process_tree(bucket, local_data, worker);
+            suffix_buckets->rem(bucket);
         }
     }
 
@@ -1180,21 +1188,19 @@ static unsigned long populate_tasks_tree_dynamic(
 {
     SuffixBuckets *suffix_buckets = local_data->suffix_buckets;
     unsigned long count=0;
-    const vector<size_t> &my_buckets = suffix_buckets->owns();
 
     utcs[worker] = new UniformTaskCollectionSplit(props, worker);
 
-    for (size_t i=0; i<my_buckets.size(); ++i) {
+    for (size_t i=0; i<suffix_buckets->size_local(); ++i) {
         if ((i%size_t(NUM_WORKERS)) == size_t(worker)) {
-            size_t bid = my_buckets[i];
-            Bucket *bucket = suffix_buckets->get(bid);
+            Bucket *bucket = suffix_buckets->get(local_data->rank, i);
             if (NULL != bucket->suffixes) {
                 task_description_one desc;
-                desc.id = bid;
+                desc.id = i;
                 utcs[worker]->addTask2(&desc, sizeof(desc));
                 ++count;
             }
-            local_data->suffix_buckets->rem(bucket);
+            suffix_buckets->rem(bucket);
         }
     }
 
@@ -1208,28 +1214,26 @@ static unsigned long populate_tasks_tree_hybrid(
 {
     SuffixBuckets *suffix_buckets = local_data->suffix_buckets;
     unsigned long count=0;
-    const vector<size_t> &my_buckets = suffix_buckets->owns();
 
     utcs[worker] = new UniformTaskCollectionSplit(props, worker);
 
 #define SORT_BUCKETS 1
 #if SORT_BUCKETS
-    vector<pair<size_t,size_t> > size_and_bid;
-    for (size_t i=0; i<my_buckets.size(); ++i) {
+    vector<pair<size_t,size_t> > size_and_index;
+    for (size_t i=0; i<suffix_buckets->size_local(); ++i) {
         if ((i%size_t(NUM_WORKERS)) == size_t(worker)) {
-            size_t bid = my_buckets[i];
-            Bucket *bucket = suffix_buckets->get(bid);
+            Bucket *bucket = suffix_buckets->get(local_data->rank, i);
             if (NULL != bucket->suffixes) {
-                size_and_bid.push_back(make_pair(bucket->size,bid));
+                size_and_index.push_back(make_pair(bucket->size,i));
             }
             local_data->suffix_buckets->rem(bucket);
         }
     }
-    ::std::sort(size_and_bid.begin(), size_and_bid.end());
-    for (vector<pair<size_t,size_t> >::iterator it=size_and_bid.begin();
-            it!=size_and_bid.end(); ++it) {
+    ::std::sort(size_and_index.begin(), size_and_index.end());
+    for (vector<pair<size_t,size_t> >::iterator it=size_and_index.begin();
+            it!=size_and_index.end(); ++it) {
         task_description_two desc;
-        desc.id1 = it->second;
+        desc.id1 = SuffixBuckets::npos - size_t(local_data->rank);
         desc.id2 = it->second;
         utcs[worker]->addTask(&desc, sizeof(desc));
         ++count;
@@ -1241,8 +1245,8 @@ static unsigned long populate_tasks_tree_hybrid(
             Bucket *bucket = suffix_buckets->get(bid);
             if (NULL != bucket->suffixes) {
                 task_description_two desc;
-                desc.id1 = bid;
-                desc.id2 = bid;
+                desc.id1 = SuffixBuckets::npos - size_t(local_data->rank);
+                desc.id2 = it->second;
                 utcs[worker]->addTask(&desc, sizeof(desc));
                 ++count;
             }

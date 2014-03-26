@@ -44,7 +44,7 @@ namespace pgraph {
 const size_t SuffixTree::npos(-1);
 
 SuffixTree::SuffixTree(
-        SequenceDatabase *sequences, Bucket *bucket, const Parameters &param)
+        SequenceDatabase *sequences, Bucket *bucket, const Parameters &param, int k)
     :   sequences(sequences)
     //,   bucket(bucket)
     ,   param(param)
@@ -53,7 +53,7 @@ SuffixTree::SuffixTree(
     ,   BEGIN(param.alphabet_begin)
     ,   alphabet(param.alphabet)
     ,   alphabet_table(numeric_limits<unsigned char>::max(), npos)
-    ,   window_size(param.window_size)
+    ,   window_size(k > 0 ? k : param.window_size)
     ,   nodes(NULL)
     ,   size(0U)
     ,   size_internal(0U)

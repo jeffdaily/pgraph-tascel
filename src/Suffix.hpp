@@ -23,22 +23,26 @@ class Suffix
             :   sid(0)
             ,   pid(0)
             ,   bid(0)
+            ,   k(0)
             ,   next(NULL)
         { }
 
         Suffix(size_t suffix_id,
                 size_t offset,
                 size_t bucket_id,
+                int k=-1,
                 Suffix *next=NULL)
             :   sid(suffix_id)
             ,   pid(offset)
             ,   bid(bucket_id)
+            ,   k(k)
             ,   next(next)
         { }
 
         size_t sid;     /**< suffix id */
         size_t pid;     /**< position id i.e. offset */
         size_t bid;     /**< bucket id */
+        int k;          /**< size of k-mer */
         Suffix *next;   /**< link to next Suffix  */
 };
 

@@ -82,11 +82,13 @@ class SuffixTree
          * @param[in] sequences all fasta sequences
          * @param[in] bucket linked list of suffixes for this bucket
          * @param[in] param alignment parameters
+         * @param[in] k kmer size, if different than param.window_size
          * @return the suffix tree
          */
         SuffixTree(SequenceDatabase *sequences,
                    Bucket *bucket,
-                   const Parameters &param);
+                   const Parameters &param,
+                   int k=-1);
 
         /** Destructor. */
         ~SuffixTree();

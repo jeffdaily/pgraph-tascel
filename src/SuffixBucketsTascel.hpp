@@ -38,16 +38,13 @@ class SuffixBucketsTascel : public SuffixBuckets
         virtual ~SuffixBucketsTascel();
 
         /** @copydoc SuffixBuckets::get */
-        virtual Bucket* get(size_t bid);
+        virtual Bucket* get(int owner, size_t index);
 
         /** @copydoc SuffixBuckets::rem */
         virtual void rem(Bucket*);
 
-        /** @copydoc SuffixBuckets::owns(size_t) */
-        virtual bool owns(size_t bid) const;
-
-        /** @copydoc SuffixBuckets::owns() */
-        virtual const vector<size_t>& owns() const { return owned_buckets; }
+        /** @copydoc SuffixBuckets::size() */
+        virtual size_t size() const { return buckets_size_global; }
 
         /** @copydoc SuffixBuckets::size_local() */
         virtual size_t size_local() const { return buckets_size; }
@@ -64,26 +61,14 @@ class SuffixBucketsTascel : public SuffixBuckets
             size_t offset;
             size_t size;
             size_t bid;
+            int k;
+
+            BucketMeta() : offset(0U), size(0U), bid(0U), k(-1) {}
+            BucketMeta(size_t offset, size_t size, size_t bid, int k)
+                : offset(offset), size(size), bid(bid), k(k) {}
         };
 
-        /** Functor for sorting Suffix instances based on Bucket owner. */
-        struct SuffixOwnerCompareFunctor {
-            size_t comm_size;
-
-            SuffixOwnerCompareFunctor(size_t comm_size)
-                :   comm_size(comm_size)
-            { }
-
-            bool operator()(const Suffix &i, const Suffix &j) {
-                size_t owner_i = i.bid % comm_size;
-                size_t owner_j = j.bid % comm_size;
-                return owner_i < owner_j;
-            }
-        };
-
-        static bool SuffixBucketCompare(const Suffix &i, const Suffix &j) {
-                return i.bid < j.bid;
-        }
+        void refine_bucket(BucketMeta &bucket, vector<BucketMeta> &buckets);
 
         ::tascel::AllocId aid_suffixes; /**< ID for suffixes allocation */
         ::tascel::AllocId aid_meta;     /**< ID for bucket meta allocation */
@@ -91,11 +76,11 @@ class SuffixBucketsTascel : public SuffixBuckets
         size_t suffixes_size;           /**< size of local suffixes array */
         BucketMeta *buckets;            /**< array of all local buckets */
         size_t buckets_size;            /**< size of local buckets array */
+        size_t buckets_size_global;     /**< size of global buckets array */
         size_t n_nonempty;              /**< global count of non-empty buckets */
         Stats buckets_stats;            /**< stats for bucket sizes */
         size_t count_remote_buckets;
         size_t count_remote_suffixes;
-        vector<size_t> owned_buckets;
 };
 
 

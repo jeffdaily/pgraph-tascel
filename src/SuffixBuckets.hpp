@@ -37,11 +37,15 @@ class Bucket
             :   suffixes(NULL)
             ,   size(0)
             ,   bid(0)
+            ,   k(-1)
+            ,   owner(-1)
         { }
 
         Suffix *suffixes;   /**< linked list of zero or more suffixes */
         size_t size;        /**< number of suffixes */
         size_t bid;         /**< bucket ID/index */
+        int k;              /**< k-mer size */
+        int owner;          /**< bucket owner */
 };
 
 
@@ -69,9 +73,10 @@ class SuffixBuckets
          * Retrieve a bucket, either remote or local.
          *
          * @param[in] bid Bucket index
+         * @param[in] index of Bucket in remote Bucket array
          * @return the Bucket
          */
-        virtual Bucket* get(size_t bid) = 0;
+        virtual Bucket* get(int owner, size_t index) = 0;
 
         /**
          * Free the memory of the given Bucket instance.
@@ -81,32 +86,12 @@ class SuffixBuckets
         virtual void rem(Bucket *bucket) = 0;
 
         /**
-         * Returns true if the Bucket is owned by this process.
-         *
-         * That is, the Suffix instances that belong in the Bucket are
-         * allocated on this process.
-         *
-         * @param[in] bid bucket index
-         */
-        virtual bool owns(size_t bid) const = 0;
-
-        /**
-         * Returns vector of all Bucket indexes owned by this process.
-         *
-         * That is, the Suffix instances that belong in the Bucket are
-         * allocated on this process.
-         *
-         * @param[in] bid bucket index
-         */
-        virtual const vector<size_t> & owns() const = 0;
-
-        /**
          * Returns the number of buckets managed by this SuffixBuckets
          * instance.
          *
          * @return the size of this SuffixBuckets instance
          */
-        size_t size() const { return n_buckets; }
+        virtual size_t size() const = 0;
 
         /**
          * Returns the number of buckets managed by this SuffixBuckets
@@ -141,7 +126,22 @@ class SuffixBuckets
          * @param[in] kmer address of of k-mer (suffix) string
          * @return the Bucket index
          */
-        size_t bucket_index(const char *kmer);
+        size_t bucket_index(const char *kmer) const;
+
+        /**
+         * Returns Bucket index for the given Suffix string.
+         *
+         * Rather, the first 'k' characters of the given k-mer are the
+         * prefix of the k-mer (suffix) where 'k' is the slide window
+         * size as indicated by the stored Parameters instance. This
+         * suffix prefix is calculated as a 0-based bucket index.
+         *
+         * @see bucket_kmer(size_t bid)
+         * @param[in] kmer address of of k-mer (suffix) string
+         * @param[in] k length of kmer
+         * @return the Bucket index
+         */
+        size_t bucket_index(const char *kmer, int k) const;
 
         /**
          * Returns kmer for a given Bucket index.
@@ -149,7 +149,18 @@ class SuffixBuckets
          * @param[in] bid bucket ID
          * @return string representing kmer
          */
-        string bucket_kmer(size_t bid);
+        string bucket_kmer(size_t bid) const;
+
+        /**
+         * Returns kmer for a given Bucket index.
+         * @see bucket_index(const char*)
+         * @param[in] bid bucket ID
+         * @param[in] k length of kmer
+         * @return string representing kmer
+         */
+        string bucket_kmer(size_t bid, int k) const;
+        
+        static const size_t npos;
 
     protected:
         /**
@@ -158,18 +169,29 @@ class SuffixBuckets
          * @param[in] kmer address of of k-mer (suffix) string
          * @return true if the kmer should be skipped
          */
-        bool filter_out(const char *kmer);
+        bool filter_out(const char *kmer) const;
+
+        /**
+         * Compare kmer against user-supplied prefix filters.
+         *
+         * @param[in] kmer address of of k-mer (suffix) string
+         * @param[in] k length of k-mer
+         * @return true if the kmer should be skipped
+         */
+        bool filter_out(const char *kmer, int k) const;
+
+        /**
+         * power function for size_t data type
+         */
+        static size_t powz(size_t base, size_t n);
 
         MPI_Comm comm;                  /**< communicator */
         size_t comm_rank;               /**< communicator rank */
         size_t comm_size;               /**< communicator size */
-        size_t n_buckets;               /**< number of buckets */
         SequenceDatabase *sequences;    /**< sequences to process */
         const Parameters &param;        /**< configuration parameters */
         size_t SIGMA;                   /**< alphabet size */
         vector<size_t> alphabet_table;  /**< lookup table for alphabet index */
-        
-        static const size_t npos;
 };
 
 }; /* namespace pgraph */

@@ -206,20 +206,22 @@ template <>
 inline MPI_Datatype build_mpi_datatype<Suffix>(const Suffix &object)
 {
     MPI_Datatype result;
-    MPI_Datatype type[4] = {
+    MPI_Datatype type[5] = {
         get_mpi_datatype(object.sid),
         get_mpi_datatype(object.pid),
         get_mpi_datatype(object.bid),
+        get_mpi_datatype(object.k),
         MPI_UNSIGNED_LONG /* void* */
     };
-    int blocklen[4] = {1,1,1,1};
-    MPI_Aint disp[4] = {
+    int blocklen[5] = {1,1,1,1,1};
+    MPI_Aint disp[5] = {
         MPI_Aint(&object.sid) - MPI_Aint(&object),
         MPI_Aint(&object.pid) - MPI_Aint(&object),
         MPI_Aint(&object.bid) - MPI_Aint(&object),
+        MPI_Aint(&object.k) - MPI_Aint(&object),
         MPI_Aint(&object.next) - MPI_Aint(&object)
     };
-    result = type_create_struct(4, blocklen, disp, type);
+    result = type_create_struct(5, blocklen, disp, type);
     type_commit(result);
     add_custom_mpi_datatype(typeid(Suffix).name(), result);
     return result;

@@ -39,10 +39,11 @@ using ::std::vector;
 
 namespace pgraph {
 
+
 const size_t SuffixBuckets::npos(-1);
 
-/** power function for size_t */
-static size_t powz(size_t base, size_t n)
+
+size_t SuffixBuckets::powz(size_t base, size_t n)
 {
     size_t p = 1;
 
@@ -55,11 +56,17 @@ static size_t powz(size_t base, size_t n)
 }
 
 
-size_t SuffixBuckets::bucket_index(const char *kmer)
+size_t SuffixBuckets::bucket_index(const char *kmer) const
+{
+    return bucket_index(kmer, param.window_size);
+}
+
+
+size_t SuffixBuckets::bucket_index(const char *kmer, int k) const
 {
     size_t value = 0;
 
-    for (int i = 0; i < param.window_size; ++i) {
+    for (int i = 0; i < k; ++i) {
         size_t index = alphabet_table[(unsigned char)(kmer[i])];
         if (npos == index) {
             cerr << "kmer[" << i << "]='"
@@ -73,11 +80,17 @@ size_t SuffixBuckets::bucket_index(const char *kmer)
 }
 
 
-string SuffixBuckets::bucket_kmer(size_t bid)
+string SuffixBuckets::bucket_kmer(size_t bid) const
+{
+    return bucket_kmer(bid, param.window_size);
+}
+
+
+string SuffixBuckets::bucket_kmer(size_t bid, int k) const
 {
     string ret;
 
-    for (int i = param.window_size-1; i >= 0; --i) {
+    for (int i = k-1; i >= 0; --i) {
         size_t tmp = powz(SIGMA,i);
         size_t quo = bid / tmp;
         size_t rem = bid % tmp;
@@ -90,11 +103,17 @@ string SuffixBuckets::bucket_kmer(size_t bid)
 }
 
 
-bool SuffixBuckets::filter_out(const char *kmer)
+bool SuffixBuckets::filter_out(const char *kmer) const
+{
+    return filter_out(kmer, param.window_size);
+}
+
+
+bool SuffixBuckets::filter_out(const char *kmer, int k) const
 {
     bool result = false;
 
-    string str(kmer, param.window_size);
+    string str(kmer, k);
 
     for (size_t i=0; i<param.re.size(); ++i) {
         regex_t *preq = param.re[i];
@@ -116,7 +135,6 @@ SuffixBuckets::SuffixBuckets(SequenceDatabase *sequences,
     :   comm(comm)
     ,   comm_rank(mpix::comm_rank(comm))
     ,   comm_size(mpix::comm_size(comm))
-    ,   n_buckets(powz(param.alphabet.size(), param.window_size))
     ,   sequences(sequences)
     ,   param(param)
     ,   SIGMA(param.alphabet.size())
