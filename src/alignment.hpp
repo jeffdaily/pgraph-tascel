@@ -395,6 +395,24 @@ cell_t align_local_affine_ssw(
         int open=-10, int gap=-1);
 
 
+/**
+ * Implementation of affine gap pairwise sequence alignment using blosum and
+ * sse vector instructions from fasta package.
+ *
+ * @param[in] s1 character sequence one
+ * @param[in] s1_len length of character sequence one
+ * @param[in] s2 character sequence two
+ * @param[in] s2_len length of character sequence two
+ * @param[in] open gap penalty
+ * @param[in] gap extension penalty
+ * @return alignment result
+ */
+cell_t align_global_affine_fasta(
+        const char * const restrict s1, size_t s1_len,
+        const char * const restrict s2, size_t s2_len,
+        int open=-10, int gap=-1);
+
+
 /** @name Alignment Functions
  *
  * Asks whether the given cell_t alignment result is an edge, based on

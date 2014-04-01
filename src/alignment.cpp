@@ -25,13 +25,20 @@
 #include "blosum/blosum90.h"
 #if HAVE_EMMINTRIN_H
 #include "ssw.h"
+
+extern "C" {
+#include "global_sse2.h"
+#include "defs.h"
+#include "param.h"
+#include "dropgsw2.h"
+}
 #endif
 
 /** mapping from BLOSUM alphabet to BLOSUM index; use as BLOSUM[map[ch-'A']] */
 static int MAP_BLOSUM[] = {
     0,  20,   4,   3,   6,  13,   7,   8,   9,  23,
-    11,  10,  12,   2,  24,  14,   5,   1,  15,  16,
-    25,  19,  17,  22,  18,  21 };
+    11,  10,  12,   2,  23,  14,   5,   1,  15,  16,
+    23,  19,  17,  22,  18,  21 };
 
 #define CROW(i) ((i)%2)
 #define PROW(i) ((i-1)%2)
@@ -792,6 +799,90 @@ cell_t align_local_affine_ssw(
     assert(0);
 #endif
 
+    return ret;
+}
+
+
+cell_t align_global_affine_fasta(
+        const char * const restrict s1, size_t s1_len,
+        const char * const restrict s2, size_t s2_len,
+        int open, int gap)
+{
+    cell_t ret;
+#if HAVE_EMMINTRIN_H
+    int bias_signed = 0;
+    unsigned short bias = 0;
+    int32_t seg_len = 0;
+    __m128i* profile_byte = NULL;
+    int8_t* t = NULL;
+    int32_t nt = 0;
+    int32_t i = 0;
+    int32_t j = 0;
+    int32_t seg_num = 0;
+    unsigned char *s1_num = new unsigned char[s1_len];
+    unsigned char *s2_num = new unsigned char[s2_len];
+    int score = 0;
+    unsigned short ceiling = 255;
+    struct f_struct f_str;
+
+    /* This table is used to transform amino acid letters into numbers. */
+    static const unsigned char table[128] = {
+        23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
+        23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
+        23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
+        23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
+        23, 0,  20, 4,  3,  6,  13, 7,  8,  9,  23, 11, 10, 12, 2,  23,
+        14, 5,  1,  15, 16, 23, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23,
+        23, 0,  20, 4,  3,  6,  13, 7,  8,  9,  23, 11, 10, 12, 2,  23,
+        14, 5,  1,  15, 16, 23, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23
+    };
+
+    /* initialize score matrix */
+    for (size_t m = 0; m < s1_len; ++m) s1_num[m] = table[(int)s1[m]];
+    for (size_t m = 0; m < s2_len; ++m) s2_num[m] = table[(int)s2[m]];
+    /* find the bias; limit is 24x24 for blosum matrix */
+    for (i=0; i<24*24; ++i) {
+        if (blosum__[i] < bias_signed) {
+            bias_signed = blosum__[i];
+        }
+    }
+    bias = abs(bias_signed);
+
+    /* create query profile for byte routine */
+    {
+        /* Split the 128 bit register into 16 pieces. Each piece is 8
+         * bit. Split the read into 16 segments. Calculat 16 segments in
+         * parallel.  */
+        seg_len = (s1_len + 15) / 16;
+        profile_byte = new __m128i[24 * seg_len];
+        t = (int8_t*)profile_byte; 
+
+        /* Generate query profile rearrange query sequence & calculate
+         * the weight of match/mismatch */
+        for (nt = 0; nt < 24; ++nt) {
+            for (i = 0; i < seg_len; ++i) {
+                j = i;
+                for (seg_num = 0; seg_num < 16; ++seg_num) {
+                    *t++ = j>= s1_len ? bias : blosum__[nt * 24 + s1_num[j]] + bias;
+                    j += seg_len;
+                }
+            }
+        }
+    }
+
+    /* create workspace for table */
+    {
+        seg_len = (s1_len + 7) / 8;
+        f_str.workspace = new __m128i[3*seg_len];
+    }
+
+    score = global_sse2_byte(
+            s1_len, (unsigned char*)profile_byte, s2_num, s2_len,
+            -open, -gap, ceiling, bias, &f_str);
+    ret.score = score;
+#else
+    assert(0);
+#endif
     return ret;
 }
 
