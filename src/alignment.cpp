@@ -35,19 +35,35 @@ extern "C" {
 #endif
 
 /** mapping from BLOSUM alphabet to BLOSUM index; use as BLOSUM[map[ch-'A']] */
-static int MAP_BLOSUM[] = {
+static const int MAP_BLOSUM[] = {
     0,  20,   4,   3,   6,  13,   7,   8,   9,  23,
     11,  10,  12,   2,  23,  14,   5,   1,  15,  16,
     23,  19,  17,  22,  18,  21 };
 
+/* This table is used to transform amino acid letters into numbers. */
+static const int MAP_BLOSUM_[128] = {
+    23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
+    23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
+    23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
+    23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
+    23, 0,  20, 4,  3,  6,  13, 7,  8,  9,  23, 11, 10, 12, 2,  23,
+    14, 5,  1,  15, 16, 23, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23,
+    23, 0,  20, 4,  3,  6,  13, 7,  8,  9,  23, 11, 10, 12, 2,  23,
+    14, 5,  1,  15, 16, 23, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23
+};
+
+
 #define CROW(i) ((i)%2)
 #define PROW(i) ((i-1)%2)
-#define BLOSUM(ch1, ch2) blosum[MAP_BLOSUM[(ch1)-'A']][MAP_BLOSUM[(ch2)-'A']]
+//#define BLOSUM(ch1, ch2) (blosum[MAP_BLOSUM[(ch1)-'A']][MAP_BLOSUM[(ch2)-'A']])
+#define BLOSUM(ch1, ch2) (blosum[MAP_BLOSUM_[(ch1)]][MAP_BLOSUM_[(ch2)]])
 #define SCORE(sub, map, first, ch1, ch2) \
     (sub)[(map)[(ch1)-(first)]][(map)[(ch2)-(first)]]
 #define NEG_ADD(x, y) (((y)<0)&&((x)<(INT_MIN-y)) ? INT_MIN : (x)+(y))
-#define MIN(x, y) (((x)<(y))? (x) : (y))
 #define MAX(x, y) (((x)>(y))? (x) : (y))
+//#define NEG_INF (INT_MIN/2)
+static const int NEG_INF = INT_MIN / 2;
+
 
 using std::cerr;
 using std::endl;
@@ -166,7 +182,6 @@ void select_blosum(int number)
     }
 }
 
-
 #define AFFINE_GAP_DECL                                                     \
     size_t i = 0;                       /* first sequence char index */     \
     size_t j = 0;                       /* second sequence char index */    \
@@ -180,11 +195,11 @@ void select_blosum(int number)
             delete_del ? allocate_int_table(2U,longestLen) : del_;          \
     int * const restrict * const restrict ins =                             \
             delete_ins ? allocate_int_table(2U,longestLen) : ins_;          \
-    cell_t maxCell = {INT_MIN, 0, 0};   /* max cell in table */
+    cell_t maxCell = {NEG_INF, 0, 0};   /* max cell in table */
 
 #define AFFINE_GAP_DECL_SEMI                                                \
-    cell_t lastCol = {INT_MIN, 0, 0};   /* max cell in last col */          \
-    cell_t lastRow = {INT_MIN, 0, 0};   /* max cell in last row */          \
+    cell_t lastCol = {NEG_INF, 0, 0};   /* max cell in last col */          \
+    cell_t lastRow = {NEG_INF, 0, 0};   /* max cell in last row */          \
 
 #define AFFINE_GAP_ASSERT       \
     assert(s1);                 \
@@ -199,15 +214,15 @@ void select_blosum(int number)
     tbl[0][0].score = 0;                                                    \
     tbl[0][0].matches = 0;                                                  \
     tbl[0][0].length = 0;                                                   \
-    del[0][0] = INT_MIN;                                                    \
-    ins[0][0] = INT_MIN;
+    del[0][0] = NEG_INF;                                                    \
+    ins[0][0] = NEG_INF;
 
 #define AFFINE_GAP_INIT_FIRST_ROW_WITH_PENALTY                              \
     for (j = 1; j <= s2Len; j++) {                                          \
         tbl[0][j].score = open + j * gap;                                   \
         tbl[0][j].matches = 0;                                              \
         tbl[0][j].length = 0;                                               \
-        del[0][j] = INT_MIN;                                                \
+        del[0][j] = NEG_INF;                                                \
         ins[0][j] = open + j * gap;                                         \
     }
 
@@ -216,7 +231,7 @@ void select_blosum(int number)
         tbl[0][j].score = 0;                                                \
         tbl[0][j].matches = 0;                                              \
         tbl[0][j].length = 0;                                               \
-        del[0][j] = INT_MIN;                                                \
+        del[0][j] = NEG_INF;                                                \
         ins[0][j] = open + j * gap;                                         \
     }
 
@@ -240,7 +255,7 @@ void select_blosum(int number)
         tbl[cr][0].matches = 0;                                             \
         tbl[cr][0].length = 0;                                              \
         del[cr][0] = open + i * gap;                                        \
-        ins[cr][0] = INT_MIN;
+        ins[cr][0] = NEG_INF;
 
 #define AFFINE_GAP_INIT_FIRST_COL_WITHOUT_PENALTY                           \
         /* init first column of 3 tables */                                 \
@@ -248,7 +263,7 @@ void select_blosum(int number)
         tbl[cr][0].matches = 0;                                             \
         tbl[cr][0].length = 0;                                              \
         del[cr][0] = open + i * gap;                                        \
-        ins[cr][0] = INT_MIN;
+        ins[cr][0] = NEG_INF;
 
 #define AFFINE_GAP_BODY2(CALCULATE_SCORE)                                   \
         for (j = 1; j <= s2Len; j++) {                                      \
@@ -259,17 +274,17 @@ void select_blosum(int number)
             ch2 = s2[j - 1];                                                \
                                                                             \
             /* overflow could happen, INT_MIN-1 = 2147483647 */             \
-            tmp1 = tbl[pr][j].score + open + gap;                           \
-            tmp2 = NEG_ADD(del[pr][j], gap);                                \
+            tmp1 = tbl[pr][j].score + open;                                 \
+            tmp2 = del[pr][j] + gap;                                        \
             up = MAX(tmp1, tmp2);                                           \
             del[cr][j] = up;                                                \
-            tmp1 = tbl[cr][j - 1].score + open + gap;                       \
-            tmp2 = NEG_ADD(ins[cr][j - 1], gap);                            \
+            tmp1 = tbl[cr][j - 1].score + open;                             \
+            tmp2 = ins[cr][j - 1] + gap;                                    \
             left = MAX(tmp1, tmp2);                                         \
             ins[cr][j] = left;                                              \
             maxScore = MAX(up, left);                                       \
             tmp1 = CALCULATE_SCORE;                                         \
-            dig = NEG_ADD(tbl[pr][j - 1].score, tmp1);                      \
+            dig = tbl[pr][j - 1].score + tmp1;                              \
             maxScore = MAX(maxScore, dig);                                  \
 
 #define AFFINE_GAP_MAX_SCORE                                                \
@@ -315,17 +330,13 @@ void select_blosum(int number)
             lastCol = tbl[cr][s2Len];                                       \
         }                                                                   \
     } /* end of i loop */                                                   \
-    maxCell = (lastCol.score > lastRow.score) ? lastCol : lastRow;          \
-                                                                            \
-    return maxCell;
+    maxCell = (lastCol.score > lastRow.score) ? lastCol : lastRow;
 
 #define AFFINE_GAP_END_LOCAL                                                \
         } /* end of j loop */                                               \
                                                                             \
         assert(j == (s2Len + 1));                                           \
-    } /* end of i loop */                                                   \
-                                                                            \
-    return maxCell;
+    } /* end of i loop */
 
 #define AFFINE_GAP_END_GLOBAL                                               \
         } /* end of j loop */                                               \
@@ -334,15 +345,17 @@ void select_blosum(int number)
         if (i == s1Len && j == s2Len+1) {                                   \
             maxCell = tbl[cr][s2Len];                                       \
         }                                                                   \
-    } /* end of i loop */                                                   \
-                                                                            \
-    return maxCell;
+    } /* end of i loop */
 
 #define AFFINE_GAP_FREE                                                     \
     if (delete_tbl) free_table(tbl,2U);                                     \
     if (delete_del) free_table(del,2U);                                     \
     if (delete_ins) free_table(ins,2U);
 
+#define AFFINE_GAP_RETURN                                                   \
+    return maxCell;
+
+
 
 cell_t align_global_affine(
         const char * const restrict s1, size_t s1Len,
@@ -362,8 +375,9 @@ cell_t align_global_affine(
     AFFINE_GAP_BODY2(callback(ch1, ch2))
     AFFINE_GAP_MAX_SCORE
     AFFINE_GAP_BODY3
-    AFFINE_GAP_FREE
     AFFINE_GAP_END_GLOBAL
+    AFFINE_GAP_FREE
+    AFFINE_GAP_RETURN
 }
 
 cell_t align_global_affine(
@@ -387,8 +401,9 @@ cell_t align_global_affine(
     AFFINE_GAP_BODY2(SCORE(sub, map, first, ch1, ch2))
     AFFINE_GAP_MAX_SCORE
     AFFINE_GAP_BODY3
-    AFFINE_GAP_FREE
     AFFINE_GAP_END_GLOBAL
+    AFFINE_GAP_FREE
+    AFFINE_GAP_RETURN
 }
 
 cell_t align_global_affine(
@@ -409,8 +424,9 @@ cell_t align_global_affine(
     AFFINE_GAP_BODY2((ch1 == ch2 ? match : mismatch))
     AFFINE_GAP_MAX_SCORE
     AFFINE_GAP_BODY3
-    AFFINE_GAP_FREE
     AFFINE_GAP_END_GLOBAL
+    AFFINE_GAP_FREE
+    AFFINE_GAP_RETURN
 }
 
 cell_t align_global_affine(
@@ -430,8 +446,9 @@ cell_t align_global_affine(
     AFFINE_GAP_BODY2(BLOSUM(ch1, ch2))
     AFFINE_GAP_MAX_SCORE
     AFFINE_GAP_BODY3
-    AFFINE_GAP_FREE
     AFFINE_GAP_END_GLOBAL
+    AFFINE_GAP_FREE
+    AFFINE_GAP_RETURN
 }
 
 
@@ -454,8 +471,9 @@ cell_t align_semi_affine(
     AFFINE_GAP_BODY2(callback(ch1, ch2))
     AFFINE_GAP_MAX_SCORE
     AFFINE_GAP_BODY3
-    AFFINE_GAP_FREE
     AFFINE_GAP_END_SEMI
+    AFFINE_GAP_FREE
+    AFFINE_GAP_RETURN
 }
 
 cell_t align_semi_affine(
@@ -480,8 +498,9 @@ cell_t align_semi_affine(
     AFFINE_GAP_BODY2(SCORE(sub, map, first, ch1, ch2))
     AFFINE_GAP_MAX_SCORE
     AFFINE_GAP_BODY3
-    AFFINE_GAP_FREE
     AFFINE_GAP_END_SEMI
+    AFFINE_GAP_FREE
+    AFFINE_GAP_RETURN
 }
 
 cell_t align_semi_affine(
@@ -503,8 +522,9 @@ cell_t align_semi_affine(
     AFFINE_GAP_BODY2((ch1 == ch2 ? match : mismatch))
     AFFINE_GAP_MAX_SCORE
     AFFINE_GAP_BODY3
-    AFFINE_GAP_FREE
     AFFINE_GAP_END_SEMI
+    AFFINE_GAP_FREE
+    AFFINE_GAP_RETURN
 }
 
 cell_t align_semi_affine(
@@ -525,8 +545,9 @@ cell_t align_semi_affine(
     AFFINE_GAP_BODY2(BLOSUM(ch1, ch2))
     AFFINE_GAP_MAX_SCORE
     AFFINE_GAP_BODY3
-    AFFINE_GAP_FREE
     AFFINE_GAP_END_SEMI
+    AFFINE_GAP_FREE
+    AFFINE_GAP_RETURN
 }
 
 
@@ -548,8 +569,9 @@ cell_t align_local_affine(
     AFFINE_GAP_BODY2(callback(ch1, ch2))
     AFFINE_GAP_MAX_SCORE_LOCAL
     AFFINE_GAP_BODY3
-    AFFINE_GAP_FREE
     AFFINE_GAP_END_LOCAL
+    AFFINE_GAP_FREE
+    AFFINE_GAP_RETURN
 }
 
 cell_t align_local_affine(
@@ -573,8 +595,9 @@ cell_t align_local_affine(
     AFFINE_GAP_BODY2(SCORE(sub, map, first, ch1, ch2))
     AFFINE_GAP_MAX_SCORE_LOCAL
     AFFINE_GAP_BODY3
-    AFFINE_GAP_FREE
     AFFINE_GAP_END_LOCAL
+    AFFINE_GAP_FREE
+    AFFINE_GAP_RETURN
 }
 
 cell_t align_local_affine(
@@ -595,8 +618,9 @@ cell_t align_local_affine(
     AFFINE_GAP_BODY2((ch1 == ch2 ? match : mismatch))
     AFFINE_GAP_MAX_SCORE_LOCAL
     AFFINE_GAP_BODY3
-    AFFINE_GAP_FREE
     AFFINE_GAP_END_LOCAL
+    AFFINE_GAP_FREE
+    AFFINE_GAP_RETURN
 }
 
 cell_t align_local_affine(
@@ -616,8 +640,9 @@ cell_t align_local_affine(
     AFFINE_GAP_BODY2(BLOSUM(ch1, ch2))
     AFFINE_GAP_MAX_SCORE_LOCAL
     AFFINE_GAP_BODY3
-    AFFINE_GAP_FREE
     AFFINE_GAP_END_LOCAL
+    AFFINE_GAP_FREE
+    AFFINE_GAP_RETURN
 }
 
 
