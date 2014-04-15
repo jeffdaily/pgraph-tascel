@@ -1026,7 +1026,7 @@ static unsigned long process_tree(Bucket *bucket, local_data_t *local_data, int 
             << "\t" << utcs[worker]->size() << endl;
 #endif
         /* assert we haven't run out of room in the task queue! */
-        assert(local_pairs.size()<((unsigned long)(utcs[worker]->capacity()-utcs[worker]->size())));
+        //assert(local_pairs.size()<((unsigned long)(utcs[worker]->capacity()-utcs[worker]->size())));
 
         /* populate task queue */
 #if USE_SET
@@ -1034,12 +1034,29 @@ static unsigned long process_tree(Bucket *bucket, local_data_t *local_data, int 
 #else
         vector<pair<size_t,size_t> >::iterator it;
 #endif
+        bool overflow = false;
         for (it=local_pairs.begin(); it!=local_pairs.end(); ++it) {
-            task_description_two desc;
-            desc.id1 = it->first;
-            desc.id2 = it->second;
-            utcs[worker]->addTask(&desc, sizeof(desc));
+            if (utcs[worker]->spaceAvailable()) {
+                task_description_two desc;
+                desc.id1 = it->first;
+                desc.id2 = it->second;
+                utcs[worker]->addTask(&desc, sizeof(desc));
+            }
+            else {
+                unsigned long p[2] = {it->first,it->second};
+                align(p, local_data, worker);
+                overflow = true;
+            }
             ++count;
+        }
+
+        if (overflow) {
+            string kmer = local_data->suffix_buckets->bucket_kmer(
+                    bucket->bid, bucket->k);
+            cerr << "bucket " << bucket->bid
+                << " (" << kmer << ")"
+                << " overflowed with " << orig_size << " pairs"
+                << endl;
         }
 
         stats_tree[worker].time_last = MPI_Wtime();

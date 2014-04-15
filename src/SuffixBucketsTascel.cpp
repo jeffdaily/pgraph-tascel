@@ -322,6 +322,10 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
     }
 #endif
 
+#if DEBUG || 1
+    mpix::print_sync("buckets_size_before", initial_buckets.size(), comm);
+#endif
+
     /* now that initial buckets are created, refine the big ones */
     bool done = false;
     start = 0;
@@ -332,16 +336,16 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
             BucketMeta &bucket = initial_buckets[i];
 #if DEBUG
             if (0 == comm_rank) {
-                ::std::cout << "bucket.size >? bucket_cutoff*buckets_stats.stddev() -- "
-                    << bucket.size << " >? " << param.bucket_cutoff*buckets_stats.stddev()
+                ::std::cout << "bucket.size >? bucket_stats.mean() + bucket_cutoff*buckets_stats.stddev() -- "
+                    << bucket.size << " >? " << buckets_stats.mean() + param.bucket_cutoff*buckets_stats.stddev()
                     << ::std::endl;
                 ::std::cout << "bucket.k <? param.exact_match_length -- "
                     << bucket.k << " <? " << param.exact_match_length
                     << ::std::endl;
             }
 #endif
-            if (bucket.size > param.bucket_cutoff*buckets_stats.stddev()
-                    && bucket.k < param.exact_match_length) {
+            if (bucket.size > buckets_stats.mean() + param.bucket_cutoff*buckets_stats.stddev()
+                    && bucket.k+1 < param.exact_match_length) {
                 vector<BucketMeta> local_new_buckets;
                 refine_bucket(bucket, local_new_buckets);
                 done = false;

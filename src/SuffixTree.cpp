@@ -285,6 +285,7 @@ int SuffixTree::next_diff_pos(Suffix *suffixes, int depth)
                 << endl;
             cout << (*sequences)[p->sid];
             cout << string(p->pid, 'X') << endl;;
+            MPI_Abort(MPI_COMM_WORLD, -1);
         }
         assert((i + p->pid) < (*sequences)[p->sid].size());
         pCh = (*sequences)[p->sid][p->pid + i];
