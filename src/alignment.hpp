@@ -28,6 +28,7 @@ namespace pgraph {
 typedef struct {
     int score;      /**< alignment score */
     int matches;    /**< number of matches */
+    int similarities;/**< number of similarities */
     int length;     /**< alignment length */
 } cell_t;
 

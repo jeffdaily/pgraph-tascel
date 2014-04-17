@@ -38,7 +38,7 @@ extern "C" {
 static const int MAP_BLOSUM[] = {
     0,  20,   4,   3,   6,  13,   7,   8,   9,  23,
     11,  10,  12,   2,  23,  14,   5,   1,  15,  16,
-    23,  19,  17,  22,  18,  21 };
+    22,  19,  17,  22,  18,  21 };
 
 /* This table is used to transform amino acid letters into numbers. */
 static const int MAP_BLOSUM_[128] = {
@@ -47,9 +47,9 @@ static const int MAP_BLOSUM_[128] = {
     23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
     23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
     23, 0,  20, 4,  3,  6,  13, 7,  8,  9,  23, 11, 10, 12, 2,  23,
-    14, 5,  1,  15, 16, 23, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23,
+    14, 5,  1,  15, 16, 22, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23,
     23, 0,  20, 4,  3,  6,  13, 7,  8,  9,  23, 11, 10, 12, 2,  23,
-    14, 5,  1,  15, 16, 23, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23
+    14, 5,  1,  15, 16, 22, 19, 17, 22, 18, 21, 23, 23, 23, 23, 23
 };
 
 
@@ -74,6 +74,7 @@ namespace pgraph {
 
 /** points to selected blosum table (default blosum62) */
 static const int (* restrict blosum)[24] = blosum62;
+static const int * const restrict * restrict blosum_ = blosum62_;
 static const int8_t * restrict blosum__ = blosum62__;
 
 
@@ -154,26 +155,32 @@ void select_blosum(int number)
     switch (number) {
         case 40:
             blosum = blosum40;
+            blosum_ = blosum40_;
             blosum__ = blosum40__;
             break;
         case 45:
             blosum = blosum45;
+            blosum_ = blosum45_;
             blosum__ = blosum45__;
             break;
         case 62:
             blosum = blosum62;
+            blosum_ = blosum62_;
             blosum__ = blosum62__;
             break;
         case 75:
             blosum = blosum75;
+            blosum_ = blosum75_;
             blosum__ = blosum75__;
             break;
         case 80:
             blosum = blosum80;
+            blosum_ = blosum80_;
             blosum__ = blosum80__;
             break;
         case 90:
             blosum = blosum90;
+            blosum_ = blosum90_;
             blosum__ = blosum90__;
             break;
         default:
@@ -195,11 +202,11 @@ void select_blosum(int number)
             delete_del ? allocate_int_table(2U,longestLen) : del_;          \
     int * const restrict * const restrict ins =                             \
             delete_ins ? allocate_int_table(2U,longestLen) : ins_;          \
-    cell_t maxCell = {NEG_INF, 0, 0};   /* max cell in table */
+    cell_t maxCell = {NEG_INF, 0, 0, 0};   /* max cell in table */          \
 
 #define AFFINE_GAP_DECL_SEMI                                                \
-    cell_t lastCol = {NEG_INF, 0, 0};   /* max cell in last col */          \
-    cell_t lastRow = {NEG_INF, 0, 0};   /* max cell in last row */          \
+    cell_t lastCol = {NEG_INF, 0, 0, 0};   /* max cell in last col */       \
+    cell_t lastRow = {NEG_INF, 0, 0, 0};   /* max cell in last row */       \
 
 #define AFFINE_GAP_ASSERT       \
     assert(s1);                 \
@@ -213,108 +220,128 @@ void select_blosum(int number)
 #define AFFINE_GAP_INIT_CORNER                                              \
     tbl[0][0].score = 0;                                                    \
     tbl[0][0].matches = 0;                                                  \
+    tbl[0][0].similarities = 0;                                             \
     tbl[0][0].length = 0;                                                   \
     del[0][0] = NEG_INF;                                                    \
     ins[0][0] = NEG_INF;
 
 #define AFFINE_GAP_INIT_FIRST_ROW_WITH_PENALTY                              \
     for (j = 1; j <= s2Len; j++) {                                          \
-        tbl[0][j].score = open + j * gap;                                   \
+        tbl[0][j].score = open + (j-1) * gap;                               \
         tbl[0][j].matches = 0;                                              \
+        tbl[0][j].similarities = 0;                                         \
         tbl[0][j].length = 0;                                               \
         del[0][j] = NEG_INF;                                                \
-        ins[0][j] = open + j * gap;                                         \
+        ins[0][j] = open + (j-1) * gap;                                     \
     }
 
 #define AFFINE_GAP_INIT_FIRST_ROW_WITHOUT_PENALTY                           \
     for (j = 1; j <= s2Len; j++) {                                          \
         tbl[0][j].score = 0;                                                \
         tbl[0][j].matches = 0;                                              \
+        tbl[0][j].similarities = 0;                                         \
         tbl[0][j].length = 0;                                               \
         del[0][j] = NEG_INF;                                                \
-        ins[0][j] = open + j * gap;                                         \
+        ins[0][j] = open + (j-1) * gap;                                     \
     }
 
 #define AFFINE_GAP_BODY1                                                    \
     for (i = 1; i <= s1Len; ++i) {                                          \
-        int dig = 0;        /* diagonal value in DP table */                \
-        int up = 0;         /* upper value in DP table */                   \
-        int left = 0;       /* left value in DP table */                    \
-        int maxScore = 0;   /* max of dig, up, and left in DP table */      \
-        size_t cr = 0;      /* current row index in DP table */             \
-        size_t pr = 0;      /* previous row index in DP table */            \
-        char ch1 = 0;       /* current character in first sequence */       \
+        size_t cr = CROW(i);                                                \
+        size_t pr = PROW(i);                                                \
+        char ch1 = s1[i - 1];                                               \
+        const int * const restrict BlosumRow = blosum_[MAP_BLOSUM_[ch1]];   \
                                                                             \
-        cr = CROW(i);                                                       \
-        pr = PROW(i);                                                       \
-        ch1 = s1[i - 1];                                                    \
+        int Nscore        = tbl[pr][0].score;                               \
+        int Nmatches      = tbl[pr][0].matches;                             \
+        int Nsimilarities = tbl[pr][0].similarities;                        \
+        int Nlength       = tbl[pr][0].length;                              \
+                                                                            \
+        int Wscore        = open + (i-1) * gap;                             \
+        int Wmatches      = 0;                                              \
+        int Wsimilarities = 0;                                              \
+        int Wlength       = 0;
 
 #define AFFINE_GAP_INIT_FIRST_COL_WITH_PENALTY                              \
         /* init first column of 3 tables */                                 \
-        tbl[cr][0].score = open + i * gap;                                  \
-        tbl[cr][0].matches = 0;                                             \
-        tbl[cr][0].length = 0;                                              \
-        del[cr][0] = open + i * gap;                                        \
+        tbl[cr][0].score = Wscore;                                          \
+        tbl[cr][0].matches = Wmatches;                                      \
+        tbl[cr][0].similarities = Wsimilarities;                            \
+        tbl[cr][0].length = Wlength;                                        \
+        del[cr][0] = open + (i-1) * gap;                                    \
         ins[cr][0] = NEG_INF;
 
 #define AFFINE_GAP_INIT_FIRST_COL_WITHOUT_PENALTY                           \
         /* init first column of 3 tables */                                 \
         tbl[cr][0].score = 0;                                               \
-        tbl[cr][0].matches = 0;                                             \
-        tbl[cr][0].length = 0;                                              \
-        del[cr][0] = open + i * gap;                                        \
+        tbl[cr][0].matches = Wmatches;                                      \
+        tbl[cr][0].similarities = Wsimilarities;                            \
+        tbl[cr][0].length = Wlength;                                        \
+        del[cr][0] = open + (i-1) * gap;                                    \
         ins[cr][0] = NEG_INF;
 
 #define AFFINE_GAP_BODY2(CALCULATE_SCORE)                                   \
         for (j = 1; j <= s2Len; j++) {                                      \
             int tmp1 = 0;   /* temporary during DP calculation */           \
-            int tmp2 = 0;   /* temporary during DP calculation */           \
-            char ch2 = 0;   /* current character in second sequence */      \
+            int up = 0;                                                     \
+            int left = 0;                                                   \
+            int dig = 0;                                                    \
+            char ch2 = s2[j - 1];                                           \
+            int NWscore        = Nscore;                                    \
+            int NWmatches      = Nmatches;                                  \
+            int NWsimilarities = Nsimilarities;                             \
+            int NWlength       = Nlength;                                   \
                                                                             \
-            ch2 = s2[j - 1];                                                \
+            Nscore        = tbl[pr][j].score;                               \
+            Nmatches      = tbl[pr][j].matches;                             \
+            Nsimilarities = tbl[pr][j].similarities;                        \
+            Nlength       = tbl[pr][j].length;                              \
                                                                             \
-            /* overflow could happen, INT_MIN-1 = 2147483647 */             \
-            tmp1 = tbl[pr][j].score + open;                                 \
-            tmp2 = del[pr][j] + gap;                                        \
-            up = MAX(tmp1, tmp2);                                           \
-            del[cr][j] = up;                                                \
-            tmp1 = tbl[cr][j - 1].score + open;                             \
-            tmp2 = ins[cr][j - 1] + gap;                                    \
-            left = MAX(tmp1, tmp2);                                         \
-            ins[cr][j] = left;                                              \
-            maxScore = MAX(up, left);                                       \
             tmp1 = CALCULATE_SCORE;                                         \
-            dig = tbl[pr][j - 1].score + tmp1;                              \
-            maxScore = MAX(maxScore, dig);                                  \
+            up   = MAX(Nscore + open, del[pr][j]   + gap);                  \
+            left = MAX(Wscore + open, ins[cr][j-1] + gap);                  \
+            dig  = NWscore + tmp1;                                          \
+                                                                            \
+            del[cr][j] = up;                                                \
+            ins[cr][j] = left;                                              \
+                                                                            \
+            if ((dig >= up) && (dig >= left)) {                             \
+                Wscore = dig;                                               \
+                Wmatches  = NWmatches + (ch1 == ch2);                       \
+                Wsimilarities = NWsimilarities + (tmp1 > 0);                \
+                Wlength  = NWlength + 1;                                    \
+            } else if (up >= left) {                                        \
+                Wscore = up;                                                \
+                Wmatches  = Nmatches;                                       \
+                Wsimilarities = Nsimilarities;                              \
+                Wlength  = Nlength + 1;                                     \
+            } else {                                                        \
+                Wscore = left;                                              \
+                Wmatches  = Wmatches;                                       \
+                Wsimilarities  = Wsimilarities;                             \
+                Wlength  = Wlength + 1;                                     \
+            }                                                               \
+                                                                            \
+            tbl[cr][j].score = Wscore;                                      \
+            tbl[cr][j].matches  = Wmatches;                                 \
+            tbl[cr][j].similarities  = Wsimilarities;                       \
+            tbl[cr][j].length  = Wlength;
 
-#define AFFINE_GAP_MAX_SCORE                                                \
-            tbl[cr][j].score = maxScore;
-
-#define AFFINE_GAP_MAX_SCORE_LOCAL                                          \
-            maxScore = MAX(maxScore, 0);                                    \
-            tbl[cr][j].score = maxScore;                                    \
+#define AFFINE_GAP_BODY2_LOCAL                                              \
             if (tbl[cr][j].score > maxCell.score) {                         \
                 maxCell = tbl[cr][j];                                       \
             }                                                               \
-            if (tbl[cr][j].score == 0) {                                    \
-                tbl[cr][j].matches = 0;                                     \
-                tbl[cr][j].length = 0;                                      \
-            } else
-
-#define AFFINE_GAP_BODY3                                                    \
-            if (maxScore == dig) {                                          \
-                tbl[cr][j].matches =                                        \
-                        tbl[pr][j - 1].matches + ((ch1 == ch2) ? 1 : 0);    \
-                tbl[cr][j].length = tbl[pr][j - 1].length + 1;              \
-            }                                                               \
-            else if (maxScore == up) {                                      \
-                tbl[cr][j].matches = tbl[pr][j].matches;                    \
-                tbl[cr][j].length = tbl[pr][j].length + 1;                  \
-            }                                                               \
-            else {                                                          \
-                tbl[cr][j].matches = tbl[cr][j - 1].matches;                \
-                tbl[cr][j].length = tbl[cr][j - 1].length + 1;              \
+            if (tbl[cr][j].score <= 0) {                                    \
+                tbl[cr][j].score = Wscore = 0;                              \
+                tbl[cr][j].matches = Wmatches = 0;                          \
+                tbl[cr][j].similarities = Wsimilarities = 0;                \
+                tbl[cr][j].length = Wlength = 0;                            \
             }
+
+#define AFFINE_GAP_END_GLOBAL                                               \
+        } /* end of j loop */                                               \
+    } /* end of i loop */                                                   \
+    maxCell = tbl[CROW(s1Len)][s2Len];
 
 #define AFFINE_GAP_END_SEMI                                                 \
             /* track the maximum of last row */                             \
@@ -322,9 +349,6 @@ void select_blosum(int number)
                 lastRow = tbl[cr][j];                                       \
             }                                                               \
         } /* end of j loop */                                               \
-                                                                            \
-        assert(j == (s2Len + 1));                                           \
-                                                                            \
         /* update the maximum of last column */                             \
         if (tbl[cr][s2Len].score > lastCol.score) {                         \
             lastCol = tbl[cr][s2Len];                                       \
@@ -334,17 +358,6 @@ void select_blosum(int number)
 
 #define AFFINE_GAP_END_LOCAL                                                \
         } /* end of j loop */                                               \
-                                                                            \
-        assert(j == (s2Len + 1));                                           \
-    } /* end of i loop */
-
-#define AFFINE_GAP_END_GLOBAL                                               \
-        } /* end of j loop */                                               \
-                                                                            \
-        assert(j == (s2Len + 1));                                           \
-        if (i == s1Len && j == s2Len+1) {                                   \
-            maxCell = tbl[cr][s2Len];                                       \
-        }                                                                   \
     } /* end of i loop */
 
 #define AFFINE_GAP_FREE                                                     \
@@ -373,8 +386,6 @@ cell_t align_global_affine(
     AFFINE_GAP_BODY1
     AFFINE_GAP_INIT_FIRST_COL_WITH_PENALTY
     AFFINE_GAP_BODY2(callback(ch1, ch2))
-    AFFINE_GAP_MAX_SCORE
-    AFFINE_GAP_BODY3
     AFFINE_GAP_END_GLOBAL
     AFFINE_GAP_FREE
     AFFINE_GAP_RETURN
@@ -399,8 +410,6 @@ cell_t align_global_affine(
     AFFINE_GAP_BODY1
     AFFINE_GAP_INIT_FIRST_COL_WITH_PENALTY
     AFFINE_GAP_BODY2(SCORE(sub, map, first, ch1, ch2))
-    AFFINE_GAP_MAX_SCORE
-    AFFINE_GAP_BODY3
     AFFINE_GAP_END_GLOBAL
     AFFINE_GAP_FREE
     AFFINE_GAP_RETURN
@@ -422,8 +431,6 @@ cell_t align_global_affine(
     AFFINE_GAP_BODY1
     AFFINE_GAP_INIT_FIRST_COL_WITH_PENALTY
     AFFINE_GAP_BODY2((ch1 == ch2 ? match : mismatch))
-    AFFINE_GAP_MAX_SCORE
-    AFFINE_GAP_BODY3
     AFFINE_GAP_END_GLOBAL
     AFFINE_GAP_FREE
     AFFINE_GAP_RETURN
@@ -443,9 +450,7 @@ cell_t align_global_affine(
     AFFINE_GAP_INIT_FIRST_ROW_WITH_PENALTY
     AFFINE_GAP_BODY1
     AFFINE_GAP_INIT_FIRST_COL_WITH_PENALTY
-    AFFINE_GAP_BODY2(BLOSUM(ch1, ch2))
-    AFFINE_GAP_MAX_SCORE
-    AFFINE_GAP_BODY3
+    AFFINE_GAP_BODY2(BlosumRow[MAP_BLOSUM_[ch2]])
     AFFINE_GAP_END_GLOBAL
     AFFINE_GAP_FREE
     AFFINE_GAP_RETURN
@@ -469,8 +474,6 @@ cell_t align_semi_affine(
     AFFINE_GAP_BODY1
     AFFINE_GAP_INIT_FIRST_COL_WITHOUT_PENALTY
     AFFINE_GAP_BODY2(callback(ch1, ch2))
-    AFFINE_GAP_MAX_SCORE
-    AFFINE_GAP_BODY3
     AFFINE_GAP_END_SEMI
     AFFINE_GAP_FREE
     AFFINE_GAP_RETURN
@@ -496,8 +499,6 @@ cell_t align_semi_affine(
     AFFINE_GAP_BODY1
     AFFINE_GAP_INIT_FIRST_COL_WITHOUT_PENALTY
     AFFINE_GAP_BODY2(SCORE(sub, map, first, ch1, ch2))
-    AFFINE_GAP_MAX_SCORE
-    AFFINE_GAP_BODY3
     AFFINE_GAP_END_SEMI
     AFFINE_GAP_FREE
     AFFINE_GAP_RETURN
@@ -520,8 +521,6 @@ cell_t align_semi_affine(
     AFFINE_GAP_BODY1
     AFFINE_GAP_INIT_FIRST_COL_WITHOUT_PENALTY
     AFFINE_GAP_BODY2((ch1 == ch2 ? match : mismatch))
-    AFFINE_GAP_MAX_SCORE
-    AFFINE_GAP_BODY3
     AFFINE_GAP_END_SEMI
     AFFINE_GAP_FREE
     AFFINE_GAP_RETURN
@@ -542,9 +541,7 @@ cell_t align_semi_affine(
     AFFINE_GAP_INIT_FIRST_ROW_WITHOUT_PENALTY
     AFFINE_GAP_BODY1
     AFFINE_GAP_INIT_FIRST_COL_WITHOUT_PENALTY
-    AFFINE_GAP_BODY2(BLOSUM(ch1, ch2))
-    AFFINE_GAP_MAX_SCORE
-    AFFINE_GAP_BODY3
+    AFFINE_GAP_BODY2(BlosumRow[MAP_BLOSUM_[ch2]])
     AFFINE_GAP_END_SEMI
     AFFINE_GAP_FREE
     AFFINE_GAP_RETURN
@@ -567,8 +564,7 @@ cell_t align_local_affine(
     AFFINE_GAP_BODY1
     AFFINE_GAP_INIT_FIRST_COL_WITHOUT_PENALTY
     AFFINE_GAP_BODY2(callback(ch1, ch2))
-    AFFINE_GAP_MAX_SCORE_LOCAL
-    AFFINE_GAP_BODY3
+    AFFINE_GAP_BODY2_LOCAL
     AFFINE_GAP_END_LOCAL
     AFFINE_GAP_FREE
     AFFINE_GAP_RETURN
@@ -593,8 +589,7 @@ cell_t align_local_affine(
     AFFINE_GAP_BODY1
     AFFINE_GAP_INIT_FIRST_COL_WITHOUT_PENALTY
     AFFINE_GAP_BODY2(SCORE(sub, map, first, ch1, ch2))
-    AFFINE_GAP_MAX_SCORE_LOCAL
-    AFFINE_GAP_BODY3
+    AFFINE_GAP_BODY2_LOCAL
     AFFINE_GAP_END_LOCAL
     AFFINE_GAP_FREE
     AFFINE_GAP_RETURN
@@ -616,8 +611,7 @@ cell_t align_local_affine(
     AFFINE_GAP_BODY1
     AFFINE_GAP_INIT_FIRST_COL_WITHOUT_PENALTY
     AFFINE_GAP_BODY2((ch1 == ch2 ? match : mismatch))
-    AFFINE_GAP_MAX_SCORE_LOCAL
-    AFFINE_GAP_BODY3
+    AFFINE_GAP_BODY2_LOCAL
     AFFINE_GAP_END_LOCAL
     AFFINE_GAP_FREE
     AFFINE_GAP_RETURN
@@ -637,9 +631,8 @@ cell_t align_local_affine(
     AFFINE_GAP_INIT_FIRST_ROW_WITHOUT_PENALTY
     AFFINE_GAP_BODY1
     AFFINE_GAP_INIT_FIRST_COL_WITHOUT_PENALTY
-    AFFINE_GAP_BODY2(BLOSUM(ch1, ch2))
-    AFFINE_GAP_MAX_SCORE_LOCAL
-    AFFINE_GAP_BODY3
+    AFFINE_GAP_BODY2(BlosumRow[MAP_BLOSUM_[ch2]])
+    AFFINE_GAP_BODY2_LOCAL
     AFFINE_GAP_END_LOCAL
     AFFINE_GAP_FREE
     AFFINE_GAP_RETURN
