@@ -61,6 +61,7 @@ SuffixTree::SuffixTree(
     ,   fanout_stats()
     ,   depth_stats()
     ,   suffix_length_stats()
+    ,   tails(NULL)
 {
     size_t n_nodes = 2 * bucket->size;
     size_t i = 0;
@@ -81,7 +82,7 @@ SuffixTree::SuffixTree(
     }
 
     /* allocate lset pointer memory for tree nodes */
-    lset_array = new Suffix*[SIGMA * n_nodes];
+    lset_array = new Suffix*[SIGMA * (n_nodes+1)];
     if (NULL == lset_array) {
         perror("build_tree: malloc lset array");
         exit(EXIT_FAILURE);
@@ -104,6 +105,7 @@ SuffixTree::SuffixTree(
         nodes[i].rLeaf = 0;
         nodes[i].lset = &(lset_array[i*SIGMA]);
     }
+    tails = &(lset_array[SIGMA * n_nodes]);
 
     /* gather suffix statistics */
     Suffix *p = NULL;
@@ -116,7 +118,7 @@ SuffixTree::SuffixTree(
         suffix_length_stats.push_back(len);
     }
 
-    build_tree_recursive(bucket->suffixes, window_size - 1);
+    build_tree_recursive2(bucket->suffixes, window_size - 1);
 }
 
 
@@ -224,6 +226,85 @@ size_t SuffixTree::build_tree_recursive(Suffix *suffixes, int depth)
 
 
 /**
+ * TODO
+ */
+size_t SuffixTree::build_tree_recursive2(Suffix *suffixes, int depth)
+{
+    int diffPos;
+
+    diffPos = next_diff_pos2(suffixes, depth, size);
+    if (diffPos == ERROR) { /* can never happen */
+        fprintf(stderr, "wrong when exploring diff chars!");
+        exit(EXIT_FAILURE);
+    }
+    else if (diffPos == DOL_END) { /* leaf node */
+        suffixes = nodes[size].lset[0];
+        nodes[size].lset[0] = NULL;
+        Sequence &seq = (*sequences)[suffixes->sid];
+
+        /* depth also includes the '$' */
+        nodes[size].depth = (seq.size() - 1) - suffixes->pid;
+        nodes[size].rLeaf = size; /* point to itself */
+
+        compute_lset(suffixes, nodes[size].lset);
+
+        return size++;
+    }
+    else {  /* internal node */
+        size_t i;
+        size_t j; /* store the index of the internal node */
+        Suffix **heads = NULL;
+        Suffix *p = NULL;
+        Suffix *q = NULL;
+        size_t rLeaf = SIZE_MAX;
+
+        j = size; /* store st_index in the stack */
+        size++;
+        nodes[j].depth = diffPos - 1 ;
+
+        depth_stats.push_back(nodes[j].depth);
+
+        heads = nodes[j].lset;
+
+        /* compute fanout */
+        size_internal++;
+        for (i = 0; i < SIGMA; i++) {
+            size_t fanout = 0;
+            if (heads[i]) {
+                ++fanout;
+            }
+            fanout_stats.push_back(fanout);
+        }
+
+        /* recursively construct the tree in DFS way */
+        for (i = 0; i < SIGMA; i++) {
+            if (heads[i]) {
+                /* branching with '$' */
+                if (i == (alphabet_table[DOLLAR])) {
+                    nodes[size].depth =
+                        ((*sequences)[heads[i]->sid].size() - 1 - heads[i]->pid);
+                    nodes[size].rLeaf = size;
+
+                    compute_lset(heads[i], nodes[size].lset);
+                    rLeaf = size++;
+                }
+                else {
+                    rLeaf = build_tree_recursive2(heads[i], diffPos);
+                }
+
+                /* put it back into NULL */
+                heads[i] = NULL;
+            }
+        }
+
+        /* store the right most leaf in the internal node */
+        nodes[j].rLeaf = rLeaf;
+        return nodes[j].rLeaf;
+    }
+}
+
+
+/**
  * compute lset according to the left character of pid to
  * ensure the left maximality. Mark the special case of
  * whole sequence. Use BEGIN='O' as the special character.
@@ -306,6 +387,99 @@ int SuffixTree::next_diff_pos(Suffix *suffixes, int depth)
             return DOL_END;
         }
     }
+}
+
+
+/**
+ * find the next different position of suffixes.
+ * NOTE: if all suffixes end at '$', then report it as
+ *       isLeaf = YES
+ *
+ * return -2: all dollar ending
+ *        -1: error, cannot happen
+ *         i: next diff position from starting point
+ *
+ * @param[in] suffixes - bucket in linked list way
+ * @param[in] depth - depth since root, which has 0 depth
+ * ---------------------------------------------------*/
+int SuffixTree::next_diff_pos2(Suffix *suffixes, int depth, int size)
+{
+    int i;
+    size_t j;
+    char pCh;
+    char cCh;
+    size_t hIndex;
+    Suffix **heads = nodes[size].lset; /* temp space for heads */
+    //Suffix **tails = new Suffix*[SIGMA]; /* temp space for tails */
+    Suffix *p = NULL;
+    Suffix *q = NULL;
+    int result = -1;
+
+    assert(suffixes != NULL);
+    i = depth; /* position checked until this point */
+
+    for (j = 0; j < SIGMA; j++) {
+        heads[j] = NULL;
+        tails[j] = NULL;
+    }
+
+    /* partition suffixes into SIGMA sub-buckets */
+    p = suffixes;
+    while (result == -1) {
+        i++; /* step forward one more char for comparison */
+        pCh = (*sequences)[p->sid][p->pid + i];
+        hIndex = alphabet_table[(unsigned)pCh];
+        if (hIndex == npos) {
+            fprintf(stderr, "invalid h index caused by '%c'\n", pCh);
+        }
+        assert(hIndex != npos);
+        assert(hIndex < SIGMA);
+        q = p->next;
+        p->next = heads[hIndex];
+        heads[hIndex] = p;
+        tails[hIndex] = p;
+
+        for (p = q; p != NULL; p = q) {
+            cCh = (*sequences)[p->sid][p->pid + i];
+            hIndex = alphabet_table[(unsigned)cCh];
+            if (hIndex == npos) {
+                fprintf(stderr, "invalid h index caused by '%c'\n", cCh);
+            }
+            assert(hIndex != npos);
+            assert(hIndex < SIGMA);
+            q = p->next;
+            p->next = heads[hIndex];
+            heads[hIndex] = p;
+            if (tails[hIndex] == NULL) {
+                tails[hIndex] = p;
+            }
+            if (cCh != pCh) {
+                result = i;
+            }
+        }
+
+        if (result == -1) {
+            /* went through all suffixes, all matched */
+            /* stitch them back together */
+            p = NULL;
+            for (j = 0; j < SIGMA; ++j) {
+                if (heads[j]) {
+                    tails[j]->next = p;
+                    p = heads[j];
+                }
+                heads[j] = NULL;
+                tails[j] = NULL;
+            }
+            if (pCh == DOLLAR) {
+                result = DOL_END;
+                heads[0] = p;
+            }
+        }
+    }
+
+    //delete [] tails;
+
+    return result;
 }
 
 

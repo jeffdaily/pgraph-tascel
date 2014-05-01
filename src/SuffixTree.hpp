@@ -133,8 +133,10 @@ class SuffixTree
 
     private:
         size_t build_tree_recursive(Suffix *suffixes, int depth);
+        size_t build_tree_recursive2(Suffix *suffixes, int depth);
         void compute_lset(Suffix *suffixes, Suffix **lset);
         int next_diff_pos(Suffix *suffixes, int depth);
+        int next_diff_pos2(Suffix *suffixes, int depth, int size);
         bool is_candidate(Suffix *p, Suffix *q);
         size_t* count_sort();
         void merge_lsets(size_t sIndex, size_t eIndex);
@@ -161,6 +163,7 @@ class SuffixTree
         Stats fanout_stats;     /**< average fanout */
         Stats depth_stats;      /**< node depth stats */
         Stats suffix_length_stats;/**< suffix length stats */
+        Suffix **tails;
 
         static const size_t npos;
 };
