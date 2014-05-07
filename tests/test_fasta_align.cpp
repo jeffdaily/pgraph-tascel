@@ -21,14 +21,22 @@ int main(int argc, char **argv)
     int gap = -1;
     ::pgraph::cell_t result_cell = {0,0,0,0};
     ::pgraph::cell_t **tbl = ::pgraph::allocate_cell_table(2, s1_len);
+    int **scr = ::pgraph::allocate_int_table(2, s1_len);
+    int **mat = ::pgraph::allocate_int_table(2, s1_len);
+    int **sim = ::pgraph::allocate_int_table(2, s1_len);
+    int **len = ::pgraph::allocate_int_table(2, s1_len);
     int **del = ::pgraph::allocate_int_table(2, s1_len);
     int **ins = ::pgraph::allocate_int_table(2, s1_len);
     unsigned long long timer;
     size_t i = 0;
-    size_t limit = 100;
+    size_t limit = 1000;
 
     timer_init();
     ::std::cout << timer_name() << " timer" << ::std::endl;
+
+    ::std::cout << ::std::endl;
+    ::std::cout << "AOS tests" << ::std::endl;
+    ::std::cout << ::std::endl;
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
@@ -75,6 +83,55 @@ int main(int argc, char **argv)
         << ::std::endl;
     ::std::cout << timer/limit << ::std::endl;
 
+    ::std::cout << ::std::endl;
+    ::std::cout << "SOA tests" << ::std::endl;
+    ::std::cout << ::std::endl;
+
+    timer = timer_start();
+    for (i=0; i<limit; ++i) {
+        result_cell = ::pgraph::align_global_affine(
+                s1, s1_len, s2, s2_len, open, gap, scr, mat, sim, len, del, ins);
+    }
+    timer = timer_end(timer);
+    ::std::cout
+        << "align_global_affine" << ::std::endl
+        << result_cell.score
+        << " " << result_cell.matches
+        << " " << result_cell.similarities
+        << " " << result_cell.length
+        << ::std::endl;
+    ::std::cout << timer/limit << ::std::endl;
+
+    timer = timer_start();
+    for (i=0; i<limit; ++i) {
+        result_cell = ::pgraph::align_semi_affine(
+                s1, s1_len, s2, s2_len, open, gap, scr, mat, sim, len, del, ins);
+    }
+    timer = timer_end(timer);
+    ::std::cout
+        << "align_semi_affine" << ::std::endl
+        << result_cell.score
+        << " " << result_cell.matches
+        << " " << result_cell.similarities
+        << " " << result_cell.length
+        << ::std::endl;
+    ::std::cout << timer/limit << ::std::endl;
+
+    timer = timer_start();
+    for (i=0; i<limit; ++i) {
+        result_cell = ::pgraph::align_local_affine(
+                s1, s1_len, s2, s2_len, open, gap, scr, mat, sim, len, del, ins);
+    }
+    timer = timer_end(timer);
+    ::std::cout
+        << "align_local_affine" << ::std::endl
+        << result_cell.score
+        << " " << result_cell.matches
+        << " " << result_cell.similarities
+        << " " << result_cell.length
+        << ::std::endl;
+    ::std::cout << timer/limit << ::std::endl;
+
 #if 0
     timer = timer_start();
     for (i=0; i<limit; ++i) {
@@ -91,6 +148,10 @@ int main(int argc, char **argv)
 #endif
 
     ::pgraph::free_cell_table(tbl, 2);
+    ::pgraph::free_int_table(scr, 2);
+    ::pgraph::free_int_table(mat, 2);
+    ::pgraph::free_int_table(sim, 2);
+    ::pgraph::free_int_table(len, 2);
     ::pgraph::free_int_table(del, 2);
     ::pgraph::free_int_table(ins, 2);
 

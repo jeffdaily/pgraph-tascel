@@ -376,6 +376,150 @@ cell_t align_local_affine(
         int * const restrict * const restrict del=NULL,
         int * const restrict * const restrict ins=NULL);
 
+cell_t align_global_affine(
+        const char * const restrict s1, size_t s1_len,
+        const char * const restrict s2, size_t s2_len,
+        match_t match,
+        int open=-10, int gap=-1,
+        int * const restrict * const restrict scr=NULL,
+        int * const restrict * const restrict mat=NULL,
+        int * const restrict * const restrict sim=NULL,
+        int * const restrict * const restrict len=NULL,
+        int * const restrict * const restrict del=NULL,
+        int * const restrict * const restrict ins=NULL);
+
+cell_t align_global_affine(
+        const char * const restrict s1, size_t s1_len,
+        const char * const restrict s2, size_t s2_len,
+        const int * const restrict * const restrict sub,
+        const int * const restrict map, char first,
+        int open=-10, int gap=-1,
+        int * const restrict * const restrict scr=NULL,
+        int * const restrict * const restrict mat=NULL,
+        int * const restrict * const restrict sim=NULL,
+        int * const restrict * const restrict len=NULL,
+        int * const restrict * const restrict del=NULL,
+        int * const restrict * const restrict ins=NULL);
+
+cell_t align_global_affine(
+        const char * const restrict s1, size_t s1_len,
+        const char * const restrict s2, size_t s2_len,
+        int match, int mismatch,
+        int open=-10, int gap=-1,
+        int * const restrict * const restrict scr=NULL,
+        int * const restrict * const restrict mat=NULL,
+        int * const restrict * const restrict sim=NULL,
+        int * const restrict * const restrict len=NULL,
+        int * const restrict * const restrict del=NULL,
+        int * const restrict * const restrict ins=NULL);
+
+cell_t align_global_affine(
+        const char * const restrict s1, size_t s1_len,
+        const char * const restrict s2, size_t s2_len,
+        int open=-10, int gap=-1,
+        int * const restrict * const restrict scr=NULL,
+        int * const restrict * const restrict mat=NULL,
+        int * const restrict * const restrict sim=NULL,
+        int * const restrict * const restrict len=NULL,
+        int * const restrict * const restrict del=NULL,
+        int * const restrict * const restrict ins=NULL);
+
+cell_t align_semi_affine(
+        const char * const restrict s1, size_t s1_len,
+        const char * const restrict s2, size_t s2_len,
+        match_t match,
+        int open=-10, int gap=-1,
+        int * const restrict * const restrict scr=NULL,
+        int * const restrict * const restrict mat=NULL,
+        int * const restrict * const restrict sim=NULL,
+        int * const restrict * const restrict len=NULL,
+        int * const restrict * const restrict del=NULL,
+        int * const restrict * const restrict ins=NULL);
+
+cell_t align_semi_affine(
+        const char * const restrict s1, size_t s1_len,
+        const char * const restrict s2, size_t s2_len,
+        const int * const restrict * const restrict sub,
+        const int * const restrict map, char first,
+        int open=-10, int gap=-1,
+        int * const restrict * const restrict scr=NULL,
+        int * const restrict * const restrict mat=NULL,
+        int * const restrict * const restrict sim=NULL,
+        int * const restrict * const restrict len=NULL,
+        int * const restrict * const restrict del=NULL,
+        int * const restrict * const restrict ins=NULL);
+
+cell_t align_semi_affine(
+        const char * const restrict s1, size_t s1_len,
+        const char * const restrict s2, size_t s2_len,
+        int match, int mismatch,
+        int open=-10, int gap=-1,
+        int * const restrict * const restrict scr=NULL,
+        int * const restrict * const restrict mat=NULL,
+        int * const restrict * const restrict sim=NULL,
+        int * const restrict * const restrict len=NULL,
+        int * const restrict * const restrict del=NULL,
+        int * const restrict * const restrict ins=NULL);
+
+cell_t align_semi_affine(
+        const char * const restrict s1, size_t s1_len,
+        const char * const restrict s2, size_t s2_len,
+        int open=-10, int gap=-1,
+        int * const restrict * const restrict scr=NULL,
+        int * const restrict * const restrict mat=NULL,
+        int * const restrict * const restrict sim=NULL,
+        int * const restrict * const restrict len=NULL,
+        int * const restrict * const restrict del=NULL,
+        int * const restrict * const restrict ins=NULL);
+
+cell_t align_local_affine(
+        const char * const restrict s1, size_t s1_len,
+        const char * const restrict s2, size_t s2_len,
+        match_t match,
+        int open=-10, int gap=-1,
+        int * const restrict * const restrict scr=NULL,
+        int * const restrict * const restrict mat=NULL,
+        int * const restrict * const restrict sim=NULL,
+        int * const restrict * const restrict len=NULL,
+        int * const restrict * const restrict del=NULL,
+        int * const restrict * const restrict ins=NULL);
+
+cell_t align_local_affine(
+        const char * const restrict s1, size_t s1_len,
+        const char * const restrict s2, size_t s2_len,
+        const int * const restrict * const restrict sub,
+        const int * const restrict map, char first,
+        int open=-10, int gap=-1,
+        int * const restrict * const restrict scr=NULL,
+        int * const restrict * const restrict mat=NULL,
+        int * const restrict * const restrict sim=NULL,
+        int * const restrict * const restrict len=NULL,
+        int * const restrict * const restrict del=NULL,
+        int * const restrict * const restrict ins=NULL);
+
+cell_t align_local_affine(
+        const char * const restrict s1, size_t s1_len,
+        const char * const restrict s2, size_t s2_len,
+        int match, int mismatch,
+        int open=-10, int gap=-1,
+        int * const restrict * const restrict scr=NULL,
+        int * const restrict * const restrict mat=NULL,
+        int * const restrict * const restrict sim=NULL,
+        int * const restrict * const restrict len=NULL,
+        int * const restrict * const restrict del=NULL,
+        int * const restrict * const restrict ins=NULL);
+
+cell_t align_local_affine(
+        const char * const restrict s1, size_t s1_len,
+        const char * const restrict s2, size_t s2_len,
+        int open=-10, int gap=-1,
+        int * const restrict * const restrict scr=NULL,
+        int * const restrict * const restrict mat=NULL,
+        int * const restrict * const restrict sim=NULL,
+        int * const restrict * const restrict len=NULL,
+        int * const restrict * const restrict del=NULL,
+        int * const restrict * const restrict ins=NULL);
+
 /** @} */
 
 /**
