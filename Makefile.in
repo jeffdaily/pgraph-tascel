@@ -79,9 +79,11 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = apps/align$(EXEEXT) $(am__EXEEXT_1)
-noinst_PROGRAMS = $(am__EXEEXT_2) tests/test_combinations$(EXEEXT) \
-	tests/test_parser$(EXEEXT) \
+bin_PROGRAMS = apps/align$(EXEEXT)
+noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) \
+	tests/st_serial$(EXEEXT) tests/suftest$(EXEEXT) \
+	tests/suftest_orig$(EXEEXT) tests/test_sais$(EXEEXT) \
+	tests/test_combinations$(EXEEXT) tests/test_parser$(EXEEXT) \
 	tests/test_stl_container_performance$(EXEEXT) $(am__EXEEXT_2)
 check_PROGRAMS = tests/test_mpi$(EXEEXT)
 @HAVE_SSE2_TRUE@am__append_1 = -I$(top_srcdir)/contrib/Complete-Striped-Smith-Waterman-Library/src \
@@ -106,7 +108,7 @@ check_PROGRAMS = tests/test_mpi$(EXEEXT)
 @HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/rstruct.h \
 @HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/smith_waterman_sse2.c \
 @HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/smith_waterman_sse2.h
-@HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@am__append_4 = apps/ssw_test
+@HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@am__append_4 = tests/ssw_test
 @HAVE_SSE2_TRUE@am__append_5 = tests/test_fasta_align
 @HAVE_SSE2_TRUE@am__append_6 = tests/test_fasta_align
 subdir = .
@@ -191,7 +193,8 @@ am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
 	contrib/fasta-36.3.6d/src/param.h \
 	contrib/fasta-36.3.6d/src/rstruct.h \
 	contrib/fasta-36.3.6d/src/smith_waterman_sse2.c \
-	contrib/fasta-36.3.6d/src/smith_waterman_sse2.h
+	contrib/fasta-36.3.6d/src/smith_waterman_sse2.h \
+	contrib/sais-lite-lcp/sais.c contrib/sais-lite-lcp/sais.h
 @HAVE_ARMCI_TRUE@am__objects_1 = src/SuffixBucketsArmci.lo \
 @HAVE_ARMCI_TRUE@	src/SequenceDatabaseArmci.lo
 @HAVE_SSE2_TRUE@am__objects_2 = contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.lo \
@@ -204,7 +207,7 @@ am_libpgraph_la_OBJECTS = src/alignment.lo src/Bootstrap.lo \
 	src/PairCheckGlobalServer.lo src/Parameters.lo src/Sequence.lo \
 	src/SequenceDatabaseReplicated.lo src/SuffixBuckets.lo \
 	src/SuffixBucketsTascel.lo src/SuffixTree.lo $(am__objects_1) \
-	$(am__objects_2)
+	$(am__objects_2) contrib/sais-lite-lcp/sais.lo
 libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -241,8 +244,9 @@ am_libyaml_cpp_la_OBJECTS = contrib/yaml-cpp-0.5.1/src/binary.lo \
 	contrib/yaml-cpp-0.5.1/src/stream.lo \
 	contrib/yaml-cpp-0.5.1/src/tag.lo
 libyaml_cpp_la_OBJECTS = $(am_libyaml_cpp_la_OBJECTS)
-@HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@am__EXEEXT_1 = apps/ssw_test$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)"
+@HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@am__EXEEXT_1 =  \
+@HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@	tests/ssw_test$(EXEEXT)
 @HAVE_SSE2_TRUE@am__EXEEXT_2 = tests/test_fasta_align$(EXEEXT)
 PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
 am_apps_align_OBJECTS = apps/align.$(OBJEXT)
@@ -252,16 +256,36 @@ am__DEPENDENCIES_1 =
 apps_align_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) libyaml-cpp.la
-am_apps_ssw_test_OBJECTS = contrib/Complete-Striped-Smith-Waterman-Library/src/main.$(OBJEXT)
-apps_ssw_test_OBJECTS = $(am_apps_ssw_test_OBJECTS)
+am_tests_ssw_test_OBJECTS = contrib/Complete-Striped-Smith-Waterman-Library/src/main.$(OBJEXT)
+tests_ssw_test_OBJECTS = $(am_tests_ssw_test_OBJECTS)
 am__DEPENDENCIES_2 = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) libyaml-cpp.la
-apps_ssw_test_DEPENDENCIES = $(am__DEPENDENCIES_2) \
+tests_ssw_test_DEPENDENCIES = $(am__DEPENDENCIES_2) \
 	$(am__DEPENDENCIES_1)
-apps_ssw_test_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(apps_ssw_test_LDFLAGS) $(LDFLAGS) -o $@
+tests_ssw_test_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(AM_CFLAGS) $(CFLAGS) $(tests_ssw_test_LDFLAGS) $(LDFLAGS) -o \
+	$@
+am_tests_st_serial_OBJECTS = tests/st_serial.$(OBJEXT)
+tests_st_serial_OBJECTS = $(am_tests_st_serial_OBJECTS)
+tests_st_serial_LDADD = $(LDADD)
+tests_st_serial_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) libyaml-cpp.la
+am_tests_suftest_OBJECTS = tests/suftest.$(OBJEXT)
+tests_suftest_OBJECTS = $(am_tests_suftest_OBJECTS)
+tests_suftest_LDADD = $(LDADD)
+tests_suftest_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) libyaml-cpp.la
+am_tests_suftest_orig_OBJECTS =  \
+	contrib/sais-lite-lcp/suftest.$(OBJEXT)
+tests_suftest_orig_OBJECTS = $(am_tests_suftest_orig_OBJECTS)
+tests_suftest_orig_LDADD = $(LDADD)
+tests_suftest_orig_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) libyaml-cpp.la
 am_tests_test_combinations_OBJECTS =  \
 	tests/test_combinations.$(OBJEXT)
 tests_test_combinations_OBJECTS =  \
@@ -284,6 +308,12 @@ am_tests_test_parser_OBJECTS = tests/test_parser.$(OBJEXT)
 tests_test_parser_OBJECTS = $(am_tests_test_parser_OBJECTS)
 tests_test_parser_LDADD = $(LDADD)
 tests_test_parser_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) libyaml-cpp.la
+am_tests_test_sais_OBJECTS = contrib/sais-lite-lcp/test.$(OBJEXT)
+tests_test_sais_OBJECTS = $(am_tests_test_sais_OBJECTS)
+tests_test_sais_LDADD = $(LDADD)
+tests_test_sais_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) libyaml-cpp.la
 am_tests_test_stl_container_performance_OBJECTS =  \
@@ -348,17 +378,21 @@ am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
 	$(libpgraph_la_SOURCES) $(libyaml_cpp_la_SOURCES) \
-	$(apps_align_SOURCES) $(apps_ssw_test_SOURCES) \
+	$(apps_align_SOURCES) $(tests_ssw_test_SOURCES) \
+	$(tests_st_serial_SOURCES) $(tests_suftest_SOURCES) \
+	$(tests_suftest_orig_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
 	$(tests_test_fasta_align_SOURCES) $(tests_test_mpi_SOURCES) \
-	$(tests_test_parser_SOURCES) \
+	$(tests_test_parser_SOURCES) $(tests_test_sais_SOURCES) \
 	$(tests_test_stl_container_performance_SOURCES)
 DIST_SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
 	$(am__libpgraph_la_SOURCES_DIST) $(libyaml_cpp_la_SOURCES) \
-	$(apps_align_SOURCES) $(apps_ssw_test_SOURCES) \
+	$(apps_align_SOURCES) $(tests_ssw_test_SOURCES) \
+	$(tests_st_serial_SOURCES) $(tests_suftest_SOURCES) \
+	$(tests_suftest_orig_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
 	$(tests_test_fasta_align_SOURCES) $(tests_test_mpi_SOURCES) \
-	$(tests_test_parser_SOURCES) \
+	$(tests_test_parser_SOURCES) $(tests_test_sais_SOURCES) \
 	$(tests_test_stl_container_performance_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
@@ -552,6 +586,7 @@ AM_CPPFLAGS = $(TASCEL_CPPFLAGS) $(ARMCI_CPPFLAGS) $(PT_MPI_CPPFLAGS) \
 	-I$(top_srcdir)/contrib/boost_1_55_0 \
 	-I$(top_srcdir)/contrib/gtest-1.7.0 \
 	-I$(top_srcdir)/contrib/gtest-1.7.0/include \
+	-I$(top_srcdir)/contrib/sais-lite-lcp \
 	-I$(top_srcdir)/contrib/yaml-cpp-0.5.1/include
 #AM_LDFLAGS += $(GA_LDFLAGS)
 AM_LDFLAGS = $(TASCEL_LDFLAGS) $(ARMCI_LDFLAGS) $(PT_MPI_LDFLAGS) \
@@ -578,7 +613,8 @@ libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
 	src/SuffixBuckets.hpp src/SuffixBucketsTascel.cpp \
 	src/SuffixBucketsTascel.hpp src/SuffixTree.cpp \
 	src/SuffixTree.hpp src/tascelx.hpp src/timer.h \
-	src/TreeStats.hpp $(am__append_2) $(am__append_3)
+	src/TreeStats.hpp $(am__append_2) $(am__append_3) \
+	contrib/sais-lite-lcp/sais.c contrib/sais-lite-lcp/sais.h
 libyaml_cpp_la_SOURCES =  \
 	contrib/yaml-cpp-0.5.1/include/yaml-cpp/anchor.h \
 	contrib/yaml-cpp-0.5.1/include/yaml-cpp/binary.h \
@@ -670,11 +706,15 @@ libyaml_cpp_la_SOURCES =  \
 	contrib/yaml-cpp-0.5.1/src/tag.h \
 	contrib/yaml-cpp-0.5.1/src/token.h
 apps_align_SOURCES = apps/align.cpp
-apps_ssw_test_SOURCES =  \
+tests_ssw_test_SOURCES =  \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/main.c \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/kseq.h
-apps_ssw_test_LDFLAGS = $(ZLIB_LDFLAGS) $(AM_LDFLAGS)
-apps_ssw_test_LDADD = $(LDADD) $(ZLIB_LIBS)
+tests_ssw_test_LDFLAGS = $(ZLIB_LDFLAGS) $(AM_LDFLAGS)
+tests_ssw_test_LDADD = $(LDADD) $(ZLIB_LIBS)
+tests_suftest_SOURCES = tests/suftest.c
+tests_suftest_orig_SOURCES = contrib/sais-lite-lcp/suftest.c
+tests_test_sais_SOURCES = contrib/sais-lite-lcp/test.c
+tests_st_serial_SOURCES = tests/st_serial.cpp
 tests_test_combinations_SOURCES = tests/test_combinations.cpp
 tests_test_parser_SOURCES = tests/test_parser.cpp
 tests_test_stl_container_performance_SOURCES = tests/test_stl_container_performance.cpp
@@ -833,6 +873,14 @@ contrib/fasta-36.3.6d/src/glocal_sse2.lo:  \
 contrib/fasta-36.3.6d/src/smith_waterman_sse2.lo:  \
 	contrib/fasta-36.3.6d/src/$(am__dirstamp) \
 	contrib/fasta-36.3.6d/src/$(DEPDIR)/$(am__dirstamp)
+contrib/sais-lite-lcp/$(am__dirstamp):
+	@$(MKDIR_P) contrib/sais-lite-lcp
+	@: > contrib/sais-lite-lcp/$(am__dirstamp)
+contrib/sais-lite-lcp/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) contrib/sais-lite-lcp/$(DEPDIR)
+	@: > contrib/sais-lite-lcp/$(DEPDIR)/$(am__dirstamp)
+contrib/sais-lite-lcp/sais.lo: contrib/sais-lite-lcp/$(am__dirstamp) \
+	contrib/sais-lite-lcp/$(DEPDIR)/$(am__dirstamp)
 
 libpgraph.la: $(libpgraph_la_OBJECTS) $(libpgraph_la_DEPENDENCIES) $(EXTRA_libpgraph_la_DEPENDENCIES) 
 	$(AM_V_CXXLD)$(CXXLINK)  $(libpgraph_la_OBJECTS) $(libpgraph_la_LIBADD) $(LIBS)
@@ -1020,9 +1068,28 @@ apps/align$(EXEEXT): $(apps_align_OBJECTS) $(apps_align_DEPENDENCIES) $(EXTRA_ap
 contrib/Complete-Striped-Smith-Waterman-Library/src/main.$(OBJEXT): contrib/Complete-Striped-Smith-Waterman-Library/src/$(am__dirstamp) \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/$(am__dirstamp)
 
-apps/ssw_test$(EXEEXT): $(apps_ssw_test_OBJECTS) $(apps_ssw_test_DEPENDENCIES) $(EXTRA_apps_ssw_test_DEPENDENCIES) apps/$(am__dirstamp)
-	@rm -f apps/ssw_test$(EXEEXT)
-	$(AM_V_CCLD)$(apps_ssw_test_LINK) $(apps_ssw_test_OBJECTS) $(apps_ssw_test_LDADD) $(LIBS)
+tests/ssw_test$(EXEEXT): $(tests_ssw_test_OBJECTS) $(tests_ssw_test_DEPENDENCIES) $(EXTRA_tests_ssw_test_DEPENDENCIES) tests/$(am__dirstamp)
+	@rm -f tests/ssw_test$(EXEEXT)
+	$(AM_V_CCLD)$(tests_ssw_test_LINK) $(tests_ssw_test_OBJECTS) $(tests_ssw_test_LDADD) $(LIBS)
+tests/st_serial.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+
+tests/st_serial$(EXEEXT): $(tests_st_serial_OBJECTS) $(tests_st_serial_DEPENDENCIES) $(EXTRA_tests_st_serial_DEPENDENCIES) tests/$(am__dirstamp)
+	@rm -f tests/st_serial$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(tests_st_serial_OBJECTS) $(tests_st_serial_LDADD) $(LIBS)
+tests/suftest.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+
+tests/suftest$(EXEEXT): $(tests_suftest_OBJECTS) $(tests_suftest_DEPENDENCIES) $(EXTRA_tests_suftest_DEPENDENCIES) tests/$(am__dirstamp)
+	@rm -f tests/suftest$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(tests_suftest_OBJECTS) $(tests_suftest_LDADD) $(LIBS)
+contrib/sais-lite-lcp/suftest.$(OBJEXT):  \
+	contrib/sais-lite-lcp/$(am__dirstamp) \
+	contrib/sais-lite-lcp/$(DEPDIR)/$(am__dirstamp)
+
+tests/suftest_orig$(EXEEXT): $(tests_suftest_orig_OBJECTS) $(tests_suftest_orig_DEPENDENCIES) $(EXTRA_tests_suftest_orig_DEPENDENCIES) tests/$(am__dirstamp)
+	@rm -f tests/suftest_orig$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(tests_suftest_orig_OBJECTS) $(tests_suftest_orig_LDADD) $(LIBS)
 tests/test_combinations.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 
@@ -1047,6 +1114,13 @@ tests/test_parser.$(OBJEXT): tests/$(am__dirstamp) \
 tests/test_parser$(EXEEXT): $(tests_test_parser_OBJECTS) $(tests_test_parser_DEPENDENCIES) $(EXTRA_tests_test_parser_DEPENDENCIES) tests/$(am__dirstamp)
 	@rm -f tests/test_parser$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_parser_OBJECTS) $(tests_test_parser_LDADD) $(LIBS)
+contrib/sais-lite-lcp/test.$(OBJEXT):  \
+	contrib/sais-lite-lcp/$(am__dirstamp) \
+	contrib/sais-lite-lcp/$(DEPDIR)/$(am__dirstamp)
+
+tests/test_sais$(EXEEXT): $(tests_test_sais_OBJECTS) $(tests_test_sais_DEPENDENCIES) $(EXTRA_tests_test_sais_DEPENDENCIES) tests/$(am__dirstamp)
+	@rm -f tests/test_sais$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(tests_test_sais_OBJECTS) $(tests_test_sais_LDADD) $(LIBS)
 tests/test_stl_container_performance.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 
@@ -1062,6 +1136,8 @@ mostlyclean-compile:
 	-rm -f contrib/fasta-36.3.6d/src/*.$(OBJEXT)
 	-rm -f contrib/fasta-36.3.6d/src/*.lo
 	-rm -f contrib/gtest-1.7.0/src/*.$(OBJEXT)
+	-rm -f contrib/sais-lite-lcp/*.$(OBJEXT)
+	-rm -f contrib/sais-lite-lcp/*.lo
 	-rm -f contrib/yaml-cpp-0.5.1/src/*.$(OBJEXT)
 	-rm -f contrib/yaml-cpp-0.5.1/src/*.lo
 	-rm -f contrib/yaml-cpp-0.5.1/src/contrib/*.$(OBJEXT)
@@ -1081,6 +1157,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/fasta-36.3.6d/src/$(DEPDIR)/glocal_sse2.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/fasta-36.3.6d/src/$(DEPDIR)/smith_waterman_sse2.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/gtest-1.7.0/src/$(DEPDIR)/gtest-all.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/sais-lite-lcp/$(DEPDIR)/sais.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/sais-lite-lcp/$(DEPDIR)/suftest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@contrib/sais-lite-lcp/$(DEPDIR)/test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/binary.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/convert.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/directives.Plo@am__quote@
@@ -1125,6 +1204,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/combinations.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/MpiEnvironment.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/StreamPrettyPrinter.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/st_serial.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/suftest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_combinations.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_fasta_align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_mpi.Po@am__quote@
@@ -1211,6 +1292,7 @@ clean-libtool:
 	-rm -rf apps/.libs apps/_libs
 	-rm -rf contrib/Complete-Striped-Smith-Waterman-Library/src/.libs contrib/Complete-Striped-Smith-Waterman-Library/src/_libs
 	-rm -rf contrib/fasta-36.3.6d/src/.libs contrib/fasta-36.3.6d/src/_libs
+	-rm -rf contrib/sais-lite-lcp/.libs contrib/sais-lite-lcp/_libs
 	-rm -rf contrib/yaml-cpp-0.5.1/src/.libs contrib/yaml-cpp-0.5.1/src/_libs
 	-rm -rf contrib/yaml-cpp-0.5.1/src/contrib/.libs contrib/yaml-cpp-0.5.1/src/contrib/_libs
 	-rm -rf src/.libs src/_libs
@@ -1476,6 +1558,8 @@ distclean-generic:
 	-rm -f contrib/fasta-36.3.6d/src/$(am__dirstamp)
 	-rm -f contrib/gtest-1.7.0/src/$(DEPDIR)/$(am__dirstamp)
 	-rm -f contrib/gtest-1.7.0/src/$(am__dirstamp)
+	-rm -f contrib/sais-lite-lcp/$(DEPDIR)/$(am__dirstamp)
+	-rm -f contrib/sais-lite-lcp/$(am__dirstamp)
 	-rm -f contrib/yaml-cpp-0.5.1/src/$(DEPDIR)/$(am__dirstamp)
 	-rm -f contrib/yaml-cpp-0.5.1/src/$(am__dirstamp)
 	-rm -f contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR)/$(am__dirstamp)
@@ -1496,7 +1580,7 @@ clean-am: clean-binPROGRAMS clean-checkLIBRARIES clean-checkPROGRAMS \
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf apps/$(DEPDIR) contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR) contrib/fasta-36.3.6d/src/$(DEPDIR) contrib/gtest-1.7.0/src/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf apps/$(DEPDIR) contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR) contrib/fasta-36.3.6d/src/$(DEPDIR) contrib/gtest-1.7.0/src/$(DEPDIR) contrib/sais-lite-lcp/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -1544,7 +1628,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf apps/$(DEPDIR) contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR) contrib/fasta-36.3.6d/src/$(DEPDIR) contrib/gtest-1.7.0/src/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf apps/$(DEPDIR) contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR) contrib/fasta-36.3.6d/src/$(DEPDIR) contrib/gtest-1.7.0/src/$(DEPDIR) contrib/sais-lite-lcp/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR) src/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
