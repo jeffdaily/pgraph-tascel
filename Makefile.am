@@ -237,7 +237,7 @@ if HAVE_SSE2
 noinst_PROGRAMS += tests/test_fasta_align
 endif
 
-tests_suftest_SOURCES                      = tests/suftest.c
+tests_suftest_SOURCES                      = tests/suftest.cpp
 tests_suftest_orig_SOURCES                 = contrib/sais-lite-lcp/suftest.c
 tests_test_sais_SOURCES                    = contrib/sais-lite-lcp/test.c
 tests_st_serial_SOURCES                    = tests/st_serial.cpp

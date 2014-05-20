@@ -711,7 +711,7 @@ tests_ssw_test_SOURCES =  \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/kseq.h
 tests_ssw_test_LDFLAGS = $(ZLIB_LDFLAGS) $(AM_LDFLAGS)
 tests_ssw_test_LDADD = $(LDADD) $(ZLIB_LIBS)
-tests_suftest_SOURCES = tests/suftest.c
+tests_suftest_SOURCES = tests/suftest.cpp
 tests_suftest_orig_SOURCES = contrib/sais-lite-lcp/suftest.c
 tests_test_sais_SOURCES = contrib/sais-lite-lcp/test.c
 tests_st_serial_SOURCES = tests/st_serial.cpp
@@ -1082,7 +1082,7 @@ tests/suftest.$(OBJEXT): tests/$(am__dirstamp) \
 
 tests/suftest$(EXEEXT): $(tests_suftest_OBJECTS) $(tests_suftest_DEPENDENCIES) $(EXTRA_tests_suftest_DEPENDENCIES) tests/$(am__dirstamp)
 	@rm -f tests/suftest$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(tests_suftest_OBJECTS) $(tests_suftest_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(CXXLINK) $(tests_suftest_OBJECTS) $(tests_suftest_LDADD) $(LIBS)
 contrib/sais-lite-lcp/suftest.$(OBJEXT):  \
 	contrib/sais-lite-lcp/$(am__dirstamp) \
 	contrib/sais-lite-lcp/$(DEPDIR)/$(am__dirstamp)
