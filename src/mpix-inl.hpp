@@ -626,9 +626,20 @@ inline void print_sync(const string &name, const T *what, int size_, MPI_Comm co
 }
 
 
+inline void print_zero(const string &name, MPI_Comm comm)
+{
+    barrier(comm);
+    if (0 == comm_rank(comm)) {
+        cout << name << endl;
+    }
+    barrier(comm);
+}
+
+
 template <class T>
 inline void print_zero(const string &name, const T &what, MPI_Comm comm)
 {
+    barrier(comm);
     if (0 == comm_rank(comm)) {
         cout << name << "=" << what << endl;
     }
@@ -636,11 +647,10 @@ inline void print_zero(const string &name, const T &what, MPI_Comm comm)
 }
 
 
-
-
 template <typename T>
 inline void print_zero(const string &name, const vector<T> &what, MPI_Comm comm)
 {
+    barrier(comm);
     if (0 == comm_rank(comm)) {
         cout << name << "={";
         cout << what[0];
@@ -657,6 +667,7 @@ inline void print_zero(const string &name, const vector<T> &what, MPI_Comm comm)
 template <typename T>
 inline void print_zero(const string &name, const T *what, int size, MPI_Comm comm)
 {
+    barrier(comm);
     if (0 == comm_rank(comm)) {
         cout << name << "={";
         cout << what[0];
@@ -713,8 +724,8 @@ inline void read_file(
         MPI_Offset &file_size,
         MPI_Comm comm)
 {
-    read_file_mpiio(file_name, file_buffer, file_size, comm);
-    //read_file_bcast(file_name, file_buffer, file_size, comm);
+    //read_file_mpiio(file_name, file_buffer, file_size, comm);
+    read_file_bcast(file_name, file_buffer, file_size, comm);
 }
 
 
