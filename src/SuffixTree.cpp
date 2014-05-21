@@ -118,7 +118,7 @@ SuffixTree::SuffixTree(
         suffix_length_stats.push_back(len);
     }
 
-    build_tree_recursive(bucket->suffixes, window_size - 1);
+    build_tree_recursive2(bucket->suffixes, window_size - 1);
 }
 
 
