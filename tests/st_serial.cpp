@@ -52,7 +52,6 @@
 #include "SuffixBuckets.hpp"
 #include "SuffixBucketsTascel.hpp"
 #include "SuffixTree.hpp"
-#include "SuffixTree2.hpp"
 #include "TreeStats.hpp"
 
 #define ENABLE_ARMCI 0
