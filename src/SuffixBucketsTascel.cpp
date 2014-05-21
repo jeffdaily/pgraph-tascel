@@ -75,6 +75,7 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
     size_t start = 0;
     size_t stop = 0;
     int ierr = 0;
+    double time = 0.0;
 
     /* how many suffixes are in the given sequence database? */
     n_suffixes = sequences->char_size()
@@ -111,6 +112,7 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
     mpix::print_sync("stop", stop, comm);
 #endif
 
+    time = MPI_Wtime();
     size_t initial_suffixes_size = 0;
     for (size_t i = start; i < stop; ++i) {
         size_t sequence_length = (*sequences)[i].size();
@@ -118,9 +120,43 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
             initial_suffixes_size += sequence_length - param.window_size + 1;
         }
     }
+    time = MPI_Wtime() - time;
     vector<Suffix> initial_suffixes(initial_suffixes_size);
 
+#if DEBUG || 1
+    {
+        vector<double> times = mpix::gather(time, 0, comm);
+        if (0 == comm_rank) {
+            Stats stats;
+            for (size_t i=0; i<times.size(); ++i) {
+                stats.push_back(times[i]);
+            }
+            cout << "                 " << Stats::header() << endl;
+            cout << "suffix size time " << stats << endl;
+        }
+    }
+#endif
+
     /* slide k-mers for every sequence and bucket them */
+
+#if DEBUG || 1
+    mpix::print_sync("initial_suffixes_size", initial_suffixes_size, comm);
+
+    {
+        vector<size_t> sizes = mpix::gather(initial_suffixes_size, 0, comm);
+        if (0 == comm_rank) {
+            Stats stats;
+            for (size_t i=0; i<sizes.size(); ++i) {
+                stats.push_back(sizes[i]);
+            }
+            cout << "                      " << Stats::header() << endl;
+            cout << "initial_suffixes_size " << stats << endl;
+        }
+    }
+#endif
+
+    /* slide k-mers for every sequence and bucket them */
+    time = MPI_Wtime();
     for (size_t i = start; i < stop; ++i) {
         size_t stop_index = 0;
         const char *sequence_data = NULL;
@@ -153,11 +189,34 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
         }
     }
     initial_suffixes.resize(suffix_index);
+    time = MPI_Wtime() - time;
+    {
+        vector<double> times = mpix::gather(time, 0, comm);
+        if (0 == comm_rank) {
+            Stats stats;
+            for (size_t i=0; i<times.size(); ++i) {
+                stats.push_back(times[i]);
+            }
+            cout << "           " << Stats::header() << endl;
+            cout << "k-mer time " << stats << endl;
+        }
+    }
 #if DEBUG || 1
     mpix::print_sync("n_suffixes_skipped", n_suffixes_skipped, comm);
+    {
+        vector<size_t> skipped = mpix::gather(n_suffixes_skipped, 0, comm);
+        if (0 == comm_rank) {
+            Stats stats;
+            for (size_t i=0; i<skipped.size(); ++i) {
+                stats.push_back(skipped[i]);
+            }
+            cout << "                   " << Stats::header() << endl;
+            cout << "n_suffixes_skipped " << stats << endl;
+        }
+    }
 #endif
 
-#if DEBUG
+#if DEBUG || 1
     mpix::print_sync("suffix_index", suffix_index, comm);
 #endif
 
@@ -182,7 +241,13 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
     mpix::print_sync("amount_to_send", amount_to_send, comm);
 #endif
 
+#if DEBUG || 1
+    mpix::print_zero("before amount_to_send all to all", comm);
+#endif
     mpix::alltoall(amount_to_send, amount_to_recv, comm);
+#if DEBUG || 1
+    mpix::print_zero("after amount_to_send all to all", comm);
+#endif
 
 #if DEBUG
     mpix::print_sync("amount_to_recv", amount_to_recv, comm);
@@ -200,17 +265,36 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
 #endif
     suffixes_size = total_amount_to_recv;
 
+#if DEBUG || 1
+    mpix::print_zero("before suffix sort", comm);
+#endif
     /* We are preparing for the all to all, so we sort the suffixes.
      * Sort is based on owner ID. */
+    time = MPI_Wtime();
     std::sort(initial_suffixes.begin(),
               initial_suffixes.end(),
               SuffixOwnerCompareFunctor(comm_size)
     );
+    time = MPI_Wtime() - time;
+    {
+        vector<double> times = mpix::gather(time, 0, comm);
+        if (0 == comm_rank) {
+            Stats stats;
+            for (size_t i=0; i<times.size(); ++i) {
+                stats.push_back(times[i]);
+            }
+            cout << "                 " << Stats::header() << endl;
+            cout << "suffix sort time " << stats << endl;
+        }
+    }
+#if DEBUG || 1
+    mpix::print_zero("after suffix sort", comm);
+#endif
 
     aid_suffixes = theRma().allocColl(sizeof(Suffix)*suffixes_size);
     suffixes = reinterpret_cast<Suffix*>(
             theRma().lookupPointer(RmaPtr(aid_suffixes)));
-#if DEBUG
+#if DEBUG || 1
     mpix::print_sync("suffixes_size", suffixes_size, comm);
 #endif
 
@@ -232,12 +316,18 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
     mpix::print_sync("initial_suffixes", initial_suffixes, comm);
 #endif
 
+#if DEBUG || 1
+    mpix::print_zero("before suffix all to all", comm);
+#endif
     ierr = MPI_Alltoallv(
             &initial_suffixes[0], &amount_to_send[0],
             &send_displacements[0], SuffixType,
             &suffixes[0], &amount_to_recv[0],
             &recv_displacements[0], SuffixType, comm);
     assert(MPI_SUCCESS == ierr);
+#if DEBUG || 1
+    mpix::print_zero("after suffix all to all", comm);
+#endif
 
 #if DEBUG
     mpix::print_sync("suffixes", suffixes, suffixes_size, comm);
@@ -245,6 +335,7 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
 
     vector<BucketMeta> initial_buckets;
 
+    time = MPI_Wtime();
     if (suffixes_size > 0) {
         /* sort the received Suffix instances based on bucket ID */
         std::sort(suffixes, suffixes+suffixes_size, SuffixBucketCompare);
@@ -271,6 +362,18 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
             else {
                 assert(0); /* this shouldn't be reached */
             }
+        }
+    }
+    time = MPI_Wtime() - time;
+    {
+        vector<double> times = mpix::gather(time, 0, comm);
+        if (0 == comm_rank) {
+            Stats stats;
+            for (size_t i=0; i<times.size(); ++i) {
+                stats.push_back(times[i]);
+            }
+            cout << "                         " << Stats::header() << endl;
+            cout << "BucketMeta creation time " << stats << endl;
         }
     }
 
@@ -327,6 +430,7 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
 #endif
 
     /* now that initial buckets are created, refine the big ones */
+    time = MPI_Wtime();
     bool done = false;
     start = 0;
     while (!done) {
@@ -367,6 +471,18 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
                 new_buckets.begin(), new_buckets.end());
     }
     buckets_size = initial_buckets.size();
+    time = MPI_Wtime() - time;
+    {
+        vector<double> times = mpix::gather(time, 0, comm);
+        if (0 == comm_rank) {
+            Stats stats;
+            for (size_t i=0; i<times.size(); ++i) {
+                stats.push_back(times[i]);
+            }
+            cout << "                " << Stats::header() << endl;
+            cout << "refinement time " << stats << endl;
+        }
+    }
 
 #if DEBUG || 1
     mpix::print_sync("buckets_size", buckets_size, comm);

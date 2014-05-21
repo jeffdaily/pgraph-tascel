@@ -83,10 +83,10 @@ SequenceDatabaseReplicated::SequenceDatabaseReplicated(
 
 SequenceDatabaseReplicated::~SequenceDatabaseReplicated()
 {
-    map<size_t, Sequence*>::iterator it;
+    vector<Sequence*>::iterator it;
 
     for (it=local_cache.begin(); it!=local_cache.end(); ++it) {
-        delete it->second;
+        delete *it;
     }
 
     delete [] local_data;
@@ -148,7 +148,8 @@ void SequenceDatabaseReplicated::pack_and_index_fasta(char *buffer,
                             sequence_offset,
                             sequence_length);
                 sequence->uses_delimiter(delimiter != '\0');
-                local_cache[id++] = sequence;
+                local_cache.push_back(sequence);
+                id++;
                 assert(!local_cache.empty());
                 size_t l = local_cache[id-1]->get_sequence_length();
                 _longest = l > _longest ? l : _longest;

@@ -9,17 +9,17 @@
 #define SEQUENCE_DATABASE_REPLICATED_H_
 
 #include <cstddef>
-#include <map>
 #include <string>
+#include <vector>
 
 #include <mpi.h>
 
 #include "Sequence.hpp"
 #include "SequenceDatabase.hpp"
 
-using std::map;
-using std::size_t;
-using std::string;
+using ::std::size_t;
+using ::std::string;
+using ::std::vector;
 
 namespace pgraph {
 
@@ -80,10 +80,10 @@ class SequenceDatabaseReplicated : public SequenceDatabase
          * @return the Sequence reference (owned by this SequenceDatabaseReplicated)
          */
         virtual Sequence &get_sequence(size_t i) {
-            if (local_cache.end() == local_cache.find(i)) {
+            if (i > local_cache.size()) {
                 std::cout << "get_sequence(" << i << ") failed" << std::endl;
             }
-            assert(local_cache.end() != local_cache.find(i));
+            assert(i <= local_cache.size());
             return *local_cache[i];
         }
 
@@ -117,7 +117,7 @@ class SequenceDatabaseReplicated : public SequenceDatabase
         int comm_size;      /**< communicator size */
         string file_name;   /**< fasta file name */
         char *local_data;   /**< memory allocated for local sequences */
-        map<size_t, Sequence*> local_cache; /**< TODO */
+        vector<Sequence*> local_cache; /**< TODO */
         size_t _longest;    /**< longest sequence */
         size_t _char_size;  /**< total character count */
 };

@@ -74,6 +74,7 @@ template <typename T> inline void print_sync(const string &label, const T &objec
 template <typename T> inline void print_sync(const string &label, const vector<T> &object, MPI_Comm comm);
 template <typename T> inline void print_sync(const string &label, const T *object, int size, MPI_Comm comm);
 
+                      inline void print_zero(const string &label, MPI_Comm comm);
 template <typename T> inline void print_zero(const string &label, const T &object, MPI_Comm comm);
 template <typename T> inline void print_zero(const string &label, const vector<T> &object, MPI_Comm comm);
 template <typename T> inline void print_zero(const string &label, const T *object, int size, MPI_Comm comm);

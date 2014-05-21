@@ -85,8 +85,8 @@ const bool Parameters::DEF_USE_TREE_DYNAMIC(false);
 const bool Parameters::DEF_USE_TREE_HYBRID(false);
 const bool Parameters::DEF_PRINT_STATS(true);
 const string Parameters::DEF_ALPHABET("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-const char Parameters::DEF_ALPHABET_BEGIN('O');
-const char Parameters::DEF_ALPHABET_DOLLAR('U');
+const char Parameters::DEF_ALPHABET_BEGIN(':');
+const char Parameters::DEF_ALPHABET_DOLLAR(';');
 const bool Parameters::DEF_DUPLICATES_LOCAL(true);
 const bool Parameters::DEF_DUPLICATES_SEMILOCAL(false);
 const bool Parameters::DEF_DUPLICATES_SMP(false);
@@ -271,6 +271,12 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
                 DEF_USE_TREE_HYBRID);
         print_stats = config[KEY_PRINT_STATS].as<bool>(
                 DEF_PRINT_STATS);
+        alphabet = config[KEY_ALPHABET].as<string>(
+                DEF_ALPHABET);
+        alphabet_begin = config[KEY_ALPHABET_BEGIN].as<char>(
+                DEF_ALPHABET_BEGIN);
+        alphabet_dollar = config[KEY_ALPHABET_DOLLAR].as<char>(
+                DEF_ALPHABET_DOLLAR);
         dup_local = config[KEY_DUPLICATES_LOCAL].as<bool>(
                 DEF_DUPLICATES_LOCAL);
         dup_semilocal = config[KEY_DUPLICATES_SEMILOCAL].as<bool>(

@@ -13,18 +13,12 @@
 #include <utility>
 #include <vector>
 
+#include "Pair.hpp"
 #include "Stats.hpp"
 
-using ::std::pair;
-using ::std::set;
 using ::std::size_t;
-using ::std::vector;
 
 namespace pgraph {
-
-typedef pair<size_t,size_t> Pair;
-typedef set<Pair> SetPair;
-typedef vector<Pair> VecPair;
 
 class PairCheck
 {
