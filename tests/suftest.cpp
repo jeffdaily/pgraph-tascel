@@ -54,8 +54,6 @@ using ::std::size_t;
 using ::std::stack;
 using ::std::vector;
 
-typedef map<char,list<int> > pset_t;
-
 struct quad {
     int lcp;
     int lb;
@@ -198,7 +196,7 @@ static int sufcheck(const unsigned char *T, const int *SA, int n, int verbose) {
 }
 
 static void print_help(const char *progname, int status) {
-    fprintf(stderr, "usage: %s [-p] [-c cutoff] [-s sentinal] FILE\n\n", progname);
+    fprintf(stderr, "usage: %s [-p] [-c cutoff>=1] [-s sentinal] FILE\n\n", progname);
     exit(status);
 }
 
@@ -210,7 +208,7 @@ int main(int argc, const char *argv[]) {
     int *LCP = NULL;
     unsigned char *BWT = NULL;
     int *SID = NULL;
-    int *END = NULL;
+    vector<int> END;
     int n = 0;
     clock_t start = 0;
     clock_t finish = 0;
@@ -233,8 +231,11 @@ int main(int argc, const char *argv[]) {
             print_help(argv[0], EXIT_SUCCESS);
         }
         else if (strncmp(argv[i], "-c", 2) == 0) {
-            if (i+1 < argc && strlen(argv[i+1]) == 1) {
+            if (i+1 < argc) {
                 cutoff = atoi(argv[i+1]);
+                if (cutoff <= 0) {
+                    print_help(argv[0], EXIT_FAILURE);
+                }
                 ++i;
             }
             else {
@@ -313,15 +314,11 @@ int main(int argc, const char *argv[]) {
     LCP = (int *)malloc((size_t)(n+1) * sizeof(int)); /* +1 for lcp tree */
     BWT = (unsigned char *)malloc((size_t)(n+1) * sizeof(unsigned char));
     SID = (int *)malloc((size_t)n * sizeof(int));
-    if (print) {
-        END = (int *)malloc((size_t)n * sizeof(int));
-    }
     if((T == NULL)
             || (SA == NULL)
             || (LCP == NULL)
             || (BWT == NULL)
-            || (SID == NULL)
-            || (END == NULL && print))
+            || (SID == NULL))
     {
         fprintf(stderr, "%s: Cannot allocate memory.\n", argv[0]);
         exit(EXIT_FAILURE);
@@ -364,28 +361,17 @@ int main(int argc, const char *argv[]) {
     printf("adjusted n=%d\n", n);
 
     /* scan T from left to right to build auxiliary info stuff... yep */
-    if (print) {
-        sid = 0;
-        for (i=0; i<n; ++i) {
-            SID[i] = sid;
-            if (T[i] == sentinal) {
-                END[sid] = i;
-                ++sid;
-            }
-        }
-    }
-    else {
-        sid = 0;
-        for (i=0; i<n; ++i) {
-            SID[i] = sid;
-            if (T[i] == sentinal) {
-                ++sid;
-            }
+    sid = 0;
+    for (i=0; i<n; ++i) {
+        SID[i] = sid;
+        if (T[i] == sentinal) {
+            END.push_back(i);
+            ++sid;
         }
     }
     if (0 == sid) { /* no sentinal found, that's okay */
         printf("no sentinal(%c) found in input\n", sentinal);
-        if (print) END[0] = n-1;
+        END.push_back(n-1);
     }
 
     /* Construct the suffix array. */
@@ -399,8 +385,11 @@ int main(int argc, const char *argv[]) {
     fprintf(stderr, "induced SA: %.4f sec\n", (double)(finish - start) / (double)CLOCKS_PER_SEC);
 
     /* naive BWT: */
+    /* also "fix" the LCP array to clamp LCP's that are too long */
     start = clock();
     for (i = 0; i < n; ++i) {
+        int len = END[SID[SA[i]]] - SA[i] + 1;
+        if (LCP[i] > len) LCP[i] = len;
         BWT[i] = (SA[i] > 0) ? T[SA[i]-1] : sentinal;
     }
     finish = clock();
@@ -411,9 +400,11 @@ int main(int argc, const char *argv[]) {
         if (sufcheck(T, SA, (int)n, 1) != 0) { exit(EXIT_FAILURE); }
 
         /* check LCP: */
+        fprintf(stderr, "LCP check: ");
         for (i = 1; i < n; ++i) {
             l = 0;
-            while (T[SA[i]+l]==T[SA[i-1]+l]) ++l;
+            while (T[SA[i]+l]==T[SA[i-1]+l]
+                    && (END[SID[SA[i-1]]]-SA[i-1]+1)>l) ++l;
             if (l != LCP[i]) {
                 printf("Error at position %i\n", i);
                 printf("%i vs. %i\n", l, LCP[i]);
@@ -422,6 +413,7 @@ int main(int argc, const char *argv[]) {
                 exit(-1);
             }
         }
+        fprintf(stderr, "Done.\n");
     }
     else {
         printf("skipping validation\n");
@@ -430,14 +422,17 @@ int main(int argc, const char *argv[]) {
     if (print) {
         printf("Index\tSA\tLCP\tBWT\tSeqID\tSuffix\n");
         for(i=0; i<n; ++i) {
-            int len = END[SID[SA[i]]] - SA[i] + 1;
+            //int len = END[SID[SA[i]]] - SA[i] + 1;
+            int len = n - SA[i];
             printf("%d\t%d\t%d\t%c\t%d\t%.*s\n", i, SA[i], LCP[i], BWT[i], SID[SA[i]], len, T+SA[i]);
         }
-        /* this is the last time END is used */
-        free(END);
     }
 
-    /* we don't even need the input file any longer */
+    /* we don't need END any longer */
+    /* force a reallocation to reduce vector capacity to 0 */
+    vector<int>().swap(END);
+
+    /* we don't need the input file any longer */
     free(T);
 
     stack<quad> the_stack;
