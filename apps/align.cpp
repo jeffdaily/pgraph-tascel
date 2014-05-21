@@ -38,6 +38,7 @@
 #include "EdgeResult.hpp"
 #include "mpix.hpp"
 #include "mpix-types.hpp"
+#include "Pair.hpp"
 #include "PairCheck.hpp"
 #include "PairCheckGlobal.hpp"
 #include "PairCheckGlobalServer.hpp"
@@ -198,7 +199,27 @@ static unsigned long populate_tasks_tree_hybrid(
         local_data_t *local_data, int worker);
 
 
+int inner_main(int argc, char **argv);
+
+
 int main(int argc, char **argv)
+{
+    int retval;
+
+    try {
+        retval = inner_main(argc, argv);
+    }
+    catch (const std::bad_alloc &ba) {
+        MPI_Abort(MPI_COMM_WORLD, -1);
+        ::std::cerr << "bad_alloc: " << ba.what() << ::std::endl;
+        retval = -1;
+    }
+
+    return retval;
+}
+
+
+int inner_main(int argc, char **argv)
 {
     double time_main;
     int rank;
@@ -953,6 +974,136 @@ static void alignment_task(
 }
 
 
+static unsigned long check_and_add(
+        Bucket *bucket,
+#if USE_SET
+        const SetPair &local_pairs,
+#else
+        const VecPair &local_pairs,
+#endif
+        local_data_t *local_data,
+        int worker)
+{
+    unsigned long count = 0;
+    double t;
+    SequenceDatabase *sequences = local_data->sequences;
+    UniformTaskCollection **utcs = local_data->utcs;
+    Parameters *parameters = local_data->parameters;
+    TreeStats *stats_tree = local_data->stats_tree;
+    DupStats *stats_dup = local_data->stats_dup;
+    PairCheck **pair_check = local_data->pair_check;
+    size_t orig_size = local_pairs.size();
+#if USE_SET
+    SetPair checked_pairs;
+#else
+    VecPair checked_pairs;
+#endif
+
+    stats_dup[worker].checked.push_back(orig_size);
+    t = MPI_Wtime();
+    checked_pairs = pair_check[worker]->check(local_pairs);
+    stats_dup[worker].time.push_back(MPI_Wtime() - t);
+    stats_dup[worker].returned.push_back(checked_pairs.size());
+
+    /* populate task queue */
+#if USE_SET
+    SetPair::iterator it;
+#else
+    VecPair::iterator it;
+#endif
+    bool overflow = false;
+    for (it=checked_pairs.begin(); it!=checked_pairs.end(); ++it) {
+        if (utcs[worker]->spaceAvailable()) {
+            task_description_two desc;
+            desc.id1 = it->first;
+            desc.id2 = it->second;
+            utcs[worker]->addTask(&desc, sizeof(desc));
+        }
+        else {
+            unsigned long p[2] = {it->first,it->second};
+            align(p, local_data, worker);
+            overflow = true;
+        }
+        ++count;
+    }
+
+    if (overflow) {
+        string kmer = local_data->suffix_buckets->bucket_kmer(
+                bucket->bid, bucket->k);
+        cerr << "bucket " << bucket->bid
+            << " (" << kmer << ")"
+            << " overflowed with " << orig_size << " pairs"
+            << endl;
+    }
+
+    return count;
+}
+
+
+struct PairGenCallback {
+    Bucket *bucket;
+#if USE_SET
+    SetPair &pairs;
+#else
+    VecPair &pairs;
+#endif
+    local_data_t *local_data;
+    size_t limit;
+    unsigned long count;
+    int worker;
+    double t;
+    double t_total;
+    double gen_count;
+    int exceeded_count;
+
+    PairGenCallback(
+            Bucket *bucket,
+#if USE_SET
+            SetPair &pairs,
+#else
+            VecPair &pairs,
+#endif
+            local_data_t *local_data,
+            size_t limit,
+            unsigned long &count,
+            int worker)
+        : bucket(bucket)
+        , pairs(pairs)
+        , local_data(local_data)
+        , limit(limit)
+        , count(count)
+        , worker(worker)
+        , t(MPI_Wtime())
+        , t_total(0.0)
+        , gen_count(0.0)
+        , exceeded_count(0)
+    {}
+
+    bool operator()(const Pair &p) {
+        pairs.push_back(p);
+        if (pairs.size() > limit) {
+            {
+                exceeded_count += 1;
+                string kmer = local_data->suffix_buckets->bucket_kmer(
+                        bucket->bid, bucket->k);
+                cerr << "bucket " << bucket->bid
+                    << " (" << kmer << ")"
+                    << " exceeded local limit "
+                    << exceeded_count
+                    << " times"
+                    << endl;
+            }
+            gen_count += pairs.size();
+            t_total += MPI_Wtime() - t;
+            t = MPI_Wtime();
+            check_and_add(bucket, pairs, local_data, worker);
+            pairs.clear();
+        }
+        return false;
+    }
+};
+
+
 static unsigned long process_tree(Bucket *bucket, local_data_t *local_data, int worker)
 {
     unsigned long count = 0;
@@ -969,9 +1120,9 @@ static unsigned long process_tree(Bucket *bucket, local_data_t *local_data, int 
     if (NULL != bucket->suffixes) {
         double t;
 #if USE_SET
-        set<pair<size_t,size_t> > local_pairs;
+        SetPair local_pairs;
 #else
-        vector<pair<size_t,size_t> > local_pairs;
+        VecPair local_pairs;
 #endif
 
         assert(bucket->size > 0);
@@ -1007,58 +1158,24 @@ static unsigned long process_tree(Bucket *bucket, local_data_t *local_data, int 
         stats_tree[worker].suffix_length.push_back(tree->get_suffix_length());
 
         /* generate pairs */
+#define USE_CALLBACK 1
+#if USE_CALLBACK
+        PairGenCallback callback(
+                bucket, local_pairs, local_data, 1000000, count, worker);
+        tree->generate_pairs(callback);
+        stats_tree[worker].time_process.push_back(
+                (MPI_Wtime()-callback.t) + callback.t_total);
+        stats_tree[worker].pairs.push_back(
+                local_pairs.size() + callback.gen_count);
+        // after callback is finished, we could still have pairs left
+        count += check_and_add(bucket, local_pairs, local_data, worker);
+#else
         t = MPI_Wtime();
         tree->generate_pairs(local_pairs);
-        size_t orig_size = local_pairs.size();
-        stats_tree[worker].pairs.push_back(orig_size);
         stats_tree[worker].time_process.push_back(MPI_Wtime() - t);
-        delete tree;
-        stats_dup[worker].checked.push_back(orig_size);
-        t = MPI_Wtime();
-        local_pairs = pair_check[worker]->check(local_pairs);
-        stats_dup[worker].time.push_back(MPI_Wtime() - t);
-        stats_dup[worker].returned.push_back(local_pairs.size());
-
-#if 0
-        size_t new_size = local_pairs.size();
-        cout << bid << "=" << local_data->suffix_buckets->bucket_kmer(bid)
-            << "\t" << orig_size << "-" << new_size << "=" << (orig_size-new_size)
-            << "\t" << utcs[worker]->size() << endl;
+        stats_tree[worker].pairs.push_back(local_pairs.size());
+        count += check_and_add(bucket, local_pairs, local_data, worker);
 #endif
-        /* assert we haven't run out of room in the task queue! */
-        //assert(local_pairs.size()<((unsigned long)(utcs[worker]->capacity()-utcs[worker]->size())));
-
-        /* populate task queue */
-#if USE_SET
-        set<pair<size_t,size_t> >::iterator it;
-#else
-        vector<pair<size_t,size_t> >::iterator it;
-#endif
-        bool overflow = false;
-        for (it=local_pairs.begin(); it!=local_pairs.end(); ++it) {
-            if (utcs[worker]->spaceAvailable()) {
-                task_description_two desc;
-                desc.id1 = it->first;
-                desc.id2 = it->second;
-                utcs[worker]->addTask(&desc, sizeof(desc));
-            }
-            else {
-                unsigned long p[2] = {it->first,it->second};
-                align(p, local_data, worker);
-                overflow = true;
-            }
-            ++count;
-        }
-
-        if (overflow) {
-            string kmer = local_data->suffix_buckets->bucket_kmer(
-                    bucket->bid, bucket->k);
-            cerr << "bucket " << bucket->bid
-                << " (" << kmer << ")"
-                << " overflowed with " << orig_size << " pairs"
-                << endl;
-        }
-
         stats_tree[worker].time_last = MPI_Wtime();
     }
 

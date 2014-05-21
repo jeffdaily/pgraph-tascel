@@ -16,6 +16,7 @@
 #include <utility>
 
 #include "Parameters.hpp"
+#include "Pair.hpp"
 #include "SequenceDatabase.hpp"
 #include "Stats.hpp"
 #include "Suffix.hpp"
@@ -40,7 +41,7 @@ class SuffixTreeNode
 };
 
 
-typedef void(*SuffixTreePairCallback)(pair<size_t,size_t>);
+typedef void(*SuffixTreePairCallback)(Pair);
 
 
 /**
@@ -50,20 +51,20 @@ class SuffixTree
 {
     public:
         struct VectorCallback {
-            vector<pair<size_t,size_t> > &pairs;
-            VectorCallback(vector<pair<size_t,size_t> > &pairs)
+            vector<Pair> &pairs;
+            VectorCallback(vector<Pair> &pairs)
                 : pairs(pairs) {}
-            bool operator()(const pair<size_t,size_t> &p) {
+            bool operator()(const Pair &p) {
                 pairs.push_back(p);
                 return false;
             }
         };
 
         struct SetCallback {
-            set<pair<size_t,size_t> > &pairs;
-            SetCallback(set<pair<size_t,size_t> > &pairs)
+            set<Pair> &pairs;
+            SetCallback(set<Pair> &pairs)
                 : pairs(pairs) {}
-            bool operator()(const pair<size_t,size_t> &p) {
+            bool operator()(const Pair &p) {
                 pairs.insert(p);
                 return false;
             }
@@ -98,7 +99,7 @@ class SuffixTree
          *
          * @param[out] pairs
          */
-        bool generate_pairs(set<pair<size_t,size_t> > &pairs) {
+        bool generate_pairs(set<Pair> &pairs) {
             return generate_pairs(SetCallback(pairs));
         }
 
@@ -107,7 +108,7 @@ class SuffixTree
          *
          * @param[out] pairs
          */
-        bool generate_pairs(vector<pair<size_t,size_t> > &pairs) {
+        bool generate_pairs(vector<Pair> &pairs) {
             return generate_pairs(VectorCallback(pairs));
         }
 
