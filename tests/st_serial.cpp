@@ -202,11 +202,10 @@ int main(int argc, char **argv)
     cout << "tree size internal " << tree->get_size_internal() << endl;
 
     double time_pairs = MPI_Wtime();
-    vector<pair<size_t,size_t> > pairs;
+    set<pair<size_t,size_t> > pairs;
     tree->generate_pairs(pairs);
     time_pairs = MPI_Wtime() - time_pairs;
-    if (0 == rank) {
-    }
+#if 0
     double time_dup = MPI_Wtime();
     set<pair<size_t,size_t> > pairs_set(pairs.begin(), pairs.end());
     time_dup = MPI_Wtime() - time_dup;
@@ -220,6 +219,12 @@ int main(int argc, char **argv)
         cout << "pairs_set.size() = " << pairs_set.size() << endl;
         cout << "pairs.size() = " << pairs.size() << endl;
     }
+#else
+    if (0 == rank) {
+        cout << "time pairs = " << time_pairs << " seconds" << endl;
+        cout << "pairs.size() = " << pairs.size() << endl;
+    }
+#endif
 
     delete [] stats_tree;
     delete bucket;

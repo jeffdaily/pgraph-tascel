@@ -186,7 +186,7 @@ bool SuffixTree::generate_pairs(Callback callback)
         printf("stNode->depth=%d, node->rLeaf=%ld, sIndex=%ld\n", node->depth, node->rLeaf, sIndex);
 #endif
 
-        if (node->depth >= EM - 1) {
+        if (node->depth >= EM) {
             if (node->rLeaf == sIndex) { /* leaf node */
                 if (proc_leaf(node->lset, callback)) return true;
             }

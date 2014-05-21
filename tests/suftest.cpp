@@ -23,6 +23,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
+#include "config.h"
 
 #include <cctype>
 #include <cstdio>
@@ -69,8 +70,6 @@ struct quad {
         : lcp(lcp), lb(lb), rb(rb), children(children) {}
 
     bool empty() { return rb == INT_MAX; }
-
-    bool includes(int b) { return b >= lb && b <= rb; }
 };
 
 ostream& operator << (ostream &os, const quad &q) {
@@ -98,8 +97,23 @@ static int count;
 static int count_generated;
 static set<pair<int,int> > pairs;
 
-static void process(quad &q);
-static void process(quad &q, int *SA, char *BWT, int *SID, char sentinal, int cutoff);
+inline static void pair_check(
+        const int &i,
+        const int &j,
+        const int * const restrict SA,
+        const unsigned char * const restrict BWT,
+        const int * const restrict SID,
+        const char &sentinal);
+
+inline static void process(const quad &q);
+
+inline static void process(
+        const quad &q,
+        const int * const restrict SA,
+        const unsigned char * const restrict BWT,
+        const int * const restrict SID,
+        const char &sentinal,
+        const int &cutoff);
 
 
 /* Checks the suffix array SA of the string T. */
@@ -194,7 +208,7 @@ int main(int argc, const char *argv[]) {
     unsigned char *T = NULL;
     int *SA = NULL;
     int *LCP = NULL;
-    char *BWT = NULL;
+    unsigned char *BWT = NULL;
     int *SID = NULL;
     int *END = NULL;
     int n = 0;
@@ -297,7 +311,7 @@ int main(int argc, const char *argv[]) {
     T = (unsigned char *)malloc((size_t)(n+1) * sizeof(unsigned char));
     SA = (int *)malloc((size_t)(n+1) * sizeof(int)); /* +1 for computing LCP */
     LCP = (int *)malloc((size_t)(n+1) * sizeof(int)); /* +1 for lcp tree */
-    BWT = (char *)malloc((size_t)(n+1) * sizeof(char));
+    BWT = (unsigned char *)malloc((size_t)(n+1) * sizeof(unsigned char));
     SID = (int *)malloc((size_t)n * sizeof(int));
     if (print) {
         END = (int *)malloc((size_t)n * sizeof(int));
@@ -439,16 +453,17 @@ int main(int argc, const char *argv[]) {
             the_stack.top().rb = i - 1;
             last_interval = the_stack.top();
             the_stack.pop();
-            //process(last_interval);
             process(last_interval, SA, BWT, SID, sentinal, cutoff);
             lb = last_interval.lb;
             if (LCP[i] <= the_stack.top().lcp) {
+                last_interval.children.clear();
                 the_stack.top().children.push_back(last_interval);
                 last_interval = quad();
             }
         }
         if (LCP[i] > the_stack.top().lcp) {
             if (!last_interval.empty()) {
+                last_interval.children.clear();
                 the_stack.push(quad(LCP[i],lb,INT_MAX,vector<quad>(1, last_interval)));
                 last_interval = quad();
             }
@@ -482,13 +497,20 @@ int main(int argc, const char *argv[]) {
 }
 
 
-void process(quad &q)
+inline static void process(const quad &q)
 {
     ++count;
     cout << q << endl;
 }
 
-static void pair_check(int i, int j, int *SA, char *BWT, int *SID, char sentinal) {
+inline static void pair_check(
+        const int &i,
+        const int &j,
+        const int * const restrict SA,
+        const unsigned char * const restrict BWT,
+        const int * const restrict SID,
+        const char &sentinal)
+{
     const int sidi = SID[SA[i]];
     const int sidj = SID[SA[j]];
     if ((BWT[i] != BWT[j] || BWT[i] == sentinal) && sidi != sidj) {
@@ -505,7 +527,13 @@ static void pair_check(int i, int j, int *SA, char *BWT, int *SID, char sentinal
 /* this naive pair generation actually works but generates an extreme number of
  * duplicates */
 #if 0
-void process(quad &q, int *SA, char *BWT, int *SID, char sentinal, int cutoff)
+inline static void process(
+        const quad &q,
+        const int * const restrict SA,
+        const unsigned char * const restrict BWT,
+        const int * const restrict SID,
+        const char &sentinal,
+        const int &cutoff)
 {
     ++count;
     //cout << q << endl;
@@ -532,9 +560,15 @@ void process(quad &q, int *SA, char *BWT, int *SID, char sentinal, int cutoff)
  * pairs. Instead, the complexity should be bounded by the number of exact
  * matches...
  */
-void process(quad &q, int *SA, char *BWT, int *SID, char sentinal, int cutoff)
+inline static void process(
+        const quad &q,
+        const int * const restrict SA,
+        const unsigned char * const restrict BWT,
+        const int * const restrict SID,
+        const char &sentinal,
+        const int &cutoff)
 {
-    int n_children = q.children.size();
+    const int n_children = q.children.size();
     int child_index = 0;
 
     ++count;
