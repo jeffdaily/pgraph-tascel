@@ -45,6 +45,7 @@ main(int argc, const char *argv[]) {
   unsigned char *T1BWT;
   int *T3BWT;
   int *SA1;
+  int *LCP1;
   int *SA3;
   int *A;
   int i, j, n, p1, p3;
@@ -56,7 +57,8 @@ main(int argc, const char *argv[]) {
     T1BWT = malloc(n * sizeof(unsigned char));
     T3 = malloc(n * sizeof(int));
     T3BWT = malloc(n * sizeof(int));
-    SA1 = malloc(n * sizeof(int));
+    SA1 = malloc((n+1) * sizeof(int));
+    LCP1 = malloc(n * sizeof(int));
     SA3 = malloc(n * sizeof(int));
     A = malloc(n * sizeof(int));
     for(bits = 0; bits < (1U << n); ++bits) {
@@ -69,7 +71,7 @@ main(int argc, const char *argv[]) {
       }
 
       /* construct sa and bwt */
-      if(sais(T1, SA1, n) != 0) {
+      if(sais(T1, SA1, LCP1, n) != 0) {
         fprintf(stderr, "  n=%2d, bits=%u : failure - sais\n", n, bits);
         exit(EXIT_FAILURE);
       }
