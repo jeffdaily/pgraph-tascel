@@ -25,6 +25,7 @@ endif
 AM_CPPFLAGS += -I$(top_srcdir)/contrib/boost_1_55_0
 AM_CPPFLAGS += -I$(top_srcdir)/contrib/gtest-1.7.0
 AM_CPPFLAGS += -I$(top_srcdir)/contrib/gtest-1.7.0/include
+AM_CPPFLAGS += -I$(top_srcdir)/contrib/sais-lite-lcp
 AM_CPPFLAGS += -I$(top_srcdir)/contrib/yaml-cpp-0.5.1/include
 
 AM_LDFLAGS += $(TASCEL_LDFLAGS)
@@ -113,6 +114,9 @@ libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/rstruct.h
 libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/smith_waterman_sse2.c
 libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/smith_waterman_sse2.h
 endif
+
+libpgraph_la_SOURCES += contrib/sais-lite-lcp/sais.c
+libpgraph_la_SOURCES += contrib/sais-lite-lcp/sais.h
 
 noinst_LTLIBRARIES += libyaml-cpp.la
 libyaml_cpp_la_SOURCES =
@@ -211,18 +215,21 @@ apps_align_SOURCES = apps/align.cpp
 
 if HAVE_SSE2
 if HAVE_ZLIB
-bin_PROGRAMS += apps/ssw_test
+noinst_PROGRAMS += tests/ssw_test
 endif
 noinst_PROGRAMS += tests/test_fasta_align
 endif
-apps_ssw_test_SOURCES =
-apps_ssw_test_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/main.c
-apps_ssw_test_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/kseq.h
-apps_ssw_test_LDFLAGS = $(ZLIB_LDFLAGS) $(AM_LDFLAGS)
+tests_ssw_test_SOURCES =
+tests_ssw_test_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/main.c
+tests_ssw_test_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/kseq.h
+tests_ssw_test_LDFLAGS = $(ZLIB_LDFLAGS) $(AM_LDFLAGS)
 
-apps_ssw_test_LDADD = $(LDADD) $(ZLIB_LIBS)
+tests_ssw_test_LDADD = $(LDADD) $(ZLIB_LIBS)
 
-
+noinst_PROGRAMS += tests/st_serial
+noinst_PROGRAMS += tests/suftest
+noinst_PROGRAMS += tests/suftest_orig
+noinst_PROGRAMS += tests/test_sais
 noinst_PROGRAMS += tests/test_combinations
 noinst_PROGRAMS += tests/test_parser
 noinst_PROGRAMS += tests/test_stl_container_performance
@@ -230,6 +237,10 @@ if HAVE_SSE2
 noinst_PROGRAMS += tests/test_fasta_align
 endif
 
+tests_suftest_SOURCES                      = tests/suftest.cpp
+tests_suftest_orig_SOURCES                 = contrib/sais-lite-lcp/suftest.c
+tests_test_sais_SOURCES                    = contrib/sais-lite-lcp/test.c
+tests_st_serial_SOURCES                    = tests/st_serial.cpp
 tests_test_combinations_SOURCES            = tests/test_combinations.cpp
 tests_test_parser_SOURCES                  = tests/test_parser.cpp
 tests_test_stl_container_performance_SOURCES = tests/test_stl_container_performance.cpp
