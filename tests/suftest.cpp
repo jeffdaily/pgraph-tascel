@@ -41,6 +41,14 @@
 #include <utility>
 #include <vector>
 
+#ifdef _OPENMP
+#include "omp.h"
+#endif
+
+#ifdef USE_TBB
+#include <tbb/concurrent_unordered_set.h>
+#endif
+
 #include "sais.h"
 
 using ::std::cout;
@@ -54,6 +62,15 @@ using ::std::set;
 using ::std::size_t;
 using ::std::stack;
 using ::std::vector;
+
+typedef pair<int,int> Pair;
+
+#ifdef USE_TBB
+using ::tbb::concurrent_unordered_set;
+typedef concurrent_unordered_set<Pair> PairSet;
+#else
+typedef set<Pair> PairSet;
+#endif
 
 struct quad {
     int lcp;
@@ -92,11 +109,9 @@ ostream& operator << (ostream &os, const quad &q) {
     return os;
 }
 
-static int count;
-static int count_generated;
-static set<pair<int,int> > pairs;
-
 inline static void pair_check(
+        int &count_generated,
+        PairSet &pairs,
         const int &i,
         const int &j,
         const int * const restrict SA,
@@ -104,9 +119,12 @@ inline static void pair_check(
         const int * const restrict SID,
         const char &sentinal);
 
-inline static void process(const quad &q);
+inline static void process(int &count, const quad &q);
 
 inline static void process(
+        int &count,
+        int &count_generated,
+        PairSet &pairs,
         const quad &q,
         const int * const restrict SA,
         const unsigned char * const restrict BWT,
@@ -197,7 +215,7 @@ static int sufcheck(const unsigned char *T, const int *SA, int n, int verbose) {
 }
 
 static void print_help(const char *progname, int status) {
-    fprintf(stderr, "usage: %s [-p] [-c cutoff>=1] [-s sentinal] FILE\n\n", progname);
+    fprintf(stderr, "usage: %s [-p] [-k window_size] [-c cutoff>=1] [-s sentinal] FILE\n\n", progname);
     exit(status);
 }
 
@@ -210,18 +228,21 @@ int main(int argc, const char *argv[]) {
     unsigned char *BWT = NULL;
     int *SID = NULL;
     vector<int> END;
+    vector<int> BUCKET;
     int n = 0;
     clock_t start = 0;
     clock_t finish = 0;
     int i = 0;
-    int j = 0;
-    int l = 0;
     int sid = 0;
     char sentinal = 0;
     int print = 0;
     int validate = 0;
-    int lb = 0;
     int cutoff = 1;
+    int k = 3;
+    int bucket_traversal = 0;
+    PairSet pairs;
+    int count = 0;
+    int count_generated = 0;
 
     /* Check arguments. */
     i = 1;
@@ -230,6 +251,24 @@ int main(int argc, const char *argv[]) {
                 || (strncmp(argv[i], "--help", 6) == 0)) {
             fprintf(stderr, "help requested\n");
             print_help(argv[0], EXIT_SUCCESS);
+        }
+        else if (strncmp(argv[i], "-k", 2) == 0) {
+            if (i+1 < argc) {
+                k = atoi(argv[i+1]);
+                if (k <= 0) {
+                    print_help(argv[0], EXIT_FAILURE);
+                }
+                ++i;
+            }
+            else {
+                if (i+1 >= argc) {
+                    fprintf(stderr, "-k takes a parameter\n");
+                }
+                else {
+                    fprintf(stderr, "bad argument to -k: %s\n", argv[i+1]);
+                }
+                print_help(argv[0], EXIT_FAILURE);
+            }
         }
         else if (strncmp(argv[i], "-c", 2) == 0) {
             if (i+1 < argc) {
@@ -241,10 +280,10 @@ int main(int argc, const char *argv[]) {
             }
             else {
                 if (i+1 >= argc) {
-                    fprintf(stderr, "-s takes a parameter\n");
+                    fprintf(stderr, "-c takes a parameter\n");
                 }
                 else {
-                    fprintf(stderr, "bad argument to -s: %s\n", argv[i+1]);
+                    fprintf(stderr, "bad argument to -c: %s\n", argv[i+1]);
                 }
                 print_help(argv[0], EXIT_FAILURE);
             }
@@ -266,6 +305,9 @@ int main(int argc, const char *argv[]) {
         }
         else if (strncmp(argv[i], "-p", 2) == 0) {
             print = 1;
+        }
+        else if (strncmp(argv[i], "-b", 2) == 0) {
+            bucket_traversal = 1;
         }
         else if (strncmp(argv[i], "-x", 2) == 0) {
             validate = 1;
@@ -387,10 +429,12 @@ int main(int argc, const char *argv[]) {
 
     /* naive BWT: */
     /* also "fix" the LCP array to clamp LCP's that are too long */
+    /* while we're at it, determine bucket dilenations */
     start = clock();
     for (i = 0; i < n; ++i) {
-        int len = END[SID[SA[i]]] - SA[i] + 1;
+        int len = END[SID[SA[i]]] - SA[i]; // don't include sentinal
         if (LCP[i] > len) LCP[i] = len;
+        if (LCP[i] < k && len > 0) BUCKET.push_back(i);
         BWT[i] = (SA[i] > 0) ? T[SA[i]-1] : sentinal;
     }
     finish = clock();
@@ -403,14 +447,14 @@ int main(int argc, const char *argv[]) {
         /* check LCP: */
         fprintf(stderr, "LCP check: ");
         for (i = 1; i < n; ++i) {
-            l = 0;
+            int l = 0;
             while (T[SA[i]+l]==T[SA[i-1]+l]
-                    && (END[SID[SA[i-1]]]-SA[i-1]+1)>l) ++l;
+                    && (END[SID[SA[i-1]]]-SA[i-1])>l) ++l;
             if (l != LCP[i]) {
                 printf("Error at position %i\n", i);
                 printf("%i vs. %i\n", l, LCP[i]);
-                for (j = 0; j < 10; j++) printf("%c", T[SA[i]+j]); printf("\n");
-                for (j = 0; j < 10; j++) printf("%c", T[SA[i-1]+j]); printf("\n");
+                for (int j = 0; j < 10; j++) printf("%c", T[SA[i]+j]); printf("\n");
+                for (int j = 0; j < 10; j++) printf("%c", T[SA[i-1]+j]); printf("\n");
                 exit(-1);
             }
         }
@@ -421,61 +465,197 @@ int main(int argc, const char *argv[]) {
     }
 
     if (print) {
-        printf("Index\tSA\tLCP\tBWT\tSeqID\tSuffix\n");
+        printf("Index\tSA\tLCP\tBWT\tT\tSeqID\tSuffix\n");
         for(i=0; i<n; ++i) {
-            //int len = END[SID[SA[i]]] - SA[i] + 1;
-            int len = n - SA[i];
-            printf("%d\t%d\t%d\t%c\t%d\t%.*s\n", i, SA[i], LCP[i], BWT[i], SID[SA[i]], len, T+SA[i]);
+            int len = END[SID[SA[i]]] - SA[i] + 1;
+            //int len = n - SA[i];
+            printf("%d\t%d\t%d\t%c\t%c\t%d\t%.*s\n",
+                    i, SA[i], LCP[i], BWT[i], T[i], SID[SA[i]], len, T+SA[i]);
         }
     }
+
+    /* When counting k-mer buckets, the GSA we create will put all
+     * sentinals either at the beginning or end of the SA. We don't want
+     * to count all of the terminals, nor do we want to process them in
+     * our bottom-up traversal. */
+    /* do the sentinals appear at the beginning or end of SA? */
+    int bup_start = 1;
+    int bup_stop = n;
+    if (T[SA[0]] == sentinal) {
+        fprintf(stderr, "sentinals at beginning\n");
+        bup_start = sid+1;
+        bup_stop = n;
+    }
+    else if (T[SA[n-1]] == sentinal) {
+        fprintf(stderr, "sentinals at end\n");
+        bup_start = 1;
+        bup_stop = n-sid;
+    }
+    else {
+        fprintf(stderr, "sentinals not found at beginning or end of SA\n");
+    }
+    printf("bup_start=%d\n", bup_start);
+    printf(" bup_stop=%d\n", bup_stop);
+    BUCKET.push_back(bup_stop);
+    printf("%zu %d-mer buckets found\n", BUCKET.size()-1, k);
+
+    /* we don't need the input file any longer */
+    free(T);
 
     /* we don't need END any longer */
     /* force a reallocation to reduce vector capacity to 0 */
     vector<int>().swap(END);
 
-    /* we don't need the input file any longer */
-    free(T);
-
-    stack<quad> the_stack;
     start = clock();
     count = 0;
     count_generated = 0;
-    quad last_interval;
-    the_stack.push(quad());
-    LCP[n] = 0;
-    for (i = 1; i <= n; ++i) {
-        lb = i - 1;
-        while (LCP[i] < the_stack.top().lcp) {
-            the_stack.top().rb = i - 1;
-            last_interval = the_stack.top();
-            the_stack.pop();
-            process(last_interval, SA, BWT, SID, sentinal, cutoff);
-            lb = last_interval.lb;
-            if (LCP[i] <= the_stack.top().lcp) {
-                last_interval.children.clear();
-                the_stack.top().children.push_back(last_interval);
-                last_interval = quad();
+    LCP[n] = 0; /* doesn't really exist, but for the root */
+    if (bucket_traversal) {
+        clock_t local_start = 0;
+        int local_count = 0;
+        int local_count_generated = 0;
+#ifdef USE_TBB
+        printf("using TBB concurrent_unordered_set\n");
+#pragma omp parallel private(local_start,i,local_count,local_count_generated) shared(count,count_generated,pairs,SA,LCP,BWT,SID,sentinal,cutoff,BUCKET) default(none)
+#else
+        PairSet local_pairs;
+#pragma omp parallel private(local_start,i,local_count,local_count_generated,local_pairs) shared(count,count_generated,pairs,SA,LCP,BWT,SID,sentinal,cutoff,BUCKET) default(none)
+#endif
+        {
+            local_start = clock();
+            local_count = 0;
+            local_count_generated = 0;
+#ifdef _OPENMP
+#pragma omp single
+            {
+                printf("processing buckets in parallel using %d/%d threads\n",
+                        omp_get_num_threads(), omp_get_max_threads());
             }
-        }
-        if (LCP[i] > the_stack.top().lcp) {
-            if (!last_interval.empty()) {
-                last_interval.children.clear();
-                the_stack.push(quad(LCP[i],lb,INT_MAX,vector<quad>(1, last_interval)));
-                last_interval = quad();
+#endif
+#pragma omp for nowait schedule(dynamic)
+            for (int bid=0; bid<BUCKET.size()-1; ++bid)
+            {
+                stack<quad> the_stack;
+                quad last_interval;
+#if 0
+#ifdef _OPENMP
+                printf("beg processing bucket %d [%d..%d]=%d using tid=%d\n",
+                        bid,
+                        BUCKET[bid], BUCKET[bid+1],
+                        BUCKET[bid+1]-BUCKET[bid]+1,
+                        omp_get_thread_num());
+#else
+                printf("beg processing bucket %d\n", bid);
+#endif
+#endif
+                the_stack.push(quad());
+                the_stack.push(quad(LCP[BUCKET[bid]],BUCKET[bid],INT_MAX));
+                for (i = BUCKET[bid]+1; i <= BUCKET[bid+1]; ++i) {
+                    int lb = i - 1;
+                    while (LCP[i] < the_stack.top().lcp) {
+                        the_stack.top().rb = i - 1;
+                        last_interval = the_stack.top();
+                        the_stack.pop();
+#ifdef USE_TBB
+                        process(local_count, local_count_generated, pairs, last_interval, SA, BWT, SID, sentinal, cutoff);
+#else
+                        process(local_count, local_count_generated, local_pairs, last_interval, SA, BWT, SID, sentinal, cutoff);
+#endif
+                        lb = last_interval.lb;
+                        if (LCP[i] <= the_stack.top().lcp) {
+                            last_interval.children.clear();
+                            the_stack.top().children.push_back(last_interval);
+                            last_interval = quad();
+                        }
+                    }
+                    if (LCP[i] > the_stack.top().lcp) {
+                        if (!last_interval.empty()) {
+                            last_interval.children.clear();
+                            the_stack.push(quad(LCP[i],lb,INT_MAX,vector<quad>(1, last_interval)));
+                            last_interval = quad();
+                        }
+                        else {
+                            the_stack.push(quad(LCP[i],lb,INT_MAX));
+                        }
+                    }
+                }
+                /* if we have a legit l-interval left on the stack and not the
+                 * null quad() */
+                if (the_stack.size() > 1) {
+                    the_stack.top().rb = BUCKET[bid+1] - 1;
+#ifdef USE_TBB
+                    process(local_count, local_count_generated, pairs, the_stack.top(), SA, BWT, SID, sentinal, cutoff);
+#else
+                    process(local_count, local_count_generated, local_pairs, the_stack.top(), SA, BWT, SID, sentinal, cutoff);
+#endif
+                }
+#if 0
+#ifdef _OPENMP
+                printf("end processing bucket %d using tid=%d after %.4f sec\n",
+                        bid, omp_get_thread_num(),
+                        (double)(clock()-local_start)/(double)CLOCKS_PER_SEC);
+#else
+                printf("end processing bucket %d\n", bid);
+#endif
+#endif
             }
-            else {
-                the_stack.push(quad(LCP[i],lb,INT_MAX));
+#ifdef USE_TBB
+#pragma omp atomic
+            count += local_count;
+#pragma omp atomic
+            count_generated += local_count_generated;
+#else
+#pragma omp critical
+            {
+#ifdef _OPENMP
+                printf("tid %d entered critical section after %.4f sec\n",
+                        omp_get_thread_num(), (double)(clock() - local_start) / (double)CLOCKS_PER_SEC);
+#endif
+                count += local_count;
+                count_generated += local_count_generated;
+                pairs.insert(local_pairs.begin(),local_pairs.end());
             }
+#endif
         }
     }
-    the_stack.top().rb = n - 1;
-    process(the_stack.top(), SA, BWT, SID, sentinal, cutoff);
+    else {
+        stack<quad> the_stack;
+        quad last_interval;
+        the_stack.push(quad());
+        for (i = bup_start; i <= bup_stop; ++i) {
+            int lb = i - 1;
+            while (LCP[i] < the_stack.top().lcp) {
+                the_stack.top().rb = i - 1;
+                last_interval = the_stack.top();
+                the_stack.pop();
+                process(count, count_generated, pairs, last_interval, SA, BWT, SID, sentinal, cutoff);
+                lb = last_interval.lb;
+                if (LCP[i] <= the_stack.top().lcp) {
+                    last_interval.children.clear();
+                    the_stack.top().children.push_back(last_interval);
+                    last_interval = quad();
+                }
+            }
+            if (LCP[i] > the_stack.top().lcp) {
+                if (!last_interval.empty()) {
+                    last_interval.children.clear();
+                    the_stack.push(quad(LCP[i],lb,INT_MAX,vector<quad>(1, last_interval)));
+                    last_interval = quad();
+                }
+                else {
+                    the_stack.push(quad(LCP[i],lb,INT_MAX));
+                }
+            }
+        }
+        the_stack.top().rb = bup_stop - 1;
+        process(count, count_generated, pairs, the_stack.top(), SA, BWT, SID, sentinal, cutoff);
+    }
     finish = clock();
     fprintf(stderr, "SA has %d internal nodes\n", count);
     fprintf(stderr, "processing: %.4f sec\n", (double)(finish - start) / (double)CLOCKS_PER_SEC);
 
 #if 0
-    for (set<pair<int,int> >::iterator pit=pairs.begin();
+    for (PairSet::iterator pit=pairs.begin();
             pit!=pairs.end(); ++pit) {
         cout << "pair " << pit->first << "," << pit->second << endl;
     }
@@ -493,13 +673,15 @@ int main(int argc, const char *argv[]) {
 }
 
 
-inline static void process(const quad &q)
+inline static void process(int &count, const quad &q)
 {
     ++count;
     cout << q << endl;
 }
 
 inline static void pair_check(
+        int &count_generated,
+        PairSet &pairs,
         const int &i,
         const int &j,
         const int * const restrict SA,
@@ -524,6 +706,8 @@ inline static void pair_check(
  * duplicates */
 #if 0
 inline static void process(
+        int &count,
+        PairSet &pairs,
         const quad &q,
         const int * const restrict SA,
         const unsigned char * const restrict BWT,
@@ -539,7 +723,7 @@ inline static void process(
     /* naive impl ??? */
     for (int i=q.lb; i<=q.rb; ++i) {
         for (int j=i+1; j<=q.rb; ++j) {
-            pair_check(i, j, SA, BWT, SID, sentinal);
+            pair_check(pairs, i, j, SA, BWT, SID, sentinal);
         }
     }
 }
@@ -557,6 +741,9 @@ inline static void process(
  * matches...
  */
 inline static void process(
+        int &count,
+        int &count_generated,
+        PairSet &pairs,
         const quad &q,
         const int * const restrict SA,
         const unsigned char * const restrict BWT,
@@ -571,18 +758,58 @@ inline static void process(
 
     if (q.lcp < cutoff) return;
 
-    for (int i=q.lb; i<=q.rb; ++i) {
-        int j = i+1;
-        if (child_index < n_children) {
-            if (i >= q.children[child_index].lb) {
-                j = q.children[child_index].rb+1;
-                if (i >= q.children[child_index].rb) {
-                    ++child_index;
+    if (n_children) {
+#if 1
+        for (int i=q.lb; i<=q.rb; ++i) {
+            int j = i+1;
+            if (child_index < n_children) {
+                if (i >= q.children[child_index].lb) {
+                    j = q.children[child_index].rb+1;
+                    if (i >= q.children[child_index].rb) {
+                        ++child_index;
+                    }
                 }
             }
+            for (/*nope*/; j<=q.rb; ++j) {
+                pair_check(count_generated, pairs, i, j, SA, BWT, SID, sentinal);
+            }
         }
-        for (/*nope*/; j<=q.rb; ++j) {
-            pair_check(i, j, SA, BWT, SID, sentinal);
+#else
+        /* this gets same answer as above alg but more complicated */
+        int i=q.lb;
+        while (i<=q.rb) {
+            if (i == q.children[child_index].lb) {
+                const int next = q.children[child_index].rb+1;
+                for (/*i*/; i<next; ++i) {
+                    for (int j=next; j<=q.rb; ++j) {
+                        pair_check(count_generated, pairs, i, j, SA, BWT, SID, sentinal);
+                    }
+                }
+                ++child_index;
+                if (child_index >= n_children) {
+                    break;
+                }
+            }
+            else {
+                for (int j=i+1; j<=q.rb; ++j) {
+                    pair_check(count_generated, pairs, i, j, SA, BWT, SID, sentinal);
+                }
+                ++i;
+            }
+        }
+        while (i<=q.rb) {
+            for (int j=i+1; j<=q.rb; ++j) {
+                pair_check(count_generated, pairs, i, j, SA, BWT, SID, sentinal);
+            }
+            ++i;
+        }
+#endif
+    }
+    else {
+        for (int i=q.lb; i<=q.rb; ++i) {
+            for (int j=i+1; j<=q.rb; ++j) {
+                pair_check(count_generated, pairs, i, j, SA, BWT, SID, sentinal);
+            }
         }
     }
 }
