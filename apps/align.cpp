@@ -883,7 +883,8 @@ int inner_main(int argc, char **argv)
     delete [] pair_check;
     delete suffix_buckets;
     delete parameters;
-    delete sequences;
+    delete [] sequences;
+    delete sequence_db;
     delete [] local_data->tbl;
     delete [] local_data->del;
     delete [] local_data->ins;
@@ -1239,6 +1240,8 @@ static unsigned long process_tree(Bucket *bucket, local_data_t *local_data, int 
         count += check_and_add(bucket, local_pairs, local_data, worker);
 #endif
         stats_tree[worker].time_last = MPI_Wtime();
+
+        delete tree;
     }
 
     return count;
