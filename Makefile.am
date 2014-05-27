@@ -233,6 +233,7 @@ noinst_PROGRAMS += tests/suftest
 noinst_PROGRAMS += tests/suftest_orig
 noinst_PROGRAMS += tests/test_sais
 noinst_PROGRAMS += tests/test_combinations
+noinst_PROGRAMS += tests/test_db_reprinter
 noinst_PROGRAMS += tests/test_parser
 noinst_PROGRAMS += tests/test_stl_container_performance
 if HAVE_SSE2
@@ -244,6 +245,7 @@ tests_suftest_orig_SOURCES                 = contrib/sais-lite-lcp/suftest.c
 tests_test_sais_SOURCES                    = contrib/sais-lite-lcp/test.c
 tests_st_serial_SOURCES                    = tests/st_serial.cpp
 tests_test_combinations_SOURCES            = tests/test_combinations.cpp
+tests_test_db_reprinter_SOURCES            = tests/test_db_reprinter.cpp
 tests_test_parser_SOURCES                  = tests/test_parser.cpp
 tests_test_stl_container_performance_SOURCES = tests/test_stl_container_performance.cpp
 tests_test_fasta_align_SOURCES             = tests/test_fasta_align.cpp

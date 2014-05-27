@@ -83,7 +83,8 @@ bin_PROGRAMS = apps/align$(EXEEXT)
 noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) \
 	tests/st_serial$(EXEEXT) tests/suftest$(EXEEXT) \
 	tests/suftest_orig$(EXEEXT) tests/test_sais$(EXEEXT) \
-	tests/test_combinations$(EXEEXT) tests/test_parser$(EXEEXT) \
+	tests/test_combinations$(EXEEXT) \
+	tests/test_db_reprinter$(EXEEXT) tests/test_parser$(EXEEXT) \
 	tests/test_stl_container_performance$(EXEEXT) $(am__EXEEXT_2)
 check_PROGRAMS = tests/test_mpi$(EXEEXT)
 @HAVE_SSE2_TRUE@am__append_1 = -I$(top_srcdir)/contrib/Complete-Striped-Smith-Waterman-Library/src \
@@ -296,6 +297,14 @@ tests_test_combinations_LDADD = $(LDADD)
 tests_test_combinations_DEPENDENCIES = libpgraph.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) libyaml-cpp.la
+am_tests_test_db_reprinter_OBJECTS =  \
+	tests/test_db_reprinter.$(OBJEXT)
+tests_test_db_reprinter_OBJECTS =  \
+	$(am_tests_test_db_reprinter_OBJECTS)
+tests_test_db_reprinter_LDADD = $(LDADD)
+tests_test_db_reprinter_DEPENDENCIES = libpgraph.la \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) libyaml-cpp.la
 am_tests_test_fasta_align_OBJECTS = tests/test_fasta_align.$(OBJEXT)
 tests_test_fasta_align_OBJECTS = $(am_tests_test_fasta_align_OBJECTS)
 tests_test_fasta_align_LDADD = $(LDADD)
@@ -384,6 +393,7 @@ SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
 	$(tests_st_serial_SOURCES) $(tests_suftest_SOURCES) \
 	$(tests_suftest_orig_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
+	$(tests_test_db_reprinter_SOURCES) \
 	$(tests_test_fasta_align_SOURCES) $(tests_test_mpi_SOURCES) \
 	$(tests_test_parser_SOURCES) $(tests_test_sais_SOURCES) \
 	$(tests_test_stl_container_performance_SOURCES)
@@ -393,6 +403,7 @@ DIST_SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
 	$(tests_st_serial_SOURCES) $(tests_suftest_SOURCES) \
 	$(tests_suftest_orig_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
+	$(tests_test_db_reprinter_SOURCES) \
 	$(tests_test_fasta_align_SOURCES) $(tests_test_mpi_SOURCES) \
 	$(tests_test_parser_SOURCES) $(tests_test_sais_SOURCES) \
 	$(tests_test_stl_container_performance_SOURCES)
@@ -719,6 +730,7 @@ tests_suftest_orig_SOURCES = contrib/sais-lite-lcp/suftest.c
 tests_test_sais_SOURCES = contrib/sais-lite-lcp/test.c
 tests_st_serial_SOURCES = tests/st_serial.cpp
 tests_test_combinations_SOURCES = tests/test_combinations.cpp
+tests_test_db_reprinter_SOURCES = tests/test_db_reprinter.cpp
 tests_test_parser_SOURCES = tests/test_parser.cpp
 tests_test_stl_container_performance_SOURCES = tests/test_stl_container_performance.cpp
 tests_test_fasta_align_SOURCES = tests/test_fasta_align.cpp
@@ -1101,6 +1113,12 @@ tests/test_combinations.$(OBJEXT): tests/$(am__dirstamp) \
 tests/test_combinations$(EXEEXT): $(tests_test_combinations_OBJECTS) $(tests_test_combinations_DEPENDENCIES) $(EXTRA_tests_test_combinations_DEPENDENCIES) tests/$(am__dirstamp)
 	@rm -f tests/test_combinations$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_combinations_OBJECTS) $(tests_test_combinations_LDADD) $(LIBS)
+tests/test_db_reprinter.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+
+tests/test_db_reprinter$(EXEEXT): $(tests_test_db_reprinter_OBJECTS) $(tests_test_db_reprinter_DEPENDENCIES) $(EXTRA_tests_test_db_reprinter_DEPENDENCIES) tests/$(am__dirstamp)
+	@rm -f tests/test_db_reprinter$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_db_reprinter_OBJECTS) $(tests_test_db_reprinter_LDADD) $(LIBS)
 tests/test_fasta_align.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 
@@ -1213,6 +1231,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/st_serial.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/suftest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_combinations.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_db_reprinter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_fasta_align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_mpi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_parser.Po@am__quote@
