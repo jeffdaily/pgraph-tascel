@@ -469,11 +469,12 @@ bool SequenceDatabaseTascel::is_local(size_t i)
 
 Sequence* SequenceDatabaseTascel::get_sequence(size_t i)
 {
+    Sequence *sequence = NULL;
+
     if (is_local(i)) {
-        return new Sequence(*local_cache[i]);
+        sequence = new Sequence(*local_cache[i]);
     }
     else {
-        Sequence *sequence = NULL;
         char *buffer = NULL;
         size_t j = 0;
         int global_rank = owners_translated[i];
@@ -512,9 +513,10 @@ Sequence* SequenceDatabaseTascel::get_sequence(size_t i)
         }
         assert(j<sizes[i]);
         sequence = new Sequence(buffer, 0, j, j+1, sizes[i]-j-1, true);
-        sequence->uses_delimiter(delimiter != '\0');
-        return sequence;
     }
+
+    sequence->uses_delimiter(delimiter != '\0');
+    return sequence;
 }
 
 
