@@ -134,6 +134,15 @@ class Sequence
         }
 
         /**
+         * Retrieves length of sequence ID.
+         *
+         * @return length of the sequence ID character buffer
+         */
+        size_t get_id_length() const {
+            return id_length;
+        }
+
+        /**
          * Retrieves length of sequence.
          *
          * @return length of the sequence character buffer

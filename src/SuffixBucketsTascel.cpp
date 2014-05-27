@@ -115,7 +115,7 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
     time = MPI_Wtime();
     size_t initial_suffixes_size = 0;
     for (size_t i = start; i < stop; ++i) {
-        size_t sequence_length = (*sequences)[i].size();
+        size_t sequence_length = sequences->get_sequence_size(i);
         if (sequence_length >= size_t(param.window_size)) {
             initial_suffixes_size += sequence_length - param.window_size + 1;
         }
@@ -161,8 +161,10 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
         size_t stop_index = 0;
         const char *sequence_data = NULL;
         size_t sequence_length = 0;
+        Sequence *sequence = NULL;
 
-        (*sequences)[i].get_sequence(sequence_data, sequence_length);
+        sequence = sequences->get_sequence(i);
+        sequence->get_sequence(sequence_data, sequence_length);
         if (sequence_length <= ((unsigned)param.window_size)) {
             n_suffixes_skipped += 1;
             continue;
@@ -187,6 +189,7 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
                 suffix_index++;
             }
         }
+        delete sequence;
     }
     initial_suffixes.resize(suffix_index);
     time = MPI_Wtime() - time;
@@ -698,6 +701,7 @@ void SuffixBucketsTascel::refine_bucket(
     for (size_t i=0; i<local_suffixes_size; ++i) {
         const char *sequence_data = NULL;
         size_t sequence_length = 0;
+        Sequence *sequence = NULL;
         //cout << "suffixes[" << bucket.offset+i << "]=" << local_suffixes[i] << endl;
         if (local_suffixes[i].bid != bucket.bid) {
             cout << "suffixes[" << bucket.offset+i << "].bid=" << local_suffixes[i].bid
@@ -706,7 +710,8 @@ void SuffixBucketsTascel::refine_bucket(
         }
         assert(local_suffixes[i].bid == bucket.bid);
         assert(local_suffixes[i].bid != npos);
-        (*sequences)[local_suffixes[i].sid].get_sequence(sequence_data, sequence_length);
+        sequence = sequences->get_sequence(local_suffixes[i].sid);
+        sequence->get_sequence(sequence_data, sequence_length);
         if (local_suffixes[i].pid + local_suffixes[i].k + 1 < sequence_length) {
             size_t new_bid = bucket_index(
                     &sequence_data[local_suffixes[i].pid], local_suffixes[i].k+1);
@@ -732,6 +737,7 @@ void SuffixBucketsTascel::refine_bucket(
             local_suffixes[i].k = -1;
             local_suffixes[i].next = NULL;
         }
+        delete sequence;
     }
     
     /* re-sort the suffixes now that the bucket IDs are updated */

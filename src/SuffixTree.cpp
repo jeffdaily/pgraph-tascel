@@ -62,6 +62,7 @@ SuffixTree::SuffixTree(
     ,   depth_stats()
     ,   suffix_length_stats()
     ,   tails(NULL)
+    ,   sequences_cache()
 {
     size_t n_nodes = 2 * bucket->size;
     size_t i = 0;
@@ -112,7 +113,7 @@ SuffixTree::SuffixTree(
     Suffix *q = NULL;
     for (p = bucket->suffixes; p != NULL; p = q) {
         q = p->next;
-        Sequence &seq = (*sequences)[p->sid];
+        Sequence &seq = get_sequence(p->sid);
         /* depth also includes the '$' */
         double len = (seq.size() - 1) - p->pid;
         suffix_length_stats.push_back(len);
@@ -126,6 +127,10 @@ SuffixTree::~SuffixTree()
 {
     delete [] nodes;
     delete [] lset_array;
+    for (map<size_t,Sequence*>::iterator it=sequences_cache.begin();
+            it!=sequences_cache.end(); ++it) {
+        delete it->second;
+    }
 }
 
 
@@ -143,7 +148,7 @@ size_t SuffixTree::build_tree_recursive(Suffix *suffixes, int depth)
         exit(EXIT_FAILURE);
     }
     else if (diffPos == DOL_END) { /* leaf node */
-        Sequence &seq = (*sequences)[suffixes->sid];
+        Sequence &seq = get_sequence(suffixes->sid);
 
         /* depth also includes the '$' */
         nodes[size].depth = (seq.size() - 1) - suffixes->pid;
@@ -174,7 +179,7 @@ size_t SuffixTree::build_tree_recursive(Suffix *suffixes, int depth)
 
         /* partition suffixes into SIGMA sub-buckets */
         for (p = suffixes; p != NULL; p = q) {
-            char hChar = (*sequences)[p->sid][p->pid + diffPos];
+            char hChar = get_sequence(p->sid)[p->pid + diffPos];
             size_t hIndex = alphabet_table[(unsigned)hChar];
             if (hIndex == npos) {
                 fprintf(stderr, "invalid h index caused by '%c'\n", hChar);
@@ -203,7 +208,7 @@ size_t SuffixTree::build_tree_recursive(Suffix *suffixes, int depth)
                 /* branching with '$' */
                 if (i == (alphabet_table[DOLLAR])) {
                     nodes[size].depth =
-                        ((*sequences)[heads[i]->sid].size() - 1 - heads[i]->pid);
+                        (get_sequence(heads[i]->sid).size() - 1 - heads[i]->pid);
                     nodes[size].rLeaf = size;
 
                     compute_lset(heads[i], nodes[size].lset);
@@ -240,7 +245,7 @@ size_t SuffixTree::build_tree_recursive2(Suffix *suffixes, int depth)
     else if (diffPos == DOL_END) { /* leaf node */
         suffixes = nodes[size].lset[0];
         nodes[size].lset[0] = NULL;
-        Sequence &seq = (*sequences)[suffixes->sid];
+        Sequence &seq = get_sequence(suffixes->sid);
 
         /* depth also includes the '$' */
         nodes[size].depth = (seq.size() - 1) - suffixes->pid;
@@ -282,7 +287,7 @@ size_t SuffixTree::build_tree_recursive2(Suffix *suffixes, int depth)
                 /* branching with '$' */
                 if (i == (alphabet_table[DOLLAR])) {
                     nodes[size].depth =
-                        ((*sequences)[heads[i]->sid].size() - 1 - heads[i]->pid);
+                        (get_sequence(heads[i]->sid).size() - 1 - heads[i]->pid);
                     nodes[size].rLeaf = size;
 
                     compute_lset(heads[i], nodes[size].lset);
@@ -325,7 +330,7 @@ void SuffixTree::compute_lset(Suffix *suffixes, Suffix **lset)
             lIndex = alphabet_table[BEGIN];
         }
         else {
-            lIndex = alphabet_table[(*sequences)[p->sid][p->pid-1]];
+            lIndex = alphabet_table[get_sequence(p->sid)[p->pid-1]];
         }
         p->next = lset[lIndex];
         lset[lIndex] = p;
@@ -358,22 +363,22 @@ int SuffixTree::next_diff_pos(Suffix *suffixes, int depth)
 
     while (1) {
         i++; /* step forward one more char for comparison */
-        if ((i + p->pid) >= (*sequences)[p->sid].size()) {
+        if ((i + p->pid) >= get_sequence(p->sid).size()) {
             cout << "i=" << i
                 << " p->pid=" << p->pid
                 << " i+p->pid=" << i+p->pid
-                << " <? p->sid.size=" << (*sequences)[p->sid].size()
+                << " <? p->sid.size=" << get_sequence(p->sid).size()
                 << endl;
-            cout << (*sequences)[p->sid];
+            cout << get_sequence(p->sid);
             cout << string(p->pid, 'X') << endl;;
             MPI_Abort(MPI_COMM_WORLD, -1);
         }
-        assert((i + p->pid) < (*sequences)[p->sid].size());
-        pCh = (*sequences)[p->sid][p->pid + i];
+        assert((i + p->pid) < get_sequence(p->sid).size());
+        pCh = get_sequence(p->sid)[p->pid + i];
 
         for (p = p->next; p != NULL; p = p->next) {
-            assert((i + p->pid) < (*sequences)[p->sid].size());
-            cCh = (*sequences)[p->sid][p->pid + i];
+            assert((i + p->pid) < get_sequence(p->sid).size());
+            cCh = get_sequence(p->sid)[p->pid + i];
             if (cCh != pCh) {
                 return i;
             }
@@ -427,7 +432,7 @@ int SuffixTree::next_diff_pos2(Suffix *suffixes, int depth, int size)
     p = suffixes;
     while (result == -1) {
         i++; /* step forward one more char for comparison */
-        pCh = (*sequences)[p->sid][p->pid + i];
+        pCh = get_sequence(p->sid)[p->pid + i];
         hIndex = alphabet_table[(unsigned)pCh];
         if (hIndex == npos) {
             fprintf(stderr, "invalid h index caused by '%c'\n", pCh);
@@ -440,7 +445,7 @@ int SuffixTree::next_diff_pos2(Suffix *suffixes, int depth, int size)
         tails[hIndex] = p;
 
         for (p = q; p != NULL; p = q) {
-            cCh = (*sequences)[p->sid][p->pid + i];
+            cCh = get_sequence(p->sid)[p->pid + i];
             hIndex = alphabet_table[(unsigned)cCh];
             if (hIndex == npos) {
                 fprintf(stderr, "invalid h index caused by '%c'\n", cCh);
@@ -506,8 +511,8 @@ bool SuffixTree::is_candidate(Suffix *p, Suffix *q)
             f1 = f2;
             f2 = swap;
         }
-        s1Len = (*sequences)[f1].size() - 1;
-        s2Len = (*sequences)[f2].size() - 1;
+        s1Len = get_sequence(f1).size() - 1;
+        s2Len = get_sequence(f2).size() - 1;
         result = length_filter(s1Len, s2Len, cutOff);
     }
 

@@ -189,7 +189,20 @@ static void allocate_threads()
 }
 
 
-static void initialize_threads(UniformTaskCollection **utcs)
+static void initialize_server_thread()
+{
+    {
+        server_thread_args *args = new server_thread_args(
+                &serverEnabled, &serverStart, &serverEnd);
+        pthread_create(&threadHandles[NUM_WORKERS], NULL,
+                server_thread, args);
+    }
+    serverEnabled = true;
+    pthread_barrier_wait(&serverStart);
+}
+
+
+static void initialize_worker_threads(UniformTaskCollection **utcs)
 {
     set_affinity(0);
     for (int i = 1; i < NUM_WORKERS; ++i) {
@@ -197,33 +210,33 @@ static void initialize_threads(UniformTaskCollection **utcs)
                 threadRanks[i], utcs[i], &workersStart, &workersEnd);;
         pthread_create(&threadHandles[i], NULL, worker_thread, args);
     }
-    {
-        server_thread_args *args = new server_thread_args(
-                &serverEnabled, &serverStart, &serverEnd);
-        pthread_create(&threadHandles[NUM_WORKERS], NULL,
-           server_thread, args);
-    }
-    serverEnabled = true;
-    pthread_barrier_wait(&serverStart);
     MPI_Barrier(pgraph::comm);
     pthread_barrier_wait(&workersStart);
 }
 
 
-static void finalize_threads()
+static void finalize_server_thread()
+{
+    serverEnabled = false;
+    MFENCE
+    pthread_barrier_wait(&serverEnd);
+    amBarrier();
+    pthread_join(threadHandles[NUM_WORKERS], NULL);
+}
+
+
+static void finalize_worker_threads()
 {
     pthread_barrier_wait(&workersEnd);
     amBarrierThd();
     for (int i = 1; i < NUM_WORKERS; ++i) {
         pthread_join(threadHandles[i], NULL);
     }
+}
 
-    serverEnabled = false;
-    MFENCE
-    pthread_barrier_wait(&serverEnd);
-    amBarrier();
-    pthread_join(threadHandles[NUM_WORKERS], NULL);
 
+static void deallocate_threads()
+{
     pthread_barrier_destroy(&workersStart);
     pthread_barrier_destroy(&workersEnd);
     pthread_barrier_destroy(&serverStart);

@@ -164,8 +164,9 @@ int main(int argc, char **argv)
         size_t stop_index = 0;
         const char *sequence_data = NULL;
         size_t sequence_length = 0;
+        Sequence *sequence = sequences->get_sequence(i);
 
-        (*sequences)[i].get_sequence(sequence_data, sequence_length);
+        sequence->get_sequence(sequence_data, sequence_length);
         /* stop_index stops before the assumed DOLLAR terminal character */
         stop_index = sequence_length - 2;
         for (size_t j = 0; j <= stop_index; ++j) {
@@ -176,6 +177,7 @@ int main(int argc, char **argv)
             suffixes[suffix_index].next = &suffixes[suffix_index+1];
             suffix_index++;
         }
+        delete sequence;
     }
     if (0 == rank) {
         cout << "suffix_index = " << suffix_index << endl;

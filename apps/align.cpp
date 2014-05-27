@@ -49,6 +49,8 @@
 #include "Sequence.hpp"
 #include "SequenceDatabase.hpp"
 #include "SequenceDatabaseReplicated.hpp"
+#include "SequenceDatabaseTascel.hpp"
+#include "SequenceDatabaseWithStats.hpp"
 #include "Stats.hpp"
 #include "SuffixBuckets.hpp"
 #include "SuffixBucketsTascel.hpp"
@@ -91,7 +93,7 @@ typedef struct {
     AlignStats *stats_align;
     TreeStats *stats_tree;
     DupStats *stats_dup;
-    SequenceDatabase *sequences;
+    SequenceDatabase **sequences;
     vector<EdgeResult> *edge_results;
     Parameters *parameters;
     PairCheck **pair_check;
@@ -229,7 +231,8 @@ int inner_main(int argc, char **argv)
     AlignStats *stats_align = NULL;
     TreeStats *stats_tree = NULL;
     DupStats *stats_dup = NULL;
-    SequenceDatabase *sequences = NULL;
+    SequenceDatabase *sequence_db = NULL;
+    SequenceDatabase **sequences = NULL;
     vector<EdgeResult> *edge_results = NULL;
     PairCheck **pair_check = NULL;
     SuffixBuckets *suffix_buckets = NULL;
@@ -244,6 +247,10 @@ int inner_main(int argc, char **argv)
 
     /* initialize tascel */
     TascelConfig::initialize(NUM_WORKERS_DEFAULT, pgraph::comm);
+#if THREADED
+    allocate_threads();
+    initialize_server_thread();
+#endif
 
     /* initialize global data */
     utcs = new UniformTaskCollection*[NUM_WORKERS];
@@ -340,20 +347,15 @@ int inner_main(int argc, char **argv)
     double time_seq = MPI_Wtime();
     if (parameters->distribute_sequences) {
 #if HAVE_ARMCI && ENABLE_ARMCI
-        sequences = new SequenceDatabaseArmci(all_argv[1],
+        sequence_db = new SequenceDatabaseArmci(all_argv[1],
                 parameters->memory_sequences, pgraph::comm, delimiter);
 #else
-        if (0 == rank) {
-            cerr << "config file specified to distribute sequences, "
-                "but no implementation exists" << endl;
-        }
-        TascelConfig::finalize();
-        pgraph::finalize();
-        return 1;
+        sequence_db = new SequenceDatabaseTascel(all_argv[1],
+                parameters->memory_sequences, pgraph::comm, delimiter);
 #endif
     }
     else {
-        sequences = new SequenceDatabaseReplicated(all_argv[1],
+        sequence_db = new SequenceDatabaseReplicated(all_argv[1],
                 parameters->memory_sequences, pgraph::comm, delimiter);
     }
     time_seq = MPI_Wtime() - time_seq;
@@ -361,14 +363,16 @@ int inner_main(int argc, char **argv)
         cout << "time sequence db open " << time_seq << endl;
     }
 
+    sequences = new SequenceDatabase*[NUM_WORKERS];
     local_data->sequences = sequences;
     local_data->tbl = new cell_t**[NUM_WORKERS];
     local_data->del = new int**[NUM_WORKERS];
     local_data->ins = new int**[NUM_WORKERS];
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
-        local_data->tbl[worker] = allocate_cell_table(2, sequences->longest());
-        local_data->del[worker] = allocate_int_table(2, sequences->longest());
-        local_data->ins[worker] = allocate_int_table(2, sequences->longest());
+        sequences[worker] = new SequenceDatabaseWithStats(sequence_db);
+        local_data->tbl[worker] = allocate_cell_table(2, sequence_db->longest());
+        local_data->del[worker] = allocate_int_table(2, sequence_db->longest());
+        local_data->ins[worker] = allocate_int_table(2, sequence_db->longest());
     }
 
     if (parameters->use_tree
@@ -376,9 +380,9 @@ int inner_main(int argc, char **argv)
             || parameters->use_tree_hybrid) {
         double t = MPI_Wtime();
 #if HAVE_ARMCI && ENABLE_ARMCI
-        suffix_buckets = new SuffixBucketsArmci(sequences, *parameters, pgraph::comm);
+        suffix_buckets = new SuffixBucketsArmci(sequences[0], *parameters, pgraph::comm);
 #else
-        suffix_buckets = new SuffixBucketsTascel(sequences, *parameters, pgraph::comm);
+        suffix_buckets = new SuffixBucketsTascel(sequences[0], *parameters, pgraph::comm);
 #endif
         local_data->suffix_buckets = suffix_buckets;
         t = MPI_Wtime() - t;
@@ -388,10 +392,10 @@ int inner_main(int argc, char **argv)
     }
 
     /* how many combinations of sequences are there? */
-    unsigned long ntasks = binomial_coefficient(sequences->size(), 2);
+    unsigned long ntasks = binomial_coefficient(sequence_db->size(), 2);
     if (0 == rank) {
         cout << "brute force "
-            << sequences->size()
+            << sequence_db->size()
             << " choose 2 has "
             << ntasks
             << " combinations"
@@ -567,8 +571,7 @@ int inner_main(int argc, char **argv)
     }
     else {
 #if THREADED
-        allocate_threads();
-        initialize_threads(utcs);
+        initialize_worker_threads(utcs);
 #endif
         double mytimer = MPI_Wtime();
         utcs[0]->process();
@@ -577,7 +580,9 @@ int inner_main(int argc, char **argv)
             cout << "mytimer=" << mytimer << endl;
         }
 #if THREADED
-        finalize_threads();
+        finalize_worker_threads();
+        finalize_server_thread();
+        deallocate_threads();
 #endif
     }
 
@@ -745,6 +750,60 @@ int inner_main(int argc, char **argv)
         }
     }
 
+    if (parameters->print_stats) {
+        /* synchronously print db stats all from process 0 */
+        DbStats *stats = new DbStats[NUM_WORKERS];
+        for (int i=0; i<NUM_WORKERS; ++i) {
+            stats[i] = ((SequenceDatabaseWithStats*)sequences[i])->stats;
+        }
+        if (0 == rank) {
+            DbStats *rstats = new DbStats[nprocs*NUM_WORKERS];
+            Stats time_per_worker;
+            Stats bytes_per_worker;
+            Stats count_per_worker;
+            mpix::check(MPI_Gather(
+                        stats, sizeof(DbStats)*NUM_WORKERS, MPI_CHAR,
+                        rstats, sizeof(DbStats)*NUM_WORKERS, MPI_CHAR,
+                        0, pgraph::comm));
+            DbStats cumulative;
+            ostringstream header;
+            header.fill('-');
+            header << left << setw(79) << "--- Sequence Database Stats ";
+            cout << header.str() << endl;
+            cout << setprecision(2);
+            Stats::width(13);
+            for(int i=0; i<nprocs*NUM_WORKERS; i++) {
+                cout << right << setw(5) << i;
+                cout << right << setw(14) << "name";
+                cout << Stats::header() << endl;
+                cumulative += rstats[i];
+                time_per_worker.push_back(rstats[i].time.sum());
+                bytes_per_worker.push_back(rstats[i].bytes.sum());
+                count_per_worker.push_back(rstats[i].bytes.n());
+                cout << rstats[i];
+            }
+            cout << string(79, '=') << endl;
+            cout << right << setw(5) << "TOTAL";
+            cout << right << setw(14) << "name";
+            cout << Stats::header() << endl;
+            cout << setw(19) << right << " PerDbGetTime" << time_per_worker << endl;
+            cout << setw(19) << right << "PerDbGetBytes" << bytes_per_worker << endl;
+            cout << setw(19) << right << "PerDbGetCount" << count_per_worker << endl;
+            cumulative.cum = true;
+            cout << cumulative;
+            cout << string(79, '-') << endl;
+            delete [] rstats;
+        }
+        else {
+            mpix::check(MPI_Gather(
+                        stats, sizeof(DbStats)*NUM_WORKERS, MPI_CHAR,
+                        NULL, sizeof(DbStats)*NUM_WORKERS, MPI_CHAR,
+                        0, pgraph::comm));
+        }
+        delete [] stats;
+    }
+
+
     if (!parameters->use_counter && parameters->print_stats) {
         vector<StealingStats> stt(NUM_WORKERS);
         vector<StealingStats> rstt(NUM_WORKERS*nprocs);
@@ -803,6 +862,7 @@ int inner_main(int argc, char **argv)
         if (!parameters->use_counter) {
             delete utcs[worker];
         }
+        delete sequences[worker];
         free_cell_table(local_data->tbl[worker], 2);
         free_int_table(local_data->del[worker], 2);
         free_int_table(local_data->ins[worker], 2);
@@ -866,7 +926,7 @@ static void align(
     size_t max_len;
 
     AlignStats *stats = local_data->stats_align;
-    SequenceDatabase *sequences = local_data->sequences;
+    SequenceDatabase *sequences = local_data->sequences[thd];
     vector<EdgeResult> *edge_results = local_data->edge_results;
     Parameters *parameters = local_data->parameters;
     cell_t ***tbl = local_data->tbl;
@@ -881,10 +941,10 @@ static void align(
 
     tt = MPI_Wtime();
 
-    Sequence &s1 = (*sequences)[seq_id[0]];
-    Sequence &s2 = (*sequences)[seq_id[1]];
-    unsigned long s1Len = s1.get_sequence_length();
-    unsigned long s2Len = s2.get_sequence_length();
+    Sequence *s1 = sequences->get_sequence(seq_id[0]);
+    Sequence *s2 = sequences->get_sequence(seq_id[1]);
+    unsigned long s1Len = s1->get_sequence_length();
+    unsigned long s2Len = s2->get_sequence_length();
     bool do_alignment = true;
     if (parameters->use_length_filter) {
         do_alignment = SuffixTree::length_filter(s1Len, s2Len, AOL*SIM/100);
@@ -896,9 +956,9 @@ static void align(
         ++stats[thd].align_counts;
         t = MPI_Wtime();
         cell_t result = align_semi_affine(
-                s1, s2, open, gap, tbl[thd], del[thd], ins[thd]);
+                *s1, *s2, open, gap, tbl[thd], del[thd], ins[thd]);
         is_edge_answer = is_edge(
-                result, s1, s2, AOL, SIM, OS, sscore, max_len);
+                result, *s1, *s2, AOL, SIM, OS, sscore, max_len);
 
         if (parameters->output_to_disk
                 && (is_edge_answer || parameters->output_all))
@@ -922,6 +982,8 @@ static void align(
         stats[thd].work_skipped += s1Len * s2Len;
         stats[thd].align_skipped += 1;
     }
+    delete s1;
+    delete s2;
 
     tt = MPI_Wtime() - tt;
     stats[thd].time_total += tt;
@@ -986,7 +1048,7 @@ static unsigned long check_and_add(
 {
     unsigned long count = 0;
     double t;
-    SequenceDatabase *sequences = local_data->sequences;
+    SequenceDatabase *sequences = local_data->sequences[worker];
     UniformTaskCollection **utcs = local_data->utcs;
     Parameters *parameters = local_data->parameters;
     TreeStats *stats_tree = local_data->stats_tree;
@@ -1107,7 +1169,7 @@ struct PairGenCallback {
 static unsigned long process_tree(Bucket *bucket, local_data_t *local_data, int worker)
 {
     unsigned long count = 0;
-    SequenceDatabase *sequences = local_data->sequences;
+    SequenceDatabase *sequences = local_data->sequences[worker];
     UniformTaskCollection **utcs = local_data->utcs;
     Parameters *parameters = local_data->parameters;
     TreeStats *stats_tree = local_data->stats_tree;

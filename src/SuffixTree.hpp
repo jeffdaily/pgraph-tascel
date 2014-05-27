@@ -11,6 +11,7 @@
 #define _PGRAPH_SUFFIXTREE_H_
 
 #include <cstddef>
+#include <map>
 #include <set>
 #include <vector>
 #include <utility>
@@ -22,6 +23,7 @@
 #include "Suffix.hpp"
 #include "SuffixBuckets.hpp"
 
+using ::std::map;
 using ::std::pair;
 using ::std::set;
 using ::std::vector;
@@ -141,6 +143,14 @@ class SuffixTree
         bool is_candidate(Suffix *p, Suffix *q);
         size_t* count_sort();
         void merge_lsets(size_t sIndex, size_t eIndex);
+        Sequence& get_sequence(size_t i) {
+            if (sequences_cache.count(i)) {
+                return *sequences_cache[i];
+            }
+            else {
+                return *(sequences_cache[i] = sequences->get_sequence(i));
+            }
+        };
 
         template <class Callback>
         bool proc_leaf(Suffix **lset, Callback callback);
@@ -165,6 +175,7 @@ class SuffixTree
         Stats depth_stats;      /**< node depth stats */
         Stats suffix_length_stats;/**< suffix length stats */
         Suffix **tails;
+        map<size_t,Sequence*> sequences_cache; /**< local sequence cache */
 
         static const size_t npos;
 };
