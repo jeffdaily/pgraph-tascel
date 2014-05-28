@@ -39,7 +39,7 @@ Sequence::Sequence()
 
 Sequence::Sequence(const Sequence &that)
     :   is_owner(false)
-    ,   has_delimiter(false)
+    ,   has_delimiter(that.has_delimiter)
     ,   buffer(that.buffer)
     ,   id_offset(that.id_offset)
     ,   id_length(that.id_length)
