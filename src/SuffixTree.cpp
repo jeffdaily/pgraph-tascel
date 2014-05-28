@@ -119,6 +119,20 @@ SuffixTree::SuffixTree(
         suffix_length_stats.push_back(len);
     }
 
+    /* the following bulk fetch of sequences caused significant slow
+     * down */
+#if 0
+    /* make sure all required Sequence instances are cached */
+    {
+        set<size_t> sids;
+        Suffix *p = NULL;
+        for (p = bucket->suffixes; p != NULL; p = p->next) {
+            sids.insert(p->sid);
+        }
+        sequences_cache = sequences->get_sequences(sids);
+    }
+#endif
+
     build_tree_recursive(bucket->suffixes, window_size - 1);
 }
 

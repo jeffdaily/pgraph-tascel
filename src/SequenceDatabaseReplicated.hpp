@@ -88,6 +88,21 @@ class SequenceDatabaseReplicated : public SequenceDatabase
         }
 
         /**
+         * Returns a map of Sequence pointers.
+         *
+         * @param[in] container of (globally-based) indices of sequences
+         * @return the map of ID to Sequence instances
+         */
+        virtual map<size_t,Sequence*> get_sequences(set<size_t> container) {
+            map<size_t,Sequence*> retval;
+            for (set<size_t>::const_iterator it=container.begin();
+                    it!=container.end(); ++it) {
+                retval[*it] = get_sequence(*it);
+            }
+            return retval;
+        }
+
+        /**
          * Returns length of the given Sequence's data block.
          *
          * @returns length of the given Sequence's data block.

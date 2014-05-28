@@ -82,6 +82,28 @@ class SequenceDatabaseWithStats : public SequenceDatabase
         }
 
         /**
+         * Returns a map of Sequence pointers.
+         *
+         * @param[in] container of (globally-based) indices of sequences
+         * @return the map of ID to Sequence instances
+         */
+        virtual map<size_t,Sequence*> get_sequences(set<size_t> container) {
+            double time = MPI_Wtime();
+            map<size_t,Sequence*> retval = db->get_sequences(container);
+            size_t bytes = 0;
+            for (set<size_t>::const_iterator it=container.begin();
+                    it!=container.end(); ++it) {
+                if (!db->is_local(*it)) {
+                    Sequence* &sequence = retval[*it];
+                    bytes += sequence->get_id_length()+sequence->size();
+                }
+            }
+            stats.time.push_back(MPI_Wtime()-time);
+            stats.bytes.push_back(bytes);
+            return retval;
+        }
+
+        /**
          * Returns length of the given Sequence's data block.
          *
          * @returns length of the given Sequence's data block.

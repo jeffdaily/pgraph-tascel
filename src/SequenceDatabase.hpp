@@ -9,9 +9,13 @@
 #define SEQUENCE_DATABASE_H_
 
 #include <cstddef>
+#include <map>
+#include <set>
 
 #include "Sequence.hpp"
 
+using std::map;
+using std::set;
 using std::size_t;
 
 namespace pgraph {
@@ -62,6 +66,14 @@ class SequenceDatabase
          * @return the Sequence (possibly owned by this SequenceDatabase)
          */
         virtual Sequence* get_sequence(size_t i) = 0;
+
+        /**
+         * Returns a map of Sequence pointers.
+         *
+         * @param[in] container of (globally-based) indices of sequences
+         * @return the map of ID to Sequence instances
+         */
+        virtual map<size_t,Sequence*> get_sequences(set<size_t> container) = 0;
 
         /**
          * Returns length of the given Sequence's data block.

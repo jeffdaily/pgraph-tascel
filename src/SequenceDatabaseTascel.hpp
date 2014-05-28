@@ -88,6 +88,14 @@ class SequenceDatabaseTascel : public SequenceDatabase
         virtual Sequence* get_sequence(size_t i);
 
         /**
+         * Returns a map of Sequence pointers.
+         *
+         * @param[in] container of (globally-based) indices of sequences
+         * @return the map of ID to Sequence instances
+         */
+        virtual map<size_t,Sequence*> get_sequences(set<size_t> container);
+
+        /**
          * Returns length of the given Sequence's data block.
          *
          * @returns length of the given Sequence's data block.

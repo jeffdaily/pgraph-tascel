@@ -520,6 +520,83 @@ Sequence* SequenceDatabaseTascel::get_sequence(size_t i)
 }
 
 
+map<size_t,Sequence*> SequenceDatabaseTascel::get_sequences(set<size_t> container)
+{
+    map<size_t,Sequence*> retval;
+    map<size_t,char*> cache;
+    Dispatcher<NullMutex> dispatcher;
+    vector<RmaRequest*> requests;
+
+    for (set<size_t>::const_iterator ID=container.begin();
+            ID!=container.end(); ++ID) {
+        size_t i = *ID;
+
+        if (retval.count(i) || cache.count(i)) {
+            continue; /* don't fetch same sequence multiple times */
+        }
+
+        if (is_local(i)) {
+            retval[i] = new Sequence(*local_cache[i]);
+        }
+        else {
+            char* &buffer = cache[i];
+            size_t j = 0;
+            int global_rank = owners_translated[i];
+            RmaRequest *localReq = RmaRequest::construct();
+            RmaRequest *remoteReq = RmaRequest::construct();
+
+            buffer = new char[sizes[i]+2];
+            assert(buffer);
+            (void)memset(buffer, 0, sizes[i]+2);
+            theRma().get(buffer,
+                    RmaPtr(aid_local_data, offsets[i]),
+                    sizes[i], global_rank, localReq, remoteReq);
+            dispatcher.registerCodelet(localReq);
+            dispatcher.registerCodelet(remoteReq);
+            requests.push_back(localReq);
+            requests.push_back(remoteReq);
+        }
+    }
+
+    while (!dispatcher.empty()) {
+        Codelet* codelet;
+        if ((codelet = dispatcher.progress()) != NULL) {
+            codelet->execute();
+        }
+#if !defined(THREADED)
+        AmListenObjCodelet<NullMutex>* lcodelet;
+        if((lcodelet=theAm().amListeners[0]->progress()) != NULL) {
+            lcodelet->execute();
+        }
+#endif
+    }
+
+    for (vector<RmaRequest*>::iterator it=requests.begin();
+            it!=requests.end(); ++it) {
+        delete *it;
+    }
+
+    for (map<size_t,char*>::const_iterator it=cache.begin();
+            it!=cache.end(); ++it) {
+        size_t j;
+        size_t const &i = it->first;
+        char* const &buffer = it->second;
+        assert('>' == buffer[0]);
+        //assert(delimiter == buffer[sizes[i]-1]);
+        for (j=0; j<sizes[i]; ++j) {
+            if ('#' == buffer[j]) {
+                break;
+            }
+        }
+        assert(j<sizes[i]);
+        retval[i] = new Sequence(buffer, 0, j, j+1, sizes[i]-j-1, true);
+        retval[i]->uses_delimiter(delimiter != '\0');
+    }
+
+    return retval;
+}
+
+
 size_t SequenceDatabaseTascel::get_sequence_size(size_t i)
 {
     if (is_replicated) {
