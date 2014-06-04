@@ -16,11 +16,13 @@ using std::string;
 using std::cout;
 using std::endl;
 
-void PrintAlignment(const StripedSmithWaterman::Alignment& alignment);
+static void PrintAlignment(const StripedSmithWaterman::Alignment& alignment);
 
 int main() {
   const string ref   = "CAGCCTTTCTGACCCGGAAATCAAAATAGGCACAACAAA";
   const string query = "CTGAGCCGGTAAATC";
+  //const string ref   = "CCGTTTATCGCA";
+  //const string query = "CCTTTTATCGCA";
 
   // Declares a default Aligner
   StripedSmithWaterman::Aligner aligner;
@@ -32,11 +34,11 @@ int main() {
   aligner.Align(query.c_str(), ref.c_str(), ref.size(), filter, &alignment);
 
   PrintAlignment(alignment);
-  
+
   return 0;
 }
 
-void PrintAlignment(const StripedSmithWaterman::Alignment& alignment){
+static void PrintAlignment(const StripedSmithWaterman::Alignment& alignment){
   cout << "===== SSW result =====" << endl;
   cout << "Best Smith-Waterman score:\t" << alignment.sw_score << endl
        << "Next-best Smith-Waterman score:\t" << alignment.sw_score_next_best << endl
