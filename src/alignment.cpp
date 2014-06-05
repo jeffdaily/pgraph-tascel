@@ -1756,6 +1756,7 @@ cell_t align_local_affine_ssw(
 
     ret.score = result->score1;
     ret.matches = 0;
+    ret.similarities = 0;
     ret.length = 0;
 
     s_align* a = result;
@@ -1767,17 +1768,23 @@ cell_t align_local_affine_ssw(
         int32_t q = qb;
         int32_t p = pb;
         for (c = 0; c < a->cigarLen; ++c) {
-            int32_t letter = 0xf&*(a->cigar + c);
-            int32_t length = (0xfffffff0&*(a->cigar + c))>>4;
+            char letter = cigar_int_to_op(a->cigar[c]);
+            uint32_t length = cigar_int_to_len(a->cigar[c]);
             for (i = 0; i < length; ++i){ 
-                if (letter == 0) {
-                    if (table[(int)*(ref_seq + q)] == table[(int)*(read_seq + p)]) {
+                if (letter == 'M') {
+                    int t1 = (int)*(ref_seq + q);
+                    int t2 = (int)*(read_seq + p);
+                    if (table[t1] == table[t2]) {
                         ret.matches += 1;
+                        ret.similarities += 1;
+                    }
+                    else if (blosum__[table[t1]*24+table[t2]] > 0) {
+                        ret.similarities += 1;
                     }
                     ++q;
                     ++p;
                 } else {
-                    if (letter == 1) ++p;
+                    if (letter == 'I') ++p;
                     else ++q;
                 }
                 ret.length += 1;

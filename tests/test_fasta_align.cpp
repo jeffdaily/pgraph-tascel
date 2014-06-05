@@ -30,7 +30,8 @@ int main(int argc, char **argv)
     int **ins = ::pgraph::allocate_int_table(2, s1_len);
     unsigned long long timer;
     size_t i = 0;
-    size_t limit = 1000;
+    //size_t limit = 1000;
+    size_t limit = 1;
 
     timer_init();
     ::std::cout << timer_name() << " timer" << ::std::endl;
@@ -182,13 +183,38 @@ int main(int argc, char **argv)
         << ::std::endl;
     ::std::cout << timer/limit << ::std::endl;
 
-#if 0
+#if 1
+    ::std::cout << ::std::endl;
+    ::std::cout << "SSW tests" << ::std::endl;
+    ::std::cout << ::std::endl;
+
     timer = timer_start();
     for (i=0; i<limit; ++i) {
-        result_cell = ::pgraph::align_global_affine_sse(s1, s1_len, s2, s2_len, open, gap);
+        result_cell = ::pgraph::align_local_affine_ssw(s1, s1_len, s2, s2_len, open, gap);
     }
     timer = timer_end(timer);
     ::std::cout
+        << "align_local_affine_ssw" << ::std::endl
+        << result_cell.score
+        << " " << result_cell.matches
+        << " " << result_cell.similarities
+        << " " << result_cell.length
+        << ::std::endl;
+    ::std::cout << timer/limit << ::std::endl;
+#endif
+
+#if 1
+    ::std::cout << ::std::endl;
+    ::std::cout << "FASTA tests" << ::std::endl;
+    ::std::cout << ::std::endl;
+
+    timer = timer_start();
+    for (i=0; i<limit; ++i) {
+        result_cell = ::pgraph::align_global_affine_fasta(s1, s1_len, s2, s2_len, open, gap);
+    }
+    timer = timer_end(timer);
+    ::std::cout
+        << "align_local_affine_ssw" << ::std::endl
         << result_cell.score
         << " " << result_cell.matches
         << " " << result_cell.similarities
