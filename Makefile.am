@@ -236,6 +236,7 @@ noinst_PROGRAMS += tests/test_combinations
 noinst_PROGRAMS += tests/test_db_reprinter
 noinst_PROGRAMS += tests/test_parser
 noinst_PROGRAMS += tests/test_stl_container_performance
+noinst_PROGRAMS += tests/test_woz_sw
 if HAVE_SSE2
 noinst_PROGRAMS += tests/test_fasta_align
 endif
@@ -248,6 +249,7 @@ tests_test_combinations_SOURCES            = tests/test_combinations.cpp
 tests_test_db_reprinter_SOURCES            = tests/test_db_reprinter.cpp
 tests_test_parser_SOURCES                  = tests/test_parser.cpp
 tests_test_stl_container_performance_SOURCES = tests/test_stl_container_performance.cpp
+tests_test_woz_sw_SOURCES                  = tests/test_woz_sw.cpp
 tests_test_fasta_align_SOURCES             = tests/test_fasta_align.cpp
 
 check_LIBRARIES += libgtest.a
