@@ -548,6 +548,13 @@ static int sw(
 
 
 /* shift given vector v and insert val */
+static inline __m128i vshift16(const __m128i &v)
+{
+    return _mm_srli_si128(v, 2);
+}
+
+
+/* shift given vector v and insert val */
 static inline __m128i vshift16(const __m128i &v, int val)
 {
     __m128i ret = _mm_srli_si128(v, 2);
@@ -1292,6 +1299,17 @@ static DP_t nw_stats_sse8(
         __m128i Cmatch;
         __m128i Clength;
 
+        vs1 = _mm_set_epi16(
+                s1[i-1+0],
+                s1[i-1+1],
+                s1[i-1+2],
+                s1[i-1+3],
+                s1[i-1+4],
+                s1[i-1+5],
+                s1[i-1+6],
+                s1[i-1+7]
+                );
+
         /* j = 0 */
         j = 0;
         Nscore = _mm_insert_epi16(Nscore, tbl_pr[j+7], 7);
@@ -1329,26 +1347,7 @@ static DP_t nw_stats_sse8(
                 _mm_sub_epi16(Wscore,vOpen),        \
                 _mm_sub_epi16(vIns,vGap));
         SETUP_BLOCK
-        vs1 = _mm_set_epi16(
-            s1[i-1],
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        );
-        vs2 = _mm_set_epi16(
-            s2[j-1],
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        );
+        vs2 = vshift16(vs2, s2[j-1]);
         vMat = _mm_set_epi16(
             BLOSUM(s1[i-1],s2[j-1]),
             0,
@@ -1405,26 +1404,7 @@ static DP_t nw_stats_sse8(
         /* j = 2 */
         j = 2;
         SETUP_BLOCK
-        vs1 = _mm_set_epi16(
-            s1[i-1+0],
-            s1[i-1+1],
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        );
-        vs2 = _mm_set_epi16(
-            s2[j-1-0],
-            s2[j-1-1],
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        );
+        vs2 = vshift16(vs2, s2[j-1]);
         vMat = _mm_set_epi16(
             BLOSUM(s1[i-1+0],s2[j-1-0]),
             BLOSUM(s1[i-1+1],s2[j-1-1]),
@@ -1459,26 +1439,7 @@ static DP_t nw_stats_sse8(
         /* j = 3 */
         j = 3;
         SETUP_BLOCK
-        vs1 = _mm_set_epi16(
-            s1[i-1+0],
-            s1[i-1+1],
-            s1[i-1+2],
-            0,
-            0,
-            0,
-            0,
-            0
-        );
-        vs2 = _mm_set_epi16(
-            s2[j-1-0],
-            s2[j-1-1],
-            s2[j-1-2],
-            0,
-            0,
-            0,
-            0,
-            0
-        );
+        vs2 = vshift16(vs2, s2[j-1]);
         vMat = _mm_set_epi16(
             BLOSUM(s1[i-1+0],s2[j-1-0]),
             BLOSUM(s1[i-1+1],s2[j-1-1]),
@@ -1516,26 +1477,7 @@ static DP_t nw_stats_sse8(
         /* j = 4 */
         j = 4;
         SETUP_BLOCK
-        vs1 = _mm_set_epi16(
-            s1[i-1+0],
-            s1[i-1+1],
-            s1[i-1+2],
-            s1[i-1+3],
-            0,
-            0,
-            0,
-            0
-        );
-        vs2 = _mm_set_epi16(
-            s2[j-1-0],
-            s2[j-1-1],
-            s2[j-1-2],
-            s2[j-1-3],
-            0,
-            0,
-            0,
-            0
-        );
+        vs2 = vshift16(vs2, s2[j-1]);
         vMat = _mm_set_epi16(
             BLOSUM(s1[i-1+0],s2[j-1-0]),
             BLOSUM(s1[i-1+1],s2[j-1-1]),
@@ -1576,26 +1518,7 @@ static DP_t nw_stats_sse8(
         /* j = 5 */
         j = 5;
         SETUP_BLOCK
-        vs1 = _mm_set_epi16(
-            s1[i-1+0],
-            s1[i-1+1],
-            s1[i-1+2],
-            s1[i-1+3],
-            s1[i-1+4],
-            0,
-            0,
-            0
-        );
-        vs2 = _mm_set_epi16(
-            s2[j-1-0],
-            s2[j-1-1],
-            s2[j-1-2],
-            s2[j-1-3],
-            s2[j-1-4],
-            0,
-            0,
-            0
-        );
+        vs2 = vshift16(vs2, s2[j-1]);
         vMat = _mm_set_epi16(
             BLOSUM(s1[i-1+0],s2[j-1-0]),
             BLOSUM(s1[i-1+1],s2[j-1-1]),
@@ -1639,26 +1562,7 @@ static DP_t nw_stats_sse8(
         /* j = 6 */
         j = 6;
         SETUP_BLOCK
-        vs1 = _mm_set_epi16(
-            s1[i-1+0],
-            s1[i-1+1],
-            s1[i-1+2],
-            s1[i-1+3],
-            s1[i-1+4],
-            s1[i-1+5],
-            0,
-            0
-        );
-        vs2 = _mm_set_epi16(
-            s2[j-1-0],
-            s2[j-1-1],
-            s2[j-1-2],
-            s2[j-1-3],
-            s2[j-1-4],
-            s2[j-1-5],
-            0,
-            0
-        );
+        vs2 = vshift16(vs2, s2[j-1]);
         vMat = _mm_set_epi16(
             BLOSUM(s1[i-1+0],s2[j-1-0]),
             BLOSUM(s1[i-1+1],s2[j-1-1]),
@@ -1705,26 +1609,7 @@ static DP_t nw_stats_sse8(
         /* j = 7 */
         j = 7;
         SETUP_BLOCK
-        vs1 = _mm_set_epi16(
-            s1[i-1+0],
-            s1[i-1+1],
-            s1[i-1+2],
-            s1[i-1+3],
-            s1[i-1+4],
-            s1[i-1+5],
-            s1[i-1+6],
-            0
-        );
-        vs2 = _mm_set_epi16(
-            s2[j-1-0],
-            s2[j-1-1],
-            s2[j-1-2],
-            s2[j-1-3],
-            s2[j-1-4],
-            s2[j-1-5],
-            s2[j-1-6],
-            0
-        );
+        vs2 = vshift16(vs2, s2[j-1]);
         vMat = _mm_set_epi16(
             BLOSUM(s1[i-1+0],s2[j-1-0]),
             BLOSUM(s1[i-1+1],s2[j-1-1]),
@@ -1776,26 +1661,7 @@ static DP_t nw_stats_sse8(
 
         for (j=8; j<=s2Len; ++j) {
             SETUP_BLOCK
-            vs1 = _mm_set_epi16(
-                    s1[i-1+0],
-                    s1[i-1+1],
-                    s1[i-1+2],
-                    s1[i-1+3],
-                    s1[i-1+4],
-                    s1[i-1+5],
-                    s1[i-1+6],
-                    s1[i-1+7]
-                    );
-            vs2 = _mm_set_epi16(
-                    s2[j-1-0],
-                    s2[j-1-1],
-                    s2[j-1-2],
-                    s2[j-1-3],
-                    s2[j-1-4],
-                    s2[j-1-5],
-                    s2[j-1-6],
-                    s2[j-1-7]
-                    );
+            vs2 = vshift16(vs2, s2[j-1]);
             vMat = _mm_set_epi16(
                     BLOSUM(s1[i-1+0],s2[j-1-0]),
                     BLOSUM(s1[i-1+1],s2[j-1-1]),
@@ -1851,26 +1717,7 @@ static DP_t nw_stats_sse8(
         /* j = s2Len + 1 */
         j = s2Len + 1;
         SETUP_BLOCK
-        vs1 = _mm_set_epi16(
-                0,
-                s1[i-1+1],
-                s1[i-1+2],
-                s1[i-1+3],
-                s1[i-1+4],
-                s1[i-1+5],
-                s1[i-1+6],
-                s1[i-1+7]
-                );
-        vs2 = _mm_set_epi16(
-                0,
-                s2[j-1-1],
-                s2[j-1-2],
-                s2[j-1-3],
-                s2[j-1-4],
-                s2[j-1-5],
-                s2[j-1-6],
-                s2[j-1-7]
-                );
+        vs2 = vshift16(vs2);
         vMat = _mm_set_epi16(
                 0,
                 BLOSUM(s1[i-1+1],s2[j-1-1]),
@@ -1922,26 +1769,7 @@ static DP_t nw_stats_sse8(
         /* j = s2Len + 2 */
         j = s2Len + 2;
         SETUP_BLOCK
-        vs1 = _mm_set_epi16(
-                0,
-                0,
-                s1[i-1+2],
-                s1[i-1+3],
-                s1[i-1+4],
-                s1[i-1+5],
-                s1[i-1+6],
-                s1[i-1+7]
-                );
-        vs2 = _mm_set_epi16(
-                0,
-                0,
-                s2[j-1-2],
-                s2[j-1-3],
-                s2[j-1-4],
-                s2[j-1-5],
-                s2[j-1-6],
-                s2[j-1-7]
-                );
+        vs2 = vshift16(vs2);
         vMat = _mm_set_epi16(
                 0,
                 0,
@@ -1990,26 +1818,7 @@ static DP_t nw_stats_sse8(
         /* j = s2Len + 3 */
         j = s2Len + 3;
         SETUP_BLOCK
-        vs1 = _mm_set_epi16(
-                0,
-                0,
-                0,
-                s1[i-1+3],
-                s1[i-1+4],
-                s1[i-1+5],
-                s1[i-1+6],
-                s1[i-1+7]
-                );
-        vs2 = _mm_set_epi16(
-                0,
-                0,
-                0,
-                s2[j-1-3],
-                s2[j-1-4],
-                s2[j-1-5],
-                s2[j-1-6],
-                s2[j-1-7]
-                );
+        vs2 = vshift16(vs2);
         vMat = _mm_set_epi16(
                 0,
                 0,
@@ -2055,26 +1864,7 @@ static DP_t nw_stats_sse8(
         /* j = s2Len + 4 */
         j = s2Len + 4;
         SETUP_BLOCK
-        vs1 = _mm_set_epi16(
-                0,
-                0,
-                0,
-                0,
-                s1[i-1+4],
-                s1[i-1+5],
-                s1[i-1+6],
-                s1[i-1+7]
-                );
-        vs2 = _mm_set_epi16(
-                0,
-                0,
-                0,
-                0,
-                s2[j-1-4],
-                s2[j-1-5],
-                s2[j-1-6],
-                s2[j-1-7]
-                );
+        vs2 = vshift16(vs2);
         vMat = _mm_set_epi16(
                 0,
                 0,
@@ -2117,26 +1907,7 @@ static DP_t nw_stats_sse8(
         /* j = s2Len + 5 */
         j = s2Len + 5;
         SETUP_BLOCK
-        vs1 = _mm_set_epi16(
-                0,
-                0,
-                0,
-                0,
-                0,
-                s1[i-1+5],
-                s1[i-1+6],
-                s1[i-1+7]
-                );
-        vs2 = _mm_set_epi16(
-                0,
-                0,
-                0,
-                0,
-                0,
-                s2[j-1-5],
-                s2[j-1-6],
-                s2[j-1-7]
-                );
+        vs2 = vshift16(vs2);
         vMat = _mm_set_epi16(
                 0,
                 0,
@@ -2176,26 +1947,7 @@ static DP_t nw_stats_sse8(
         /* j = s2Len + 6 */
         j = s2Len + 6;
         SETUP_BLOCK
-        vs1 = _mm_set_epi16(
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                s1[i-1+6],
-                s1[i-1+7]
-                );
-        vs2 = _mm_set_epi16(
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                s2[j-1-6],
-                s2[j-1-7]
-                );
+        vs2 = vshift16(vs2);
         vMat = _mm_set_epi16(
                 0,
                 0,
@@ -2232,26 +1984,7 @@ static DP_t nw_stats_sse8(
         /* j = s2Len + 7 */
         j = s2Len + 7;
         SETUP_BLOCK
-        vs1 = _mm_set_epi16(
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                s1[i-1+7]
-                );
-        vs2 = _mm_set_epi16(
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                s2[j-1-7]
-                );
+        vs2 = vshift16(vs2);
         vMat = _mm_set_epi16(
                 0,
                 0,
@@ -3881,6 +3614,13 @@ int main(int argc, char **argv)
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
+        score = nw_sse8(&seqA[16], lena, seqB, lenb, 10, 1, blosum62, nogap, b_gap);
+    }
+    timer = timer_end(timer);
+    ::std::cout << "nw_sse8\t\t" << timer/limit << "\t" << score << ::std::endl;
+
+    timer = timer_start();
+    for (i=0; i<limit; ++i) {
         stats = nw_stats(&seqA[16], lena, seqB, lenb, 10, 1, blosum62,
                 nogap, b_gap, matches, length);
     }
@@ -3904,13 +3644,6 @@ int main(int argc, char **argv)
         << "\t" << stats.matches
         << "\t" << stats.length
         << ::std::endl;
-
-    timer = timer_start();
-    for (i=0; i<limit; ++i) {
-        score = nw_sse8(&seqA[16], lena, seqB, lenb, 10, 1, blosum62, nogap, b_gap);
-    }
-    timer = timer_end(timer);
-    ::std::cout << "nw_sse8\t\t" << timer/limit << "\t" << score << ::std::endl;
 
 #if 0
     timer = timer_start();
