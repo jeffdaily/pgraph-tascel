@@ -41,6 +41,16 @@ static const int MAP_BLOSUM_[256] = {
 };
 
 #define BLOSUM(ch1, ch2) (matrix[MAP_BLOSUM_[(ch1)]][MAP_BLOSUM_[(ch2)]])
+#define BLOSUM_(ch1, ch2) (matrix[(ch1)][(ch2)])
+
+#define BLOSUM0_(ch1, ch2) (matrow0[(ch2)])
+#define BLOSUM1_(ch1, ch2) (matrow1[(ch2)])
+#define BLOSUM2_(ch1, ch2) (matrow2[(ch2)])
+#define BLOSUM3_(ch1, ch2) (matrow3[(ch2)])
+#define BLOSUM4_(ch1, ch2) (matrow4[(ch2)])
+#define BLOSUM5_(ch1, ch2) (matrow5[(ch2)])
+#define BLOSUM6_(ch1, ch2) (matrow6[(ch2)])
+#define BLOSUM7_(ch1, ch2) (matrow7[(ch2)])
 
 #define MAX(a,b) ((a)>(b)?(a):(b))
 
@@ -215,12 +225,20 @@ static int sw_woz(
 
 
 static int nw(
-        const char * const restrict s1, const int s1Len,
-        const char * const restrict s2, const int s2Len,
+        const char * const restrict _s1, const int s1Len,
+        const char * const restrict _s2, const int s2Len,
         const int open, const int gap,
         const int matrix[24][24],
         int * const restrict tbl_pr, int * const restrict del_pr)
 {
+    int * const restrict s1 = new int[s1Len];
+    int * const restrict s2 = new int[s2Len];
+    for (int i=0; i<s1Len; ++i) {
+        s1[i] = MAP_BLOSUM_[_s1[i]];
+    }
+    for (int j=0; j<s2Len; ++j) {
+        s2[j] = MAP_BLOSUM_[_s2[j]];
+    }
     /* upper left corner */
     tbl_pr[0] = 0;
     del_pr[0] = NEG_INF;
@@ -242,6 +260,7 @@ static int nw(
 
     /* iter over first sequence */
     for (int i=1; i<=s1Len; ++i) {
+        const int * const restrict matrow = matrix[s1[i-1]];
         /* init first column */
         int Nscore = tbl_pr[0];
         int Wscore = -open - (i-1)*gap;
@@ -255,7 +274,8 @@ static int nw(
             Nscore = tbl_pr[j];
             del_pr[j] = MAX(Nscore - open, del_pr[j] - gap);
             ins_cr    = MAX(Wscore - open, ins_cr    - gap);
-            tbl_pr[j] = NWscore + BLOSUM(s1[i-1],s2[j-1]);
+            //tbl_pr[j] = NWscore + BLOSUM_(s1[i-1],s2[j-1]);
+            tbl_pr[j] = NWscore + matrow[s2[j-1]];
             Wscore = tbl_pr[j] = MAX(tbl_pr[j],MAX(ins_cr,del_pr[j]));
 #if DEBUG
             printf(" %3d", Wscore);
@@ -266,18 +286,28 @@ static int nw(
 #endif
     }
 
+    delete [] s1;
+    delete [] s2;
     return tbl_pr[s2Len];
 }
 
 
 static DP_t nw_stats(
-        const char * const restrict s1, const int s1Len,
-        const char * const restrict s2, const int s2Len,
+        const char * const restrict _s1, const int s1Len,
+        const char * const restrict _s2, const int s2Len,
         const int open, const int gap,
         const int matrix[24][24],
         int * const restrict tbl_pr, int * const restrict del_pr,
         int * const restrict mch_pr, int * const restrict len_pr)
 {
+    int * const restrict s1 = new int[s1Len];
+    int * const restrict s2 = new int[s2Len];
+    for (int i=0; i<s1Len; ++i) {
+        s1[i] = MAP_BLOSUM_[_s1[i]];
+    }
+    for (int j=0; j<s2Len; ++j) {
+        s2[j] = MAP_BLOSUM_[_s2[j]];
+    }
     /* upper left corner */
     tbl_pr[0] = 0;
     del_pr[0] = NEG_INF;
@@ -344,7 +374,7 @@ static DP_t nw_stats(
             Nlength = len_pr[j];
             del_pr[j] = MAX(Nscore - open, del_pr[j] - gap);
             ins_cr    = MAX(Wscore - open, ins_cr    - gap);
-            tbl_pr[j] = NWscore + BLOSUM(s1[i-1],s2[j-1]);
+            tbl_pr[j] = NWscore + BLOSUM_(s1[i-1],s2[j-1]);
             if ((tbl_pr[j] >= del_pr[j]) && (tbl_pr[j] >= ins_cr)) {
                 Wscore = tbl_pr[j];
                 Wmatches  = NWmatches + (s1[i-1] == s2[j-1]);
@@ -376,6 +406,8 @@ static DP_t nw_stats(
 #endif
     }
 
+    delete [] s1;
+    delete [] s2;
     return DP_t(tbl_pr[s2Len], mch_pr[s2Len], len_pr[s2Len]);
 }
 
@@ -581,13 +613,21 @@ static inline int vextract16(const __m128i &v, int offset)
 
 
 static int nw_sse8(
-        const char * const restrict s1, const int s1Len,
-        const char * const restrict s2, const int s2Len,
+        const char * const restrict _s1, const int s1Len,
+        const char * const restrict _s2, const int s2Len,
         const int open, const int gap,
         const int matrix[24][24],
         int * const restrict tbl_pr, int * const restrict del_pr)
 {
     int score = 0;
+    int * const restrict s1 = new int[s1Len];
+    int * const restrict s2 = new int[s2Len];
+    for (int i=0; i<s1Len; ++i) {
+        s1[i] = MAP_BLOSUM_[_s1[i]];
+    }
+    for (int j=0; j<s2Len; ++j) {
+        s2[j] = MAP_BLOSUM_[_s2[j]];
+    }
 #if DEBUG
     printf("array length (s2Len(=%d)+14+1)*(s1Len(=%d)+7+1) = %d\n",
             s2Len, s1Len, (s2Len+14+1)*(s1Len+7+1));
@@ -661,7 +701,7 @@ static int nw_sse8(
                 _mm_sub_epi16(Wscore,vOpen),
                 _mm_sub_epi16(vIns,vGap));
         vMat = _mm_set_epi16(
-            BLOSUM(s1[i-1],s2[j-1]),
+            BLOSUM_(s1[i-1],s2[j-1]),
             0,
             0,
             0,
@@ -693,8 +733,8 @@ static int nw_sse8(
                 _mm_sub_epi16(Wscore,vOpen),
                 _mm_sub_epi16(vIns,vGap));
         vMat = _mm_set_epi16(
-            BLOSUM(s1[i-1+0],s2[j-1-0]),
-            BLOSUM(s1[i-1+1],s2[j-1-1]),
+            BLOSUM_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM_(s1[i-1+1],s2[j-1-1]),
             0,
             0,
             0,
@@ -726,9 +766,9 @@ static int nw_sse8(
                 _mm_sub_epi16(Wscore,vOpen),
                 _mm_sub_epi16(vIns,vGap));
         vMat = _mm_set_epi16(
-            BLOSUM(s1[i-1+0],s2[j-1-0]),
-            BLOSUM(s1[i-1+1],s2[j-1-1]),
-            BLOSUM(s1[i-1+2],s2[j-1-2]),
+            BLOSUM_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM_(s1[i-1+2],s2[j-1-2]),
             0,
             0,
             0,
@@ -760,10 +800,10 @@ static int nw_sse8(
                 _mm_sub_epi16(Wscore,vOpen),
                 _mm_sub_epi16(vIns,vGap));
         vMat = _mm_set_epi16(
-            BLOSUM(s1[i-1+0],s2[j-1-0]),
-            BLOSUM(s1[i-1+1],s2[j-1-1]),
-            BLOSUM(s1[i-1+2],s2[j-1-2]),
-            BLOSUM(s1[i-1+3],s2[j-1-3]),
+            BLOSUM_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM_(s1[i-1+2],s2[j-1-2]),
+            BLOSUM_(s1[i-1+3],s2[j-1-3]),
             0,
             0,
             0,
@@ -795,11 +835,11 @@ static int nw_sse8(
                 _mm_sub_epi16(Wscore,vOpen),
                 _mm_sub_epi16(vIns,vGap));
         vMat = _mm_set_epi16(
-            BLOSUM(s1[i-1+0],s2[j-1-0]),
-            BLOSUM(s1[i-1+1],s2[j-1-1]),
-            BLOSUM(s1[i-1+2],s2[j-1-2]),
-            BLOSUM(s1[i-1+3],s2[j-1-3]),
-            BLOSUM(s1[i-1+4],s2[j-1-4]),
+            BLOSUM_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM_(s1[i-1+2],s2[j-1-2]),
+            BLOSUM_(s1[i-1+3],s2[j-1-3]),
+            BLOSUM_(s1[i-1+4],s2[j-1-4]),
             0,
             0,
             0
@@ -831,12 +871,12 @@ static int nw_sse8(
                 _mm_sub_epi16(Wscore,vOpen),
                 _mm_sub_epi16(vIns,vGap));
         vMat = _mm_set_epi16(
-            BLOSUM(s1[i-1+0],s2[j-1-0]),
-            BLOSUM(s1[i-1+1],s2[j-1-1]),
-            BLOSUM(s1[i-1+2],s2[j-1-2]),
-            BLOSUM(s1[i-1+3],s2[j-1-3]),
-            BLOSUM(s1[i-1+4],s2[j-1-4]),
-            BLOSUM(s1[i-1+5],s2[j-1-5]),
+            BLOSUM_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM_(s1[i-1+2],s2[j-1-2]),
+            BLOSUM_(s1[i-1+3],s2[j-1-3]),
+            BLOSUM_(s1[i-1+4],s2[j-1-4]),
+            BLOSUM_(s1[i-1+5],s2[j-1-5]),
             0,
             0
         );
@@ -868,13 +908,13 @@ static int nw_sse8(
                 _mm_sub_epi16(Wscore,vOpen),
                 _mm_sub_epi16(vIns,vGap));
         vMat = _mm_set_epi16(
-            BLOSUM(s1[i-1+0],s2[j-1-0]),
-            BLOSUM(s1[i-1+1],s2[j-1-1]),
-            BLOSUM(s1[i-1+2],s2[j-1-2]),
-            BLOSUM(s1[i-1+3],s2[j-1-3]),
-            BLOSUM(s1[i-1+4],s2[j-1-4]),
-            BLOSUM(s1[i-1+5],s2[j-1-5]),
-            BLOSUM(s1[i-1+6],s2[j-1-6]),
+            BLOSUM_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM_(s1[i-1+2],s2[j-1-2]),
+            BLOSUM_(s1[i-1+3],s2[j-1-3]),
+            BLOSUM_(s1[i-1+4],s2[j-1-4]),
+            BLOSUM_(s1[i-1+5],s2[j-1-5]),
+            BLOSUM_(s1[i-1+6],s2[j-1-6]),
             0
         );
         vTbl = _mm_add_epi16(NWscore, vMat);
@@ -906,14 +946,14 @@ static int nw_sse8(
                     _mm_sub_epi16(Wscore,vOpen),
                     _mm_sub_epi16(vIns,vGap));
             vMat = _mm_set_epi16(
-                    BLOSUM(s1[i-1+0],s2[j-1-0]),
-                    BLOSUM(s1[i-1+1],s2[j-1-1]),
-                    BLOSUM(s1[i-1+2],s2[j-1-2]),
-                    BLOSUM(s1[i-1+3],s2[j-1-3]),
-                    BLOSUM(s1[i-1+4],s2[j-1-4]),
-                    BLOSUM(s1[i-1+5],s2[j-1-5]),
-                    BLOSUM(s1[i-1+6],s2[j-1-6]),
-                    BLOSUM(s1[i-1+7],s2[j-1-7])
+                    BLOSUM_(s1[i-1+0],s2[j-1-0]),
+                    BLOSUM_(s1[i-1+1],s2[j-1-1]),
+                    BLOSUM_(s1[i-1+2],s2[j-1-2]),
+                    BLOSUM_(s1[i-1+3],s2[j-1-3]),
+                    BLOSUM_(s1[i-1+4],s2[j-1-4]),
+                    BLOSUM_(s1[i-1+5],s2[j-1-5]),
+                    BLOSUM_(s1[i-1+6],s2[j-1-6]),
+                    BLOSUM_(s1[i-1+7],s2[j-1-7])
                     );
             vTbl = _mm_add_epi16(NWscore, vMat);
             vTbl = _mm_max_epi16(vTbl, vDel);
@@ -947,13 +987,13 @@ static int nw_sse8(
                 _mm_sub_epi16(vIns,vGap));
         vMat = _mm_set_epi16(
                 0,
-                BLOSUM(s1[i-1+1],s2[j-1-1]),
-                BLOSUM(s1[i-1+2],s2[j-1-2]),
-                BLOSUM(s1[i-1+3],s2[j-1-3]),
-                BLOSUM(s1[i-1+4],s2[j-1-4]),
-                BLOSUM(s1[i-1+5],s2[j-1-5]),
-                BLOSUM(s1[i-1+6],s2[j-1-6]),
-                BLOSUM(s1[i-1+7],s2[j-1-7])
+                BLOSUM_(s1[i-1+1],s2[j-1-1]),
+                BLOSUM_(s1[i-1+2],s2[j-1-2]),
+                BLOSUM_(s1[i-1+3],s2[j-1-3]),
+                BLOSUM_(s1[i-1+4],s2[j-1-4]),
+                BLOSUM_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM_(s1[i-1+7],s2[j-1-7])
                 );
         vTbl = _mm_add_epi16(NWscore, vMat);
         vTbl = _mm_max_epi16(vTbl, vDel);
@@ -986,12 +1026,12 @@ static int nw_sse8(
         vMat = _mm_set_epi16(
                 0,
                 0,
-                BLOSUM(s1[i-1+2],s2[j-1-2]),
-                BLOSUM(s1[i-1+3],s2[j-1-3]),
-                BLOSUM(s1[i-1+4],s2[j-1-4]),
-                BLOSUM(s1[i-1+5],s2[j-1-5]),
-                BLOSUM(s1[i-1+6],s2[j-1-6]),
-                BLOSUM(s1[i-1+7],s2[j-1-7])
+                BLOSUM_(s1[i-1+2],s2[j-1-2]),
+                BLOSUM_(s1[i-1+3],s2[j-1-3]),
+                BLOSUM_(s1[i-1+4],s2[j-1-4]),
+                BLOSUM_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM_(s1[i-1+7],s2[j-1-7])
                 );
         vTbl = _mm_add_epi16(NWscore, vMat);
         vTbl = _mm_max_epi16(vTbl, vDel);
@@ -1024,11 +1064,11 @@ static int nw_sse8(
                 0,
                 0,
                 0,
-                BLOSUM(s1[i-1+3],s2[j-1-3]),
-                BLOSUM(s1[i-1+4],s2[j-1-4]),
-                BLOSUM(s1[i-1+5],s2[j-1-5]),
-                BLOSUM(s1[i-1+6],s2[j-1-6]),
-                BLOSUM(s1[i-1+7],s2[j-1-7])
+                BLOSUM_(s1[i-1+3],s2[j-1-3]),
+                BLOSUM_(s1[i-1+4],s2[j-1-4]),
+                BLOSUM_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM_(s1[i-1+7],s2[j-1-7])
                 );
         vTbl = _mm_add_epi16(NWscore, vMat);
         vTbl = _mm_max_epi16(vTbl, vDel);
@@ -1061,10 +1101,10 @@ static int nw_sse8(
                 0,
                 0,
                 0,
-                BLOSUM(s1[i-1+4],s2[j-1-4]),
-                BLOSUM(s1[i-1+5],s2[j-1-5]),
-                BLOSUM(s1[i-1+6],s2[j-1-6]),
-                BLOSUM(s1[i-1+7],s2[j-1-7])
+                BLOSUM_(s1[i-1+4],s2[j-1-4]),
+                BLOSUM_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM_(s1[i-1+7],s2[j-1-7])
                 );
         vTbl = _mm_add_epi16(NWscore, vMat);
         vTbl = _mm_max_epi16(vTbl, vDel);
@@ -1097,9 +1137,9 @@ static int nw_sse8(
                 0,
                 0,
                 0,
-                BLOSUM(s1[i-1+5],s2[j-1-5]),
-                BLOSUM(s1[i-1+6],s2[j-1-6]),
-                BLOSUM(s1[i-1+7],s2[j-1-7])
+                BLOSUM_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM_(s1[i-1+7],s2[j-1-7])
                 );
         vTbl = _mm_add_epi16(NWscore, vMat);
         vTbl = _mm_max_epi16(vTbl, vDel);
@@ -1132,8 +1172,8 @@ static int nw_sse8(
                 0,
                 0,
                 0,
-                BLOSUM(s1[i-1+6],s2[j-1-6]),
-                BLOSUM(s1[i-1+7],s2[j-1-7])
+                BLOSUM_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM_(s1[i-1+7],s2[j-1-7])
                 );
         vTbl = _mm_add_epi16(NWscore, vMat);
         vTbl = _mm_max_epi16(vTbl, vDel);
@@ -1166,7 +1206,7 @@ static int nw_sse8(
                 0,
                 0,
                 0,
-                BLOSUM(s1[i-1+7],s2[j-1-7])
+                BLOSUM_(s1[i-1+7],s2[j-1-7])
                 );
         vTbl = _mm_add_epi16(NWscore, vMat);
         vTbl = _mm_max_epi16(vTbl, vDel);
@@ -1184,13 +1224,15 @@ static int nw_sse8(
     print_array2(array, s1, s1Len, s2, s2Len, 14);
     delete [] array;
 #endif
+    delete [] s1;
+    delete [] s2;
     return score;
 }
 
 
 static DP_t nw_stats_sse8(
-        const char * const restrict s1, const int s1Len,
-        const char * const restrict s2, const int s2Len,
+        const char * const restrict _s1, const int s1Len,
+        const char * const restrict _s2, const int s2Len,
         const int open, const int gap,
         const int matrix[24][24],
         int * const restrict tbl_pr, int * const restrict del_pr,
@@ -1199,6 +1241,14 @@ static DP_t nw_stats_sse8(
     int score = 0;
     int match = 0;
     int length = 0;
+    int * const restrict s1 = new int[s1Len];
+    int * const restrict s2 = new int[s2Len];
+    for (int i=0; i<s1Len; ++i) {
+        s1[i] = MAP_BLOSUM_[_s1[i]];
+    }
+    for (int j=0; j<s2Len; ++j) {
+        s2[j] = MAP_BLOSUM_[_s2[j]];
+    }
 #if DEBUG
     printf("array length (s2Len(=%d)+14+1)*(s1Len(=%d)+7+1) = %d\n",
             s2Len, s1Len, (s2Len+14+1)*(s1Len+7+1));
@@ -1299,6 +1349,15 @@ static DP_t nw_stats_sse8(
         __m128i Cmatch;
         __m128i Clength;
 
+        const int * const restrict matrow0 = matrix[s1[i-1+0]];
+        const int * const restrict matrow1 = matrix[s1[i-1+1]];
+        const int * const restrict matrow2 = matrix[s1[i-1+2]];
+        const int * const restrict matrow3 = matrix[s1[i-1+3]];
+        const int * const restrict matrow4 = matrix[s1[i-1+4]];
+        const int * const restrict matrow5 = matrix[s1[i-1+5]];
+        const int * const restrict matrow6 = matrix[s1[i-1+6]];
+        const int * const restrict matrow7 = matrix[s1[i-1+7]];
+
         vs1 = _mm_set_epi16(
                 s1[i-1+0],
                 s1[i-1+1],
@@ -1349,7 +1408,7 @@ static DP_t nw_stats_sse8(
         SETUP_BLOCK
         vs2 = vshift16(vs2, s2[j-1]);
         vMat = _mm_set_epi16(
-            BLOSUM(s1[i-1],s2[j-1]),
+            BLOSUM0_(s1[i-1],s2[j-1]),
             0,
             0,
             0,
@@ -1406,8 +1465,8 @@ static DP_t nw_stats_sse8(
         SETUP_BLOCK
         vs2 = vshift16(vs2, s2[j-1]);
         vMat = _mm_set_epi16(
-            BLOSUM(s1[i-1+0],s2[j-1-0]),
-            BLOSUM(s1[i-1+1],s2[j-1-1]),
+            BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM1_(s1[i-1+1],s2[j-1-1]),
             0,
             0,
             0,
@@ -1441,9 +1500,9 @@ static DP_t nw_stats_sse8(
         SETUP_BLOCK
         vs2 = vshift16(vs2, s2[j-1]);
         vMat = _mm_set_epi16(
-            BLOSUM(s1[i-1+0],s2[j-1-0]),
-            BLOSUM(s1[i-1+1],s2[j-1-1]),
-            BLOSUM(s1[i-1+2],s2[j-1-2]),
+            BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM2_(s1[i-1+2],s2[j-1-2]),
             0,
             0,
             0,
@@ -1479,10 +1538,10 @@ static DP_t nw_stats_sse8(
         SETUP_BLOCK
         vs2 = vshift16(vs2, s2[j-1]);
         vMat = _mm_set_epi16(
-            BLOSUM(s1[i-1+0],s2[j-1-0]),
-            BLOSUM(s1[i-1+1],s2[j-1-1]),
-            BLOSUM(s1[i-1+2],s2[j-1-2]),
-            BLOSUM(s1[i-1+3],s2[j-1-3]),
+            BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+            BLOSUM3_(s1[i-1+3],s2[j-1-3]),
             0,
             0,
             0,
@@ -1520,11 +1579,11 @@ static DP_t nw_stats_sse8(
         SETUP_BLOCK
         vs2 = vshift16(vs2, s2[j-1]);
         vMat = _mm_set_epi16(
-            BLOSUM(s1[i-1+0],s2[j-1-0]),
-            BLOSUM(s1[i-1+1],s2[j-1-1]),
-            BLOSUM(s1[i-1+2],s2[j-1-2]),
-            BLOSUM(s1[i-1+3],s2[j-1-3]),
-            BLOSUM(s1[i-1+4],s2[j-1-4]),
+            BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+            BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+            BLOSUM4_(s1[i-1+4],s2[j-1-4]),
             0,
             0,
             0
@@ -1564,12 +1623,12 @@ static DP_t nw_stats_sse8(
         SETUP_BLOCK
         vs2 = vshift16(vs2, s2[j-1]);
         vMat = _mm_set_epi16(
-            BLOSUM(s1[i-1+0],s2[j-1-0]),
-            BLOSUM(s1[i-1+1],s2[j-1-1]),
-            BLOSUM(s1[i-1+2],s2[j-1-2]),
-            BLOSUM(s1[i-1+3],s2[j-1-3]),
-            BLOSUM(s1[i-1+4],s2[j-1-4]),
-            BLOSUM(s1[i-1+5],s2[j-1-5]),
+            BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+            BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+            BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+            BLOSUM5_(s1[i-1+5],s2[j-1-5]),
             0,
             0
         );
@@ -1611,13 +1670,13 @@ static DP_t nw_stats_sse8(
         SETUP_BLOCK
         vs2 = vshift16(vs2, s2[j-1]);
         vMat = _mm_set_epi16(
-            BLOSUM(s1[i-1+0],s2[j-1-0]),
-            BLOSUM(s1[i-1+1],s2[j-1-1]),
-            BLOSUM(s1[i-1+2],s2[j-1-2]),
-            BLOSUM(s1[i-1+3],s2[j-1-3]),
-            BLOSUM(s1[i-1+4],s2[j-1-4]),
-            BLOSUM(s1[i-1+5],s2[j-1-5]),
-            BLOSUM(s1[i-1+6],s2[j-1-6]),
+            BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+            BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+            BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+            BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+            BLOSUM6_(s1[i-1+6],s2[j-1-6]),
             0
         );
         CONDITIONAL_BLOCK
@@ -1663,14 +1722,14 @@ static DP_t nw_stats_sse8(
             SETUP_BLOCK
             vs2 = vshift16(vs2, s2[j-1]);
             vMat = _mm_set_epi16(
-                    BLOSUM(s1[i-1+0],s2[j-1-0]),
-                    BLOSUM(s1[i-1+1],s2[j-1-1]),
-                    BLOSUM(s1[i-1+2],s2[j-1-2]),
-                    BLOSUM(s1[i-1+3],s2[j-1-3]),
-                    BLOSUM(s1[i-1+4],s2[j-1-4]),
-                    BLOSUM(s1[i-1+5],s2[j-1-5]),
-                    BLOSUM(s1[i-1+6],s2[j-1-6]),
-                    BLOSUM(s1[i-1+7],s2[j-1-7])
+                    BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+                    BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+                    BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+                    BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+                    BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+                    BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+                    BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                    BLOSUM7_(s1[i-1+7],s2[j-1-7])
                     );
             CONDITIONAL_BLOCK
             tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
@@ -1720,13 +1779,13 @@ static DP_t nw_stats_sse8(
         vs2 = vshift16(vs2);
         vMat = _mm_set_epi16(
                 0,
-                BLOSUM(s1[i-1+1],s2[j-1-1]),
-                BLOSUM(s1[i-1+2],s2[j-1-2]),
-                BLOSUM(s1[i-1+3],s2[j-1-3]),
-                BLOSUM(s1[i-1+4],s2[j-1-4]),
-                BLOSUM(s1[i-1+5],s2[j-1-5]),
-                BLOSUM(s1[i-1+6],s2[j-1-6]),
-                BLOSUM(s1[i-1+7],s2[j-1-7])
+                BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+                BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+                BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+                BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+                BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         CONDITIONAL_BLOCK
         tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
@@ -1773,12 +1832,12 @@ static DP_t nw_stats_sse8(
         vMat = _mm_set_epi16(
                 0,
                 0,
-                BLOSUM(s1[i-1+2],s2[j-1-2]),
-                BLOSUM(s1[i-1+3],s2[j-1-3]),
-                BLOSUM(s1[i-1+4],s2[j-1-4]),
-                BLOSUM(s1[i-1+5],s2[j-1-5]),
-                BLOSUM(s1[i-1+6],s2[j-1-6]),
-                BLOSUM(s1[i-1+7],s2[j-1-7])
+                BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+                BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+                BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+                BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         CONDITIONAL_BLOCK
         tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
@@ -1823,11 +1882,11 @@ static DP_t nw_stats_sse8(
                 0,
                 0,
                 0,
-                BLOSUM(s1[i-1+3],s2[j-1-3]),
-                BLOSUM(s1[i-1+4],s2[j-1-4]),
-                BLOSUM(s1[i-1+5],s2[j-1-5]),
-                BLOSUM(s1[i-1+6],s2[j-1-6]),
-                BLOSUM(s1[i-1+7],s2[j-1-7])
+                BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+                BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+                BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         CONDITIONAL_BLOCK
         tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
@@ -1870,10 +1929,10 @@ static DP_t nw_stats_sse8(
                 0,
                 0,
                 0,
-                BLOSUM(s1[i-1+4],s2[j-1-4]),
-                BLOSUM(s1[i-1+5],s2[j-1-5]),
-                BLOSUM(s1[i-1+6],s2[j-1-6]),
-                BLOSUM(s1[i-1+7],s2[j-1-7])
+                BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+                BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         CONDITIONAL_BLOCK
         tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
@@ -1914,9 +1973,9 @@ static DP_t nw_stats_sse8(
                 0,
                 0,
                 0,
-                BLOSUM(s1[i-1+5],s2[j-1-5]),
-                BLOSUM(s1[i-1+6],s2[j-1-6]),
-                BLOSUM(s1[i-1+7],s2[j-1-7])
+                BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         CONDITIONAL_BLOCK
         tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
@@ -1955,8 +2014,8 @@ static DP_t nw_stats_sse8(
                 0,
                 0,
                 0,
-                BLOSUM(s1[i-1+6],s2[j-1-6]),
-                BLOSUM(s1[i-1+7],s2[j-1-7])
+                BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         CONDITIONAL_BLOCK
         tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
@@ -1993,7 +2052,7 @@ static DP_t nw_stats_sse8(
                 0,
                 0,
                 0,
-                BLOSUM(s1[i-1+7],s2[j-1-7])
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         CONDITIONAL_BLOCK
         tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
@@ -3596,7 +3655,7 @@ int main(int argc, char **argv)
 #if DEBUG
     size_t limit = 1;
 #else
-    size_t limit = 1000;
+    size_t limit = 10000;
 #endif
     size_t i;
     
