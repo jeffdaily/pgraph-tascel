@@ -413,13 +413,21 @@ static DP_t nw_stats(
 
 
 static int sg(
-        const char * const restrict s1, const int s1Len,
-        const char * const restrict s2, const int s2Len,
+        const char * const restrict _s1, const int s1Len,
+        const char * const restrict _s2, const int s2Len,
         const int open, const int gap,
         const int matrix[24][24],
         int * const restrict tbl_pr, int * const restrict del_pr)
 {
     int score = NEG_INF;
+    int * const restrict s1 = new int[s1Len];
+    int * const restrict s2 = new int[s2Len];
+    for (int i=0; i<s1Len; ++i) {
+        s1[i] = MAP_BLOSUM_[_s1[i]];
+    }
+    for (int j=0; j<s2Len; ++j) {
+        s2[j] = MAP_BLOSUM_[_s2[j]];
+    }
     /* upper left corner */
     tbl_pr[0] = 0;
     del_pr[0] = NEG_INF;
@@ -441,6 +449,7 @@ static int sg(
 
     /* iter over first sequence */
     for (int i=1; i<s1Len; ++i) {
+        const int * const restrict matrow0 = matrix[s1[i-1]];
         /* init first column */
         int Nscore = tbl_pr[0];
         int Wscore = 0;
@@ -454,7 +463,7 @@ static int sg(
             Nscore = tbl_pr[j];
             del_pr[j] = MAX(Nscore - open, del_pr[j] - gap);
             ins_cr    = MAX(Wscore - open, ins_cr    - gap);
-            tbl_pr[j] = NWscore + BLOSUM(s1[i-1],s2[j-1]);
+            tbl_pr[j] = NWscore + BLOSUM0_(s1[i-1],s2[j-1]);
             Wscore = tbl_pr[j] = MAX(tbl_pr[j],MAX(ins_cr,del_pr[j]));
 #if DEBUG
             printf(" %3d", Wscore);
@@ -466,7 +475,7 @@ static int sg(
             Nscore = tbl_pr[j];
             del_pr[j] = MAX(Nscore - open, del_pr[j] - gap);
             ins_cr    = MAX(Wscore - open, ins_cr    - gap);
-            tbl_pr[j] = NWscore + BLOSUM(s1[i-1],s2[j-1]);
+            tbl_pr[j] = NWscore + BLOSUM0_(s1[i-1],s2[j-1]);
             Wscore = tbl_pr[j] = MAX(tbl_pr[j],MAX(ins_cr,del_pr[j]));
             score = MAX(score, Wscore);
 #if DEBUG
@@ -479,6 +488,7 @@ static int sg(
     }
     {
         int i=s1Len;
+        const int * const restrict matrow0 = matrix[s1[i-1]];
         /* init first column */
         int Nscore = tbl_pr[0];
         int Wscore = 0;
@@ -492,7 +502,7 @@ static int sg(
             Nscore = tbl_pr[j];
             del_pr[j] = MAX(Nscore - open, del_pr[j] - gap);
             ins_cr    = MAX(Wscore - open, ins_cr    - gap);
-            tbl_pr[j] = NWscore + BLOSUM(s1[i-1],s2[j-1]);
+            tbl_pr[j] = NWscore + BLOSUM0_(s1[i-1],s2[j-1]);
             Wscore = tbl_pr[j] = MAX(tbl_pr[j],MAX(ins_cr,del_pr[j]));
             score = MAX(score, Wscore);
 #if DEBUG
@@ -505,7 +515,7 @@ static int sg(
             Nscore = tbl_pr[j];
             del_pr[j] = MAX(Nscore - open, del_pr[j] - gap);
             ins_cr    = MAX(Wscore - open, ins_cr    - gap);
-            tbl_pr[j] = NWscore + BLOSUM(s1[i-1],s2[j-1]);
+            tbl_pr[j] = NWscore + BLOSUM0_(s1[i-1],s2[j-1]);
             Wscore = tbl_pr[j] = MAX(tbl_pr[j],MAX(ins_cr,del_pr[j]));
             score = MAX(score, Wscore);
 #if DEBUG
@@ -517,7 +527,241 @@ static int sg(
 #endif
     }
 
+    delete [] s1;
+    delete [] s2;
     return score;
+}
+
+
+static DP_t sg_stats(
+        const char * const restrict _s1, const int s1Len,
+        const char * const restrict _s2, const int s2Len,
+        const int open, const int gap,
+        const int matrix[24][24],
+        int * const restrict tbl_pr, int * const restrict del_pr,
+        int * const restrict mch_pr, int * const restrict len_pr)
+{
+    int score = NEG_INF;
+    int matches = NEG_INF;
+    int length = NEG_INF;
+    int * const restrict s1 = new int[s1Len];
+    int * const restrict s2 = new int[s2Len];
+    for (int i=0; i<s1Len; ++i) {
+        s1[i] = MAP_BLOSUM_[_s1[i]];
+    }
+    for (int j=0; j<s2Len; ++j) {
+        s2[j] = MAP_BLOSUM_[_s2[j]];
+    }
+    /* upper left corner */
+    tbl_pr[0] = 0;
+    del_pr[0] = NEG_INF;
+    mch_pr[0] = 0;
+    len_pr[0] = 0;
+#if DEBUG
+#if DEBUG_MATCHES
+    printf(" %3d", mch_pr[0]);
+#elif DEBUG_LENGTH
+    printf(" %3d", len_pr[0]);
+#else
+    printf(" %3d", tbl_pr[0]);
+#endif
+#endif
+    
+    /* first row */
+    for (int j=1; j<=s2Len; ++j) {
+        tbl_pr[j] = 0;
+        del_pr[j] = NEG_INF;
+        mch_pr[j] = 0;
+        len_pr[j] = 0;
+#if DEBUG
+#if DEBUG_MATCHES
+        printf(" %3d", mch_pr[j]);
+#elif DEBUG_LENGTH
+        printf(" %3d", len_pr[j]);
+#else
+        printf(" %3d", tbl_pr[j]);
+#endif
+#endif
+    }
+#if DEBUG
+    printf("\n");
+#endif
+
+    /* iter over first sequence */
+    for (int i=1; i<s1Len; ++i) {
+        /* init first column */
+        int Nscore = tbl_pr[0];
+        int Nmatches = mch_pr[0];
+        int Nlength = len_pr[0];
+        int Wscore = 0;
+        int Wmatches = 0;
+        int Wlength = 0;
+        int ins_cr = NEG_INF;
+        tbl_pr[0] = Wscore;
+        mch_pr[0] = Wmatches;
+        len_pr[0] = Wlength;
+#if DEBUG
+#if DEBUG_MATCHES
+        printf(" %3d", Wmatches);
+#elif DEBUG_LENGTH
+        printf(" %3d", Wlength);
+#else
+        printf(" %3d", Wscore);
+#endif
+#endif
+        for (int j=1; j<s2Len; ++j) {
+            int NWscore = Nscore;
+            int NWmatches = Nmatches;
+            int NWlength = Nlength;
+            Nscore = tbl_pr[j];
+            Nmatches = mch_pr[j];
+            Nlength = len_pr[j];
+            del_pr[j] = MAX(Nscore - open, del_pr[j] - gap);
+            ins_cr    = MAX(Wscore - open, ins_cr    - gap);
+            tbl_pr[j] = NWscore + BLOSUM_(s1[i-1],s2[j-1]);
+            if ((tbl_pr[j] >= del_pr[j]) && (tbl_pr[j] >= ins_cr)) {
+                Wscore = tbl_pr[j];
+                Wmatches  = NWmatches + (s1[i-1] == s2[j-1]);
+                Wlength  = NWlength + 1;
+            } else if (del_pr[j] >= ins_cr) {
+                Wscore = del_pr[j];
+                Wmatches  = Nmatches;
+                Wlength  = Nlength + 1;
+            } else {
+                Wscore = ins_cr;
+                Wmatches  = Wmatches;
+                Wlength  = Wlength + 1;
+            }
+            tbl_pr[j] = Wscore;
+            mch_pr[j] = Wmatches;
+            len_pr[j] = Wlength;
+#if DEBUG
+#if DEBUG_MATCHES
+            printf(" %3d", Wmatches);
+#elif DEBUG_LENGTH
+            printf(" %3d", Wlength);
+#else
+            printf(" %3d", Wscore);
+#endif
+#endif
+        }
+        {
+            int j=s2Len;
+            int NWscore = Nscore;
+            int NWmatches = Nmatches;
+            int NWlength = Nlength;
+            Nscore = tbl_pr[j];
+            Nmatches = mch_pr[j];
+            Nlength = len_pr[j];
+            del_pr[j] = MAX(Nscore - open, del_pr[j] - gap);
+            ins_cr    = MAX(Wscore - open, ins_cr    - gap);
+            tbl_pr[j] = NWscore + BLOSUM_(s1[i-1],s2[j-1]);
+            if ((tbl_pr[j] >= del_pr[j]) && (tbl_pr[j] >= ins_cr)) {
+                Wscore = tbl_pr[j];
+                Wmatches  = NWmatches + (s1[i-1] == s2[j-1]);
+                Wlength  = NWlength + 1;
+            } else if (del_pr[j] >= ins_cr) {
+                Wscore = del_pr[j];
+                Wmatches  = Nmatches;
+                Wlength  = Nlength + 1;
+            } else {
+                Wscore = ins_cr;
+                Wmatches  = Wmatches;
+                Wlength  = Wlength + 1;
+            }
+            tbl_pr[j] = Wscore;
+            mch_pr[j] = Wmatches;
+            len_pr[j] = Wlength;
+            if (Wscore > score) {
+                score = Wscore;
+                matches = Wmatches;
+                length = Wlength;
+            }
+#if DEBUG
+#if DEBUG_MATCHES
+            printf(" %3d", Wmatches);
+#elif DEBUG_LENGTH
+            printf(" %3d", Wlength);
+#else
+            printf(" %3d", Wscore);
+#endif
+#endif
+        }
+#if DEBUG
+        printf("\n");
+#endif
+    }
+    {
+        int i=s1Len;
+        /* init first column */
+        int Nscore = tbl_pr[0];
+        int Nmatches = mch_pr[0];
+        int Nlength = len_pr[0];
+        int Wscore = 0;
+        int Wmatches = 0;
+        int Wlength = 0;
+        int ins_cr = NEG_INF;
+        tbl_pr[0] = Wscore;
+        mch_pr[0] = Wmatches;
+        len_pr[0] = Wlength;
+#if DEBUG
+#if DEBUG_MATCHES
+        printf(" %3d", Wmatches);
+#elif DEBUG_LENGTH
+        printf(" %3d", Wlength);
+#else
+        printf(" %3d", Wscore);
+#endif
+#endif
+        for (int j=1; j<=s2Len; ++j) {
+            int NWscore = Nscore;
+            int NWmatches = Nmatches;
+            int NWlength = Nlength;
+            Nscore = tbl_pr[j];
+            Nmatches = mch_pr[j];
+            Nlength = len_pr[j];
+            del_pr[j] = MAX(Nscore - open, del_pr[j] - gap);
+            ins_cr    = MAX(Wscore - open, ins_cr    - gap);
+            tbl_pr[j] = NWscore + BLOSUM_(s1[i-1],s2[j-1]);
+            if ((tbl_pr[j] >= del_pr[j]) && (tbl_pr[j] >= ins_cr)) {
+                Wscore = tbl_pr[j];
+                Wmatches  = NWmatches + (s1[i-1] == s2[j-1]);
+                Wlength  = NWlength + 1;
+            } else if (del_pr[j] >= ins_cr) {
+                Wscore = del_pr[j];
+                Wmatches  = Nmatches;
+                Wlength  = Nlength + 1;
+            } else {
+                Wscore = ins_cr;
+                Wmatches  = Wmatches;
+                Wlength  = Wlength + 1;
+            }
+            tbl_pr[j] = Wscore;
+            mch_pr[j] = Wmatches;
+            len_pr[j] = Wlength;
+            if (Wscore > score) {
+                score = Wscore;
+                matches = Wmatches;
+                length = Wlength;
+            }
+#if DEBUG
+#if DEBUG_MATCHES
+            printf(" %3d", Wmatches);
+#elif DEBUG_LENGTH
+            printf(" %3d", Wlength);
+#else
+            printf(" %3d", Wscore);
+#endif
+#endif
+        }
+#if DEBUG
+        printf("\n");
+#endif
+    }
+
+    delete [] s1;
+    delete [] s2;
+    return DP_t(score, matches, length);
 }
 
 
@@ -680,6 +924,15 @@ static int nw_sse8(
         __m128i vIns    = _mm_set1_epi16(NEG_INF);
         __m128i vMat;
 
+        const int * const restrict matrow0 = matrix[s1[i-1+0]];
+        const int * const restrict matrow1 = matrix[s1[i-1+1]];
+        const int * const restrict matrow2 = matrix[s1[i-1+2]];
+        const int * const restrict matrow3 = matrix[s1[i-1+3]];
+        const int * const restrict matrow4 = matrix[s1[i-1+4]];
+        const int * const restrict matrow5 = matrix[s1[i-1+5]];
+        const int * const restrict matrow6 = matrix[s1[i-1+6]];
+        const int * const restrict matrow7 = matrix[s1[i-1+7]];
+
         /* j = 0 */
         j = 0;
         Nscore = _mm_insert_epi16(Nscore, tbl_pr[j+7], 7);
@@ -701,7 +954,7 @@ static int nw_sse8(
                 _mm_sub_epi16(Wscore,vOpen),
                 _mm_sub_epi16(vIns,vGap));
         vMat = _mm_set_epi16(
-            BLOSUM_(s1[i-1],s2[j-1]),
+            BLOSUM0_(s1[i-1],s2[j-1]),
             0,
             0,
             0,
@@ -733,8 +986,8 @@ static int nw_sse8(
                 _mm_sub_epi16(Wscore,vOpen),
                 _mm_sub_epi16(vIns,vGap));
         vMat = _mm_set_epi16(
-            BLOSUM_(s1[i-1+0],s2[j-1-0]),
-            BLOSUM_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM1_(s1[i-1+1],s2[j-1-1]),
             0,
             0,
             0,
@@ -766,9 +1019,9 @@ static int nw_sse8(
                 _mm_sub_epi16(Wscore,vOpen),
                 _mm_sub_epi16(vIns,vGap));
         vMat = _mm_set_epi16(
-            BLOSUM_(s1[i-1+0],s2[j-1-0]),
-            BLOSUM_(s1[i-1+1],s2[j-1-1]),
-            BLOSUM_(s1[i-1+2],s2[j-1-2]),
+            BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM2_(s1[i-1+2],s2[j-1-2]),
             0,
             0,
             0,
@@ -800,10 +1053,10 @@ static int nw_sse8(
                 _mm_sub_epi16(Wscore,vOpen),
                 _mm_sub_epi16(vIns,vGap));
         vMat = _mm_set_epi16(
-            BLOSUM_(s1[i-1+0],s2[j-1-0]),
-            BLOSUM_(s1[i-1+1],s2[j-1-1]),
-            BLOSUM_(s1[i-1+2],s2[j-1-2]),
-            BLOSUM_(s1[i-1+3],s2[j-1-3]),
+            BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+            BLOSUM3_(s1[i-1+3],s2[j-1-3]),
             0,
             0,
             0,
@@ -835,11 +1088,11 @@ static int nw_sse8(
                 _mm_sub_epi16(Wscore,vOpen),
                 _mm_sub_epi16(vIns,vGap));
         vMat = _mm_set_epi16(
-            BLOSUM_(s1[i-1+0],s2[j-1-0]),
-            BLOSUM_(s1[i-1+1],s2[j-1-1]),
-            BLOSUM_(s1[i-1+2],s2[j-1-2]),
-            BLOSUM_(s1[i-1+3],s2[j-1-3]),
-            BLOSUM_(s1[i-1+4],s2[j-1-4]),
+            BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+            BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+            BLOSUM4_(s1[i-1+4],s2[j-1-4]),
             0,
             0,
             0
@@ -871,12 +1124,12 @@ static int nw_sse8(
                 _mm_sub_epi16(Wscore,vOpen),
                 _mm_sub_epi16(vIns,vGap));
         vMat = _mm_set_epi16(
-            BLOSUM_(s1[i-1+0],s2[j-1-0]),
-            BLOSUM_(s1[i-1+1],s2[j-1-1]),
-            BLOSUM_(s1[i-1+2],s2[j-1-2]),
-            BLOSUM_(s1[i-1+3],s2[j-1-3]),
-            BLOSUM_(s1[i-1+4],s2[j-1-4]),
-            BLOSUM_(s1[i-1+5],s2[j-1-5]),
+            BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+            BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+            BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+            BLOSUM5_(s1[i-1+5],s2[j-1-5]),
             0,
             0
         );
@@ -908,13 +1161,13 @@ static int nw_sse8(
                 _mm_sub_epi16(Wscore,vOpen),
                 _mm_sub_epi16(vIns,vGap));
         vMat = _mm_set_epi16(
-            BLOSUM_(s1[i-1+0],s2[j-1-0]),
-            BLOSUM_(s1[i-1+1],s2[j-1-1]),
-            BLOSUM_(s1[i-1+2],s2[j-1-2]),
-            BLOSUM_(s1[i-1+3],s2[j-1-3]),
-            BLOSUM_(s1[i-1+4],s2[j-1-4]),
-            BLOSUM_(s1[i-1+5],s2[j-1-5]),
-            BLOSUM_(s1[i-1+6],s2[j-1-6]),
+            BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+            BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+            BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+            BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+            BLOSUM6_(s1[i-1+6],s2[j-1-6]),
             0
         );
         vTbl = _mm_add_epi16(NWscore, vMat);
@@ -946,14 +1199,14 @@ static int nw_sse8(
                     _mm_sub_epi16(Wscore,vOpen),
                     _mm_sub_epi16(vIns,vGap));
             vMat = _mm_set_epi16(
-                    BLOSUM_(s1[i-1+0],s2[j-1-0]),
-                    BLOSUM_(s1[i-1+1],s2[j-1-1]),
-                    BLOSUM_(s1[i-1+2],s2[j-1-2]),
-                    BLOSUM_(s1[i-1+3],s2[j-1-3]),
-                    BLOSUM_(s1[i-1+4],s2[j-1-4]),
-                    BLOSUM_(s1[i-1+5],s2[j-1-5]),
-                    BLOSUM_(s1[i-1+6],s2[j-1-6]),
-                    BLOSUM_(s1[i-1+7],s2[j-1-7])
+                    BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+                    BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+                    BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+                    BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+                    BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+                    BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+                    BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                    BLOSUM7_(s1[i-1+7],s2[j-1-7])
                     );
             vTbl = _mm_add_epi16(NWscore, vMat);
             vTbl = _mm_max_epi16(vTbl, vDel);
@@ -987,13 +1240,13 @@ static int nw_sse8(
                 _mm_sub_epi16(vIns,vGap));
         vMat = _mm_set_epi16(
                 0,
-                BLOSUM_(s1[i-1+1],s2[j-1-1]),
-                BLOSUM_(s1[i-1+2],s2[j-1-2]),
-                BLOSUM_(s1[i-1+3],s2[j-1-3]),
-                BLOSUM_(s1[i-1+4],s2[j-1-4]),
-                BLOSUM_(s1[i-1+5],s2[j-1-5]),
-                BLOSUM_(s1[i-1+6],s2[j-1-6]),
-                BLOSUM_(s1[i-1+7],s2[j-1-7])
+                BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+                BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+                BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+                BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+                BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         vTbl = _mm_add_epi16(NWscore, vMat);
         vTbl = _mm_max_epi16(vTbl, vDel);
@@ -1026,12 +1279,12 @@ static int nw_sse8(
         vMat = _mm_set_epi16(
                 0,
                 0,
-                BLOSUM_(s1[i-1+2],s2[j-1-2]),
-                BLOSUM_(s1[i-1+3],s2[j-1-3]),
-                BLOSUM_(s1[i-1+4],s2[j-1-4]),
-                BLOSUM_(s1[i-1+5],s2[j-1-5]),
-                BLOSUM_(s1[i-1+6],s2[j-1-6]),
-                BLOSUM_(s1[i-1+7],s2[j-1-7])
+                BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+                BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+                BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+                BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         vTbl = _mm_add_epi16(NWscore, vMat);
         vTbl = _mm_max_epi16(vTbl, vDel);
@@ -1064,11 +1317,11 @@ static int nw_sse8(
                 0,
                 0,
                 0,
-                BLOSUM_(s1[i-1+3],s2[j-1-3]),
-                BLOSUM_(s1[i-1+4],s2[j-1-4]),
-                BLOSUM_(s1[i-1+5],s2[j-1-5]),
-                BLOSUM_(s1[i-1+6],s2[j-1-6]),
-                BLOSUM_(s1[i-1+7],s2[j-1-7])
+                BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+                BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+                BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         vTbl = _mm_add_epi16(NWscore, vMat);
         vTbl = _mm_max_epi16(vTbl, vDel);
@@ -1101,10 +1354,10 @@ static int nw_sse8(
                 0,
                 0,
                 0,
-                BLOSUM_(s1[i-1+4],s2[j-1-4]),
-                BLOSUM_(s1[i-1+5],s2[j-1-5]),
-                BLOSUM_(s1[i-1+6],s2[j-1-6]),
-                BLOSUM_(s1[i-1+7],s2[j-1-7])
+                BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+                BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         vTbl = _mm_add_epi16(NWscore, vMat);
         vTbl = _mm_max_epi16(vTbl, vDel);
@@ -1137,9 +1390,9 @@ static int nw_sse8(
                 0,
                 0,
                 0,
-                BLOSUM_(s1[i-1+5],s2[j-1-5]),
-                BLOSUM_(s1[i-1+6],s2[j-1-6]),
-                BLOSUM_(s1[i-1+7],s2[j-1-7])
+                BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         vTbl = _mm_add_epi16(NWscore, vMat);
         vTbl = _mm_max_epi16(vTbl, vDel);
@@ -1172,8 +1425,8 @@ static int nw_sse8(
                 0,
                 0,
                 0,
-                BLOSUM_(s1[i-1+6],s2[j-1-6]),
-                BLOSUM_(s1[i-1+7],s2[j-1-7])
+                BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         vTbl = _mm_add_epi16(NWscore, vMat);
         vTbl = _mm_max_epi16(vTbl, vDel);
@@ -1206,7 +1459,7 @@ static int nw_sse8(
                 0,
                 0,
                 0,
-                BLOSUM_(s1[i-1+7],s2[j-1-7])
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         vTbl = _mm_add_epi16(NWscore, vMat);
         vTbl = _mm_max_epi16(vTbl, vDel);
@@ -2079,19 +2332,29 @@ static DP_t nw_stats_sse8(
     print_array2(array, s1, s1Len, s2, s2Len, 14);
     delete [] array;
 #endif
+    delete [] s1;
+    delete [] s2;
     return DP_t(score, match, length);
 }
 
 
 /* global alignment without end gap penalties */
 static int sg_sse8(
-        const char * const restrict s1, const int s1Len,
-        const char * const restrict s2, const int s2Len,
+        const char * const restrict _s1, const int s1Len,
+        const char * const restrict _s2, const int s2Len,
         const int open, const int gap,
         const int matrix[24][24],
         int * const restrict tbl_pr, int * const restrict del_pr)
 {
     int score = NEG_INF;
+    int * const restrict s1 = new int[s1Len];
+    int * const restrict s2 = new int[s2Len];
+    for (int i=0; i<s1Len; ++i) {
+        s1[i] = MAP_BLOSUM_[_s1[i]];
+    }
+    for (int j=0; j<s2Len; ++j) {
+        s2[j] = MAP_BLOSUM_[_s2[j]];
+    }
 #if DEBUG
     printf("array length (s2Len(=%d)+14+1)*(s1Len(=%d)+7+1) = %d\n",
             s2Len, s1Len, (s2Len+14+1)*(s1Len+7+1));
@@ -2146,6 +2409,15 @@ static int sg_sse8(
         __m128i vIns    = _mm_set1_epi16(NEG_INF);
         __m128i vMat;
 
+        const int * const restrict matrow0 = matrix[s1[i-1+0]];
+        const int * const restrict matrow1 = matrix[s1[i-1+1]];
+        const int * const restrict matrow2 = matrix[s1[i-1+2]];
+        const int * const restrict matrow3 = matrix[s1[i-1+3]];
+        const int * const restrict matrow4 = matrix[s1[i-1+4]];
+        const int * const restrict matrow5 = matrix[s1[i-1+5]];
+        const int * const restrict matrow6 = matrix[s1[i-1+6]];
+        const int * const restrict matrow7 = matrix[s1[i-1+7]];
+
         /* j = 0 */
         j = 0;
         Nscore = _mm_insert_epi16(Nscore, tbl_pr[j+7], 7);
@@ -2167,7 +2439,7 @@ static int sg_sse8(
                 _mm_sub_epi16(Wscore,vOpen),
                 _mm_sub_epi16(vIns,vGap));
         vMat = _mm_set_epi16(
-            BLOSUM(s1[i-1],s2[j-1]),
+            BLOSUM0_(s1[i-1],s2[j-1]),
             0,
             0,
             0,
@@ -2203,8 +2475,8 @@ static int sg_sse8(
                 _mm_sub_epi16(Wscore,vOpen),
                 _mm_sub_epi16(vIns,vGap));
         vMat = _mm_set_epi16(
-            BLOSUM(s1[i-1+0],s2[j-1-0]),
-            BLOSUM(s1[i-1+1],s2[j-1-1]),
+            BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM1_(s1[i-1+1],s2[j-1-1]),
             0,
             0,
             0,
@@ -2240,9 +2512,9 @@ static int sg_sse8(
                 _mm_sub_epi16(Wscore,vOpen),
                 _mm_sub_epi16(vIns,vGap));
         vMat = _mm_set_epi16(
-            BLOSUM(s1[i-1+0],s2[j-1-0]),
-            BLOSUM(s1[i-1+1],s2[j-1-1]),
-            BLOSUM(s1[i-1+2],s2[j-1-2]),
+            BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM2_(s1[i-1+2],s2[j-1-2]),
             0,
             0,
             0,
@@ -2278,10 +2550,10 @@ static int sg_sse8(
                 _mm_sub_epi16(Wscore,vOpen),
                 _mm_sub_epi16(vIns,vGap));
         vMat = _mm_set_epi16(
-            BLOSUM(s1[i-1+0],s2[j-1-0]),
-            BLOSUM(s1[i-1+1],s2[j-1-1]),
-            BLOSUM(s1[i-1+2],s2[j-1-2]),
-            BLOSUM(s1[i-1+3],s2[j-1-3]),
+            BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+            BLOSUM3_(s1[i-1+3],s2[j-1-3]),
             0,
             0,
             0,
@@ -2317,11 +2589,11 @@ static int sg_sse8(
                 _mm_sub_epi16(Wscore,vOpen),
                 _mm_sub_epi16(vIns,vGap));
         vMat = _mm_set_epi16(
-            BLOSUM(s1[i-1+0],s2[j-1-0]),
-            BLOSUM(s1[i-1+1],s2[j-1-1]),
-            BLOSUM(s1[i-1+2],s2[j-1-2]),
-            BLOSUM(s1[i-1+3],s2[j-1-3]),
-            BLOSUM(s1[i-1+4],s2[j-1-4]),
+            BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+            BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+            BLOSUM4_(s1[i-1+4],s2[j-1-4]),
             0,
             0,
             0
@@ -2357,12 +2629,12 @@ static int sg_sse8(
                 _mm_sub_epi16(Wscore,vOpen),
                 _mm_sub_epi16(vIns,vGap));
         vMat = _mm_set_epi16(
-            BLOSUM(s1[i-1+0],s2[j-1-0]),
-            BLOSUM(s1[i-1+1],s2[j-1-1]),
-            BLOSUM(s1[i-1+2],s2[j-1-2]),
-            BLOSUM(s1[i-1+3],s2[j-1-3]),
-            BLOSUM(s1[i-1+4],s2[j-1-4]),
-            BLOSUM(s1[i-1+5],s2[j-1-5]),
+            BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+            BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+            BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+            BLOSUM5_(s1[i-1+5],s2[j-1-5]),
             0,
             0
         );
@@ -2398,13 +2670,13 @@ static int sg_sse8(
                 _mm_sub_epi16(Wscore,vOpen),
                 _mm_sub_epi16(vIns,vGap));
         vMat = _mm_set_epi16(
-            BLOSUM(s1[i-1+0],s2[j-1-0]),
-            BLOSUM(s1[i-1+1],s2[j-1-1]),
-            BLOSUM(s1[i-1+2],s2[j-1-2]),
-            BLOSUM(s1[i-1+3],s2[j-1-3]),
-            BLOSUM(s1[i-1+4],s2[j-1-4]),
-            BLOSUM(s1[i-1+5],s2[j-1-5]),
-            BLOSUM(s1[i-1+6],s2[j-1-6]),
+            BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+            BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+            BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+            BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+            BLOSUM6_(s1[i-1+6],s2[j-1-6]),
             0
         );
         vTbl = _mm_add_epi16(NWscore, vMat);
@@ -2440,14 +2712,14 @@ static int sg_sse8(
                     _mm_sub_epi16(Wscore,vOpen),
                     _mm_sub_epi16(vIns,vGap));
             vMat = _mm_set_epi16(
-                    BLOSUM(s1[i-1+0],s2[j-1-0]),
-                    BLOSUM(s1[i-1+1],s2[j-1-1]),
-                    BLOSUM(s1[i-1+2],s2[j-1-2]),
-                    BLOSUM(s1[i-1+3],s2[j-1-3]),
-                    BLOSUM(s1[i-1+4],s2[j-1-4]),
-                    BLOSUM(s1[i-1+5],s2[j-1-5]),
-                    BLOSUM(s1[i-1+6],s2[j-1-6]),
-                    BLOSUM(s1[i-1+7],s2[j-1-7])
+                    BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+                    BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+                    BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+                    BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+                    BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+                    BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+                    BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                    BLOSUM7_(s1[i-1+7],s2[j-1-7])
                     );
             vTbl = _mm_add_epi16(NWscore, vMat);
             vTbl = _mm_max_epi16(vTbl, vDel);
@@ -2488,13 +2760,13 @@ static int sg_sse8(
                 _mm_sub_epi16(vIns,vGap));
         vMat = _mm_set_epi16(
                 0,
-                BLOSUM(s1[i-1+1],s2[j-1-1]),
-                BLOSUM(s1[i-1+2],s2[j-1-2]),
-                BLOSUM(s1[i-1+3],s2[j-1-3]),
-                BLOSUM(s1[i-1+4],s2[j-1-4]),
-                BLOSUM(s1[i-1+5],s2[j-1-5]),
-                BLOSUM(s1[i-1+6],s2[j-1-6]),
-                BLOSUM(s1[i-1+7],s2[j-1-7])
+                BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+                BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+                BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+                BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+                BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         vTbl = _mm_add_epi16(NWscore, vMat);
         vTbl = _mm_max_epi16(vTbl, vDel);
@@ -2530,12 +2802,12 @@ static int sg_sse8(
         vMat = _mm_set_epi16(
                 0,
                 0,
-                BLOSUM(s1[i-1+2],s2[j-1-2]),
-                BLOSUM(s1[i-1+3],s2[j-1-3]),
-                BLOSUM(s1[i-1+4],s2[j-1-4]),
-                BLOSUM(s1[i-1+5],s2[j-1-5]),
-                BLOSUM(s1[i-1+6],s2[j-1-6]),
-                BLOSUM(s1[i-1+7],s2[j-1-7])
+                BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+                BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+                BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+                BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         vTbl = _mm_add_epi16(NWscore, vMat);
         vTbl = _mm_max_epi16(vTbl, vDel);
@@ -2571,11 +2843,11 @@ static int sg_sse8(
                 0,
                 0,
                 0,
-                BLOSUM(s1[i-1+3],s2[j-1-3]),
-                BLOSUM(s1[i-1+4],s2[j-1-4]),
-                BLOSUM(s1[i-1+5],s2[j-1-5]),
-                BLOSUM(s1[i-1+6],s2[j-1-6]),
-                BLOSUM(s1[i-1+7],s2[j-1-7])
+                BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+                BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+                BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         vTbl = _mm_add_epi16(NWscore, vMat);
         vTbl = _mm_max_epi16(vTbl, vDel);
@@ -2611,10 +2883,10 @@ static int sg_sse8(
                 0,
                 0,
                 0,
-                BLOSUM(s1[i-1+4],s2[j-1-4]),
-                BLOSUM(s1[i-1+5],s2[j-1-5]),
-                BLOSUM(s1[i-1+6],s2[j-1-6]),
-                BLOSUM(s1[i-1+7],s2[j-1-7])
+                BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+                BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         vTbl = _mm_add_epi16(NWscore, vMat);
         vTbl = _mm_max_epi16(vTbl, vDel);
@@ -2650,9 +2922,9 @@ static int sg_sse8(
                 0,
                 0,
                 0,
-                BLOSUM(s1[i-1+5],s2[j-1-5]),
-                BLOSUM(s1[i-1+6],s2[j-1-6]),
-                BLOSUM(s1[i-1+7],s2[j-1-7])
+                BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         vTbl = _mm_add_epi16(NWscore, vMat);
         vTbl = _mm_max_epi16(vTbl, vDel);
@@ -2688,8 +2960,8 @@ static int sg_sse8(
                 0,
                 0,
                 0,
-                BLOSUM(s1[i-1+6],s2[j-1-6]),
-                BLOSUM(s1[i-1+7],s2[j-1-7])
+                BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         vTbl = _mm_add_epi16(NWscore, vMat);
         vTbl = _mm_max_epi16(vTbl, vDel);
@@ -2725,7 +2997,7 @@ static int sg_sse8(
                 0,
                 0,
                 0,
-                BLOSUM(s1[i-1+7],s2[j-1-7])
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         vTbl = _mm_add_epi16(NWscore, vMat);
         vTbl = _mm_max_epi16(vTbl, vDel);
@@ -2746,6 +3018,8 @@ static int sg_sse8(
     print_array2(array, s1, s1Len, s2, s2Len, 14);
     delete [] array;
 #endif
+    delete [] s1;
+    delete [] s2;
     return score;
 }
 
@@ -3662,7 +3936,7 @@ int main(int argc, char **argv)
     timer_init();
     ::std::cout << timer_name() << " timer" << ::std::endl;
 
-    ::std::cout << "alg\t\ttime\tscore\tmathces\tlength" << ::std::endl;
+    ::std::cout << "alg\t\ttime\tscore\tmatches\tlength" << ::std::endl;
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
@@ -3704,7 +3978,6 @@ int main(int argc, char **argv)
         << "\t" << stats.length
         << ::std::endl;
 
-#if 0
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sg(&seqA[16], lena, seqB, lenb, 10, 1, blosum62, nogap, b_gap);
@@ -3719,6 +3992,20 @@ int main(int argc, char **argv)
     timer = timer_end(timer);
     ::std::cout << "sg_sse8\t\t" << timer/limit << "\t" << score << ::std::endl;
 
+    timer = timer_start();
+    for (i=0; i<limit; ++i) {
+        stats = sg_stats(&seqA[16], lena, seqB, lenb, 10, 1, blosum62,
+                nogap, b_gap, matches, length);
+    }
+    timer = timer_end(timer);
+    ::std::cout << "sg stat\t"
+        << "\t" << timer/limit
+        << "\t" << stats.score
+        << "\t" << stats.matches
+        << "\t" << stats.length
+        << ::std::endl;
+
+#if 0
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sw_woz(&seqA[16], lena, seqB, lenb, 10, 1, blosum62, nogap, b_gap);
@@ -3757,6 +4044,8 @@ int main(int argc, char **argv)
 
     delete [] nogap;
     delete [] b_gap;
+    delete [] matches;
+    delete [] length;
 
     return 0;
 }
