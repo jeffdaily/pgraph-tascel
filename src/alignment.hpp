@@ -20,6 +20,8 @@
 
 using std::size_t;
 
+#define USE_SIMILARITIES 0
+
 namespace pgraph {
 
 /**
@@ -28,7 +30,9 @@ namespace pgraph {
 typedef struct {
     int score;      /**< alignment score */
     int matches;    /**< number of matches */
+#if USE_SIMILARITIES
     int similarities;/**< number of similarities */
+#endif
     int length;     /**< alignment length */
 } cell_t;
 
@@ -38,7 +42,9 @@ typedef struct {
 typedef struct {
     int score;      /**< alignment score */
     int matches;    /**< number of matches */
+#if USE_SIMILARITIES
     int similarities;/**< number of similarities */
+#endif
     int length;     /**< alignment length */
     int del;
     int ins;
@@ -407,7 +413,9 @@ cell_t align_global_affine(
         int open=-10, int gap=-1,
         int * const restrict * const restrict scr=NULL,
         int * const restrict * const restrict mat=NULL,
+#if USE_SIMILARITIES
         int * const restrict * const restrict sim=NULL,
+#endif
         int * const restrict * const restrict len=NULL,
         int * const restrict * const restrict del=NULL,
         int * const restrict * const restrict ins=NULL);
@@ -420,7 +428,9 @@ cell_t align_global_affine(
         int open=-10, int gap=-1,
         int * const restrict * const restrict scr=NULL,
         int * const restrict * const restrict mat=NULL,
+#if USE_SIMILARITIES
         int * const restrict * const restrict sim=NULL,
+#endif
         int * const restrict * const restrict len=NULL,
         int * const restrict * const restrict del=NULL,
         int * const restrict * const restrict ins=NULL);
@@ -432,7 +442,9 @@ cell_t align_global_affine(
         int open=-10, int gap=-1,
         int * const restrict * const restrict scr=NULL,
         int * const restrict * const restrict mat=NULL,
+#if USE_SIMILARITIES
         int * const restrict * const restrict sim=NULL,
+#endif
         int * const restrict * const restrict len=NULL,
         int * const restrict * const restrict del=NULL,
         int * const restrict * const restrict ins=NULL);
@@ -443,7 +455,9 @@ cell_t align_global_affine(
         int open=-10, int gap=-1,
         int * const restrict * const restrict scr=NULL,
         int * const restrict * const restrict mat=NULL,
+#if USE_SIMILARITIES
         int * const restrict * const restrict sim=NULL,
+#endif
         int * const restrict * const restrict len=NULL,
         int * const restrict * const restrict del=NULL,
         int * const restrict * const restrict ins=NULL);
@@ -455,7 +469,9 @@ cell_t align_semi_affine(
         int open=-10, int gap=-1,
         int * const restrict * const restrict scr=NULL,
         int * const restrict * const restrict mat=NULL,
+#if USE_SIMILARITIES
         int * const restrict * const restrict sim=NULL,
+#endif
         int * const restrict * const restrict len=NULL,
         int * const restrict * const restrict del=NULL,
         int * const restrict * const restrict ins=NULL);
@@ -468,7 +484,9 @@ cell_t align_semi_affine(
         int open=-10, int gap=-1,
         int * const restrict * const restrict scr=NULL,
         int * const restrict * const restrict mat=NULL,
+#if USE_SIMILARITIES
         int * const restrict * const restrict sim=NULL,
+#endif
         int * const restrict * const restrict len=NULL,
         int * const restrict * const restrict del=NULL,
         int * const restrict * const restrict ins=NULL);
@@ -480,7 +498,9 @@ cell_t align_semi_affine(
         int open=-10, int gap=-1,
         int * const restrict * const restrict scr=NULL,
         int * const restrict * const restrict mat=NULL,
+#if USE_SIMILARITIES
         int * const restrict * const restrict sim=NULL,
+#endif
         int * const restrict * const restrict len=NULL,
         int * const restrict * const restrict del=NULL,
         int * const restrict * const restrict ins=NULL);
@@ -491,7 +511,9 @@ cell_t align_semi_affine(
         int open=-10, int gap=-1,
         int * const restrict * const restrict scr=NULL,
         int * const restrict * const restrict mat=NULL,
+#if USE_SIMILARITIES
         int * const restrict * const restrict sim=NULL,
+#endif
         int * const restrict * const restrict len=NULL,
         int * const restrict * const restrict del=NULL,
         int * const restrict * const restrict ins=NULL);
@@ -503,7 +525,9 @@ cell_t align_local_affine(
         int open=-10, int gap=-1,
         int * const restrict * const restrict scr=NULL,
         int * const restrict * const restrict mat=NULL,
+#if USE_SIMILARITIES
         int * const restrict * const restrict sim=NULL,
+#endif
         int * const restrict * const restrict len=NULL,
         int * const restrict * const restrict del=NULL,
         int * const restrict * const restrict ins=NULL);
@@ -516,7 +540,9 @@ cell_t align_local_affine(
         int open=-10, int gap=-1,
         int * const restrict * const restrict scr=NULL,
         int * const restrict * const restrict mat=NULL,
+#if USE_SIMILARITIES
         int * const restrict * const restrict sim=NULL,
+#endif
         int * const restrict * const restrict len=NULL,
         int * const restrict * const restrict del=NULL,
         int * const restrict * const restrict ins=NULL);
@@ -528,7 +554,9 @@ cell_t align_local_affine(
         int open=-10, int gap=-1,
         int * const restrict * const restrict scr=NULL,
         int * const restrict * const restrict mat=NULL,
+#if USE_SIMILARITIES
         int * const restrict * const restrict sim=NULL,
+#endif
         int * const restrict * const restrict len=NULL,
         int * const restrict * const restrict del=NULL,
         int * const restrict * const restrict ins=NULL);
@@ -539,7 +567,9 @@ cell_t align_local_affine(
         int open=-10, int gap=-1,
         int * const restrict * const restrict scr=NULL,
         int * const restrict * const restrict mat=NULL,
+#if USE_SIMILARITIES
         int * const restrict * const restrict sim=NULL,
+#endif
         int * const restrict * const restrict len=NULL,
         int * const restrict * const restrict del=NULL,
         int * const restrict * const restrict ins=NULL);
