@@ -54,10 +54,15 @@ static const int MAP_BLOSUM_[256] = {
 
 #define MAX(a,b) ((a)>(b)?(a):(b))
 
+/* on OSX, _mm_extract_epi16 got wrong answer, but taking the union of
+ * the vector and extracting that way seemed to work... */
+#define EXTRACT extract
+//#define EXTRACT _mm_extract_epi16
+
 #define max8(m, vm) (vm) = _mm_max_epi16((vm), _mm_srli_si128((vm), 8)); \
                     (vm) = _mm_max_epi16((vm), _mm_srli_si128((vm), 4)); \
                     (vm) = _mm_max_epi16((vm), _mm_srli_si128((vm), 2)); \
-                    (m) = _mm_extract_epi16((vm), 0)
+                    (m) = EXTRACT((vm), 0)
 
 struct DP_t {
     int score;
@@ -70,6 +75,17 @@ struct DP_t {
 
 //static const int16_t NEG_INF = SHRT_MIN / 2;
 static const int16_t NEG_INF = -50;
+
+static inline int extract(const __m128i &m, const int &pos)
+{
+    union {
+        __m128i m;
+        int16_t v[8];
+    } tmp;
+    tmp.m = m;
+    return tmp.v[pos];
+}
+
 
 static void init_vect(int len, int *vec, int val)
 {
@@ -157,6 +173,52 @@ static void print_array2(
     }
     for (i=s1Len; i<(s1Len+padb); ++i) {
         printf("$");
+        for (j=0; j<s2Len+pad+1; ++j) {
+            printf(" %3d", array[(i+1)*(s2Len+pad+1) + j]);
+        }
+        printf("\n");
+    }
+}
+
+
+static void print_array2(
+        const int * const restrict array,
+        const int * const restrict s1, const int s1Len,
+        const int * const restrict s2, const int s2Len,
+        const int pad)
+{
+    int i;
+    int j;
+    int padb = pad/2;
+
+    printf("  ");
+    for (j=0; j<pad/2; ++j) {
+        printf("   $");
+    }
+    printf("   *");
+    for (j=0; j<s2Len; ++j) {
+        printf("  %2d", s2[j]);
+    }
+    for (j=0; j<pad/2; ++j) {
+        printf("   $");
+    }
+    printf("\n");
+    {
+        printf(" *");
+        for (j=0; j<s2Len+pad+1; ++j) {
+            printf(" %3d", array[j]);
+        }
+        printf("\n");
+    }
+    for (i=0; i<s1Len; ++i) {
+        printf("%2d", s1[i]);
+        for (j=0; j<s2Len+pad+1; ++j) {
+            printf(" %3d", array[(i+1)*(s2Len+pad+1) + j]);
+        }
+        printf("\n");
+    }
+    for (i=s1Len; i<(s1Len+padb); ++i) {
+        printf(" $");
         for (j=0; j<s2Len+pad+1; ++j) {
             printf(" %3d", array[(i+1)*(s2Len+pad+1) + j]);
         }
@@ -497,20 +559,7 @@ static int sg(
 #if DEBUG
         printf(" %3d", Wscore);
 #endif
-        for (int j=1; j<s2Len; ++j) {
-            int NWscore = Nscore;
-            Nscore = tbl_pr[j];
-            del_pr[j] = MAX(Nscore - open, del_pr[j] - gap);
-            ins_cr    = MAX(Wscore - open, ins_cr    - gap);
-            tbl_pr[j] = NWscore + BLOSUM0_(s1[i-1],s2[j-1]);
-            Wscore = tbl_pr[j] = MAX(tbl_pr[j],MAX(ins_cr,del_pr[j]));
-            score = MAX(score, Wscore);
-#if DEBUG
-            printf(" %3d", Wscore);
-#endif
-        }
-        {
-            int j=s2Len;
+        for (int j=1; j<=s2Len; ++j) {
             int NWscore = Nscore;
             Nscore = tbl_pr[j];
             del_pr[j] = MAX(Nscore - open, del_pr[j] - gap);
@@ -843,14 +892,14 @@ static inline __m128i vshift16(const __m128i &v, int val)
 static inline int vextract16(const __m128i &v, int offset)
 {
     switch (offset) {
-        case 0: return _mm_extract_epi16(v, 0);
-        case 1: return _mm_extract_epi16(v, 1);
-        case 2: return _mm_extract_epi16(v, 2);
-        case 3: return _mm_extract_epi16(v, 3);
-        case 4: return _mm_extract_epi16(v, 4);
-        case 5: return _mm_extract_epi16(v, 5);
-        case 6: return _mm_extract_epi16(v, 6);
-        case 7: return _mm_extract_epi16(v, 7);
+        case 0: return EXTRACT(v, 0);
+        case 1: return EXTRACT(v, 1);
+        case 2: return EXTRACT(v, 2);
+        case 3: return EXTRACT(v, 3);
+        case 4: return EXTRACT(v, 4);
+        case 5: return EXTRACT(v, 5);
+        case 6: return EXTRACT(v, 6);
+        case 7: return EXTRACT(v, 7);
         default: assert(0);
     }
 }
@@ -939,7 +988,7 @@ static int nw_sse8(
         Wscore = _mm_insert_epi16(Wscore, -open-(i-1)*gap, 7);
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 7);
 #if DEBUG
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(Wscore, 7);
+        array[(i+0)*(s2Len+14+1) + j + 7] = extract(Wscore, 7);
 #endif
 
         /* j = 1 */
@@ -970,8 +1019,8 @@ static int nw_sse8(
         Wscore = _mm_insert_epi16(Wscore, -open-(i+0)*gap, 6);
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 6);
 #if DEBUG
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(Wscore, 6);
+        array[(i+0)*(s2Len+14+1) + j + 7] = extract(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = extract(Wscore, 6);
 #endif
 
         /* j = 2 */
@@ -1002,9 +1051,9 @@ static int nw_sse8(
         Wscore = _mm_insert_epi16(Wscore, -open-(i+1)*gap, 5);
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 5);
 #if DEBUG
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(Wscore, 5);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wscore, 5);
 #endif
 
         /* j = 3 */
@@ -1035,10 +1084,10 @@ static int nw_sse8(
         Wscore = _mm_insert_epi16(Wscore, -open-(i+2)*gap, 4);
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 4);
 #if DEBUG
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(Wscore, 4);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wscore, 4);
 #endif
 
         /* j = 4 */
@@ -1069,11 +1118,11 @@ static int nw_sse8(
         Wscore = _mm_insert_epi16(Wscore, -open-(i+3)*gap, 3);
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 3);
 #if DEBUG
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(Wscore, 3);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wscore, 3);
 #endif
 
         /* j = 5 */
@@ -1104,12 +1153,12 @@ static int nw_sse8(
         Wscore = _mm_insert_epi16(Wscore, -open-(i+4)*gap, 2);
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 2);
 #if DEBUG
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(Wscore, 2);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wscore, 2);
 #endif
 
         /* j = 6 */
@@ -1140,13 +1189,13 @@ static int nw_sse8(
         Wscore = _mm_insert_epi16(Wscore, -open-(i+5)*gap, 1);
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 1);
 #if DEBUG
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(Wscore, 1);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wscore, 1);
 #endif
 
         /* j = 7 */
@@ -1178,14 +1227,14 @@ static int nw_sse8(
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 0);
         tbl_pr[7] = -open-(i+6)*gap;
 #if DEBUG
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(Wscore, 0);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wscore, 0);
 #endif
 
         for (j=8; j<=s2Len; ++j) {
@@ -1212,20 +1261,20 @@ static int nw_sse8(
             vTbl = _mm_max_epi16(vTbl, vDel);
             vTbl = _mm_max_epi16(vTbl, vIns);
             Wscore = vTbl;
-            tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-            del_pr[j] = _mm_extract_epi16(vDel, 0);
+            tbl_pr[j] = EXTRACT(vTbl, 0);
+            del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
-            array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-            array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-            array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-            array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-            array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-            array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-            array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-            array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+            array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+            array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+            array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+            array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+            array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+            array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+            array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+            array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
         }
-        if (i+0 == s1Len) score = _mm_extract_epi16(vTbl, 7);
+        if (i+0 == s1Len) score = EXTRACT(vTbl, 7);
 
         /* j = s2Len + 1 */
         j = s2Len + 1;
@@ -1252,18 +1301,18 @@ static int nw_sse8(
         vTbl = _mm_max_epi16(vTbl, vDel);
         vTbl = _mm_max_epi16(vTbl, vIns);
         Wscore = vTbl;
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
-        if (i+1 == s1Len) score = _mm_extract_epi16(vTbl, 6);
+        if (i+1 == s1Len) score = EXTRACT(vTbl, 6);
 
         /* j = s2Len + 2 */
         j = s2Len + 2;
@@ -1290,17 +1339,17 @@ static int nw_sse8(
         vTbl = _mm_max_epi16(vTbl, vDel);
         vTbl = _mm_max_epi16(vTbl, vIns);
         Wscore = vTbl;
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
-        if (i+2 == s1Len) score = _mm_extract_epi16(vTbl, 5);
+        if (i+2 == s1Len) score = EXTRACT(vTbl, 5);
 
         /* j = s2Len + 3 */
         j = s2Len + 3;
@@ -1327,16 +1376,16 @@ static int nw_sse8(
         vTbl = _mm_max_epi16(vTbl, vDel);
         vTbl = _mm_max_epi16(vTbl, vIns);
         Wscore = vTbl;
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
-        if (i+3 == s1Len) score = _mm_extract_epi16(vTbl, 4);
+        if (i+3 == s1Len) score = EXTRACT(vTbl, 4);
 
         /* j = s2Len + 4 */
         j = s2Len + 4;
@@ -1363,15 +1412,15 @@ static int nw_sse8(
         vTbl = _mm_max_epi16(vTbl, vDel);
         vTbl = _mm_max_epi16(vTbl, vIns);
         Wscore = vTbl;
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
-        if (i+4 == s1Len) score = _mm_extract_epi16(vTbl, 3);
+        if (i+4 == s1Len) score = EXTRACT(vTbl, 3);
 
         /* j = s2Len + 5 */
         j = s2Len + 5;
@@ -1398,14 +1447,14 @@ static int nw_sse8(
         vTbl = _mm_max_epi16(vTbl, vDel);
         vTbl = _mm_max_epi16(vTbl, vIns);
         Wscore = vTbl;
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
-        if (i+5 == s1Len) score = _mm_extract_epi16(vTbl, 2);
+        if (i+5 == s1Len) score = EXTRACT(vTbl, 2);
 
         /* j = s2Len + 6 */
         j = s2Len + 6;
@@ -1432,13 +1481,13 @@ static int nw_sse8(
         vTbl = _mm_max_epi16(vTbl, vDel);
         vTbl = _mm_max_epi16(vTbl, vIns);
         Wscore = vTbl;
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
-        if (i+6 == s1Len) score = _mm_extract_epi16(vTbl, 1);
+        if (i+6 == s1Len) score = EXTRACT(vTbl, 1);
 
         /* j = s2Len + 7 */
         j = s2Len + 7;
@@ -1465,12 +1514,12 @@ static int nw_sse8(
         vTbl = _mm_max_epi16(vTbl, vDel);
         vTbl = _mm_max_epi16(vTbl, vIns);
         Wscore = vTbl;
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
-        if (i+7 == s1Len) score = _mm_extract_epi16(vTbl, 0);
+        if (i+7 == s1Len) score = EXTRACT(vTbl, 0);
     }
 
 #if DEBUG
@@ -1633,11 +1682,11 @@ static DP_t nw_stats_sse8(
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 7);
 #if DEBUG
 #if DEBUG_MATCHES
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(Wmatch, 7);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wmatch, 7);
 #elif DEBUG_LENGTH
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(Wlength,7);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wlength,7);
 #else
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(Wscore, 7);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wscore, 7);
 #endif
 #endif
 
@@ -1702,14 +1751,14 @@ static DP_t nw_stats_sse8(
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 6);
 #if DEBUG
 #if DEBUG_MATCHES
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(Wmatch, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(Wmatch, 6);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wmatch, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wmatch, 6);
 #elif DEBUG_LENGTH
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(Wlength, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(Wlength, 6);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wlength, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wlength, 6);
 #else
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(Wscore, 6);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wscore, 6);
 #endif
 #endif
 
@@ -1734,17 +1783,17 @@ static DP_t nw_stats_sse8(
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 5);
 #if DEBUG
 #if DEBUG_MATCHES
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(Wmatch, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(Wmatch, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(Wmatch, 5);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wmatch, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wmatch, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wmatch, 5);
 #elif DEBUG_LENGTH
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(Wlength, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(Wlength, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(Wlength, 5);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wlength, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wlength, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wlength, 5);
 #else
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(Wscore, 5);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wscore, 5);
 #endif
 #endif
 
@@ -1769,20 +1818,20 @@ static DP_t nw_stats_sse8(
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 4);
 #if DEBUG
 #if DEBUG_MATCHES
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(Wmatch, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(Wmatch, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(Wmatch, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(Wmatch, 4);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wmatch, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wmatch, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wmatch, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wmatch, 4);
 #elif DEBUG_LENGTH
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(Wlength, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(Wlength, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(Wlength, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(Wlength, 4);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wlength, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wlength, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wlength, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wlength, 4);
 #else
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(Wscore, 4);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wscore, 4);
 #endif
 #endif
 
@@ -1807,23 +1856,23 @@ static DP_t nw_stats_sse8(
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 3);
 #if DEBUG
 #if DEBUG_MATCHES
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(Wmatch, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(Wmatch, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(Wmatch, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(Wmatch, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(Wmatch, 3);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wmatch, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wmatch, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wmatch, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wmatch, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wmatch, 3);
 #elif DEBUG_LENGTH
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(Wlength, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(Wlength, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(Wlength, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(Wlength, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(Wlength, 3);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wlength, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wlength, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wlength, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wlength, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wlength, 3);
 #else
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(Wscore, 3);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wscore, 3);
 #endif
 #endif
 
@@ -1848,26 +1897,26 @@ static DP_t nw_stats_sse8(
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 2);
 #if DEBUG
 #if DEBUG_MATCHES
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(Wmatch, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(Wmatch, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(Wmatch, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(Wmatch, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(Wmatch, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(Wmatch, 2);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wmatch, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wmatch, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wmatch, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wmatch, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wmatch, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wmatch, 2);
 #elif DEBUG_LENGTH
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(Wlength, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(Wlength, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(Wlength, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(Wlength, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(Wlength, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(Wlength, 2);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wlength, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wlength, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wlength, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wlength, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wlength, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wlength, 2);
 #else
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(Wscore, 2);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wscore, 2);
 #endif
 #endif
 
@@ -1892,29 +1941,29 @@ static DP_t nw_stats_sse8(
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 1);
 #if DEBUG
 #if DEBUG_MATCHES
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(Wmatch, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(Wmatch, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(Wmatch, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(Wmatch, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(Wmatch, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(Wmatch, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(Wmatch, 1);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wmatch, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wmatch, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wmatch, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wmatch, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wmatch, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wmatch, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wmatch, 1);
 #elif DEBUG_LENGTH
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(Wlength, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(Wlength, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(Wlength, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(Wlength, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(Wlength, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(Wlength, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(Wlength, 1);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wlength, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wlength, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wlength, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wlength, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wlength, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wlength, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wlength, 1);
 #else
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(Wscore, 1);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wscore, 1);
 #endif
 #endif
 
@@ -1942,32 +1991,32 @@ static DP_t nw_stats_sse8(
         len_pr[7] = 0;
 #if DEBUG
 #if DEBUG_MATCHES
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(Wmatch, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(Wmatch, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(Wmatch, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(Wmatch, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(Wmatch, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(Wmatch, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(Wmatch, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(Wmatch, 0);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wmatch, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wmatch, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wmatch, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wmatch, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wmatch, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wmatch, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wmatch, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wmatch, 0);
 #elif DEBUG_LENGTH
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(Wlength, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(Wlength, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(Wlength, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(Wlength, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(Wlength, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(Wlength, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(Wlength, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(Wlength, 0);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wlength, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wlength, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wlength, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wlength, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wlength, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wlength, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wlength, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wlength, 0);
 #else
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(Wscore, 0);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wscore, 0);
 #endif
 #endif
 
@@ -1985,45 +2034,45 @@ static DP_t nw_stats_sse8(
                     BLOSUM7_(s1[i-1+7],s2[j-1-7])
                     );
             CONDITIONAL_BLOCK
-            tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-            mch_pr[j] = _mm_extract_epi16(Wmatch, 0);
-            len_pr[j] = _mm_extract_epi16(Wlength, 0);
-            del_pr[j] = _mm_extract_epi16(vDel, 0);
+            tbl_pr[j] = EXTRACT(vTbl, 0);
+            mch_pr[j] = EXTRACT(Wmatch, 0);
+            len_pr[j] = EXTRACT(Wlength, 0);
+            del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
 #if DEBUG_MATCHES
-            array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(Wmatch, 7);
-            array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(Wmatch, 6);
-            array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(Wmatch, 5);
-            array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(Wmatch, 4);
-            array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(Wmatch, 3);
-            array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(Wmatch, 2);
-            array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(Wmatch, 1);
-            array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(Wmatch, 0);
+            array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wmatch, 7);
+            array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wmatch, 6);
+            array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wmatch, 5);
+            array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wmatch, 4);
+            array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wmatch, 3);
+            array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wmatch, 2);
+            array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wmatch, 1);
+            array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wmatch, 0);
 #elif DEBUG_LENGTH
-            array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(Wlength, 7);
-            array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(Wlength, 6);
-            array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(Wlength, 5);
-            array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(Wlength, 4);
-            array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(Wlength, 3);
-            array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(Wlength, 2);
-            array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(Wlength, 1);
-            array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(Wlength, 0);
+            array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wlength, 7);
+            array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wlength, 6);
+            array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wlength, 5);
+            array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wlength, 4);
+            array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wlength, 3);
+            array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wlength, 2);
+            array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wlength, 1);
+            array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wlength, 0);
 #else
-            array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-            array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-            array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-            array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-            array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-            array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-            array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-            array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+            array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+            array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+            array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+            array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+            array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+            array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+            array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+            array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
 #endif
         }
         if (i+0 == s1Len) {
-            score = _mm_extract_epi16(vTbl, 7);
-            match = _mm_extract_epi16(Wmatch, 7);
-            length= _mm_extract_epi16(Wlength, 7);
+            score = EXTRACT(vTbl, 7);
+            match = EXTRACT(Wmatch, 7);
+            length= EXTRACT(Wlength, 7);
         }
 
         /* j = s2Len + 1 */
@@ -2041,41 +2090,41 @@ static DP_t nw_stats_sse8(
                 BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         CONDITIONAL_BLOCK
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        mch_pr[j] = _mm_extract_epi16(Wmatch, 0);
-        len_pr[j] = _mm_extract_epi16(Wlength, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        mch_pr[j] = EXTRACT(Wmatch, 0);
+        len_pr[j] = EXTRACT(Wlength, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
 #if DEBUG_MATCHES
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(Wmatch, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(Wmatch, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(Wmatch, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(Wmatch, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(Wmatch, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(Wmatch, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(Wmatch, 0);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wmatch, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wmatch, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wmatch, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wmatch, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wmatch, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wmatch, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wmatch, 0);
 #elif DEBUG_LENGTH
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(Wlength, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(Wlength, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(Wlength, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(Wlength, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(Wlength, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(Wlength, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(Wlength, 0);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wlength, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wlength, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wlength, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wlength, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wlength, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wlength, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wlength, 0);
 #else
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
 #endif
         if (i+1 == s1Len) {
-            score = _mm_extract_epi16(vTbl, 6);
-            match = _mm_extract_epi16(Wmatch, 6);
-            length= _mm_extract_epi16(Wlength, 6);
+            score = EXTRACT(vTbl, 6);
+            match = EXTRACT(Wmatch, 6);
+            length= EXTRACT(Wlength, 6);
         }
 
         /* j = s2Len + 2 */
@@ -2093,38 +2142,38 @@ static DP_t nw_stats_sse8(
                 BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         CONDITIONAL_BLOCK
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        mch_pr[j] = _mm_extract_epi16(Wmatch, 0);
-        len_pr[j] = _mm_extract_epi16(Wlength, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        mch_pr[j] = EXTRACT(Wmatch, 0);
+        len_pr[j] = EXTRACT(Wlength, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
 #if DEBUG_MATCHES
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(Wmatch, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(Wmatch, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(Wmatch, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(Wmatch, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(Wmatch, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(Wmatch, 0);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wmatch, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wmatch, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wmatch, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wmatch, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wmatch, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wmatch, 0);
 #elif DEBUG_LENGTH
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(Wlength, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(Wlength, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(Wlength, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(Wlength, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(Wlength, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(Wlength, 0);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wlength, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wlength, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wlength, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wlength, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wlength, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wlength, 0);
 #else
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
 #endif
         if (i+2 == s1Len) {
-            score = _mm_extract_epi16(vTbl, 5);
-            match = _mm_extract_epi16(Wmatch, 5);
-            length= _mm_extract_epi16(Wlength, 5);
+            score = EXTRACT(vTbl, 5);
+            match = EXTRACT(Wmatch, 5);
+            length= EXTRACT(Wlength, 5);
         }
 
         /* j = s2Len + 3 */
@@ -2142,35 +2191,35 @@ static DP_t nw_stats_sse8(
                 BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         CONDITIONAL_BLOCK
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        mch_pr[j] = _mm_extract_epi16(Wmatch, 0);
-        len_pr[j] = _mm_extract_epi16(Wlength, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        mch_pr[j] = EXTRACT(Wmatch, 0);
+        len_pr[j] = EXTRACT(Wlength, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
 #if DEBUG_MATCHES
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(Wmatch, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(Wmatch, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(Wmatch, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(Wmatch, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(Wmatch, 0);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wmatch, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wmatch, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wmatch, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wmatch, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wmatch, 0);
 #elif DEBUG_LENGTH
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(Wlength, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(Wlength, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(Wlength, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(Wlength, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(Wlength, 0);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wlength, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wlength, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wlength, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wlength, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wlength, 0);
 #else
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
 #endif
         if (i+3 == s1Len) {
-            score = _mm_extract_epi16(vTbl, 4);
-            match = _mm_extract_epi16(Wmatch, 4);
-            length= _mm_extract_epi16(Wlength, 4);
+            score = EXTRACT(vTbl, 4);
+            match = EXTRACT(Wmatch, 4);
+            length= EXTRACT(Wlength, 4);
         }
 
         /* j = s2Len + 4 */
@@ -2188,32 +2237,32 @@ static DP_t nw_stats_sse8(
                 BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         CONDITIONAL_BLOCK
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        mch_pr[j] = _mm_extract_epi16(Wmatch, 0);
-        len_pr[j] = _mm_extract_epi16(Wlength, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        mch_pr[j] = EXTRACT(Wmatch, 0);
+        len_pr[j] = EXTRACT(Wlength, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
 #if DEBUG_MATCHES
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(Wmatch, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(Wmatch, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(Wmatch, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(Wmatch, 0);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wmatch, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wmatch, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wmatch, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wmatch, 0);
 #elif DEBUG_LENGTH
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(Wlength, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(Wlength, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(Wlength, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(Wlength, 0);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wlength, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wlength, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wlength, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wlength, 0);
 #else
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
 #endif
         if (i+4 == s1Len) {
-            score = _mm_extract_epi16(vTbl, 3);
-            match = _mm_extract_epi16(Wmatch, 3);
-            length= _mm_extract_epi16(Wlength, 3);
+            score = EXTRACT(vTbl, 3);
+            match = EXTRACT(Wmatch, 3);
+            length= EXTRACT(Wlength, 3);
         }
 
         /* j = s2Len + 5 */
@@ -2231,29 +2280,29 @@ static DP_t nw_stats_sse8(
                 BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         CONDITIONAL_BLOCK
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        mch_pr[j] = _mm_extract_epi16(Wmatch, 0);
-        len_pr[j] = _mm_extract_epi16(Wlength, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        mch_pr[j] = EXTRACT(Wmatch, 0);
+        len_pr[j] = EXTRACT(Wlength, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
 #if DEBUG_MATCHES
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(Wmatch, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(Wmatch, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(Wmatch, 0);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wmatch, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wmatch, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wmatch, 0);
 #elif DEBUG_LENGTH
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(Wlength, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(Wlength, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(Wlength, 0);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wlength, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wlength, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wlength, 0);
 #else
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
 #endif
         if (i+5 == s1Len) {
-            score = _mm_extract_epi16(vTbl, 2);
-            match = _mm_extract_epi16(Wmatch, 2);
-            length= _mm_extract_epi16(Wlength, 2);
+            score = EXTRACT(vTbl, 2);
+            match = EXTRACT(Wmatch, 2);
+            length= EXTRACT(Wlength, 2);
         }
 
         /* j = s2Len + 6 */
@@ -2271,26 +2320,26 @@ static DP_t nw_stats_sse8(
                 BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         CONDITIONAL_BLOCK
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        mch_pr[j] = _mm_extract_epi16(Wmatch, 0);
-        len_pr[j] = _mm_extract_epi16(Wlength, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        mch_pr[j] = EXTRACT(Wmatch, 0);
+        len_pr[j] = EXTRACT(Wlength, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
 #if DEBUG_MATCHES
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(Wmatch, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(Wmatch, 0);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wmatch, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wmatch, 0);
 #elif DEBUG_LENGTH
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(Wlength, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(Wlength, 0);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wlength, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wlength, 0);
 #else
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
 #endif
         if (i+6 == s1Len) {
-            score = _mm_extract_epi16(vTbl, 1);
-            match = _mm_extract_epi16(Wmatch, 1);
-            length= _mm_extract_epi16(Wlength, 1);
+            score = EXTRACT(vTbl, 1);
+            match = EXTRACT(Wmatch, 1);
+            length= EXTRACT(Wlength, 1);
         }
 
         /* j = s2Len + 7 */
@@ -2308,23 +2357,23 @@ static DP_t nw_stats_sse8(
                 BLOSUM7_(s1[i-1+7],s2[j-1-7])
                 );
         CONDITIONAL_BLOCK
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        mch_pr[j] = _mm_extract_epi16(Wmatch, 0);
-        len_pr[j] = _mm_extract_epi16(Wlength, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        mch_pr[j] = EXTRACT(Wmatch, 0);
+        len_pr[j] = EXTRACT(Wlength, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
 #if DEBUG_MATCHES
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(Wmatch, 0);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wmatch, 0);
 #elif DEBUG_LENGTH
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(Wlength, 0);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wlength, 0);
 #else
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
 #endif
         if (i+7 == s1Len) {
-            score = _mm_extract_epi16(vTbl, 0);
-            match = _mm_extract_epi16(Wmatch, 0);
-            length= _mm_extract_epi16(Wlength, 0);
+            score = EXTRACT(vTbl, 0);
+            match = EXTRACT(Wmatch, 0);
+            length= EXTRACT(Wlength, 0);
         }
     }
 
@@ -2424,7 +2473,7 @@ static int sg_sse8(
         Wscore = _mm_insert_epi16(Wscore, 0, 7);
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 7);
 #if DEBUG
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(Wscore, 7);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wscore, 7);
 #endif
 
         /* j = 1 */
@@ -2455,11 +2504,15 @@ static int sg_sse8(
         Wscore = _mm_insert_epi16(Wscore, 0, 6);
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 6);
 #if DEBUG
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(Wscore, 6);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wscore, 6);
 #endif
         if (last_pass) {
             int tmp = vextract16(vTbl, offset);
+            score = MAX(score,tmp);
+        }
+        if (j == s2Len) {
+            int tmp = EXTRACT(vTbl, 7);
             score = MAX(score,tmp);
         }
 
@@ -2491,12 +2544,16 @@ static int sg_sse8(
         Wscore = _mm_insert_epi16(Wscore, 0, 5);
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 5);
 #if DEBUG
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(Wscore, 5);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wscore, 5);
 #endif
         if (last_pass) {
             int tmp = vextract16(vTbl, offset);
+            score = MAX(score,tmp);
+        }
+        if (j == s2Len) {
+            int tmp = EXTRACT(vTbl, 7);
             score = MAX(score,tmp);
         }
 
@@ -2528,13 +2585,17 @@ static int sg_sse8(
         Wscore = _mm_insert_epi16(Wscore, 0, 4);
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 4);
 #if DEBUG
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(Wscore, 4);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wscore, 4);
 #endif
         if (last_pass) {
             int tmp = vextract16(vTbl, offset);
+            score = MAX(score,tmp);
+        }
+        if (j == s2Len) {
+            int tmp = EXTRACT(vTbl, 7);
             score = MAX(score,tmp);
         }
 
@@ -2566,14 +2627,18 @@ static int sg_sse8(
         Wscore = _mm_insert_epi16(Wscore, 0, 3);
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 3);
 #if DEBUG
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(Wscore, 3);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wscore, 3);
 #endif
         if (last_pass) {
             int tmp = vextract16(vTbl, offset);
+            score = MAX(score,tmp);
+        }
+        if (j == s2Len) {
+            int tmp = EXTRACT(vTbl, 7);
             score = MAX(score,tmp);
         }
 
@@ -2605,15 +2670,19 @@ static int sg_sse8(
         Wscore = _mm_insert_epi16(Wscore, 0, 2);
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 2);
 #if DEBUG
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(Wscore, 2);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wscore, 2);
 #endif
         if (last_pass) {
             int tmp = vextract16(vTbl, offset);
+            score = MAX(score,tmp);
+        }
+        if (j == s2Len) {
+            int tmp = EXTRACT(vTbl, 7);
             score = MAX(score,tmp);
         }
 
@@ -2645,16 +2714,20 @@ static int sg_sse8(
         Wscore = _mm_insert_epi16(Wscore, 0, 1);
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 1);
 #if DEBUG
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(Wscore, 1);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wscore, 1);
 #endif
         if (last_pass) {
             int tmp = vextract16(vTbl, offset);
+            score = MAX(score,tmp);
+        }
+        if (j == s2Len) {
+            int tmp = EXTRACT(vTbl, 7);
             score = MAX(score,tmp);
         }
 
@@ -2687,17 +2760,21 @@ static int sg_sse8(
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 0);
         tbl_pr[7] = 0;
 #if DEBUG
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(Wscore, 0);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wscore, 0);
 #endif
         if (last_pass) {
             int tmp = vextract16(vTbl, offset);
+            score = MAX(score,tmp);
+        }
+        if (j == s2Len) {
+            int tmp = EXTRACT(vTbl, 7);
             score = MAX(score,tmp);
         }
 
@@ -2725,26 +2802,26 @@ static int sg_sse8(
             vTbl = _mm_max_epi16(vTbl, vDel);
             vTbl = _mm_max_epi16(vTbl, vIns);
             Wscore = vTbl;
-            tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-            del_pr[j] = _mm_extract_epi16(vDel, 0);
+            tbl_pr[j] = EXTRACT(vTbl, 0);
+            del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
-            array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-            array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-            array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-            array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-            array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-            array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-            array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-            array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+            array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+            array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+            array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+            array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+            array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+            array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+            array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+            array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
             if (last_pass) {
                 int tmp = vextract16(vTbl, offset);
                 score = MAX(score,tmp);
             }
-        }
-        if (i+0 == s1Len) {
-            int tmp = _mm_extract_epi16(vTbl, 7);
-            score = MAX(score,tmp);
+            if (j == s2Len) {
+                int tmp = EXTRACT(vTbl, 7);
+                score = MAX(score,tmp);
+            }
         }
 
         /* j = s2Len + 1 */
@@ -2772,19 +2849,23 @@ static int sg_sse8(
         vTbl = _mm_max_epi16(vTbl, vDel);
         vTbl = _mm_max_epi16(vTbl, vIns);
         Wscore = vTbl;
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
-        if (i+1 == s1Len) {
-            int tmp = _mm_extract_epi16(vTbl, 6);
+        if (last_pass) {
+            int tmp = vextract16(vTbl, offset);
+            score = MAX(score,tmp);
+        }
+        {
+            int tmp = EXTRACT(vTbl, 6);
             score = MAX(score,tmp);
         }
 
@@ -2813,18 +2894,22 @@ static int sg_sse8(
         vTbl = _mm_max_epi16(vTbl, vDel);
         vTbl = _mm_max_epi16(vTbl, vIns);
         Wscore = vTbl;
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
-        if (i+2 == s1Len) {
-            int tmp = _mm_extract_epi16(vTbl, 5);
+        if (last_pass) {
+            int tmp = vextract16(vTbl, offset);
+            score = MAX(score,tmp);
+        }
+        {
+            int tmp = EXTRACT(vTbl, 5);
             score = MAX(score,tmp);
         }
 
@@ -2853,17 +2938,21 @@ static int sg_sse8(
         vTbl = _mm_max_epi16(vTbl, vDel);
         vTbl = _mm_max_epi16(vTbl, vIns);
         Wscore = vTbl;
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
-        if (i+3 == s1Len) {
-            int tmp = _mm_extract_epi16(vTbl, 4);
+        if (last_pass) {
+            int tmp = vextract16(vTbl, offset);
+            score = MAX(score,tmp);
+        }
+        {
+            int tmp = EXTRACT(vTbl, 4);
             score = MAX(score,tmp);
         }
 
@@ -2892,16 +2981,20 @@ static int sg_sse8(
         vTbl = _mm_max_epi16(vTbl, vDel);
         vTbl = _mm_max_epi16(vTbl, vIns);
         Wscore = vTbl;
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
-        if (i+4 == s1Len) {
-            int tmp = _mm_extract_epi16(vTbl, 3);
+        if (last_pass) {
+            int tmp = vextract16(vTbl, offset);
+            score = MAX(score,tmp);
+        }
+        {
+            int tmp = EXTRACT(vTbl, 3);
             score = MAX(score,tmp);
         }
 
@@ -2930,15 +3023,19 @@ static int sg_sse8(
         vTbl = _mm_max_epi16(vTbl, vDel);
         vTbl = _mm_max_epi16(vTbl, vIns);
         Wscore = vTbl;
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
-        if (i+5 == s1Len) {
-            int tmp = _mm_extract_epi16(vTbl, 2);
+        if (last_pass) {
+            int tmp = vextract16(vTbl, offset);
+            score = MAX(score,tmp);
+        }
+        {
+            int tmp = EXTRACT(vTbl, 2);
             score = MAX(score,tmp);
         }
 
@@ -2967,14 +3064,18 @@ static int sg_sse8(
         vTbl = _mm_max_epi16(vTbl, vDel);
         vTbl = _mm_max_epi16(vTbl, vIns);
         Wscore = vTbl;
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
-        if (i+6 == s1Len) {
-            int tmp = _mm_extract_epi16(vTbl, 1);
+        if (last_pass) {
+            int tmp = vextract16(vTbl, offset);
+            score = MAX(score,tmp);
+        }
+        {
+            int tmp = EXTRACT(vTbl, 1);
             score = MAX(score,tmp);
         }
 
@@ -3003,13 +3104,17 @@ static int sg_sse8(
         vTbl = _mm_max_epi16(vTbl, vDel);
         vTbl = _mm_max_epi16(vTbl, vIns);
         Wscore = vTbl;
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
-        if (i+7 == s1Len) {
-            int tmp = _mm_extract_epi16(vTbl, 0);
+        if (last_pass) {
+            int tmp = vextract16(vTbl, offset);
+            score = MAX(score,tmp);
+        }
+        {
+            int tmp = EXTRACT(vTbl, 0);
             score = MAX(score,tmp);
         }
     }
@@ -3021,6 +3126,1063 @@ static int sg_sse8(
     delete [] s1;
     delete [] s2;
     return score;
+}
+
+
+static DP_t sg_stats_sse8(
+        const char * const restrict _s1, const int s1Len,
+        const char * const restrict _s2, const int s2Len,
+        const int open, const int gap,
+        const int matrix[24][24],
+        int * const restrict tbl_pr, int * const restrict del_pr,
+        int * const restrict mch_pr, int * const restrict len_pr)
+{
+    int score = NEG_INF;
+    int match = 0;
+    int length = 0;
+    int * const restrict s1 = new int[s1Len];
+    int * const restrict s2 = new int[s2Len];
+    for (int i=0; i<s1Len; ++i) {
+        s1[i] = MAP_BLOSUM_[_s1[i]];
+    }
+    for (int j=0; j<s2Len; ++j) {
+        s2[j] = MAP_BLOSUM_[_s2[j]];
+    }
+#if DEBUG
+    printf("array length (s2Len(=%d)+14+1)*(s1Len(=%d)+7+1) = %d\n",
+            s2Len, s1Len, (s2Len+14+1)*(s1Len+7+1));
+    int *array = new int[(s2Len+14+1)*(s1Len+7+1)];
+    init_vect((s2Len+14+1)*(s1Len+7+1), array, -99);
+#endif
+
+    /* dummy padding */
+    for (int j=0; j<7; ++j) {
+        tbl_pr[j] = NEG_INF;
+        del_pr[j] = NEG_INF;
+        mch_pr[j] = 0;
+        len_pr[j] = 0;
+#if DEBUG
+#if DEBUG_MATCHES
+        array[j] = mch_pr[j];
+#elif DEBUG_LENGTH
+        array[j] = len_pr[j];
+#else
+        array[j] = tbl_pr[j];
+#endif
+#endif
+    }
+    /* upper left corner */
+    tbl_pr[7] = 0;
+    del_pr[7] = NEG_INF;
+    mch_pr[7] = 0;
+    len_pr[7] = 0;
+#if DEBUG
+#if DEBUG_MATCHES
+    array[7] = mch_pr[7];
+#elif DEBUG_LENGTH
+    array[7] = len_pr[7];
+#else
+    array[7] = tbl_pr[7];
+#endif
+#endif
+    /* first row */
+    for (int j=8; j<s2Len+8; ++j) {
+        tbl_pr[j] = 0;
+        del_pr[j] = NEG_INF;
+        mch_pr[j] = 0;
+        len_pr[j] = 0;
+#if DEBUG
+#if DEBUG_MATCHES
+        array[j] = mch_pr[j];
+#elif DEBUG_LENGTH
+        array[j] = len_pr[j];
+#else
+        array[j] = tbl_pr[j];
+#endif
+#endif
+    }
+    /* dummy padding */
+    for (int j=s2Len+8; j<s2Len+8+7; ++j) {
+        tbl_pr[j] = NEG_INF;
+        del_pr[j] = NEG_INF;
+        mch_pr[j] = 0;
+        len_pr[j] = 0;
+#if DEBUG
+#if DEBUG_MATCHES
+        array[j] = mch_pr[j];
+#elif DEBUG_LENGTH
+        array[j] = len_pr[j];
+#else
+        array[j] = tbl_pr[j];
+#endif
+#endif
+    }
+
+    __m128i vOpen = _mm_set1_epi16(open);
+    __m128i vGap  = _mm_set1_epi16(gap);
+
+    /* iter over first sequence */
+    for (int i=1; i<=s1Len; i+=8) {
+        bool last_pass = (i+8>=s1Len);
+        int offset = 7 - (s1Len - i);
+        int j;
+        __m128i NWscore  = _mm_set1_epi16(NEG_INF);
+        __m128i NWmatch  = _mm_set1_epi16(NEG_INF);
+        __m128i NWlength = _mm_set1_epi16(NEG_INF);
+        __m128i Nscore   = _mm_set1_epi16(NEG_INF);
+        __m128i Nmatch   = _mm_set1_epi16(NEG_INF);
+        __m128i Nlength  = _mm_set1_epi16(NEG_INF);
+        __m128i Wscore   = _mm_set1_epi16(NEG_INF);
+        __m128i Wmatch   = _mm_set1_epi16(NEG_INF);
+        __m128i Wlength  = _mm_set1_epi16(NEG_INF);
+        __m128i vTbl     = _mm_set1_epi16(NEG_INF);
+        __m128i vDel     = _mm_set1_epi16(NEG_INF);
+        __m128i vIns     = _mm_set1_epi16(NEG_INF);
+        __m128i vMat;
+        __m128i vs1;
+        __m128i vs2;
+        __m128i vOne     = _mm_set1_epi16(1);
+        __m128i case1not;
+        __m128i case2not;
+        __m128i case2;
+        __m128i case3;
+        __m128i Cscore;
+        __m128i Cmatch;
+        __m128i Clength;
+
+        const int * const restrict matrow0 = matrix[s1[i-1+0]];
+        const int * const restrict matrow1 = matrix[s1[i-1+1]];
+        const int * const restrict matrow2 = matrix[s1[i-1+2]];
+        const int * const restrict matrow3 = matrix[s1[i-1+3]];
+        const int * const restrict matrow4 = matrix[s1[i-1+4]];
+        const int * const restrict matrow5 = matrix[s1[i-1+5]];
+        const int * const restrict matrow6 = matrix[s1[i-1+6]];
+        const int * const restrict matrow7 = matrix[s1[i-1+7]];
+
+        vs1 = _mm_set_epi16(
+                s1[i-1+0],
+                s1[i-1+1],
+                s1[i-1+2],
+                s1[i-1+3],
+                s1[i-1+4],
+                s1[i-1+5],
+                s1[i-1+6],
+                s1[i-1+7]
+                );
+
+        /* j = 0 */
+        j = 0;
+        Nscore = _mm_insert_epi16(Nscore, tbl_pr[j+7], 7);
+        Nmatch = _mm_insert_epi16(Nscore, mch_pr[j+7], 7);
+        Nlength= _mm_insert_epi16(Nscore, len_pr[j+7], 7);
+        Wscore = _mm_insert_epi16(Wscore, 0, 7);
+        Wmatch = _mm_insert_epi16(Wscore, 0, 7);
+        Wlength= _mm_insert_epi16(Wscore, 0, 7);
+        vIns   = _mm_insert_epi16(vIns, NEG_INF, 7);
+#if DEBUG
+#if DEBUG_MATCHES
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wmatch, 7);
+#elif DEBUG_LENGTH
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wlength,7);
+#else
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wscore, 7);
+#endif
+#endif
+
+        /* j = 1 */
+        j = 1;
+        /* this block never changes, so let's not copy-and-paste */
+#define SETUP_BLOCK                                 \
+        NWscore = Nscore;                           \
+        NWmatch = Nmatch;                           \
+        NWlength= Nlength;                          \
+        Nscore  = vshift16(Wscore, tbl_pr[j+7]);    \
+        Nmatch  = vshift16(Wmatch, mch_pr[j+7]);    \
+        Nlength = vshift16(Wlength,len_pr[j+7]);    \
+        vDel    = vshift16(vDel,   del_pr[j+7]);    \
+        vDel = _mm_max_epi16(                       \
+                _mm_sub_epi16(Nscore, vOpen),       \
+                _mm_sub_epi16(vDel, vGap));         \
+        vIns = _mm_max_epi16(                       \
+                _mm_sub_epi16(Wscore,vOpen),        \
+                _mm_sub_epi16(vIns,vGap));
+        SETUP_BLOCK
+        vs2 = vshift16(vs2, s2[j-1]);
+        vMat = _mm_set_epi16(
+            BLOSUM0_(s1[i-1],s2[j-1]),
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        );
+        /* we reuse this logic throughout this function,
+         * best to not copy-and-paste everywhere */
+#define CONDITIONAL_BLOCK                                                   \
+        vTbl = _mm_add_epi16(NWscore, vMat);                                \
+        case1not = _mm_or_si128(                                            \
+                _mm_cmplt_epi16(vTbl,vDel),_mm_cmplt_epi16(vTbl,vIns));     \
+        case2not = _mm_cmplt_epi16(vDel,vIns);                              \
+        case2 = _mm_andnot_si128(case2not,case1not);                        \
+        case3 = _mm_and_si128(case1not,case2not);                           \
+        Cscore = _mm_andnot_si128(case1not, vTbl);                          \
+        Cmatch = _mm_andnot_si128(case1not,                                 \
+                    _mm_add_epi16(NWmatch, _mm_and_si128(                   \
+                            _mm_cmpeq_epi16(vs1,vs2),vOne)));               \
+        Clength= _mm_andnot_si128(case1not, _mm_add_epi16(NWlength, vOne)); \
+        Cscore = _mm_or_si128(Cscore, _mm_and_si128(case2, vDel));          \
+        Cmatch = _mm_or_si128(Cmatch, _mm_and_si128(case2, Nmatch));        \
+        Clength= _mm_or_si128(Clength,_mm_and_si128(case2,                  \
+                    _mm_add_epi16(Nlength, vOne)));                         \
+        Cscore = _mm_or_si128(Cscore, _mm_and_si128(case3, vIns));          \
+        Cmatch = _mm_or_si128(Cmatch, _mm_and_si128(case3, Wmatch));        \
+        Clength= _mm_or_si128(Clength,_mm_and_si128(case3,                  \
+                    _mm_add_epi16(Wlength, vOne)));                         \
+        Wscore = vTbl = Cscore;                                             \
+        Wmatch = Cmatch;                                                    \
+        Wlength= Clength;
+        CONDITIONAL_BLOCK
+        Wscore = _mm_insert_epi16(Wscore, 0, 6);
+        Wmatch = _mm_insert_epi16(Wmatch, 0, 6);
+        Wlength= _mm_insert_epi16(Wlength,0, 6);
+        vIns   = _mm_insert_epi16(vIns, NEG_INF, 6);
+#if DEBUG
+#if DEBUG_MATCHES
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wmatch, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wmatch, 6);
+#elif DEBUG_LENGTH
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wlength, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wlength, 6);
+#else
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wscore, 6);
+#endif
+#endif
+        if (last_pass) {
+            int tmp = vextract16(vTbl, offset);
+            if (tmp > score) {
+                score = tmp;
+                match = vextract16(Wmatch, offset);
+                length= vextract16(Wlength, offset);
+            }
+        }
+        if (j == s2Len) {
+            int tmp = EXTRACT(vTbl, 7);
+            if (tmp > score) {
+                score = tmp;
+                match = EXTRACT(Wmatch, 7);
+                length= EXTRACT(Wlength, 7);
+            }
+        }
+
+        /* j = 2 */
+        j = 2;
+        SETUP_BLOCK
+        vs2 = vshift16(vs2, s2[j-1]);
+        vMat = _mm_set_epi16(
+            BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        );
+        CONDITIONAL_BLOCK
+        Wscore = _mm_insert_epi16(Wscore, 0, 5);
+        Wmatch = _mm_insert_epi16(Wmatch, 0, 5);
+        Wlength= _mm_insert_epi16(Wlength,0, 5);
+        vIns   = _mm_insert_epi16(vIns, NEG_INF, 5);
+#if DEBUG
+#if DEBUG_MATCHES
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wmatch, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wmatch, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wmatch, 5);
+#elif DEBUG_LENGTH
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wlength, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wlength, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wlength, 5);
+#else
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wscore, 5);
+#endif
+#endif
+        if (last_pass) {
+            int tmp = vextract16(vTbl, offset);
+            if (tmp > score) {
+                score = tmp;
+                match = vextract16(Wmatch, offset);
+                length= vextract16(Wlength, offset);
+            }
+        }
+        if (j == s2Len) {
+            int tmp = EXTRACT(vTbl, 7);
+            if (tmp > score) {
+                score = tmp;
+                match = EXTRACT(Wmatch, 7);
+                length= EXTRACT(Wlength, 7);
+            }
+        }
+
+        /* j = 3 */
+        j = 3;
+        SETUP_BLOCK
+        vs2 = vshift16(vs2, s2[j-1]);
+        vMat = _mm_set_epi16(
+            BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+            0,
+            0,
+            0,
+            0,
+            0
+        );
+        CONDITIONAL_BLOCK
+        Wscore = _mm_insert_epi16(Wscore, 0, 4);
+        Wmatch = _mm_insert_epi16(Wmatch, 0, 4);
+        Wlength= _mm_insert_epi16(Wlength,0, 4);
+        vIns   = _mm_insert_epi16(vIns, NEG_INF, 4);
+#if DEBUG
+#if DEBUG_MATCHES
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wmatch, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wmatch, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wmatch, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wmatch, 4);
+#elif DEBUG_LENGTH
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wlength, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wlength, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wlength, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wlength, 4);
+#else
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wscore, 4);
+#endif
+#endif
+        if (last_pass) {
+            int tmp = vextract16(vTbl, offset);
+            if (tmp > score) {
+                score = tmp;
+                match = vextract16(Wmatch, offset);
+                length= vextract16(Wlength, offset);
+            }
+        }
+        if (j == s2Len) {
+            int tmp = EXTRACT(vTbl, 7);
+            if (tmp > score) {
+                score = tmp;
+                match = EXTRACT(Wmatch, 7);
+                length= EXTRACT(Wlength, 7);
+            }
+        }
+
+        /* j = 4 */
+        j = 4;
+        SETUP_BLOCK
+        vs2 = vshift16(vs2, s2[j-1]);
+        vMat = _mm_set_epi16(
+            BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+            BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+            0,
+            0,
+            0,
+            0
+        );
+        CONDITIONAL_BLOCK
+        Wscore = _mm_insert_epi16(Wscore, 0, 3);
+        Wmatch = _mm_insert_epi16(Wmatch, 0, 3);
+        Wlength= _mm_insert_epi16(Wlength,0, 3);
+        vIns   = _mm_insert_epi16(vIns, NEG_INF, 3);
+#if DEBUG
+#if DEBUG_MATCHES
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wmatch, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wmatch, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wmatch, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wmatch, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wmatch, 3);
+#elif DEBUG_LENGTH
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wlength, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wlength, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wlength, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wlength, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wlength, 3);
+#else
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wscore, 3);
+#endif
+#endif
+        if (last_pass) {
+            int tmp = vextract16(vTbl, offset);
+            if (tmp > score) {
+                score = tmp;
+                match = vextract16(Wmatch, offset);
+                length= vextract16(Wlength, offset);
+            }
+        }
+        if (j == s2Len) {
+            int tmp = EXTRACT(vTbl, 7);
+            if (tmp > score) {
+                score = tmp;
+                match = EXTRACT(Wmatch, 7);
+                length= EXTRACT(Wlength, 7);
+            }
+        }
+
+        /* j = 5 */
+        j = 5;
+        SETUP_BLOCK
+        vs2 = vshift16(vs2, s2[j-1]);
+        vMat = _mm_set_epi16(
+            BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+            BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+            BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+            0,
+            0,
+            0
+        );
+        CONDITIONAL_BLOCK
+        Wscore = _mm_insert_epi16(Wscore, 0, 2);
+        Wmatch = _mm_insert_epi16(Wmatch, 0, 2);
+        Wlength= _mm_insert_epi16(Wlength,0, 2);
+        vIns   = _mm_insert_epi16(vIns, NEG_INF, 2);
+#if DEBUG
+#if DEBUG_MATCHES
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wmatch, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wmatch, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wmatch, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wmatch, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wmatch, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wmatch, 2);
+#elif DEBUG_LENGTH
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wlength, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wlength, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wlength, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wlength, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wlength, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wlength, 2);
+#else
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wscore, 2);
+#endif
+#endif
+        if (last_pass) {
+            int tmp = vextract16(vTbl, offset);
+            if (tmp > score) {
+                score = tmp;
+                match = vextract16(Wmatch, offset);
+                length= vextract16(Wlength, offset);
+            }
+        }
+        if (j == s2Len) {
+            int tmp = EXTRACT(vTbl, 7);
+            if (tmp > score) {
+                score = tmp;
+                match = EXTRACT(Wmatch, 7);
+                length= EXTRACT(Wlength, 7);
+            }
+        }
+
+        /* j = 6 */
+        j = 6;
+        SETUP_BLOCK
+        vs2 = vshift16(vs2, s2[j-1]);
+        vMat = _mm_set_epi16(
+            BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+            BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+            BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+            BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+            0,
+            0
+        );
+        CONDITIONAL_BLOCK
+        Wscore = _mm_insert_epi16(Wscore, 0, 1);
+        Wmatch = _mm_insert_epi16(Wmatch, 0, 1);
+        Wlength= _mm_insert_epi16(Wlength,0, 1);
+        vIns   = _mm_insert_epi16(vIns, NEG_INF, 1);
+#if DEBUG
+#if DEBUG_MATCHES
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wmatch, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wmatch, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wmatch, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wmatch, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wmatch, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wmatch, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wmatch, 1);
+#elif DEBUG_LENGTH
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wlength, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wlength, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wlength, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wlength, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wlength, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wlength, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wlength, 1);
+#else
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wscore, 1);
+#endif
+#endif
+        if (last_pass) {
+            int tmp = vextract16(vTbl, offset);
+            if (tmp > score) {
+                score = tmp;
+                match = vextract16(Wmatch, offset);
+                length= vextract16(Wlength, offset);
+            }
+        }
+        if (j == s2Len) {
+            int tmp = EXTRACT(vTbl, 7);
+            if (tmp > score) {
+                score = tmp;
+                match = EXTRACT(Wmatch, 7);
+                length= EXTRACT(Wlength, 7);
+            }
+        }
+
+        /* j = 7 */
+        j = 7;
+        SETUP_BLOCK
+        vs2 = vshift16(vs2, s2[j-1]);
+        vMat = _mm_set_epi16(
+            BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+            BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+            BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+            BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+            BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+            BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+            BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+            0
+        );
+        CONDITIONAL_BLOCK
+        Wscore = _mm_insert_epi16(Wscore, 0, 0);
+        Wmatch = _mm_insert_epi16(Wmatch, 0, 0);
+        Wlength= _mm_insert_epi16(Wlength,0, 0);
+        vIns   = _mm_insert_epi16(vIns, NEG_INF, 0);
+        tbl_pr[7] = 0;
+        mch_pr[7] = 0;
+        len_pr[7] = 0;
+#if DEBUG
+#if DEBUG_MATCHES
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wmatch, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wmatch, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wmatch, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wmatch, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wmatch, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wmatch, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wmatch, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wmatch, 0);
+#elif DEBUG_LENGTH
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wlength, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wlength, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wlength, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wlength, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wlength, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wlength, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wlength, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wlength, 0);
+#else
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wscore, 0);
+#endif
+#endif
+        if (last_pass) {
+            int tmp = vextract16(vTbl, offset);
+            if (tmp > score) {
+                score = tmp;
+                match = vextract16(Wmatch, offset);
+                length= vextract16(Wlength, offset);
+            }
+        }
+        if (j == s2Len) {
+            int tmp = EXTRACT(vTbl, 7);
+            if (tmp > score) {
+                score = tmp;
+                match = EXTRACT(Wmatch, 7);
+                length= EXTRACT(Wlength, 7);
+            }
+        }
+
+        for (j=8; j<=s2Len; ++j) {
+            SETUP_BLOCK
+            vs2 = vshift16(vs2, s2[j-1]);
+            vMat = _mm_set_epi16(
+                    BLOSUM0_(s1[i-1+0],s2[j-1-0]),
+                    BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+                    BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+                    BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+                    BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+                    BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+                    BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                    BLOSUM7_(s1[i-1+7],s2[j-1-7])
+                    );
+            CONDITIONAL_BLOCK
+            tbl_pr[j] = EXTRACT(vTbl, 0);
+            mch_pr[j] = EXTRACT(Wmatch, 0);
+            len_pr[j] = EXTRACT(Wlength, 0);
+            del_pr[j] = EXTRACT(vDel, 0);
+#if DEBUG
+#if DEBUG_MATCHES
+            array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wmatch, 7);
+            array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wmatch, 6);
+            array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wmatch, 5);
+            array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wmatch, 4);
+            array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wmatch, 3);
+            array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wmatch, 2);
+            array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wmatch, 1);
+            array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wmatch, 0);
+#elif DEBUG_LENGTH
+            array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wlength, 7);
+            array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wlength, 6);
+            array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wlength, 5);
+            array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wlength, 4);
+            array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wlength, 3);
+            array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wlength, 2);
+            array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wlength, 1);
+            array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wlength, 0);
+#else
+            array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+            array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+            array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+            array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+            array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+            array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+            array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+            array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
+#endif
+#endif
+            if (last_pass) {
+                int tmp = vextract16(vTbl, offset);
+                if (tmp > score) {
+                    score = tmp;
+                    match = vextract16(Wmatch, offset);
+                    length= vextract16(Wlength, offset);
+                }
+            }
+            if (j == s2Len) {
+                int tmp = EXTRACT(vTbl, 7);
+                if (tmp > score) {
+                    score = tmp;
+                    match = EXTRACT(Wmatch, 7);
+                    length= EXTRACT(Wlength, 7);
+                }
+            }
+        }
+
+        /* j = s2Len + 1 */
+        j = s2Len + 1;
+        SETUP_BLOCK
+        vs2 = vshift16(vs2);
+        vMat = _mm_set_epi16(
+                0,
+                BLOSUM1_(s1[i-1+1],s2[j-1-1]),
+                BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+                BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+                BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+                BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
+                );
+        CONDITIONAL_BLOCK
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        mch_pr[j] = EXTRACT(Wmatch, 0);
+        len_pr[j] = EXTRACT(Wlength, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
+#if DEBUG
+#if DEBUG_MATCHES
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wmatch, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wmatch, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wmatch, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wmatch, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wmatch, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wmatch, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wmatch, 0);
+#elif DEBUG_LENGTH
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wlength, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wlength, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wlength, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wlength, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wlength, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wlength, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wlength, 0);
+#else
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
+#endif
+#endif
+        if (last_pass) {
+            int tmp = vextract16(vTbl, offset);
+            if (tmp > score) {
+                score = tmp;
+                match = vextract16(Wmatch, offset);
+                length= vextract16(Wlength, offset);
+            }
+        }
+        if (j == s2Len) {
+            int tmp = EXTRACT(vTbl, 6);
+            if (tmp > score) {
+                score = tmp;
+                match = EXTRACT(Wmatch, 6);
+                length= EXTRACT(Wlength, 6);
+            }
+        }
+
+        /* j = s2Len + 2 */
+        j = s2Len + 2;
+        SETUP_BLOCK
+        vs2 = vshift16(vs2);
+        vMat = _mm_set_epi16(
+                0,
+                0,
+                BLOSUM2_(s1[i-1+2],s2[j-1-2]),
+                BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+                BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+                BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
+                );
+        CONDITIONAL_BLOCK
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        mch_pr[j] = EXTRACT(Wmatch, 0);
+        len_pr[j] = EXTRACT(Wlength, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
+#if DEBUG
+#if DEBUG_MATCHES
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wmatch, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wmatch, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wmatch, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wmatch, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wmatch, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wmatch, 0);
+#elif DEBUG_LENGTH
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wlength, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wlength, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wlength, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wlength, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wlength, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wlength, 0);
+#else
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
+#endif
+#endif
+        if (last_pass) {
+            int tmp = vextract16(vTbl, offset);
+            if (tmp > score) {
+                score = tmp;
+                match = vextract16(Wmatch, offset);
+                length= vextract16(Wlength, offset);
+            }
+        }
+        if (j == s2Len) {
+            int tmp = EXTRACT(vTbl, 5);
+            if (tmp > score) {
+                score = tmp;
+                match = EXTRACT(Wmatch, 5);
+                length= EXTRACT(Wlength, 5);
+            }
+        }
+
+        /* j = s2Len + 3 */
+        j = s2Len + 3;
+        SETUP_BLOCK
+        vs2 = vshift16(vs2);
+        vMat = _mm_set_epi16(
+                0,
+                0,
+                0,
+                BLOSUM3_(s1[i-1+3],s2[j-1-3]),
+                BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+                BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
+                );
+        CONDITIONAL_BLOCK
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        mch_pr[j] = EXTRACT(Wmatch, 0);
+        len_pr[j] = EXTRACT(Wlength, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
+#if DEBUG
+#if DEBUG_MATCHES
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wmatch, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wmatch, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wmatch, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wmatch, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wmatch, 0);
+#elif DEBUG_LENGTH
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wlength, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wlength, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wlength, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wlength, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wlength, 0);
+#else
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
+#endif
+#endif
+        if (last_pass) {
+            int tmp = vextract16(vTbl, offset);
+            if (tmp > score) {
+                score = tmp;
+                match = vextract16(Wmatch, offset);
+                length= vextract16(Wlength, offset);
+            }
+        }
+        if (j == s2Len) {
+            int tmp = EXTRACT(vTbl, 4);
+            if (tmp > score) {
+                score = tmp;
+                match = EXTRACT(Wmatch, 4);
+                length= EXTRACT(Wlength, 4);
+            }
+        }
+
+        /* j = s2Len + 4 */
+        j = s2Len + 4;
+        SETUP_BLOCK
+        vs2 = vshift16(vs2);
+        vMat = _mm_set_epi16(
+                0,
+                0,
+                0,
+                0,
+                BLOSUM4_(s1[i-1+4],s2[j-1-4]),
+                BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
+                );
+        CONDITIONAL_BLOCK
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        mch_pr[j] = EXTRACT(Wmatch, 0);
+        len_pr[j] = EXTRACT(Wlength, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
+#if DEBUG
+#if DEBUG_MATCHES
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wmatch, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wmatch, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wmatch, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wmatch, 0);
+#elif DEBUG_LENGTH
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wlength, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wlength, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wlength, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wlength, 0);
+#else
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
+#endif
+#endif
+        if (last_pass) {
+            int tmp = vextract16(vTbl, offset);
+            if (tmp > score) {
+                score = tmp;
+                match = vextract16(Wmatch, offset);
+                length= vextract16(Wlength, offset);
+            }
+        }
+        if (j == s2Len) {
+            int tmp = EXTRACT(vTbl, 3);
+            if (tmp > score) {
+                score = tmp;
+                match = EXTRACT(Wmatch, 3);
+                length= EXTRACT(Wlength, 3);
+            }
+        }
+
+        /* j = s2Len + 5 */
+        j = s2Len + 5;
+        SETUP_BLOCK
+        vs2 = vshift16(vs2);
+        vMat = _mm_set_epi16(
+                0,
+                0,
+                0,
+                0,
+                0,
+                BLOSUM5_(s1[i-1+5],s2[j-1-5]),
+                BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
+                );
+        CONDITIONAL_BLOCK
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        mch_pr[j] = EXTRACT(Wmatch, 0);
+        len_pr[j] = EXTRACT(Wlength, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
+#if DEBUG
+#if DEBUG_MATCHES
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wmatch, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wmatch, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wmatch, 0);
+#elif DEBUG_LENGTH
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wlength, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wlength, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wlength, 0);
+#else
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
+#endif
+#endif
+        if (last_pass) {
+            int tmp = vextract16(vTbl, offset);
+            if (tmp > score) {
+                score = tmp;
+                match = vextract16(Wmatch, offset);
+                length= vextract16(Wlength, offset);
+            }
+        }
+        if (j == s2Len) {
+            int tmp = EXTRACT(vTbl, 2);
+            if (tmp > score) {
+                score = tmp;
+                match = EXTRACT(Wmatch, 2);
+                length= EXTRACT(Wlength, 2);
+            }
+        }
+
+        /* j = s2Len + 6 */
+        j = s2Len + 6;
+        SETUP_BLOCK
+        vs2 = vshift16(vs2);
+        vMat = _mm_set_epi16(
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                BLOSUM6_(s1[i-1+6],s2[j-1-6]),
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
+                );
+        CONDITIONAL_BLOCK
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        mch_pr[j] = EXTRACT(Wmatch, 0);
+        len_pr[j] = EXTRACT(Wlength, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
+#if DEBUG
+#if DEBUG_MATCHES
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wmatch, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wmatch, 0);
+#elif DEBUG_LENGTH
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wlength, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wlength, 0);
+#else
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
+#endif
+#endif
+        if (last_pass) {
+            int tmp = vextract16(vTbl, offset);
+            if (tmp > score) {
+                score = tmp;
+                match = vextract16(Wmatch, offset);
+                length= vextract16(Wlength, offset);
+            }
+        }
+        if (j == s2Len) {
+            int tmp = EXTRACT(vTbl, 1);
+            if (tmp > score) {
+                score = tmp;
+                match = EXTRACT(Wmatch, 1);
+                length= EXTRACT(Wlength, 1);
+            }
+        }
+
+        /* j = s2Len + 7 */
+        j = s2Len + 7;
+        SETUP_BLOCK
+        vs2 = vshift16(vs2);
+        vMat = _mm_set_epi16(
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                BLOSUM7_(s1[i-1+7],s2[j-1-7])
+                );
+        CONDITIONAL_BLOCK
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        mch_pr[j] = EXTRACT(Wmatch, 0);
+        len_pr[j] = EXTRACT(Wlength, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
+#if DEBUG
+#if DEBUG_MATCHES
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wmatch, 0);
+#elif DEBUG_LENGTH
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wlength, 0);
+#else
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
+#endif
+#endif
+        if (last_pass) {
+            int tmp = vextract16(vTbl, offset);
+            if (tmp > score) {
+                score = tmp;
+                match = vextract16(Wmatch, offset);
+                length= vextract16(Wlength, offset);
+            }
+        }
+        if (j == s2Len) {
+            int tmp = EXTRACT(vTbl, 0);
+            if (tmp > score) {
+                score = tmp;
+                match = EXTRACT(Wmatch, 0);
+                length= EXTRACT(Wlength, 0);
+            }
+        }
+    }
+
+#if DEBUG
+    print_array2(array, s1, s1Len, s2, s2Len, 14);
+    delete [] array;
+#endif
+    delete [] s1;
+    delete [] s2;
+    return DP_t(score, match, length);
 }
 
 
@@ -3093,7 +4255,7 @@ static int sw_sse8(
         Wscore = _mm_insert_epi16(Wscore, 0, 7);
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 7);
 #if DEBUG
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(Wscore, 7);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(Wscore, 7);
 #endif
 
         /* j = 1 */
@@ -3126,8 +4288,8 @@ static int sw_sse8(
         Wscore = _mm_insert_epi16(Wscore, 0, 6);
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 6);
 #if DEBUG
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(Wscore, 6);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(Wscore, 6);
 #endif
 
         /* j = 2 */
@@ -3160,9 +4322,9 @@ static int sw_sse8(
         Wscore = _mm_insert_epi16(Wscore, 0, 5);
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 5);
 #if DEBUG
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(Wscore, 5);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(Wscore, 5);
 #endif
 
         /* j = 3 */
@@ -3195,10 +4357,10 @@ static int sw_sse8(
         Wscore = _mm_insert_epi16(Wscore, 0, 4);
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 4);
 #if DEBUG
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(Wscore, 4);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(Wscore, 4);
 #endif
 
         /* j = 4 */
@@ -3231,11 +4393,11 @@ static int sw_sse8(
         Wscore = _mm_insert_epi16(Wscore, 0, 3);
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 3);
 #if DEBUG
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(Wscore, 3);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(Wscore, 3);
 #endif
 
         /* j = 5 */
@@ -3268,12 +4430,12 @@ static int sw_sse8(
         Wscore = _mm_insert_epi16(Wscore, 0, 2);
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 2);
 #if DEBUG
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(Wscore, 2);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(Wscore, 2);
 #endif
 
         /* j = 6 */
@@ -3306,13 +4468,13 @@ static int sw_sse8(
         Wscore = _mm_insert_epi16(Wscore, 0, 1);
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 1);
 #if DEBUG
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(Wscore, 1);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(Wscore, 1);
 #endif
 
         /* j = 7 */
@@ -3346,14 +4508,14 @@ static int sw_sse8(
         vIns   = _mm_insert_epi16(vIns, NEG_INF, 0);
         tbl_pr[7] = 0;
 #if DEBUG
-        array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(Wscore, 0);
+        array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(Wscore, 0);
 #endif
 
         for (j=8; j<=s2Len; ++j) {
@@ -3382,21 +4544,21 @@ static int sw_sse8(
             vTbl = _mm_max_epi16(vTbl, vZero);
             vScore = _mm_max_epi16(vScore, vTbl);
             Wscore = vTbl;
-            tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-            del_pr[j] = _mm_extract_epi16(vDel, 0);
+            tbl_pr[j] = EXTRACT(vTbl, 0);
+            del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
-            array[(i+0)*(s2Len+14+1) + j + 7] = _mm_extract_epi16(vTbl, 7);
-            array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-            array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-            array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-            array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-            array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-            array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-            array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+            array[(i+0)*(s2Len+14+1) + j + 7] = EXTRACT(vTbl, 7);
+            array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+            array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+            array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+            array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+            array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+            array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+            array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
         }
         if (i+0 == s1Len) {
-            int tmp = _mm_extract_epi16(vTbl, 7);
+            int tmp = EXTRACT(vTbl, 7);
             score = MAX(score,tmp);
         }
 
@@ -3427,19 +4589,19 @@ static int sw_sse8(
         vTbl = _mm_max_epi16(vTbl, vZero);
         vScore = _mm_max_epi16(vScore, vTbl);
         Wscore = vTbl;
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
-        array[(i+1)*(s2Len+14+1) + j + 6] = _mm_extract_epi16(vTbl, 6);
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+1)*(s2Len+14+1) + j + 6] = EXTRACT(vTbl, 6);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
         if (i+1 == s1Len) {
-            int tmp = _mm_extract_epi16(vTbl, 6);
+            int tmp = EXTRACT(vTbl, 6);
             score = MAX(score,tmp);
         }
 
@@ -3470,18 +4632,18 @@ static int sw_sse8(
         vTbl = _mm_max_epi16(vTbl, vZero);
         vScore = _mm_max_epi16(vScore, vTbl);
         Wscore = vTbl;
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
-        array[(i+2)*(s2Len+14+1) + j + 5] = _mm_extract_epi16(vTbl, 5);
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+2)*(s2Len+14+1) + j + 5] = EXTRACT(vTbl, 5);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
         if (i+2 == s1Len) {
-            int tmp = _mm_extract_epi16(vTbl, 5);
+            int tmp = EXTRACT(vTbl, 5);
             score = MAX(score,tmp);
         }
 
@@ -3512,17 +4674,17 @@ static int sw_sse8(
         vTbl = _mm_max_epi16(vTbl, vZero);
         vScore = _mm_max_epi16(vScore, vTbl);
         Wscore = vTbl;
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
-        array[(i+3)*(s2Len+14+1) + j + 4] = _mm_extract_epi16(vTbl, 4);
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+3)*(s2Len+14+1) + j + 4] = EXTRACT(vTbl, 4);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
         if (i+3 == s1Len) {
-            int tmp = _mm_extract_epi16(vTbl, 4);
+            int tmp = EXTRACT(vTbl, 4);
             score = MAX(score,tmp);
         }
 
@@ -3553,16 +4715,16 @@ static int sw_sse8(
         vTbl = _mm_max_epi16(vTbl, vZero);
         vScore = _mm_max_epi16(vScore, vTbl);
         Wscore = vTbl;
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
-        array[(i+4)*(s2Len+14+1) + j + 3] = _mm_extract_epi16(vTbl, 3);
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+4)*(s2Len+14+1) + j + 3] = EXTRACT(vTbl, 3);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
         if (i+4 == s1Len) {
-            int tmp = _mm_extract_epi16(vTbl, 3);
+            int tmp = EXTRACT(vTbl, 3);
             score = MAX(score,tmp);
         }
 
@@ -3593,15 +4755,15 @@ static int sw_sse8(
         vTbl = _mm_max_epi16(vTbl, vZero);
         vScore = _mm_max_epi16(vScore, vTbl);
         Wscore = vTbl;
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
-        array[(i+5)*(s2Len+14+1) + j + 2] = _mm_extract_epi16(vTbl, 2);
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+5)*(s2Len+14+1) + j + 2] = EXTRACT(vTbl, 2);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
         if (i+5 == s1Len) {
-            int tmp = _mm_extract_epi16(vTbl, 2);
+            int tmp = EXTRACT(vTbl, 2);
             score = MAX(score,tmp);
         }
 
@@ -3632,14 +4794,14 @@ static int sw_sse8(
         vTbl = _mm_max_epi16(vTbl, vZero);
         vScore = _mm_max_epi16(vScore, vTbl);
         Wscore = vTbl;
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
-        array[(i+6)*(s2Len+14+1) + j + 1] = _mm_extract_epi16(vTbl, 1);
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+6)*(s2Len+14+1) + j + 1] = EXTRACT(vTbl, 1);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
         if (i+6 == s1Len) {
-            int tmp = _mm_extract_epi16(vTbl, 1);
+            int tmp = EXTRACT(vTbl, 1);
             score = MAX(score,tmp);
         }
 
@@ -3670,13 +4832,13 @@ static int sw_sse8(
         vTbl = _mm_max_epi16(vTbl, vZero);
         vScore = _mm_max_epi16(vScore, vTbl);
         Wscore = vTbl;
-        tbl_pr[j] = _mm_extract_epi16(vTbl, 0);
-        del_pr[j] = _mm_extract_epi16(vDel, 0);
+        tbl_pr[j] = EXTRACT(vTbl, 0);
+        del_pr[j] = EXTRACT(vDel, 0);
 #if DEBUG
-        array[(i+7)*(s2Len+14+1) + j + 0] = _mm_extract_epi16(vTbl, 0);
+        array[(i+7)*(s2Len+14+1) + j + 0] = EXTRACT(vTbl, 0);
 #endif
         if (i+7 == s1Len) {
-            int tmp = _mm_extract_epi16(vTbl, 0);
+            int tmp = EXTRACT(vTbl, 0);
             score = MAX(score,tmp);
         }
     }
@@ -3866,17 +5028,17 @@ static int sw_sse8_pad(
             Vlast_nogap = _mm_max_epi16(Vlast_nogap, Vb_gap);
             Vprev_nogap = Vnogap;
             Vnogap = Vlast_nogap;
-            b_gap[j] = _mm_extract_epi16(Vb_gap, 0);
-            nogap[j] = _mm_extract_epi16(Vnogap, 0);
+            b_gap[j] = EXTRACT(Vb_gap, 0);
+            nogap[j] = EXTRACT(Vnogap, 0);
 #if DEBUG
-            array[(i+0)*(lena+14) + j+7] = _mm_extract_epi16(Vnogap, 7);
-            array[(i+1)*(lena+14) + j+6] = _mm_extract_epi16(Vnogap, 6);
-            array[(i+2)*(lena+14) + j+5] = _mm_extract_epi16(Vnogap, 5);
-            array[(i+3)*(lena+14) + j+4] = _mm_extract_epi16(Vnogap, 4);
-            array[(i+4)*(lena+14) + j+3] = _mm_extract_epi16(Vnogap, 3);
-            array[(i+5)*(lena+14) + j+2] = _mm_extract_epi16(Vnogap, 2);
-            array[(i+6)*(lena+14) + j+1] = _mm_extract_epi16(Vnogap, 1);
-            array[(i+7)*(lena+14) + j+0] = _mm_extract_epi16(Vnogap, 0);
+            array[(i+0)*(lena+14) + j+7] = EXTRACT(Vnogap, 7);
+            array[(i+1)*(lena+14) + j+6] = EXTRACT(Vnogap, 6);
+            array[(i+2)*(lena+14) + j+5] = EXTRACT(Vnogap, 5);
+            array[(i+3)*(lena+14) + j+4] = EXTRACT(Vnogap, 4);
+            array[(i+4)*(lena+14) + j+3] = EXTRACT(Vnogap, 3);
+            array[(i+5)*(lena+14) + j+2] = EXTRACT(Vnogap, 2);
+            array[(i+6)*(lena+14) + j+1] = EXTRACT(Vnogap, 1);
+            array[(i+7)*(lena+14) + j+0] = EXTRACT(Vnogap, 0);
 #endif
             Vscore = _mm_max_epi16(Vscore, Vlast_nogap);
         }
@@ -3999,6 +5161,19 @@ int main(int argc, char **argv)
     }
     timer = timer_end(timer);
     ::std::cout << "sg stat\t"
+        << "\t" << timer/limit
+        << "\t" << stats.score
+        << "\t" << stats.matches
+        << "\t" << stats.length
+        << ::std::endl;
+
+    timer = timer_start();
+    for (i=0; i<limit; ++i) {
+        stats = sg_stats_sse8(&seqA[16], lena, seqB, lenb, 10, 1, blosum62,
+                nogap, b_gap, matches, length);
+    }
+    timer = timer_end(timer);
+    ::std::cout << "sg stat sse"
         << "\t" << timer/limit
         << "\t" << stats.score
         << "\t" << stats.matches
