@@ -307,6 +307,15 @@ cell_t align_global_affine(
         int * const restrict * const restrict del=NULL,
         int * const restrict * const restrict ins=NULL);
 
+cell_t align_global_affine_sse(
+        const Sequence &s1,
+        const Sequence &s2,
+        int open, int gap,
+        int * const restrict scr,
+        int * const restrict del,
+        int * const restrict mch,
+        int * const restrict len);
+
 cell_t align_semi_affine(
         const Sequence &s1,
         const Sequence &s2,
@@ -343,6 +352,15 @@ cell_t align_semi_affine(
         int * const restrict * const restrict del=NULL,
         int * const restrict * const restrict ins=NULL);
 
+cell_t align_semi_affine_sse(
+        const Sequence &s1,
+        const Sequence &s2,
+        int open, int gap,
+        int * const restrict scr,
+        int * const restrict del,
+        int * const restrict mch,
+        int * const restrict len);
+
 cell_t align_local_affine(
         const Sequence &s1,
         const Sequence &s2,
@@ -378,6 +396,15 @@ cell_t align_local_affine(
         cell_t * const restrict * const restrict tbl=NULL,
         int * const restrict * const restrict del=NULL,
         int * const restrict * const restrict ins=NULL);
+
+cell_t align_local_affine_sse(
+        const Sequence &s1,
+        const Sequence &s2,
+        int open, int gap,
+        int * const restrict scr,
+        int * const restrict del,
+        int * const restrict mch,
+        int * const restrict len);
 
 bool is_edge(
         const cell_t &result,

@@ -371,8 +371,8 @@ int inner_main(int argc, char **argv)
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
         sequences[worker] = new SequenceDatabaseWithStats(sequence_db);
         local_data->tbl[worker] = allocate_cell_table(2, sequence_db->longest());
-        local_data->del[worker] = allocate_int_table(2, sequence_db->longest());
-        local_data->ins[worker] = allocate_int_table(2, sequence_db->longest());
+        local_data->del[worker] = allocate_int_table(2, sequence_db->longest()+16);
+        local_data->ins[worker] = allocate_int_table(2, sequence_db->longest()+16);
     }
 
     if (parameters->use_tree
@@ -956,8 +956,17 @@ static void align(
         stats[thd].work += s1Len * s2Len;
         ++stats[thd].align_counts;
         t = MPI_Wtime();
-        cell_t result = align_semi_affine(
-                *s1, *s2, open, gap, tbl[thd], del[thd], ins[thd]);
+        cell_t result;
+#if ENABLE_SSE || 1
+        if (s1Len >=8 && s2Len >= 8) {
+            result = align_semi_affine_sse(
+                    *s1, *s2, open, gap, del[thd][0], del[thd][1],
+                    ins[thd][0], ins[thd][1]);
+        } else
+#else
+            result = align_semi_affine(
+                    *s1, *s2, open, gap, tbl[thd], del[thd], ins[thd]);
+#endif
         is_edge_answer = is_edge(
                 result, *s1, *s2, AOL, SIM, OS, sscore, max_len);
 

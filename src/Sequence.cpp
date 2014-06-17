@@ -168,6 +168,22 @@ cell_t align_global_affine(
 }
 
 
+cell_t align_global_affine_sse(
+        const Sequence &s1,
+        const Sequence &s2,
+        int open, int gap,
+        int * const restrict scr,
+        int * const restrict del,
+        int * const restrict mch,
+        int * const restrict len)
+{
+    size_t s1_size = s1.uses_delimiter() ? s1.size()-1 : s1.size();
+    size_t s2_size = s2.uses_delimiter() ? s2.size()-1 : s2.size();
+    return align_global_affine_sse(s1.data(), s1_size, s2.data(), s2_size,
+            open, gap, scr, del, mch, len);
+}
+
+
 cell_t align_semi_affine(
         const Sequence &s1,
         const Sequence &s2,
@@ -232,6 +248,22 @@ cell_t align_semi_affine(
 }
 
 
+cell_t align_semi_affine_sse(
+        const Sequence &s1,
+        const Sequence &s2,
+        int open, int gap,
+        int * const restrict scr,
+        int * const restrict del,
+        int * const restrict mch,
+        int * const restrict len)
+{
+    size_t s1_size = s1.uses_delimiter() ? s1.size()-1 : s1.size();
+    size_t s2_size = s2.uses_delimiter() ? s2.size()-1 : s2.size();
+    return align_semi_affine_sse(s1.data(), s1_size, s2.data(), s2_size,
+            open, gap, scr, del, mch, len);
+}
+
+
 cell_t align_local_affine(
         const Sequence &s1,
         const Sequence &s2,
@@ -293,6 +325,22 @@ cell_t align_local_affine(
     size_t s2_size = s2.uses_delimiter() ? s2.size()-1 : s2.size();
     return align_local_affine(s1.data(), s1_size, s2.data(), s2_size,
             open, gap, tbl, del, ins);
+}
+
+
+cell_t align_local_affine_sse(
+        const Sequence &s1,
+        const Sequence &s2,
+        int open, int gap,
+        int * const restrict scr,
+        int * const restrict del,
+        int * const restrict mch,
+        int * const restrict len)
+{
+    size_t s1_size = s1.uses_delimiter() ? s1.size()-1 : s1.size();
+    size_t s2_size = s2.uses_delimiter() ? s2.size()-1 : s2.size();
+    return align_local_affine_sse(s1.data(), s1_size, s2.data(), s2_size,
+            open, gap, scr, del, mch, len);
 }
 
 

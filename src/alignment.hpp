@@ -462,6 +462,15 @@ cell_t align_global_affine(
         int * const restrict * const restrict del=NULL,
         int * const restrict * const restrict ins=NULL);
 
+cell_t align_global_affine_sse(
+        const char * const restrict s1, size_t s1_len,
+        const char * const restrict s2, size_t s2_len,
+        int open, int gap,
+        int * const restrict scr,
+        int * const restrict del,
+        int * const restrict mat,
+        int * const restrict len);
+
 cell_t align_semi_affine(
         const char * const restrict s1, size_t s1_len,
         const char * const restrict s2, size_t s2_len,
@@ -518,6 +527,15 @@ cell_t align_semi_affine(
         int * const restrict * const restrict del=NULL,
         int * const restrict * const restrict ins=NULL);
 
+cell_t align_semi_affine_sse(
+        const char * const restrict s1, size_t s1_len,
+        const char * const restrict s2, size_t s2_len,
+        int open, int gap,
+        int * const restrict scr,
+        int * const restrict del,
+        int * const restrict mat,
+        int * const restrict len);
+
 cell_t align_local_affine(
         const char * const restrict s1, size_t s1_len,
         const char * const restrict s2, size_t s2_len,
@@ -573,6 +591,15 @@ cell_t align_local_affine(
         int * const restrict * const restrict len=NULL,
         int * const restrict * const restrict del=NULL,
         int * const restrict * const restrict ins=NULL);
+
+cell_t align_local_affine_sse(
+        const char * const restrict s1, size_t s1_len,
+        const char * const restrict s2, size_t s2_len,
+        int open, int gap,
+        int * const restrict scr,
+        int * const restrict del,
+        int * const restrict mat,
+        int * const restrict len);
 
 cell_t align_global_affine(
         const char * const restrict s1, size_t s1_len,
