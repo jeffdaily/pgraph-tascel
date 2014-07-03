@@ -63,6 +63,7 @@ const string Parameters::KEY_DUPLICATES_SEMILOCAL("DuplicatesSemiLocal");
 const string Parameters::KEY_DUPLICATES_SMP("DuplicatesSmp");
 const string Parameters::KEY_DUPLICATES_GLOBAL("DuplicatesGlobal");
 const string Parameters::KEY_BUCKET_CUTOFF("BucketCutoff");
+const string Parameters::KEY_SKIP_TREE("SkipTree");
 /* Defaults */
 const int Parameters::DEF_ALIGN_OVER_LONGER_SEQUENCE(80);
 const int Parameters::DEF_MATCH_SIMILARITY(40);
@@ -92,6 +93,7 @@ const bool Parameters::DEF_DUPLICATES_SEMILOCAL(false);
 const bool Parameters::DEF_DUPLICATES_SMP(false);
 const bool Parameters::DEF_DUPLICATES_GLOBAL(false);
 const size_t Parameters::DEF_BUCKET_CUTOFF(30);
+const bool Parameters::DEF_SKIP_TREE(false);
 
 
 static size_t parse_memory_budget(const string& value)
@@ -181,6 +183,7 @@ Parameters::Parameters()
     , dup_smp(DEF_DUPLICATES_SMP)
     , dup_global(DEF_DUPLICATES_GLOBAL)
     , bucket_cutoff(DEF_BUCKET_CUTOFF)
+    , skip_tree(DEF_SKIP_TREE)
 {
 }
 
@@ -215,6 +218,7 @@ Parameters::Parameters(const char *parameters_file, MPI_Comm comm)
     , dup_smp(DEF_DUPLICATES_SMP)
     , dup_global(DEF_DUPLICATES_GLOBAL)
     , bucket_cutoff(DEF_BUCKET_CUTOFF)
+    , skip_tree(DEF_SKIP_TREE)
 {
     parse(parameters_file, comm);
 }
@@ -287,6 +291,8 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
                 DEF_DUPLICATES_GLOBAL);
         bucket_cutoff = config[KEY_BUCKET_CUTOFF].as<size_t>(
                 DEF_BUCKET_CUTOFF);
+        skip_tree = config[KEY_SKIP_TREE].as<bool>(
+                DEF_SKIP_TREE);
 
         string val;
         val = config[KEY_MEMORY_WORKER].as<string>("");
@@ -357,6 +363,7 @@ ostream& operator<< (ostream &os, const Parameters &p)
     out << YAML::Key << Parameters::KEY_DUPLICATES_SMP << YAML::Value << p.dup_smp;
     out << YAML::Key << Parameters::KEY_DUPLICATES_GLOBAL << YAML::Value << p.dup_global;
     out << YAML::Key << Parameters::KEY_BUCKET_CUTOFF << YAML::Value << p.bucket_cutoff;
+    out << YAML::Key << Parameters::KEY_SKIP_TREE << YAML::Value << p.skip_tree;
     out << YAML::EndMap;
     os << out.c_str();
     return os;

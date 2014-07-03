@@ -134,6 +134,8 @@ class SuffixTree
 
         static bool length_filter(size_t s1Len, size_t s2Len, size_t cutOff);
 
+        void print();
+
     private:
         size_t build_tree_recursive(Suffix *suffixes, int depth);
         size_t build_tree_recursive2(Suffix *suffixes, int depth);

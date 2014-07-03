@@ -60,6 +60,7 @@ public:
     static const string KEY_DUPLICATES_SMP;
     static const string KEY_DUPLICATES_GLOBAL;
     static const string KEY_BUCKET_CUTOFF;
+    static const string KEY_SKIP_TREE;
 
     /* Defaults */
     static const int DEF_ALIGN_OVER_LONGER_SEQUENCE;
@@ -90,6 +91,7 @@ public:
     static const bool DEF_DUPLICATES_SMP;
     static const bool DEF_DUPLICATES_GLOBAL;
     static const size_t DEF_BUCKET_CUTOFF;
+    static const bool DEF_SKIP_TREE;
 
     /**
      * Constructs empty (default) parameters.
@@ -150,6 +152,7 @@ public:
     bool dup_smp;       /**< whether to check for duplicate pairs across invocations, thread safe*/
     bool dup_global;    /**< whether to check for duplicate pairs distributed */
     size_t bucket_cutoff; /**< how many stddev above bucket size to discard */
+    bool skip_tree;     /**< don't use tree if cutoff == exact match length */
 };
 
 ostream& operator<< (ostream &os, const Parameters &p);

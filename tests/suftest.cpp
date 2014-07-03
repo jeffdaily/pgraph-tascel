@@ -65,6 +65,9 @@ using ::std::vector;
 
 typedef pair<int,int> Pair;
 
+static int mismatch_sid;
+static int mismatch_bwt;
+
 #ifdef USE_TBB
 using ::tbb::concurrent_unordered_set;
 typedef concurrent_unordered_set<Pair> PairSet;
@@ -227,6 +230,7 @@ int main(int argc, const char *argv[]) {
     int *LCP = NULL;
     unsigned char *BWT = NULL;
     int *SID = NULL;
+    int *POS = NULL;
     vector<int> END;
     vector<int> BUCKET;
     int n = 0;
@@ -234,6 +238,7 @@ int main(int argc, const char *argv[]) {
     clock_t finish = 0;
     int i = 0;
     int sid = 0;
+    int pos = 0;
     char sentinal = 0;
     int print = 0;
     int validate = 0;
@@ -357,11 +362,13 @@ int main(int argc, const char *argv[]) {
     LCP = (int *)malloc((size_t)(n+1) * sizeof(int)); /* +1 for lcp tree */
     BWT = (unsigned char *)malloc((size_t)(n+1) * sizeof(unsigned char));
     SID = (int *)malloc((size_t)n * sizeof(int));
+    POS = (int *)malloc((size_t)n * sizeof(int));
     if((T == NULL)
             || (SA == NULL)
             || (LCP == NULL)
             || (BWT == NULL)
-            || (SID == NULL))
+            || (SID == NULL)
+            || (POS == NULL))
     {
         fprintf(stderr, "%s: Cannot allocate memory.\n", argv[0]);
         exit(EXIT_FAILURE);
@@ -405,11 +412,14 @@ int main(int argc, const char *argv[]) {
 
     /* scan T from left to right to build auxiliary info stuff... yep */
     sid = 0;
+    pos = 0;
     for (i=0; i<n; ++i) {
         SID[i] = sid;
+        POS[i] = pos++;
         if (T[i] == sentinal) {
             END.push_back(i);
             ++sid;
+            pos = 0;
         }
     }
     if (0 == sid) { /* no sentinal found, that's okay */
@@ -464,13 +474,17 @@ int main(int argc, const char *argv[]) {
         printf("skipping validation\n");
     }
 
+#define CUTOFF (20)
     if (print) {
-        printf("Index\tSA\tLCP\tBWT\tT\tSeqID\tSuffix\n");
+        printf("Index\tSA\tLCP\tBWT\tT\tSeqID\tSeqPos\tSuffix\n");
         for(i=0; i<n; ++i) {
             int len = END[SID[SA[i]]] - SA[i] + 1;
+            if (len > CUTOFF) len = CUTOFF;
             //int len = n - SA[i];
-            printf("%d\t%d\t%d\t%c\t%c\t%d\t%.*s\n",
-                    i, SA[i], LCP[i], BWT[i], T[i], SID[SA[i]], len, T+SA[i]);
+            printf("%d\t%d\t%d\t%c\t%c\t%d\t%d\t%.*s",
+                    i, SA[i], LCP[i], BWT[i], T[i], SID[SA[i]], POS[SA[i]], len, T+SA[i]);
+            if (len == CUTOFF) printf("...");
+            printf("\n");
         }
     }
 
@@ -495,7 +509,7 @@ int main(int argc, const char *argv[]) {
         fprintf(stderr, "sentinals not found at beginning or end of SA\n");
     }
     printf("bup_start=%d\n", bup_start);
-    printf(" bup_stop=%d\n", bup_stop);
+    printf("bup_stop =%d\n", bup_stop);
     BUCKET.push_back(bup_stop);
     printf("%zu %d-mer buckets found\n", BUCKET.size()-1, k);
 
@@ -509,6 +523,8 @@ int main(int argc, const char *argv[]) {
     start = clock();
     count = 0;
     count_generated = 0;
+    mismatch_sid = 0;
+    mismatch_bwt = 0;
     LCP[n] = 0; /* doesn't really exist, but for the root */
     if (bucket_traversal) {
         clock_t local_start = 0;
@@ -662,6 +678,14 @@ int main(int argc, const char *argv[]) {
 #endif
     cout << "   unique pairs = " << pairs.size() << endl;
     cout << "generated pairs = " << count_generated << endl;
+    cout << "mismatch_sid = " << mismatch_sid << endl;
+    cout << "mismatch_bwt = " << mismatch_bwt << endl;
+
+    if (print) {
+        for (PairSet::iterator it=pairs.begin(); it!=pairs.end(); ++it) {
+            cout << it->first << "," << it->second << endl;
+        }
+    }
 
     /* Deallocate memory. */
     free(SA);
@@ -689,15 +713,19 @@ inline static void pair_check(
         const int * const restrict SID,
         const char &sentinal)
 {
-    const int sidi = SID[SA[i]];
-    const int sidj = SID[SA[j]];
-    if ((BWT[i] != BWT[j] || BWT[i] == sentinal) && sidi != sidj) {
-        ++count_generated;
-        if (sidi < sidj) {
-            pairs.insert(make_pair(sidi,sidj));
-        }
-        else {
-            pairs.insert(make_pair(sidj,sidi));
+    const int &sidi = SID[SA[i]];
+    const int &sidj = SID[SA[j]];
+    mismatch_sid += (sidi != sidj);
+    mismatch_bwt += (BWT[i] != BWT[j] || BWT[i] == sentinal);
+    if (BWT[i] != BWT[j] || BWT[i] == sentinal) {
+        if (sidi != sidj) {
+            ++count_generated;
+            if (sidi < sidj) {
+                pairs.insert(make_pair(sidi,sidj));
+            }
+            else {
+                pairs.insert(make_pair(sidj,sidi));
+            }
         }
     }
 }
@@ -814,4 +842,3 @@ inline static void process(
     }
 }
 #endif
-

@@ -194,8 +194,11 @@ int main(int argc, char **argv)
     }
 
     double time_tree = MPI_Wtime();
-    SuffixTree *tree = new SuffixTree(sequences, bucket, *parameters);
+    SuffixTree *tree = new SuffixTree(sequences, bucket, *parameters, 0);
     time_tree = MPI_Wtime() - time_tree;
+#if PRINT
+    tree->print();
+#endif
     if (0 == rank) {
         cout << "time tree = " << time_tree << " seconds" << endl;
     }
@@ -203,7 +206,7 @@ int main(int argc, char **argv)
     cout << "tree size internal " << tree->get_size_internal() << endl;
 
     double time_pairs = MPI_Wtime();
-    set<pair<size_t,size_t> > pairs;
+    vector<pair<size_t,size_t> > pairs;
     tree->generate_pairs(pairs);
     time_pairs = MPI_Wtime() - time_pairs;
 #if 0
@@ -223,7 +226,15 @@ int main(int argc, char **argv)
 #else
     if (0 == rank) {
         cout << "time pairs = " << time_pairs << " seconds" << endl;
-        cout << "pairs.size() = " << pairs.size() << endl;
+        cout << "pairs generated = " << pairs.size() << endl;
+        set<pair<size_t,size_t> > set_pairs(pairs.begin(),pairs.end());
+        cout << "pairs unique    = " << set_pairs.size() << endl;
+#if PRINT
+        for (set<pair<size_t,size_t> >::iterator it=set_pairs.begin();
+                it!=set_pairs.end(); ++it) {
+            cout << it->first << "," << it->second << endl;
+        }
+#endif
     }
 #endif
 

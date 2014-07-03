@@ -53,7 +53,7 @@ SuffixTree::SuffixTree(
     ,   BEGIN(param.alphabet_begin)
     ,   alphabet(param.alphabet)
     ,   alphabet_table(numeric_limits<unsigned char>::max(), npos)
-    ,   window_size(k > 0 ? k : param.window_size)
+    ,   window_size(k >= 0 ? k : param.window_size)
     ,   nodes(NULL)
     ,   size(0U)
     ,   size_internal(0U)
@@ -182,7 +182,7 @@ size_t SuffixTree::build_tree_recursive(Suffix *suffixes, int depth)
 
         j = size; /* store st_index in the stack */
         size++;
-        nodes[j].depth = diffPos - 1 ;
+        nodes[j].depth = diffPos;
 
         depth_stats.push_back(nodes[j].depth);
 
@@ -504,6 +504,7 @@ int SuffixTree::next_diff_pos2(Suffix *suffixes, int depth, int size)
 
 bool SuffixTree::is_candidate(Suffix *p, Suffix *q)
 {
+#if 0
     size_t s1Len = 0;
     size_t s2Len = 0;
     size_t f1 = 0;
@@ -531,6 +532,9 @@ bool SuffixTree::is_candidate(Suffix *p, Suffix *q)
     }
 
     return result;
+#else
+    return p->sid != q->sid;
+#endif
 }
 
 
@@ -634,6 +638,71 @@ void SuffixTree::merge_lsets(size_t sIndex, size_t eIndex)
                 while (p->next) {
                     p = p->next;
                 }
+            }
+        }
+    }
+}
+
+
+void SuffixTree::print()
+{
+    printf("BWT\tSID\tPID\tsuffix\n");
+    for (size_t i=0; i<size; ++i) {
+        SuffixTreeNode &node = nodes[i];
+        /* process DOLLAR first */
+        size_t j = alphabet_table[DOLLAR];
+        {
+            for (size_t k=0; k<SIGMA; ++k) {
+                Suffix *p = NULL;
+                Suffix *q = NULL;
+                for (p = node.lset[k]; p != NULL; p = q) {
+                    q = p->next;
+                    Sequence &s = get_sequence(p->sid);
+                    const char *str;
+                    size_t slen;
+                    s.get_sequence(str,slen);
+                    int len = int(slen) - p->pid;
+                    if (len > 20) len = 20;
+                    if (j == alphabet_table[s[p->pid]]) {
+                        char BWT;
+                        if (p->pid == 0) {
+                            BWT = BEGIN;
+                        }
+                        else {
+                            BWT = s[p->pid-1];
+                        }
+                        printf("%c\t%d\t%d\t%.*s\n",
+                                BWT, p->sid, p->pid, len, &str[p->pid]);
+                    }
+                }
+
+            }
+        }
+        for (j=0; j<SIGMA; ++j) {
+            for (size_t k=0; k<SIGMA; ++k) {
+                Suffix *p = NULL;
+                Suffix *q = NULL;
+                for (p = node.lset[k]; p != NULL; p = q) {
+                    q = p->next;
+                    Sequence &s = get_sequence(p->sid);
+                    const char *str;
+                    size_t slen;
+                    s.get_sequence(str,slen);
+                    int len = int(slen) - p->pid;
+                    if (len > 20) len = 20;
+                    if (j == alphabet_table[s[p->pid]]) {
+                        char BWT;
+                        if (p->pid == 0) {
+                            BWT = BEGIN;
+                        }
+                        else {
+                            BWT = s[p->pid-1];
+                        }
+                        printf("%c\t%d\t%d\t%.*s\n",
+                                BWT, p->sid, p->pid, len, &str[p->pid]);
+                    }
+                }
+
             }
         }
     }

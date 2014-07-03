@@ -1152,7 +1152,11 @@ struct PairGenCallback {
     {}
 
     bool operator()(const Pair &p) {
+#if USE_SET
+        pairs.insert(p);
+#else
         pairs.push_back(p);
+#endif
         if (pairs.size() > limit) {
             {
                 exceeded_count += 1;
@@ -1215,42 +1219,93 @@ static unsigned long process_tree(Bucket *bucket, local_data_t *local_data, int 
             stats_tree[worker].time_first = MPI_Wtime();
         }
 
-        /* construct tree */
-        t = MPI_Wtime();
-        SuffixTree *tree = new SuffixTree(sequences, bucket, *parameters, bucket->k);
-        stats_tree[worker].time_build.push_back(MPI_Wtime() - t);
+#define LIMIT (1000000)
 
-        /* gather stats_tree */
-        stats_tree[worker].trees++;
-        stats_tree[worker].suffixes.push_back(bucket->size);
-        stats_tree[worker].size.push_back(tree->get_size());
-        stats_tree[worker].size_internal.push_back(tree->get_size_internal());
-        stats_tree[worker].fanout.push_back(tree->get_fanout());
-        stats_tree[worker].depth.push_back(tree->get_depth());
-        stats_tree[worker].suffix_length.push_back(tree->get_suffix_length());
+        if (parameters->skip_tree
+                && bucket->k == parameters->exact_match_length) {
+            int exceeded_count = 0;
+            double gen_count = 0;
+            double t_total = 0;
+            t = MPI_Wtime();
+            /* gather stats_tree */
+            stats_tree[worker].trees++;
+            stats_tree[worker].suffixes.push_back(bucket->size);
+            /* generate pairs */
+            for (size_t i=0, limit=bucket->size; i<limit; ++i) {
+                size_t id1 = bucket->suffixes[i].sid;
+                for (size_t j=0; j<limit; ++j) {
+                    size_t id2 = bucket->suffixes[j].sid;
+                    if (id1 == id2) continue;
+                    if (id1 > id2) {
+                        local_pairs.push_back(make_pair(id2,id1));
+                    }
+                    else {
+                        local_pairs.push_back(make_pair(id1,id2));
+                    }
+                    if (local_pairs.size() > LIMIT) {
+                        {
+                            exceeded_count += 1;
+                            string kmer = local_data->suffix_buckets->bucket_kmer(
+                                    bucket->bid, bucket->k);
+                            cerr << "bucket " << bucket->bid
+                                << " (" << kmer << ")"
+                                << " exceeded local limit "
+                                << exceeded_count
+                                << " times"
+                                << endl;
+                        }
+                        gen_count += local_pairs.size();
+                        t_total += MPI_Wtime() - t;
+                        t = MPI_Wtime();
+                        count += check_and_add(bucket, local_pairs, local_data, worker);
+                        local_pairs.clear();
+                    }
+                }
+            }
+            stats_tree[worker].time_process.push_back((MPI_Wtime()-t) + t_total);
+            stats_tree[worker].pairs.push_back(local_pairs.size() + gen_count);
+            // after callback is finished, we could still have pairs left
+            count += check_and_add(bucket, local_pairs, local_data, worker);
+            stats_tree[worker].time_last = MPI_Wtime();
+        }
+        else {
+            /* construct tree */
+            t = MPI_Wtime();
+            SuffixTree *tree = new SuffixTree(sequences, bucket, *parameters, bucket->k);
+            stats_tree[worker].time_build.push_back(MPI_Wtime() - t);
 
-        /* generate pairs */
+            /* gather stats_tree */
+            stats_tree[worker].trees++;
+            stats_tree[worker].suffixes.push_back(bucket->size);
+            stats_tree[worker].size.push_back(tree->get_size());
+            stats_tree[worker].size_internal.push_back(tree->get_size_internal());
+            stats_tree[worker].fanout.push_back(tree->get_fanout());
+            stats_tree[worker].depth.push_back(tree->get_depth());
+            stats_tree[worker].suffix_length.push_back(tree->get_suffix_length());
+
+            /* generate pairs */
 #define USE_CALLBACK 1
 #if USE_CALLBACK
-        PairGenCallback callback(
-                bucket, local_pairs, local_data, 1000000, count, worker);
-        tree->generate_pairs(callback);
-        stats_tree[worker].time_process.push_back(
-                (MPI_Wtime()-callback.t) + callback.t_total);
-        stats_tree[worker].pairs.push_back(
-                local_pairs.size() + callback.gen_count);
-        // after callback is finished, we could still have pairs left
-        count += check_and_add(bucket, local_pairs, local_data, worker);
+            PairGenCallback callback(
+                    bucket, local_pairs, local_data, LIMIT, count, worker);
+            tree->generate_pairs(callback);
+            stats_tree[worker].time_process.push_back(
+                    (MPI_Wtime()-callback.t) + callback.t_total);
+            stats_tree[worker].pairs.push_back(
+                    local_pairs.size() + callback.gen_count);
+            // after callback is finished, we could still have pairs left
+            count += check_and_add(bucket, local_pairs, local_data, worker);
 #else
-        t = MPI_Wtime();
-        tree->generate_pairs(local_pairs);
-        stats_tree[worker].time_process.push_back(MPI_Wtime() - t);
-        stats_tree[worker].pairs.push_back(local_pairs.size());
-        count += check_and_add(bucket, local_pairs, local_data, worker);
+            t = MPI_Wtime();
+            tree->generate_pairs(local_pairs);
+            stats_tree[worker].time_process.push_back(MPI_Wtime() - t);
+            stats_tree[worker].pairs.push_back(local_pairs.size());
+            count += check_and_add(bucket, local_pairs, local_data, worker);
 #endif
-        stats_tree[worker].time_last = MPI_Wtime();
+            stats_tree[worker].time_last = MPI_Wtime();
 
-        delete tree;
+            delete tree;
+        }
     }
 
     return count;
@@ -1428,7 +1483,7 @@ static unsigned long populate_tasks_tree_hybrid(
 
 #define SORT_BUCKETS 1
 #if SORT_BUCKETS
-    vector<pair<size_t,size_t> > size_and_index;
+    vector<Pair> size_and_index;
     for (size_t i=0; i<suffix_buckets->size_local(); ++i) {
         if ((i%size_t(NUM_WORKERS)) == size_t(worker)) {
             Bucket *bucket = suffix_buckets->get(local_data->rank, i);
@@ -1439,7 +1494,7 @@ static unsigned long populate_tasks_tree_hybrid(
         }
     }
     ::std::sort(size_and_index.begin(), size_and_index.end());
-    for (vector<pair<size_t,size_t> >::iterator it=size_and_index.begin();
+    for (vector<Pair>::iterator it=size_and_index.begin();
             it!=size_and_index.end(); ++it) {
         task_description_two desc;
         desc.id1 = SuffixBuckets::npos - size_t(local_data->rank);
