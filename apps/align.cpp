@@ -946,9 +946,9 @@ static void align(
     Sequence *s2 = sequences->get_sequence(seq_id[1]);
     unsigned long s1Len = s1->get_sequence_length();
     unsigned long s2Len = s2->get_sequence_length();
-    bool do_alignment = true;
+    bool do_alignment = parameters->perform_alignments;
     if (parameters->use_length_filter) {
-        do_alignment = SuffixTree::length_filter(s1Len, s2Len, AOL*SIM/100);
+        do_alignment |= SuffixTree::length_filter(s1Len, s2Len, AOL*SIM/100);
     }
 
     if (do_alignment)

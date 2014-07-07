@@ -61,6 +61,7 @@ public:
     static const string KEY_DUPLICATES_GLOBAL;
     static const string KEY_BUCKET_CUTOFF;
     static const string KEY_SKIP_TREE;
+    static const string KEY_PERFORM_ALIGNMENTS;
 
     /* Defaults */
     static const int DEF_ALIGN_OVER_LONGER_SEQUENCE;
@@ -92,6 +93,7 @@ public:
     static const bool DEF_DUPLICATES_GLOBAL;
     static const size_t DEF_BUCKET_CUTOFF;
     static const bool DEF_SKIP_TREE;
+    static const bool DEF_PERFORM_ALIGNMENTS;
 
     /**
      * Constructs empty (default) parameters.
@@ -153,6 +155,7 @@ public:
     bool dup_global;    /**< whether to check for duplicate pairs distributed */
     size_t bucket_cutoff; /**< how many stddev above bucket size to discard */
     bool skip_tree;     /**< don't use tree if cutoff == exact match length */
+    bool perform_alignments; /**< when debugging, sometimes useful to not align */
 };
 
 ostream& operator<< (ostream &os, const Parameters &p);
