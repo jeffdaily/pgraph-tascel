@@ -48,6 +48,7 @@ public:
     static const string KEY_USE_LENGTH_FILTER;
     static const string KEY_USE_ITERATOR;
     static const string KEY_USE_COUNTER;
+    static const string KEY_USE_ARRAY;
     static const string KEY_USE_TREE;
     static const string KEY_USE_TREE_DYNAMIC;
     static const string KEY_USE_TREE_HYBRID;
@@ -80,6 +81,7 @@ public:
     static const bool DEF_USE_LENGTH_FILTER;
     static const bool DEF_USE_ITERATOR;
     static const bool DEF_USE_COUNTER;
+    static const bool DEF_USE_ARRAY;
     static const bool DEF_USE_TREE;
     static const bool DEF_USE_TREE_DYNAMIC;
     static const bool DEF_USE_TREE_HYBRID;
@@ -142,6 +144,7 @@ public:
     bool use_length_filter; /**< whether to skip obviously bad alignments */
     bool use_iterator;  /**< whether to use tascel iterator */
     bool use_counter;   /**< whether to use ARMCI task counter */
+    bool use_array;     /**< whether to use suffix array filter instead of tree */
     bool use_tree;      /**< whether to use tree filter as separate phase  */
     bool use_tree_dynamic; /**< whether to use tree filter as-needed */
     bool use_tree_hybrid;  /**< whether to allow tree tasks to be stolen */

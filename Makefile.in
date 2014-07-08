@@ -179,8 +179,9 @@ am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
 	src/SigSegvHandler.hpp src/Stats.hpp src/Suffix.hpp \
 	src/SuffixBuckets.cpp src/SuffixBuckets.hpp \
 	src/SuffixBucketsTascel.cpp src/SuffixBucketsTascel.hpp \
-	src/SuffixTree.cpp src/SuffixTree.hpp src/tascelx.hpp \
-	src/timer.h src/TreeStats.hpp src/SuffixBucketsArmci.cpp \
+	src/SuffixArray.cpp src/SuffixArray.hpp src/SuffixTree.cpp \
+	src/SuffixTree.hpp src/tascelx.hpp src/timer.h \
+	src/TreeStats.hpp src/SuffixBucketsArmci.cpp \
 	src/SuffixBucketsArmci.hpp src/SequenceDatabaseArmci.cpp \
 	src/SequenceDatabaseArmci.hpp \
 	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.c \
@@ -211,8 +212,9 @@ am_libpgraph_la_OBJECTS = src/alignment.lo src/Bootstrap.lo \
 	src/PairCheckGlobalServer.lo src/Parameters.lo src/Sequence.lo \
 	src/SequenceDatabaseReplicated.lo \
 	src/SequenceDatabaseTascel.lo src/SuffixBuckets.lo \
-	src/SuffixBucketsTascel.lo src/SuffixTree.lo $(am__objects_1) \
-	$(am__objects_2) contrib/sais-lite-lcp/sais.lo
+	src/SuffixBucketsTascel.lo src/SuffixArray.lo \
+	src/SuffixTree.lo $(am__objects_1) $(am__objects_2) \
+	contrib/sais-lite-lcp/sais.lo
 libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -642,8 +644,9 @@ libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
 	src/SigSegvHandler.hpp src/Stats.hpp src/Suffix.hpp \
 	src/SuffixBuckets.cpp src/SuffixBuckets.hpp \
 	src/SuffixBucketsTascel.cpp src/SuffixBucketsTascel.hpp \
-	src/SuffixTree.cpp src/SuffixTree.hpp src/tascelx.hpp \
-	src/timer.h src/TreeStats.hpp $(am__append_2) $(am__append_3) \
+	src/SuffixArray.cpp src/SuffixArray.hpp src/SuffixTree.cpp \
+	src/SuffixTree.hpp src/tascelx.hpp src/timer.h \
+	src/TreeStats.hpp $(am__append_2) $(am__append_3) \
 	contrib/sais-lite-lcp/sais.c contrib/sais-lite-lcp/sais.h
 libyaml_cpp_la_SOURCES =  \
 	contrib/yaml-cpp-0.5.1/include/yaml-cpp/anchor.h \
@@ -878,6 +881,7 @@ src/SuffixBuckets.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
 src/SuffixBucketsTascel.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
+src/SuffixArray.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/SuffixTree.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/SuffixBucketsArmci.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
@@ -1250,6 +1254,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabaseArmci.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabaseReplicated.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SequenceDatabaseTascel.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SuffixArray.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SuffixBuckets.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SuffixBucketsArmci.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SuffixBucketsTascel.Plo@am__quote@

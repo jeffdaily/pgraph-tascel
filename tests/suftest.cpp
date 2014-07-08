@@ -530,6 +530,7 @@ int main(int argc, const char *argv[]) {
         clock_t local_start = 0;
         int local_count = 0;
         int local_count_generated = 0;
+        printf("using bucket traversal\n");
 #ifdef USE_TBB
         printf("using TBB concurrent_unordered_set\n");
 #pragma omp parallel private(local_start,i,local_count,local_count_generated) shared(count,count_generated,pairs,SA,LCP,BWT,SID,sentinal,cutoff,BUCKET) default(none)
@@ -692,6 +693,7 @@ int main(int argc, const char *argv[]) {
     free(LCP);
     free(BWT);
     free(SID);
+    free(POS);
 
     return 0;
 }

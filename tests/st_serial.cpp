@@ -51,6 +51,7 @@
 #include "Stats.hpp"
 #include "SuffixBuckets.hpp"
 #include "SuffixBucketsTascel.hpp"
+#include "SuffixArray.hpp"
 #include "SuffixTree.hpp"
 #include "TreeStats.hpp"
 
@@ -193,22 +194,40 @@ int main(int argc, char **argv)
         cout << "time bucket = " << time_bucket << " seconds" << endl;
     }
 
-    double time_tree = MPI_Wtime();
-    SuffixTree *tree = new SuffixTree(sequences, bucket, *parameters, 0);
-    time_tree = MPI_Wtime() - time_tree;
-#if PRINT
-    tree->print();
-#endif
-    if (0 == rank) {
-        cout << "time tree = " << time_tree << " seconds" << endl;
-    }
-    cout << "tree size " << tree->get_size() << endl;
-    cout << "tree size internal " << tree->get_size_internal() << endl;
-
-    double time_pairs = MPI_Wtime();
+    double time_pairs;
     vector<pair<size_t,size_t> > pairs;
-    tree->generate_pairs(pairs);
-    time_pairs = MPI_Wtime() - time_pairs;
+    double time_create = MPI_Wtime();
+    if (parameters->use_array) {
+        SuffixArray *array = new SuffixArray(sequences, bucket, *parameters, 0);
+        time_create = MPI_Wtime() - time_create;
+#if PRINT
+        array->print();
+#endif
+        if (0 == rank) {
+            cout << "time array = " << time_create << " seconds" << endl;
+        }
+
+        time_pairs = MPI_Wtime();
+        array->generate_pairs(pairs);
+        time_pairs = MPI_Wtime() - time_pairs;
+        delete array;
+    } else {
+        SuffixTree *tree = new SuffixTree(sequences, bucket, *parameters, 0);
+        time_create = MPI_Wtime() - time_create;
+#if PRINT
+        tree->print();
+#endif
+        if (0 == rank) {
+            cout << "time tree = " << time_create << " seconds" << endl;
+        }
+        cout << "tree size " << tree->get_size() << endl;
+        cout << "tree size internal " << tree->get_size_internal() << endl;
+
+        time_pairs = MPI_Wtime();
+        tree->generate_pairs(pairs);
+        time_pairs = MPI_Wtime() - time_pairs;
+        delete tree;
+    }
 #if 0
     double time_dup = MPI_Wtime();
     set<pair<size_t,size_t> > pairs_set(pairs.begin(), pairs.end());
@@ -242,7 +261,6 @@ int main(int argc, char **argv)
     delete bucket;
     delete parameters;
     delete sequences;
-    delete tree;
 
     time_main = MPI_Wtime() - time_main;
     if (0 == rank) {
