@@ -25,12 +25,14 @@
  */
 #include "config.h"
 
+#include <cassert>
 #include <cctype>
 #include <climits>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <sys/time.h>
 
 #include <iostream>
 #include <list>
@@ -43,10 +45,12 @@
 
 #ifdef _OPENMP
 #include "omp.h"
+#warning "using openmp directives"
 #endif
 
 #ifdef USE_TBB
 #include <tbb/concurrent_unordered_set.h>
+#warning "using intel tbb"
 #endif
 
 #include "sais.h"
@@ -111,6 +115,16 @@ ostream& operator << (ostream &os, const quad &q) {
 #endif
     return os;
 }
+ 
+inline static double timer()
+{
+    timespec ts;
+    //long retval = clock_gettime(CLOCK_MONOTONIC, &ts); // Works on FreeBSD
+    long retval = clock_gettime(CLOCK_REALTIME, &ts); // Works on Linux
+    assert(0 == retval);
+    return double(ts.tv_sec) + double(ts.tv_nsec)/1000000000.0;
+}
+
 
 inline static void pair_check(
         int &count_generated,
@@ -234,8 +248,8 @@ int main(int argc, const char *argv[]) {
     vector<int> END;
     vector<int> BUCKET;
     int n = 0;
-    clock_t start = 0;
-    clock_t finish = 0;
+    double start = 0;
+    double finish = 0;
     int i = 0;
     int sid = 0;
     int pos = 0;
@@ -429,26 +443,26 @@ int main(int argc, const char *argv[]) {
 
     /* Construct the suffix array. */
     fprintf(stderr, "%s: %d bytes ... \n", fname, n);
-    start = clock();
+    start = timer();
     if(sais(T, SA, LCP, (int)n) != 0) {
         fprintf(stderr, "%s: Cannot allocate memory.\n", argv[0]);
         exit(EXIT_FAILURE);
     }
-    finish = clock();
-    fprintf(stderr, "induced SA: %.4f sec\n", (double)(finish - start) / (double)CLOCKS_PER_SEC);
+    finish = timer();
+    fprintf(stderr, "induced SA: %.4f sec\n", finish-start);
 
     /* naive BWT: */
     /* also "fix" the LCP array to clamp LCP's that are too long */
     /* while we're at it, determine bucket dilenations */
-    start = clock();
+    start = timer();
     for (i = 0; i < n; ++i) {
         int len = END[SID[SA[i]]] - SA[i]; // don't include sentinal
         if (LCP[i] > len) LCP[i] = len;
         if (LCP[i] < k && len > 0) BUCKET.push_back(i);
         BWT[i] = (SA[i] > 0) ? T[SA[i]-1] : sentinal;
     }
-    finish = clock();
-    fprintf(stderr, " naive BWT: %.4f sec\n", (double)(finish - start) / (double)CLOCKS_PER_SEC);
+    finish = timer();
+    fprintf(stderr, " naive BWT: %.4f sec\n", finish-start);
 
     if (validate) {
         /* check SA: */
@@ -520,14 +534,14 @@ int main(int argc, const char *argv[]) {
     /* force a reallocation to reduce vector capacity to 0 */
     vector<int>().swap(END);
 
-    start = clock();
+    start = timer();
     count = 0;
     count_generated = 0;
     mismatch_sid = 0;
     mismatch_bwt = 0;
     LCP[n] = 0; /* doesn't really exist, but for the root */
     if (bucket_traversal) {
-        clock_t local_start = 0;
+        double local_start = 0;
         int local_count = 0;
         int local_count_generated = 0;
         printf("using bucket traversal\n");
@@ -539,7 +553,7 @@ int main(int argc, const char *argv[]) {
 #pragma omp parallel private(local_start,i,local_count,local_count_generated,local_pairs) shared(count,count_generated,pairs,SA,LCP,BWT,SID,sentinal,cutoff,BUCKET) default(none)
 #endif
         {
-            local_start = clock();
+            local_start = timer();
             local_count = 0;
             local_count_generated = 0;
 #ifdef _OPENMP
@@ -610,7 +624,7 @@ int main(int argc, const char *argv[]) {
 #ifdef _OPENMP
                 printf("end processing bucket %d using tid=%d after %.4f sec\n",
                         bid, omp_get_thread_num(),
-                        (double)(clock()-local_start)/(double)CLOCKS_PER_SEC);
+                        (timer()-local_start));
 #else
                 printf("end processing bucket %d\n", bid);
 #endif
@@ -626,7 +640,7 @@ int main(int argc, const char *argv[]) {
             {
 #ifdef _OPENMP
                 printf("tid %d entered critical section after %.4f sec\n",
-                        omp_get_thread_num(), (double)(clock() - local_start) / (double)CLOCKS_PER_SEC);
+                        omp_get_thread_num(), timer()-local_start);
 #endif
                 count += local_count;
                 count_generated += local_count_generated;
@@ -667,9 +681,9 @@ int main(int argc, const char *argv[]) {
         the_stack.top().rb = bup_stop - 1;
         process(count, count_generated, pairs, the_stack.top(), SA, BWT, SID, sentinal, cutoff);
     }
-    finish = clock();
+    finish = timer();
     fprintf(stderr, "SA has %d internal nodes\n", count);
-    fprintf(stderr, "processing: %.4f sec\n", (double)(finish - start) / (double)CLOCKS_PER_SEC);
+    fprintf(stderr, "processing: %.4f sec\n", finish-start);
 
 #if 0
     for (PairSet::iterator pit=pairs.begin();
