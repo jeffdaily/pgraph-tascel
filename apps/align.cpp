@@ -54,6 +54,7 @@
 #include "Stats.hpp"
 #include "SuffixBuckets.hpp"
 #include "SuffixBucketsTascel.hpp"
+#include "SuffixArray.hpp"
 #include "SuffixTree.hpp"
 #include "TreeStats.hpp"
 
@@ -1267,6 +1268,40 @@ static unsigned long process_tree(Bucket *bucket, local_data_t *local_data, int 
             // after callback is finished, we could still have pairs left
             count += check_and_add(bucket, local_pairs, local_data, worker);
             stats_tree[worker].time_last = MPI_Wtime();
+        }
+        else if (parameters->use_array) {
+            /* construct suffix array */
+            t = MPI_Wtime();
+            SuffixArray *array = new SuffixArray(sequences, bucket, *parameters, bucket->k);
+            stats_tree[worker].time_build.push_back(MPI_Wtime() - t);
+
+            /* gather stats_tree */
+            stats_tree[worker].trees++;
+            stats_tree[worker].suffixes.push_back(bucket->size);
+            stats_tree[worker].size.push_back(array->get_size());
+
+            /* generate pairs */
+#define USE_CALLBACK 1
+#if USE_CALLBACK
+            PairGenCallback callback(
+                    bucket, local_pairs, local_data, LIMIT, count, worker);
+            array->generate_pairs(callback);
+            stats_tree[worker].time_process.push_back(
+                    (MPI_Wtime()-callback.t) + callback.t_total);
+            stats_tree[worker].pairs.push_back(
+                    local_pairs.size() + callback.gen_count);
+            // after callback is finished, we could still have pairs left
+            count += check_and_add(bucket, local_pairs, local_data, worker);
+#else
+            t = MPI_Wtime();
+            array->generate_pairs(local_pairs);
+            stats_tree[worker].time_process.push_back(MPI_Wtime() - t);
+            stats_tree[worker].pairs.push_back(local_pairs.size());
+            count += check_and_add(bucket, local_pairs, local_data, worker);
+#endif
+            stats_tree[worker].time_last = MPI_Wtime();
+
+            delete array;
         }
         else {
             /* construct tree */

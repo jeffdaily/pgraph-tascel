@@ -126,6 +126,7 @@ static int sufcheck(const unsigned char *T, const int *SA, int n, int verbose) {
 SuffixArray::SuffixArray(
         SequenceDatabase *sequences, Bucket *bucket, const Parameters &param, int k)
     :   sequences(sequences)
+    ,   bucket(bucket)
     ,   param(param)
     ,   SIGMA(param.alphabet.size())
     ,   DOLLAR(param.alphabet_dollar)
@@ -140,6 +141,7 @@ SuffixArray::SuffixArray(
     ,   SID(NULL)
     ,   POS(NULL)
     ,   END()
+    ,   SIDmap()
     ,   n(0)
     ,   sid(0)
     ,   sentinal(0)
@@ -149,6 +151,7 @@ SuffixArray::SuffixArray(
      * longest suffix for each sequence represented */
     map<size_t,size_t> input_subset;
     for (Suffix *p=bucket->suffixes; p!=NULL; p=p->next) {
+#if 1
         if (input_subset.count(p->sid)) {
             if (input_subset[p->sid] > p->pid) {
                 input_subset[p->sid] = p->pid;
@@ -157,6 +160,9 @@ SuffixArray::SuffixArray(
         else {
             input_subset[p->sid] = p->pid;
         }
+#else
+        input_subset[p->sid] = 0;
+#endif
     }
     size_t uncompressed_size = 0;
     size_t compressed_size = 0;
@@ -167,8 +173,10 @@ SuffixArray::SuffixArray(
         compressed_size += sequence.size() - it->second;
     }
     n = compressed_size;
+#if DEBUG
     cout << "uncompressed_size = " << uncompressed_size << endl;
     cout << "  compressed_size = " <<   compressed_size << endl;
+#endif
 
     /* Allocate 9n bytes of memory. */
     T = (unsigned char *)malloc((size_t)(n+1) * sizeof(unsigned char));
@@ -202,10 +210,12 @@ SuffixArray::SuffixArray(
         offset += length;
         T[offset] = '$';
         offset += 1;
+        SIDmap.push_back(it->first);
     }
 
     T[n]='\0'; /* so we can print it */
     //if (n < 256) printf("%s\n", T);
+    //printf("%s\n", T);
 
     /* determine sentinal */
     sentinal = '$';
@@ -248,14 +258,18 @@ SuffixArray::SuffixArray(
     }
 
     /* Construct the suffix array. */
+#if DEBUG
     fprintf(stderr, "sais: %d bytes ... \n", n);
+#endif
     double start = MPI_Wtime();
     if(sais(T, SA, LCP, (int)n) != 0) {
         fprintf(stderr, "sais: Cannot allocate memory.\n");
         exit(EXIT_FAILURE);
     }
     double finish = MPI_Wtime();
+#if DEBUG
     fprintf(stderr, "induced SA: %.4f sec\n", finish - start);
+#endif
 
     /* naive BWT: */
     /* also "fix" the LCP array to clamp LCP's that are too long */
@@ -267,9 +281,11 @@ SuffixArray::SuffixArray(
         BWT[i] = (SA[i] > 0) ? T[SA[i]-1] : sentinal;
     }
     finish = MPI_Wtime();
+#if DEBUG
     fprintf(stderr, " naive BWT: %.4f sec\n", finish - start);
+#endif
 
-    bool validate = true;
+    bool validate = false;
     if (validate) {
         /* check SA: */
         if (sufcheck(T, SA, (int)n, 1) != 0) { exit(EXIT_FAILURE); }
