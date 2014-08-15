@@ -88,7 +88,7 @@ const bool Parameters::DEF_USE_TREE(false);
 const bool Parameters::DEF_USE_TREE_DYNAMIC(false);
 const bool Parameters::DEF_USE_TREE_HYBRID(false);
 const bool Parameters::DEF_PRINT_STATS(true);
-const string Parameters::DEF_ALPHABET("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+const string Parameters::DEF_ALPHABET("ABCDEFGHIJKLMNOPQRSTUVWXYZ:;");
 const char Parameters::DEF_ALPHABET_BEGIN(':');
 const char Parameters::DEF_ALPHABET_DOLLAR(';');
 const bool Parameters::DEF_DUPLICATES_LOCAL(true);
