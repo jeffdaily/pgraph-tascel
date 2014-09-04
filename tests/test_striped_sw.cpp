@@ -7,6 +7,7 @@
 #include <stdint.h>
 
 #include <climits>
+#include <cstdio>
 #include <cstring>
 #include <iostream>
 
@@ -14,6 +15,11 @@
 #include "timer.h"
 
 using namespace ::std;
+
+#define DEBUG 1
+#define DEBUG_MATCHES 0
+#define DEBUG_LENGTH 0
+#define SHORT_TEST 0
 
 #define MAX(a,b) ((a)>(b)?(a):(b))
 
@@ -33,6 +39,179 @@ struct DP_t {
     DP_t(int score, int matches, int length)
         : score(score), matches(matches), length(length) {}
 };
+
+
+static inline void init_vect(int len, int *vec, int val)
+{
+    int i;
+    for (i=0; i<len; ++i) {
+        vec[i] = val;
+    }
+}
+
+
+#if DEBUG
+static void arr_store_si128(
+        int *array,
+        __m128i vH,
+        int32_t t,
+        int32_t seglen,
+        int32_t d,
+        int32_t dlen)
+{
+    array[(0*seglen+t)*dlen + d] = ((int16_t*)&vH)[0];
+    array[(1*seglen+t)*dlen + d] = ((int16_t*)&vH)[1];
+    array[(2*seglen+t)*dlen + d] = ((int16_t*)&vH)[2];
+    array[(3*seglen+t)*dlen + d] = ((int16_t*)&vH)[3];
+    array[(4*seglen+t)*dlen + d] = ((int16_t*)&vH)[4];
+    array[(5*seglen+t)*dlen + d] = ((int16_t*)&vH)[5];
+    array[(6*seglen+t)*dlen + d] = ((int16_t*)&vH)[6];
+    array[(7*seglen+t)*dlen + d] = ((int16_t*)&vH)[7];
+}
+
+
+static void print_array(
+        const int * const restrict array,
+        const char * const restrict seqA, const int lena,
+        const char * const restrict seqB, const int lenb,
+        const int pad)
+{
+    int i;
+    int j;
+    int padb = pad/2;
+
+    printf(" ");
+    for (j=0; j<pad/2; ++j) {
+        printf("   $");
+    }
+    for (j=0; j<lena; ++j) {
+        printf("   %c", seqA[j]);
+    }
+    for (j=0; j<pad/2; ++j) {
+        printf("   $");
+    }
+    printf("\n");
+    for (i=0; i<lenb; ++i) {
+        printf("%c", seqB[i]);
+        for (j=0; j<lena+pad; ++j) {
+            printf(" %3d", array[i*(lena+pad) + j]);
+        }
+        printf("\n");
+    }
+    for (i=lenb; i<(lenb+padb); ++i) {
+        printf("$");
+        for (j=0; j<lena+pad; ++j) {
+            printf(" %3d", array[i*(lena+pad) + j]);
+        }
+        printf("\n");
+    }
+}
+
+
+static void print_array2(
+        const int * const restrict array,
+        const char * const restrict s1, const int s1Len,
+        const char * const restrict s2, const int s2Len,
+        const int pad)
+{
+    int i;
+    int j;
+    int padb = pad/2;
+
+    printf(" ");
+    for (j=0; j<pad/2; ++j) {
+        printf("   $");
+    }
+    printf("   *");
+    for (j=0; j<s2Len; ++j) {
+        printf("   %c", s2[j]);
+    }
+    for (j=0; j<pad/2; ++j) {
+        printf("   $");
+    }
+    printf("\n");
+    {
+        printf("*");
+        for (j=0; j<s2Len+pad+1; ++j) {
+            printf(" %3d", array[j]);
+        }
+        printf("\n");
+    }
+    for (i=0; i<s1Len; ++i) {
+        printf("%c", s1[i]);
+        for (j=0; j<s2Len+pad+1; ++j) {
+            printf(" %3d", array[(i+1)*(s2Len+pad+1) + j]);
+        }
+        printf("\n");
+    }
+    for (i=s1Len; i<(s1Len+padb); ++i) {
+        printf("$");
+        for (j=0; j<s2Len+pad+1; ++j) {
+            printf(" %3d", array[(i+1)*(s2Len+pad+1) + j]);
+        }
+        printf("\n");
+    }
+}
+
+
+static void print_array2(
+        const int * const restrict array,
+        const int * const restrict s1, const int s1Len,
+        const int * const restrict s2, const int s2Len,
+        const int pad)
+{
+    int i;
+    int j;
+    int padb = pad/2;
+
+    printf("  ");
+    for (j=0; j<pad/2; ++j) {
+        printf("   $");
+    }
+    printf("   *");
+    for (j=0; j<s2Len; ++j) {
+        printf("  %2d", s2[j]);
+    }
+    for (j=0; j<pad/2; ++j) {
+        printf("   $");
+    }
+    printf("\n");
+    {
+        printf(" *");
+        for (j=0; j<s2Len+pad+1; ++j) {
+            printf(" %3d", array[j]);
+        }
+        printf("\n");
+    }
+    for (i=0; i<s1Len; ++i) {
+        printf("%2d", s1[i]);
+        for (j=0; j<s2Len+pad+1; ++j) {
+            printf(" %3d", array[(i+1)*(s2Len+pad+1) + j]);
+        }
+        printf("\n");
+    }
+    for (i=s1Len; i<(s1Len+padb); ++i) {
+        printf(" $");
+        for (j=0; j<s2Len+pad+1; ++j) {
+            printf(" %3d", array[(i+1)*(s2Len+pad+1) + j]);
+        }
+        printf("\n");
+    }
+}
+
+
+static void print_m128i_16(const char *name, const __m128i &m) {
+    union {
+        __m128i m;
+        int16_t v[8];
+    } tmp;
+    tmp.m = m;
+    printf("%s={%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d}", name,
+            int(tmp.v[0]), int(tmp.v[1]), int(tmp.v[2]), int(tmp.v[3]),
+            int(tmp.v[4]), int(tmp.v[5]), int(tmp.v[6]), int(tmp.v[7]));
+}
+#endif
+
 
 /* This table is used to transform amino acid letters into numbers. */
 static const int MAP_BLOSUM_[256] = {
@@ -78,6 +257,13 @@ int sw(
             }
         }
     }
+
+#if DEBUG
+    printf("array length (s1Len(=%d)+0)*s2Len(=%d) = %d\n",
+            s1Len, s2Len, (s1Len+0)*s2Len);
+    int *array = new int[segLen*8*s2Len];
+    init_vect(segLen*8, array, -9);
+#endif
 
     /* the max alignment score */
     uint16_t max = 0;
@@ -141,6 +327,9 @@ int sw(
 
             /* Save vH values. */
             _mm_store_si128(pvHStore + i, vH);
+#if DEBUG
+            arr_store_si128(array, vH, i, segLen, j, s2Len);
+#endif
 
             /* Update vE value. */
             /* saturation arithmetic, result >= 0 */
@@ -165,6 +354,9 @@ int sw(
                 vH = _mm_load_si128(pvHStore + i);
                 vH = _mm_max_epi16(vH, vF);
                 _mm_store_si128(pvHStore + i, vH);
+#if DEBUG
+                arr_store_si128(array, vH, i, segLen, j, s2Len);
+#endif
                 vH = _mm_subs_epu16(vH, vGapO);
                 vF = _mm_subs_epu16(vF, vGapE);
                 if (! _mm_movemask_epi8(_mm_cmpgt_epi16(vF, vH))) goto end;
@@ -201,6 +393,11 @@ end:
 
     free(maxColumn);
 
+#if DEBUG
+    print_array(array, s2, s2Len, s1, s1Len, 0);
+    delete [] array;
+#endif
+
     return max;
 }
 
@@ -229,8 +426,15 @@ int sg(
         }
     }
 
+#if DEBUG
+    printf("array length (s1Len(=%d)+0)*s2Len(=%d) = %d\n",
+            s1Len, s2Len, (s1Len+0)*s2Len);
+    int *array = new int[segLen*8*s2Len];
+    init_vect(segLen*8, array, -9);
+#endif
+
     /* the max alignment score */
-    uint16_t max = SHRT_MIN/4;
+    uint16_t max = NEG_INF;
 
     /* array to record the largest score of each reference position */
     uint16_t* maxColumn = (uint16_t*) calloc(s2Len, 2);
@@ -238,8 +442,10 @@ int sg(
     /* Define 16 byte 0 vector. */
     __m128i vZero = _mm_setzero_si128();
 
-    /* Define 16 byte SHRT_MIN vector. */
-    __m128i vShortMin = _mm_set1_epi16(SHRT_MIN/4);
+    /* Define 16 byte NEG_INF vector. */
+    __m128i vShortMin = _mm_set1_epi16(NEG_INF);
+    print_m128i_16("vShortMin", vShortMin);
+    printf("\n");
 
     __m128i* pvHStore = (__m128i*) calloc(segLen, sizeof(__m128i));
     __m128i* pvHLoad = (__m128i*) calloc(segLen, sizeof(__m128i));
@@ -249,10 +455,8 @@ int sg(
     /* initialize E */
     t = (int16_t*)pvE;
     for (int32_t i=0; i<segLen; ++i) {
-        int32_t j = i;
         for (int32_t segNum=0; segNum<8; ++segNum) {
-            *t++ = j>=s1Len ? 0 : -open - j*gap;
-            j += segLen;
+            *t++ = NEG_INF;
         }
     }
 
@@ -274,8 +478,8 @@ int sg(
     for (int32_t j=0; j<s2Len; ++j) {
         int32_t cmp;
         __m128i e;
-        /* Initialize F value to 0.  Any errors to vH values will be corrected
-         * in the Lazy_F loop.  */
+        /* Initialize F value to -INF.  Any errors to vH values will be
+         * corrected in the Lazy_F loop.  */
         __m128i vF = vShortMin;
 
         /* load final segment of pvHStore and shift left by 2 bytes */
@@ -304,6 +508,9 @@ int sg(
 
             /* Save vH values. */
             _mm_store_si128(pvHStore + i, vH);
+#if DEBUG
+            arr_store_si128(array, vH, i, segLen, j, s2Len);
+#endif
 
             /* Update vE value. */
             vH = _mm_subs_epi16(vH, vGapO);
@@ -323,10 +530,15 @@ int sg(
          * then deletion, so don't update E(i, i), learn from SWPS3 */
         for (int32_t k=0; k<8; ++k) {
             vF = _mm_slli_si128 (vF, 2);
+            /* first vF value must be -INF */
+            vF = _mm_insert_epi16(vF, NEG_INF, 0);
             for (int32_t i=0; i<segLen; ++i) {
                 vH = _mm_load_si128(pvHStore + i);
                 vH = _mm_max_epi16(vH, vF);
                 _mm_store_si128(pvHStore + i, vH);
+#if DEBUG
+                arr_store_si128(array, vH, i, segLen, j, s2Len);
+#endif
                 vH = _mm_subs_epi16(vH, vGapO);
                 vF = _mm_subs_epi16(vF, vGapE);
                 if (! _mm_movemask_epi8(_mm_cmpgt_epi16(vF, vH))) goto end;
@@ -363,6 +575,11 @@ end:
 
     free(maxColumn);
 
+#if DEBUG
+    print_array(array, s2, s2Len, s1, s1Len, 0);
+    delete [] array;
+#endif
+
     return max;
 }
 
@@ -370,10 +587,10 @@ end:
 int main(int argc, char **argv)
 {
 #if SHORT_TEST || DEBUG
-    const char *seqA = "$$$$$$$$$$$$$$$$SLPSMRADSFTKELMEKISS$$$$$$$$$$$$$$$$";
-    const char *seqB = "MTNKICIYAISKNEEKFV$$$$$$$$$$$$$$$$";
+    const char *seqA = "SLPSMRADSFTKELMEKISS";
+    const char *seqB = "MTNKICIYAISKNEEKFV";
 #else
-    const char *seqA = "$$$$$$$$$$$$$$$$"
+    const char *seqA =
         "SLPSMRADSFTKELMEKISS"
         "SLPSMRADSFTKELMEKISS"
         "SLPSMRADSFTKELMEKISS"
@@ -381,9 +598,8 @@ int main(int argc, char **argv)
         "SLPSMRADSFTKELMEKISS"
         "SLPSMRADSFTKELMEKISS"
         "SLPSMRADSFTKELMEKISS"
-        "SLPSMRADSFTKELMEKISS"
-        "$$$$$$$$$$$$$$$$";
-    const char *seqB = "MTNKICIYAISKNEEKFV"
+        "SLPSMRADSFTKELMEKISS";
+    const char *seqB =
         "MTNKICIYAISKNEEKFV"
         "MTNKICIYAISKNEEKFV"
         "MTNKICIYAISKNEEKFV"
@@ -391,11 +607,11 @@ int main(int argc, char **argv)
         "MTNKICIYAISKNEEKFV"
         "MTNKICIYAISKNEEKFV"
         "MTNKICIYAISKNEEKFV"
-        "$$$$$$$$$$$$$$$$";
+        "MTNKICIYAISKNEEKFV";
 #endif
-    const int lena = strlen(seqA) - 32;
-    const int lenb = strlen(seqB) - 16;
-    const int lenmax = MAX(lena,lenb)+32;
+    const int lena = strlen(seqA);
+    const int lenb = strlen(seqB);
+    const int lenmax = MAX(lena,lenb);
     int score;
     DP_t stats;
     unsigned long long timer;
@@ -411,16 +627,18 @@ int main(int argc, char **argv)
 
     ::std::cout << "alg\t\ttime\tscore\tmatches\tlength" << ::std::endl;
 
+#if 0
     timer = timer_start();
     for (i=0; i<limit; ++i) {
-        score = sw(&seqA[16], lena, seqB, lenb, 10, 1, blosum62__);
+        score = sw(seqA, lena, seqB, lenb, 10, 1, blosum62__);
     }
     timer = timer_end(timer);
     ::std::cout << "sw orig\t\t" << timer/limit << "\t" << score << ::std::endl;
+#endif
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
-        score = sg(&seqA[16], lena, seqB, lenb, 10, 1, blosum62__);
+        score = sg(seqA, lena, seqB, lenb, 10, 1, blosum62__);
     }
     timer = timer_end(timer);
     ::std::cout << "sg orig\t\t" << timer/limit << "\t" << score << ::std::endl;
