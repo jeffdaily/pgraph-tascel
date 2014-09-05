@@ -263,7 +263,7 @@ int sw(
         for (int32_t i=0; i<segLen; ++i) {
             int32_t j = i;
             for (int32_t segNum=0; segNum<8; ++segNum) {
-                *t++ = j>=s1Len ? 0 : matrix[nt*n + MAP_BLOSUM_[s1[j]]];
+                *t++ = j>=s1Len ? 0 : matrix[nt*n + MAP_BLOSUM_[(unsigned char)s1[j]]];
                 j += segLen;
             }
         }
@@ -319,7 +319,7 @@ int sw(
         __m128i vMaxColumn = vZero;
 
         /* Correct part of the vProfile */
-        const __m128i* vP = vProfile + MAP_BLOSUM_[s2[j]] * segLen;
+        const __m128i* vP = vProfile + MAP_BLOSUM_[(unsigned char)s2[j]] * segLen;
 
         /* Swap the 2 H buffers. */
         __m128i* pv = pvHLoad;
@@ -431,7 +431,7 @@ int sg(
         for (int32_t i=0; i<segLen; ++i) {
             int32_t j = i;
             for (int32_t segNum=0; segNum<8; ++segNum) {
-                *t++ = j>=s1Len ? 0 : matrix[nt*n + MAP_BLOSUM_[s1[j]]];
+                *t++ = j>=s1Len ? 0 : matrix[nt*n + MAP_BLOSUM_[(unsigned char)s1[j]]];
                 j += segLen;
             }
         }
@@ -473,7 +473,6 @@ int sg(
 
     /* outer loop over database sequence */
     for (int32_t j=0; j<s2Len; ++j) {
-        int32_t cmp;
         __m128i e;
         /* Initialize F value to -INF.  Any errors to vH values will be
          * corrected in the Lazy_F loop.  */
@@ -483,7 +482,7 @@ int sg(
         __m128i vH = _mm_slli_si128(pvHStore[segLen - 1], 2);
 
         /* Correct part of the vProfile */
-        const __m128i* vP = vProfile + MAP_BLOSUM_[s2[j]] * segLen;
+        const __m128i* vP = vProfile + MAP_BLOSUM_[(unsigned char)s2[j]] * segLen;
 
         /* Swap the 2 H buffers. */
         __m128i* pv = pvHLoad;
@@ -607,7 +606,7 @@ int nw(
         for (int32_t i=0; i<segLen; ++i) {
             int32_t j = i;
             for (int32_t segNum=0; segNum<8; ++segNum) {
-                *t++ = j>=s1Len ? 0 : matrix[nt*n + MAP_BLOSUM_[s1[j]]];
+                *t++ = j>=s1Len ? 0 : matrix[nt*n + MAP_BLOSUM_[(unsigned char)s1[j]]];
                 j += segLen;
             }
         }
@@ -670,7 +669,6 @@ int nw(
 
     /* outer loop over database sequence */
     for (int32_t j=0; j<s2Len; ++j) {
-        int32_t cmp;
         __m128i e;
         /* Initialize F value to -INF.  Any errors to vH values will be
          * corrected in the Lazy_F loop.  */
@@ -683,7 +681,7 @@ int nw(
         vH = _mm_insert_epi16(vH, boundary[j], 0);
 
         /* Correct part of the vProfile */
-        const __m128i* vP = vProfile + MAP_BLOSUM_[s2[j]] * segLen;
+        const __m128i* vP = vProfile + MAP_BLOSUM_[(unsigned char)s2[j]] * segLen;
 
         /* Swap the 2 H buffers. */
         __m128i* pv = pvHLoad;
@@ -764,7 +762,7 @@ end:
 }
 
 
-int main(int argc, char **argv)
+int main(int /*argc*/, char ** /*argv*/)
 {
 #if SHORT_TEST || DEBUG
     const char *seqA = "SLPSMRADSFTKELMEKISS";
@@ -791,7 +789,6 @@ int main(int argc, char **argv)
 #endif
     const int lena = strlen(seqA);
     const int lenb = strlen(seqB);
-    const int lenmax = MAX(lena,lenb);
     int score;
     DP_t stats;
     unsigned long long timer;
