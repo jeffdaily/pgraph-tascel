@@ -218,8 +218,14 @@ static void print_m128i_16(const char *name, const __m128i &m) {
     } tmp;
     tmp.m = m;
     printf("%s={%3d,%3d,%3d,%3d,%3d,%3d,%3d,%3d}", name,
+#if 0
             int(tmp.v[0]), int(tmp.v[1]), int(tmp.v[2]), int(tmp.v[3]),
-            int(tmp.v[4]), int(tmp.v[5]), int(tmp.v[6]), int(tmp.v[7]));
+            int(tmp.v[4]), int(tmp.v[5]), int(tmp.v[6]), int(tmp.v[7])
+#else
+            extract(m,0), extract(m,1), extract(m,2), extract(m,3),
+            extract(m,4), extract(m,5), extract(m,6), extract(m,7)
+#endif
+            );
 }
 #endif
 
@@ -413,6 +419,224 @@ end:
 }
 
 
+static int sw_mine(
+        const char * const restrict s1, const int s1Len,
+        const char * const restrict s2, const int s2Len,
+        const int open, const int gap,
+        const int8_t * const restrict matrix)
+{
+    /* compute 'query' profile; s1 is the query */
+    const int32_t n = 24; /* number of amino acids in table */
+    int32_t segLen = (s1Len + 7) / 8;
+    __m128i* vProfile = (__m128i*)malloc(n * segLen * sizeof(__m128i));
+    int16_t* t = (int16_t*)vProfile;
+
+    /* Generate query profile rearrange query sequence & calculate the weight
+     * of match/mismatch */
+    for (int32_t nt=0; nt<n; ++nt) {
+        for (int32_t i=0; i<segLen; ++i) {
+            int32_t j = i;
+            for (int32_t segNum=0; segNum<8; ++segNum) {
+                *t++ = j>=s1Len ? 0 : matrix[nt*n + MAP_BLOSUM_[(unsigned char)s1[j]]];
+                j += segLen;
+            }
+        }
+    }
+
+#if DEBUG
+    printf("array length (s1Len(=%d)+0)*s2Len(=%d) = %d\n",
+            s1Len, s2Len, (s1Len+0)*s2Len);
+    int *array = new int[segLen*8*s2Len];
+    init_vect(segLen*8, array, -9);
+#endif
+
+    /* the max alignment score */
+    uint16_t max = 0;
+
+    /* array to record the largest score of each reference position */
+    uint16_t* maxColumn = (uint16_t*) calloc(s2Len, 2);
+
+    /* Define 16 byte 0 vector. */
+    __m128i vZero = _mm_setzero_si128();
+
+    __m128i* pvHStore = (__m128i*) calloc(segLen, sizeof(__m128i));
+    __m128i* pvHLoad = (__m128i*) calloc(segLen, sizeof(__m128i));
+    __m128i* pvE = (__m128i*) calloc(segLen, sizeof(__m128i));
+    __m128i* pvHmax = (__m128i*) calloc(segLen, sizeof(__m128i));
+
+    /* 16 byte insertion begin vector */
+    __m128i vGapO = _mm_set1_epi16(open);
+
+    /* 16 byte insertion extension vector */
+    __m128i vGapE = _mm_set1_epi16(gap);
+
+    /* Trace the highest score of the whole SW matrix. */
+    __m128i vMaxScore = vZero;
+
+    /* Trace the highest score till the previous column. */
+    __m128i vMaxMark = vZero;
+
+    __m128i vTemp;
+
+    /* outer loop over database sequence */
+    for (int32_t j=0; j<s2Len; ++j) {
+        //printf("j=%d\n", j);
+        int32_t cmp;
+
+        /* Initialize F value to 0.
+         * Any errors to vH values will be corrected in the Lazy_F loop. */
+        __m128i vF = vZero;
+        __m128i vH_i1 = vZero;
+
+        /* load final segment of pvHStore and shift left by 2 bytes */
+        /* aka H_(i-1,j-1) */
+        __m128i vH = _mm_slli_si128(pvHStore[segLen - 1], 2);
+
+        /* vMaxColumn is used to record the max values of column j. */
+        __m128i vMaxColumn = vZero;
+
+        /* Correct part of the vProfile */
+        const __m128i* vP = vProfile + MAP_BLOSUM_[(unsigned char)s2[j]] * segLen;
+
+        /* Swap the 2 H buffers. */
+        __m128i* pv = pvHLoad;
+        pvHLoad = pvHStore;
+        pvHStore = pv;
+
+        /* inner loop to process the query sequence */
+        for (int32_t i=0; i<segLen; ++i) {
+            //printf("i=%d\n", i);
+            /* calculate vE */
+            __m128i vH_j1 = _mm_load_si128(pvHLoad + i);
+            __m128i vE_j1 = _mm_load_si128(pvE + i);
+            vH_j1 = _mm_subs_epi16(vH_j1, vGapO);
+            vE_j1 = _mm_subs_epi16(vE_j1, vGapE);
+            __m128i vE = _mm_max_epi16(vE_j1, vH_j1);
+            _mm_store_si128(pvE + i, vE);
+            //print_m128i_16("vE          ",vE);
+            //printf("\n");
+
+            /* calculate vF */
+            vF = _mm_subs_epi16(vF, vGapE);
+            vH_i1 = _mm_subs_epi16(vH_i1, vGapO);
+            vF = _mm_max_epi16(vF, vH_i1);
+            //print_m128i_16("vF          ",vF);
+            //printf("\n");
+
+            /* calculate new vH */
+            vH = _mm_adds_epi16(vH, _mm_load_si128(vP + i));
+            //print_m128i_16("vH          ",vH);
+            //printf("\n");
+            vH = _mm_max_epi16(vH, vE);
+            vH = _mm_max_epi16(vH, vF);
+            vH = _mm_max_epi16(vH, vZero);
+            //print_m128i_16("vH          ",vH);
+            //printf("\n");
+            vMaxColumn = _mm_max_epi16(vMaxColumn, vH);
+            _mm_store_si128(pvHStore + i, vH);
+#if DEBUG
+            arr_store_si128(array, vH, i, segLen, j, s2Len);
+#endif
+            /* keep latest vH for next inner loop */
+            vH_i1 = vH;
+
+            /* Load the next vH. */
+            vH = _mm_load_si128(pvHLoad + i);
+        }
+
+        /* Lazy_F loop: has been revised to disallow adjecent insertion and
+         * then deletion, so don't update E(i, i), learn from SWPS3 */
+#if 0
+        for (int32_t k=0; k<8; ++k) {
+            vF = _mm_slli_si128 (vF, 2);
+            for (int32_t i=0; i<segLen; ++i) {
+                vH = _mm_load_si128(pvHStore + i);
+                vH = _mm_max_epi16(vH, vF);
+                _mm_store_si128(pvHStore + i, vH);
+#if DEBUG
+                arr_store_si128(array, vH, i, segLen, j, s2Len);
+#endif
+                vH = _mm_subs_epu16(vH, vGapO);
+                vF = _mm_subs_epu16(vF, vGapE);
+                if (! _mm_movemask_epi8(_mm_cmpgt_epi16(vF, vH))) goto end;
+            }
+        }
+#else
+        //printf("lazy F loop\n");
+        for (int32_t k=0; k<8; ++k) {
+            vF = _mm_slli_si128(vF, 2);
+            //print_m128i_16("vF          ",vF);
+            //printf("\n");
+            vH_i1 = _mm_slli_si128(vH_i1, 2);
+            //print_m128i_16("vH_i1       ",vH_i1);
+            //printf("\n");
+            for (int32_t i=0; i<segLen; ++i) {
+                vF = _mm_subs_epi16(vF,vGapE);
+                //print_m128i_16("vF          ",vF);
+                //printf("\n");
+                vH_i1 = _mm_subs_epi16(vH_i1, vGapO);
+                //print_m128i_16("vH_i1       ",vH_i1);
+                //printf("\n");
+                vF = _mm_max_epi16(vF,vH_i1);
+                //print_m128i_16("vF          ",vF);
+                //printf("\n");
+                vH = _mm_load_si128(pvHStore + i);
+                //print_m128i_16("vH          ",vH);
+                //printf("\n");
+                __m128i cond = _mm_cmpgt_epi16(vF,vH);
+                //print_m128i_16("cond        ",cond);
+                //printf("\n");
+                if (!_mm_movemask_epi8(cond)) {
+                    goto end;
+                }
+                vH_i1 = _mm_max_epi16(vF,vH);
+                _mm_store_si128(pvHStore + i, vH_i1);
+#if DEBUG
+                arr_store_si128(array, vH_i1, i, segLen, j, s2Len);
+#endif
+            }
+        }
+#endif
+
+end:
+        vMaxScore = _mm_max_epi16(vMaxScore, vMaxColumn);
+        vTemp = _mm_cmpeq_epi16(vMaxMark, vMaxScore);
+        cmp = _mm_movemask_epi8(vTemp);
+        if (cmp != 0xffff) {
+            uint16_t temp;
+            vMaxMark = vMaxScore;
+            max8(temp, vMaxScore);
+            vMaxScore = vMaxMark;
+
+            if (temp > max) {
+                max = temp;
+                for (int32_t i=0; i<segLen; ++i) {
+                    pvHmax[i] = pvHStore[i];
+                }
+            }
+        }
+
+        /* Record the max score of current column. */
+        max8(maxColumn[j], vMaxColumn);
+    }
+
+    free(vProfile);
+    free(pvHmax);
+    free(pvE);
+    free(pvHLoad);
+    free(pvHStore);
+
+    free(maxColumn);
+
+#if DEBUG
+    print_array(array, s2, s2Len, s1, s1Len, 0);
+    delete [] array;
+#endif
+
+    return max;
+}
+
+
 static DP_t sw_stats(
         const char * const restrict s1, const int s1Len,
         const char * const restrict s2, const int s2Len,
@@ -479,6 +703,7 @@ static DP_t sw_stats(
 
     /* outer loop over database sequence */
     for (int32_t j=0; j<s2Len; ++j) {
+        printf("j=%d\n", j);
         int32_t cmp;
         __m128i e;
         /* Initialize F value to 0.  Any errors to vH values will be corrected
@@ -499,6 +724,15 @@ static DP_t sw_stats(
         /* load left and upper left length counts */
         __m128i Wlength = _mm_load_si128(pvLStore);
         __m128i NWlength = _mm_slli_si128(pvLStore[segLen - 1], 2);
+
+#if DEBUG
+        print_m128i_16("      vH", vH);
+        printf("\n");
+        print_m128i_16(" Wlength", Wlength);
+        printf("\n");
+        print_m128i_16("NWlength", NWlength);
+        printf("\n");
+#endif
 
         /* vMaxColumn is used to record the max values of column j. */
         __m128i vMaxColumn = vZero;
@@ -534,6 +768,17 @@ static DP_t sw_stats(
             /* Save vH values. */
             _mm_store_si128(pvHStore + i, vH);
 
+            /* Update vE value. */
+            /* saturation arithmetic, result >= 0 */
+            vH = _mm_subs_epu16(vH, vGapO);
+            e = _mm_subs_epu16(e, vGapE);
+            e = _mm_max_epi16(e, vH);
+            _mm_store_si128(pvE + i, e);
+
+            /* Update vF value. */
+            vF = _mm_subs_epu16(vF, vGapE);
+            vF = _mm_max_epi16(vF, vH);
+
             /* Save vM and vL values */
             __m128i case1not = _mm_or_si128(
                     _mm_cmplt_epi16(vH,vF),_mm_cmplt_epi16(vH,e));
@@ -553,34 +798,40 @@ static DP_t sw_stats(
             Clength= _mm_or_si128(Clength,_mm_and_si128(case3,
                         _mm_add_epi16(Wlength, vOne)));
             __m128i mask = _mm_cmplt_epi16(vH,vOne);
-            vH = _mm_andnot_si128(mask, vH);
             Cmatch = _mm_andnot_si128(mask, Cmatch);
             Clength= _mm_andnot_si128(mask, Clength);
-            mask = _mm_cmpgt_epi16(vH,vScore);
-            vScore = _mm_andnot_si128(mask, vScore);
-            vScore = _mm_or_si128(vScore, _mm_and_si128(mask, vH));
-            vMatch = _mm_andnot_si128(mask, vMatch);
-            vMatch = _mm_or_si128(vMatch, _mm_and_si128(mask, Cmatch));
-            vLength= _mm_andnot_si128(mask, vLength);
-            vLength= _mm_or_si128(vLength,_mm_and_si128(mask, Clength));
 
+            _mm_store_si128(pvMStore + i, Cmatch);
+            _mm_store_si128(pvLStore + i, Clength);
 #if DEBUG
+            print_m128i_16(" Clength", Clength);
+            printf("\n");
+#if DEBUG_MATCHES
+            arr_store_si128(array, Cmatch, i, segLen, j, s2Len);
+#elif DEBUG_LENGTH
+            arr_store_si128(array, Clength, i, segLen, j, s2Len);
+#else
             arr_store_si128(array, vH, i, segLen, j, s2Len);
 #endif
-
-            /* Update vE value. */
-            /* saturation arithmetic, result >= 0 */
-            vH = _mm_subs_epu16(vH, vGapO);
-            e = _mm_subs_epu16(e, vGapE);
-            e = _mm_max_epi16(e, vH);
-            _mm_store_si128(pvE + i, e);
-
-            /* Update vF value. */
-            vF = _mm_subs_epu16(vF, vGapE);
-            vF = _mm_max_epi16(vF, vH);
+#endif
 
             /* Load the next vH. */
             vH = _mm_load_si128(pvHLoad + i);
+
+            /* load left and upper left match counts */
+            Wmatch = _mm_load_si128(pvMLoad + i);
+            NWmatch= Cmatch;
+
+            /* load left and upper left length counts */
+            Wlength = _mm_load_si128(pvLLoad + i);
+            NWlength= Clength;
+
+#if DEBUG
+            print_m128i_16("next  Wlength", Wlength);
+            printf("\n");
+            print_m128i_16("next NWlength", NWlength);
+            printf("\n");
+#endif
         }
 
         /* Lazy_F loop: has been revised to disallow adjecent insertion and
@@ -592,7 +843,11 @@ static DP_t sw_stats(
                 vH = _mm_max_epi16(vH, vF);
                 _mm_store_si128(pvHStore + i, vH);
 #if DEBUG
+#if DEBUG_MATCHES
+#elif DEBUG_LENGTH
+#else
                 arr_store_si128(array, vH, i, segLen, j, s2Len);
+#endif
 #endif
                 vH = _mm_subs_epu16(vH, vGapO);
                 vF = _mm_subs_epu16(vF, vGapE);
@@ -993,6 +1248,8 @@ int main(int /*argc*/, char ** /*argv*/)
 #if SHORT_TEST || DEBUG
     const char *seqA = "SLPSMRADSFTKELMEKISS";
     const char *seqB = "MTNKICIYAISKNEEKFV";
+    //const char *seqA = "WTHECK";
+    //const char *seqB = "BETTERWORK";
 #else
     const char *seqA =
         "SLPSMRADSFTKELMEKISS"
@@ -1048,11 +1305,19 @@ int main(int /*argc*/, char ** /*argv*/)
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
+        score = sw_mine(seqA, lena, seqB, lenb, 10, 1, blosum62__);
+    }
+    timer = timer_end(timer);
+    ::std::cout << "sw mine\t\t" << timer/limit << "\t" << score << ::std::endl;
+
+    timer = timer_start();
+    for (i=0; i<limit; ++i) {
         score = sw(seqA, lena, seqB, lenb, 10, 1, blosum62__);
     }
     timer = timer_end(timer);
     ::std::cout << "sw orig\t\t" << timer/limit << "\t" << score << ::std::endl;
 
+#if 0
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         stats = sw_stats(seqA, lena, seqB, lenb, 10, 1, blosum62__);
@@ -1064,6 +1329,7 @@ int main(int /*argc*/, char ** /*argv*/)
         << "\t" << stats.matches
         << "\t" << stats.length
         << ::std::endl;
+#endif
 
     return 0;
 }
