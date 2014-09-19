@@ -380,6 +380,8 @@ static DP_t nw_stats(
     printf(" %3d", mch_pr[0]);
 #elif DEBUG_LENGTH
     printf(" %3d", len_pr[0]);
+    //printf(" %3d", del_pr[0]);
+    //printf(" %3d", NEG_INF);
 #else
     printf(" %3d", tbl_pr[0]);
 #endif
@@ -396,6 +398,8 @@ static DP_t nw_stats(
         printf(" %3d", mch_pr[j]);
 #elif DEBUG_LENGTH
         printf(" %3d", len_pr[j]);
+        //printf(" %3d", del_pr[j]);
+        //printf(" %3d", NEG_INF);
 #else
         printf(" %3d", tbl_pr[j]);
 #endif
@@ -423,6 +427,7 @@ static DP_t nw_stats(
         printf(" %3d", Wmatches);
 #elif DEBUG_LENGTH
         printf(" %3d", Wlength);
+        //printf(" %3d", NEG_INF);
 #else
         printf(" %3d", Wscore);
 #endif
@@ -458,6 +463,8 @@ static DP_t nw_stats(
             printf(" %3d", Wmatches);
 #elif DEBUG_LENGTH
             printf(" %3d", Wlength);
+            //printf(" %3d", del_pr[j]);
+            //printf(" %3d", ins_cr);
 #else
             printf(" %3d", Wscore);
 #endif
@@ -6012,8 +6019,10 @@ static DP_t sw_stats_sse8(
 int main(int argc, char **argv)
 {
 #if SHORT_TEST || DEBUG
-    const char *seqA = "$$$$$$$$$$$$$$$$SLPSMRADSFTKELMEKISS$$$$$$$$$$$$$$$$";
-    const char *seqB = "MTNKICIYAISKNEEKFV$$$$$$$$$$$$$$$$";
+    //const char *seqA = "$$$$$$$$$$$$$$$$SLPSMRADSFTKELMEKISS$$$$$$$$$$$$$$$$";
+    //const char *seqB = "MTNKICIYAISKNEEKFV$$$$$$$$$$$$$$$$";
+    const char *seqA = "$$$$$$$$$$$$$$$$WTHECK$$$$$$$$$$$$$$$$";
+    const char *seqB = "BETTERWORK$$$$$$$$$$$$$$$$";
 #else
     const char *seqA = "$$$$$$$$$$$$$$$$"
                        "SLPSMRADSFTKELMEKISS"
@@ -6057,139 +6066,167 @@ int main(int argc, char **argv)
 
     ::std::cout << "alg\t\ttime\tscore\tmatches\tlength" << ::std::endl;
 
+#if 1
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw(&seqA[16], lena, seqB, lenb, 10, 1, blosum62, nogap, b_gap);
     }
     timer = timer_end(timer);
-    ::std::cout << "nw orig\t\t" << timer/limit << "\t" << score << ::std::endl;
+    ::std::cout << "nw serial\t" << timer/limit << "\t" << score << ::std::endl;
+#endif
 
+#if 1
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw_sse8(&seqA[16], lena, seqB, lenb, 10, 1, blosum62, nogap, b_gap);
     }
     timer = timer_end(timer);
-    ::std::cout << "nw_sse8\t\t" << timer/limit << "\t" << score << ::std::endl;
+    ::std::cout << "nw woz\t\t" << timer/limit << "\t" << score << ::std::endl;
+#endif
 
+#if 1
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         stats = nw_stats(&seqA[16], lena, seqB, lenb, 10, 1, blosum62,
                 nogap, b_gap, matches, length);
     }
     timer = timer_end(timer);
-    ::std::cout << "nw stat\t"
+    ::std::cout << "nw serial stat"
         << "\t" << timer/limit
         << "\t" << stats.score
         << "\t" << stats.matches
         << "\t" << stats.length
         << ::std::endl;
+#endif
 
+#if 1
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         stats = nw_stats_sse8(&seqA[16], lena, seqB, lenb, 10, 1, blosum62,
                 nogap, b_gap, matches, length);
     }
     timer = timer_end(timer);
-    ::std::cout << "nw stat sse"
+    ::std::cout << "nw woz stat"
         << "\t" << timer/limit
         << "\t" << stats.score
         << "\t" << stats.matches
         << "\t" << stats.length
         << ::std::endl;
+#endif
 
+#if 1
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sg(&seqA[16], lena, seqB, lenb, 10, 1, blosum62, nogap, b_gap);
     }
     timer = timer_end(timer);
-    ::std::cout << "sg orig\t\t" << timer/limit << "\t" << score << ::std::endl;
+    ::std::cout << "sg serial\t" << timer/limit << "\t" << score << ::std::endl;
+#endif
 
+#if 1
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sg_sse8(&seqA[16], lena, seqB, lenb, 10, 1, blosum62, nogap, b_gap);
     }
     timer = timer_end(timer);
-    ::std::cout << "sg_sse8\t\t" << timer/limit << "\t" << score << ::std::endl;
+    ::std::cout << "sg woz\t\t" << timer/limit << "\t" << score << ::std::endl;
+#endif
 
+#if 1
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         stats = sg_stats(&seqA[16], lena, seqB, lenb, 10, 1, blosum62,
                 nogap, b_gap, matches, length);
     }
     timer = timer_end(timer);
-    ::std::cout << "sg stat\t"
+    ::std::cout << "sg serial stat"
         << "\t" << timer/limit
         << "\t" << stats.score
         << "\t" << stats.matches
         << "\t" << stats.length
         << ::std::endl;
+#endif
 
+#if 1
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         stats = sg_stats_sse8(&seqA[16], lena, seqB, lenb, 10, 1, blosum62,
                 nogap, b_gap, matches, length);
     }
     timer = timer_end(timer);
-    ::std::cout << "sg stat sse"
+    ::std::cout << "sg woz stat"
         << "\t" << timer/limit
         << "\t" << stats.score
         << "\t" << stats.matches
         << "\t" << stats.length
         << ::std::endl;
+#endif
 
+#if 0
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sw_woz(&seqA[16], lena, seqB, lenb, 10, 1, blosum62, nogap, b_gap);
     }
     timer = timer_end(timer);
     ::std::cout << "sw_woz\t\t" << timer/limit << "\t" << score << ::std::endl;
+#endif
 
+#if 1
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sw(&seqA[16], lena, seqB, lenb, 10, 1, blosum62, nogap, b_gap);
     }
     timer = timer_end(timer);
-    ::std::cout << "sw orig\t\t" << timer/limit << "\t" << score << ::std::endl;
+    ::std::cout << "sw serial\t" << timer/limit << "\t" << score << ::std::endl;
+#endif
 
+#if 0
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sw_sse8_pad(&seqA[16], lena, seqB, lenb, 10, 1, blosum62, nogap, b_gap);
     }
     timer = timer_end(timer);
     ::std::cout << "sw_sse8_pad\t" << timer/limit << "\t" << score << ::std::endl;
+#endif
 
+#if 1
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sw_sse8(&seqA[16], lena, seqB, lenb, 10, 1, blosum62, nogap, b_gap);
     }
     timer = timer_end(timer);
-    ::std::cout << "sw_sse8\t\t" << timer/limit << "\t" << score << ::std::endl;
+    ::std::cout << "sw woz\t\t" << timer/limit << "\t" << score << ::std::endl;
+#endif
 
+#if 1
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         stats = sw_stats(&seqA[16], lena, seqB, lenb, 10, 1, blosum62,
                 nogap, b_gap, matches, length);
     }
     timer = timer_end(timer);
-    ::std::cout << "sw stat\t"
+    ::std::cout << "sw serial stat"
         << "\t" << timer/limit
         << "\t" << stats.score
         << "\t" << stats.matches
         << "\t" << stats.length
         << ::std::endl;
+#endif
 
+#if 1
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         stats = sw_stats_sse8(&seqA[16], lena, seqB, lenb, 10, 1, blosum62,
                 nogap, b_gap, matches, length);
     }
     timer = timer_end(timer);
-    ::std::cout << "sw stat sse"
+    ::std::cout << "sw woz stat"
         << "\t" << timer/limit
         << "\t" << stats.score
         << "\t" << stats.matches
         << "\t" << stats.length
         << ::std::endl;
+#endif
 
     delete [] nogap;
     delete [] b_gap;
