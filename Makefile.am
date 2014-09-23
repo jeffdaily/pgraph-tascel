@@ -35,6 +35,7 @@ AM_LDFLAGS += $(PT_MPI_LDFLAGS)
 AM_LDFLAGS += $(GMP_LDFLAGS)
 
 LDADD += libpgraph.la
+LDADD += libalign.la
 LDADD += $(TASCEL_LIBS)
 #LDADD += $(GA_LIBS)
 LDADD += $(ARMCI_LIBS)
@@ -42,6 +43,34 @@ LDADD += $(PT_MPI_LIBS)
 LDADD += $(GMP_LIBS)
 #LDADD += $(GA_FLIBS)
 LDADD += libyaml-cpp.la
+
+noinst_LTLIBRARIES += libalign.la
+libalign_la_SOURCES =
+libalign_la_SOURCES += src/align/align.h
+libalign_la_SOURCES += src/align/nw_ref.c
+libalign_la_SOURCES += src/align/nw_woz.c
+libalign_la_SOURCES += src/align/nw_striped.c
+libalign_la_SOURCES += src/align/nw_stats_ref.c
+libalign_la_SOURCES += src/align/nw_stats_woz.c
+libalign_la_SOURCES += src/align/nw_stats_striped.c
+libalign_la_SOURCES += src/align/sg_ref.c
+libalign_la_SOURCES += src/align/sg_woz.c
+libalign_la_SOURCES += src/align/sg_striped.c
+libalign_la_SOURCES += src/align/sg_stats_ref.c
+libalign_la_SOURCES += src/align/sg_stats_woz.c
+libalign_la_SOURCES += src/align/sg_stats_striped.c
+libalign_la_SOURCES += src/align/sw_ref.c
+libalign_la_SOURCES += src/align/sw_woz.c
+libalign_la_SOURCES += src/align/sw_striped.c
+libalign_la_SOURCES += src/align/sw_stats_ref.c
+libalign_la_SOURCES += src/align/sw_stats_woz.c
+libalign_la_SOURCES += src/align/sw_stats_striped.c
+
+noinst_LTLIBRARIES += libalign_debug.la
+libalign_debug_la_SOURCES = $(libalign_la_SOURCES)
+libalign_debug_la_CPPFLAGS =
+libalign_debug_la_CPPFLAGS += $(AM_CPPFLAGS)
+libalign_debug_la_CPPFLAGS += -DALIGN_EXTRA
 
 noinst_LTLIBRARIES += libpgraph.la
 libpgraph_la_SOURCES =
@@ -238,10 +267,11 @@ noinst_PROGRAMS += tests/test_combinations
 noinst_PROGRAMS += tests/test_db_reprinter
 noinst_PROGRAMS += tests/test_parser
 noinst_PROGRAMS += tests/test_stl_container_performance
+if HAVE_SSE2
+noinst_PROGRAMS += tests/test_align
+noinst_PROGRAMS += tests/test_fasta_align
 noinst_PROGRAMS += tests/test_striped_sw
 noinst_PROGRAMS += tests/test_woz_sw
-if HAVE_SSE2
-noinst_PROGRAMS += tests/test_fasta_align
 endif
 
 tests_suftest_SOURCES                      = tests/suftest.cpp
@@ -252,9 +282,15 @@ tests_test_combinations_SOURCES            = tests/test_combinations.cpp
 tests_test_db_reprinter_SOURCES            = tests/test_db_reprinter.cpp
 tests_test_parser_SOURCES                  = tests/test_parser.cpp
 tests_test_stl_container_performance_SOURCES = tests/test_stl_container_performance.cpp
-tests_test_striped_sw_SOURCES              = tests/test_striped_sw.cpp
-tests_test_woz_sw_SOURCES                  = tests/test_woz_sw.cpp
+
 tests_test_fasta_align_SOURCES             = tests/test_fasta_align.cpp
+
+tests_test_striped_sw_SOURCES              = tests/test_striped_sw.cpp
+tests_test_striped_sw_LDADD                = 
+tests_test_woz_sw_SOURCES                  = tests/test_woz_sw.cpp
+tests_test_woz_sw_LDADD                    = 
+tests_test_align_SOURCES                   = tests/test_align.c
+tests_test_align_LDADD                     = libalign.la
 
 check_LIBRARIES += libgtest.a
 libgtest_a_SOURCES = contrib/gtest-1.7.0/src/gtest-all.cc
