@@ -549,6 +549,7 @@ end:
     free(pvELoad);
     free(pvEM);
     free(pvEL);
+    free(boundary);
 
 #if DEBUG
     print_array(array, s2, s2Len, s1, s1Len, 0);
@@ -739,6 +740,7 @@ end:
     free(pvHStore);
     free(pvHLoad);
     free(pvE);
+    free(boundary);
 
 #if DEBUG
     print_array(array, s2, s2Len, s1, s1Len, 0);
