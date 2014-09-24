@@ -269,6 +269,7 @@ noinst_PROGRAMS += tests/test_parser
 noinst_PROGRAMS += tests/test_stl_container_performance
 if HAVE_SSE2
 noinst_PROGRAMS += tests/test_align
+noinst_PROGRAMS += tests/test_align_db
 noinst_PROGRAMS += tests/test_fasta_align
 noinst_PROGRAMS += tests/test_striped_sw
 noinst_PROGRAMS += tests/test_woz_sw
@@ -290,7 +291,8 @@ tests_test_striped_sw_LDADD                =
 tests_test_woz_sw_SOURCES                  = tests/test_woz_sw.cpp
 tests_test_woz_sw_LDADD                    = 
 tests_test_align_SOURCES                   = tests/test_align.c
-tests_test_align_LDADD                     = libalign.la
+tests_test_align_LDADD                     = libalign.la libalign_debug.la
+tests_test_align_db_SOURCES                = tests/test_align_db.cpp
 
 check_LIBRARIES += libgtest.a
 libgtest_a_SOURCES = contrib/gtest-1.7.0/src/gtest-all.cc

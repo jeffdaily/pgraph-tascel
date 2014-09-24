@@ -111,8 +111,9 @@ check_PROGRAMS = tests/test_mpi$(EXEEXT)
 @HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/smith_waterman_sse2.h
 @HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@am__append_4 = tests/ssw_test
 @HAVE_SSE2_TRUE@am__append_5 = tests/test_fasta_align
-@HAVE_SSE2_TRUE@am__append_6 = tests/test_align tests/test_fasta_align \
-@HAVE_SSE2_TRUE@	tests/test_striped_sw tests/test_woz_sw
+@HAVE_SSE2_TRUE@am__append_6 = tests/test_align tests/test_align_db \
+@HAVE_SSE2_TRUE@	tests/test_fasta_align tests/test_striped_sw \
+@HAVE_SSE2_TRUE@	tests/test_woz_sw
 subdir = .
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) \
@@ -287,6 +288,7 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 @HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@	tests/ssw_test$(EXEEXT)
 @HAVE_SSE2_TRUE@am__EXEEXT_2 = tests/test_fasta_align$(EXEEXT)
 @HAVE_SSE2_TRUE@am__EXEEXT_3 = tests/test_align$(EXEEXT) \
+@HAVE_SSE2_TRUE@	tests/test_align_db$(EXEEXT) \
 @HAVE_SSE2_TRUE@	tests/test_fasta_align$(EXEEXT) \
 @HAVE_SSE2_TRUE@	tests/test_striped_sw$(EXEEXT) \
 @HAVE_SSE2_TRUE@	tests/test_woz_sw$(EXEEXT)
@@ -330,7 +332,13 @@ tests_suftest_orig_DEPENDENCIES = libpgraph.la libalign.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) libyaml-cpp.la
 am_tests_test_align_OBJECTS = tests/test_align.$(OBJEXT)
 tests_test_align_OBJECTS = $(am_tests_test_align_OBJECTS)
-tests_test_align_DEPENDENCIES = libalign.la
+tests_test_align_DEPENDENCIES = libalign.la libalign_debug.la
+am_tests_test_align_db_OBJECTS = tests/test_align_db.$(OBJEXT)
+tests_test_align_db_OBJECTS = $(am_tests_test_align_db_OBJECTS)
+tests_test_align_db_LDADD = $(LDADD)
+tests_test_align_db_DEPENDENCIES = libpgraph.la libalign.la \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) libyaml-cpp.la
 am_tests_test_combinations_OBJECTS =  \
 	tests/test_combinations.$(OBJEXT)
 tests_test_combinations_OBJECTS =  \
@@ -441,6 +449,7 @@ SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
 	$(apps_align_SOURCES) $(tests_ssw_test_SOURCES) \
 	$(tests_st_serial_SOURCES) $(tests_suftest_SOURCES) \
 	$(tests_suftest_orig_SOURCES) $(tests_test_align_SOURCES) \
+	$(tests_test_align_db_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
 	$(tests_test_db_reprinter_SOURCES) \
 	$(tests_test_fasta_align_SOURCES) $(tests_test_mpi_SOURCES) \
@@ -453,6 +462,7 @@ DIST_SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
 	$(apps_align_SOURCES) $(tests_ssw_test_SOURCES) \
 	$(tests_st_serial_SOURCES) $(tests_suftest_SOURCES) \
 	$(tests_suftest_orig_SOURCES) $(tests_test_align_SOURCES) \
+	$(tests_test_align_db_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
 	$(tests_test_db_reprinter_SOURCES) \
 	$(tests_test_fasta_align_SOURCES) $(tests_test_mpi_SOURCES) \
@@ -805,7 +815,8 @@ tests_test_striped_sw_LDADD =
 tests_test_woz_sw_SOURCES = tests/test_woz_sw.cpp
 tests_test_woz_sw_LDADD = 
 tests_test_align_SOURCES = tests/test_align.c
-tests_test_align_LDADD = libalign.la
+tests_test_align_LDADD = libalign.la libalign_debug.la
+tests_test_align_db_SOURCES = tests/test_align_db.cpp
 libgtest_a_SOURCES = contrib/gtest-1.7.0/src/gtest-all.cc
 libpgtest_a_SOURCES = tests/MpiEnvironment.cpp \
 	tests/MpiEnvironment.hpp tests/StreamPrettyPrinter.cpp \
@@ -1270,6 +1281,12 @@ tests/test_align.$(OBJEXT): tests/$(am__dirstamp) \
 tests/test_align$(EXEEXT): $(tests_test_align_OBJECTS) $(tests_test_align_DEPENDENCIES) $(EXTRA_tests_test_align_DEPENDENCIES) tests/$(am__dirstamp)
 	@rm -f tests/test_align$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(tests_test_align_OBJECTS) $(tests_test_align_LDADD) $(LIBS)
+tests/test_align_db.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+
+tests/test_align_db$(EXEEXT): $(tests_test_align_db_OBJECTS) $(tests_test_align_db_DEPENDENCIES) $(EXTRA_tests_test_align_db_DEPENDENCIES) tests/$(am__dirstamp)
+	@rm -f tests/test_align_db$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_align_db_OBJECTS) $(tests_test_align_db_LDADD) $(LIBS)
 tests/test_combinations.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 
@@ -1445,6 +1462,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/st_serial.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/suftest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_align.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_align_db.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_combinations.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_db_reprinter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_fasta_align.Po@am__quote@
