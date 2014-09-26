@@ -27,7 +27,7 @@ using namespace ::std;
 using namespace ::pgraph;
 
 #define ENABLE_WOZNIAK 1
-#define ENABLE_STRIPED 0
+#define ENABLE_STRIPED 1
 
 static float pct(float orig_, float new_)
 {
