@@ -22,7 +22,7 @@ static float pct(unsigned long long orig_, unsigned long long new_)
 int main(int argc, char **argv)
 {
     const char *seqA = "MEFYDVAVTVGMLCIIIYLLLVRQFRYWTERNVPQLNPHLLFGDVRDVNKTHHIGEKFRQLYNELKGKHPFGGIYMFTKPVALVTDLELVKNVFVKDFQYFHDRGTYYDEKHDPLSAHLFNLEGYKWKSLRNKITPTFTSGKMKMMFPTVAAAGKQFKDYLEDAIGEQEEFELKELLARYTTDVIGTCAFGIECNSMRNPNAEFRVMGKKIFGRSRSNLQLLLMNAFPSVAKLVGIKLILPEVSDFFMNAVRDTIKYRVENNVQRNDFMDILIRMRSDKETKSDDGTLTFHEIAAQAFVFFVAGFETSSSLMAFTLYELALDQDMQDKARKCVTDVLERHNGELTYEAAMEMDYLDCVLKGWVR";
-    const char *seqB = "GIDSGIDTGIGSGIGSRIGSGIDSGIGIGSRIRIGSEIGFGSGIRIGSGIGIGSGIGSGIKIGSDIRFDSEIRIGFEIEIGYGIGFGSGIRISSGIGIGSGIGSGIKIGS";
+    const char *seqB = "AALGVAARAGFLAAGFASSSELSSELSSEDSAAFLAAAAGVAAFAGVFTIAAFGVAATADLLAAGLHSSSELSSELSSEDSAAFFAATAGVAALAGVLAAAAAFGVAATADFFAAGLESSSELSSELSSDDSAVFFAAAAGVATFAGVLAAAATFGVAACAGFFAAGLDSSSELSSELSSEDSAAFFAAAAGVATFTGVLAAAAACAAAACVGFFAAGLDSSSELSSELSSEDSAAFFAAAAGVAALAGVLAAAAACAGFFAAGLESSSELSSE";
     const int lena = strlen(seqA);
     const int lenb = strlen(seqB);
     const int longest = MAX(lena,lenb) + 16 /* +16 for woz padding */;
@@ -63,7 +63,6 @@ int main(int argc, char **argv)
     timer = timer_end(timer);
     printf("nw striped\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
-#if 0
     timer_ref = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw_stats(seqA, lena, seqB, lenb, 10, 1, blosum62,
@@ -86,7 +85,6 @@ int main(int argc, char **argv)
     }
     timer = timer_end(timer);
     printf("nw stats striped\t%llu\t%4.1f\t%d\t%d\t%d\n", timer/limit, pct(timer_ref,timer), score, matches, length);
-#endif
 
     timer_ref = timer_start();
     for (i=0; i<limit; ++i) {
@@ -109,7 +107,6 @@ int main(int argc, char **argv)
     timer = timer_end(timer);
     printf("sg striped\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
-#if 0
     timer_ref = timer_start();
     for (i=0; i<limit; ++i) {
         score = sg_stats(seqA, lena, seqB, lenb, 10, 1, blosum62,
@@ -178,7 +175,6 @@ int main(int argc, char **argv)
     }
     timer = timer_end(timer);
     printf("sw stats striped\t%llu\t%4.1f\t%d\t%d\t%d\n", timer/limit, pct(timer_ref,timer), score, matches, length);
-#endif
 
     free(tbl_pr);
     free(del_pr);
