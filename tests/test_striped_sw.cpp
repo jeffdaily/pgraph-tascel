@@ -1053,12 +1053,15 @@ end:
 
     /* max in vec */
     for (int32_t j=0; j<8; ++j) {
-        int16_t value = (signed short) _mm_extract_epi16(vMaxLastColH, j);
+        int16_t value = (signed short) _mm_extract_epi16(vMaxLastColH, 7);
         if (value > max.score) {
             max.score = value;
-            max.matches = _mm_extract_epi16(vMaxLastColHM, j);
-            max.length = _mm_extract_epi16(vMaxLastColHL, j);
+            max.matches = _mm_extract_epi16(vMaxLastColHM, 7);
+            max.length = _mm_extract_epi16(vMaxLastColHL, 7);
         }
+        vMaxLastColH = _mm_slli_si128(vMaxLastColH, 2);
+        vMaxLastColHM = _mm_slli_si128(vMaxLastColHM, 2);
+        vMaxLastColHL = _mm_slli_si128(vMaxLastColHL, 2);
     }
 
     free(vProfile);
@@ -1265,10 +1268,11 @@ end:
 
     /* max in vec */
     for (int32_t j=0; j<8; ++j) {
-        int16_t value = (signed short) _mm_extract_epi16(vMaxLastColH, j);
+        int16_t value = (signed short) _mm_extract_epi16(vMaxLastColH, 7);
         if (value > max) {
             max = value;
         }
+        vMaxLastColH = _mm_slli_si128(vMaxLastColH, 2);
     }
 
     free(vProfile);
@@ -1549,12 +1553,15 @@ end:
 
     /* max in vec */
     for (int32_t j=0; j<8; ++j) {
-        int16_t value = (signed short) _mm_extract_epi16(vMaxH, j);
+        int16_t value = (signed short) _mm_extract_epi16(vMaxH, 7);
         if (value > max.score) {
             max.score = value;
-            max.matches = (signed short) _mm_extract_epi16(vMaxM, j);
-            max.length = (signed short) _mm_extract_epi16(vMaxL, j);
+            max.matches = (signed short) _mm_extract_epi16(vMaxM, 7);
+            max.length = (signed short) _mm_extract_epi16(vMaxL, 7);
         }
+        vMaxH = _mm_slli_si128(vMaxH, 2);
+        vMaxM = _mm_slli_si128(vMaxM, 2);
+        vMaxL = _mm_slli_si128(vMaxL, 2);
     }
 
     free(vProfile);
@@ -1737,10 +1744,11 @@ end:
 
     /* max in vec */
     for (int32_t j=0; j<8; ++j) {
-        int16_t value = (signed short) _mm_extract_epi16(vMaxH, j);
+        int16_t value = (signed short) _mm_extract_epi16(vMaxH, 7);
         if (value > max) {
             max = value;
         }
+        vMaxH = _mm_slli_si128(vMaxH, 2);
     }
 
     free(vProfile);

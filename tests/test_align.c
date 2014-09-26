@@ -8,6 +8,8 @@
 #include <string.h>
 
 #include "align/align.h"
+#include "align/align_wozniak_128_16.h"
+#include "align/align_striped_128_16.h"
 #include "blosum/blosum62.h"
 #include "timer.h"
 
@@ -51,14 +53,14 @@ int main(int argc, char **argv)
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
-        score = nw_woz(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
+        score = nw_wozniak_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
     }
     timer = timer_end(timer);
     printf("nw wozniak\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
-        score = nw_striped(seqA, lena, seqB, lenb, 10, 1, blosum62__);
+        score = nw_striped_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__);
     }
     timer = timer_end(timer);
     printf("nw striped\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
@@ -73,7 +75,7 @@ int main(int argc, char **argv)
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
-        score = nw_stats_woz(seqA, lena, seqB, lenb, 10, 1, blosum62,
+        score = nw_stats_wozniak_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62,
                 &matches, &length, tbl_pr, del_pr, mch_pr, len_pr);
     }
     timer = timer_end(timer);
@@ -81,7 +83,7 @@ int main(int argc, char **argv)
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
-        score = nw_stats_striped(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length);
+        score = nw_stats_striped_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length);
     }
     timer = timer_end(timer);
     printf("nw stats striped\t%llu\t%4.1f\t%d\t%d\t%d\n", timer/limit, pct(timer_ref,timer), score, matches, length);
@@ -95,14 +97,14 @@ int main(int argc, char **argv)
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
-        score = sg_woz(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
+        score = sg_wozniak_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
     }
     timer = timer_end(timer);
     printf("sg wozniak\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
-        score = sg_striped(seqA, lena, seqB, lenb, 10, 1, blosum62__);
+        score = sg_striped_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__);
     }
     timer = timer_end(timer);
     printf("sg striped\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
@@ -117,7 +119,7 @@ int main(int argc, char **argv)
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
-        score = sg_stats_woz(seqA, lena, seqB, lenb, 10, 1, blosum62,
+        score = sg_stats_wozniak_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62,
                 &matches, &length, tbl_pr, del_pr, mch_pr, len_pr);
     }
     timer = timer_end(timer);
@@ -125,7 +127,7 @@ int main(int argc, char **argv)
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
-        score = sg_stats_striped(seqA, lena, seqB, lenb, 10, 1, blosum62__,
+        score = sg_stats_striped_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__,
                 &matches, &length);
     }
     timer = timer_end(timer);
@@ -140,14 +142,14 @@ int main(int argc, char **argv)
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
-        score = sw_woz(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
+        score = sw_wozniak_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
     }
     timer = timer_end(timer);
     printf("sw wozniak\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
-        score = sw_striped(seqA, lena, seqB, lenb, 10, 1, blosum62__);
+        score = sw_striped_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__);
     }
     timer = timer_end(timer);
     printf("sw striped\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
@@ -162,7 +164,7 @@ int main(int argc, char **argv)
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
-        score = sw_stats_woz(seqA, lena, seqB, lenb, 10, 1, blosum62,
+        score = sw_stats_wozniak_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62,
                 &matches, &length, tbl_pr, del_pr, mch_pr, len_pr);
     }
     timer = timer_end(timer);
@@ -170,7 +172,7 @@ int main(int argc, char **argv)
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
-        score = sw_stats_striped(seqA, lena, seqB, lenb, 10, 1, blosum62__,
+        score = sw_stats_striped_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__,
                 &matches, &length);
     }
     timer = timer_end(timer);

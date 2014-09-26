@@ -677,7 +677,9 @@ AM_LDFLAGS = $(TASCEL_LDFLAGS) $(ARMCI_LDFLAGS) $(PT_MPI_LDFLAGS) \
 #LDADD += $(GA_FLIBS)
 LDADD = libpgraph.la libalign.la $(TASCEL_LIBS) $(ARMCI_LIBS) \
 	$(PT_MPI_LIBS) $(GMP_LIBS) libyaml-cpp.la
-libalign_la_SOURCES = src/align/align.h src/align/nw_ref.c \
+libalign_la_SOURCES = src/align/align.h \
+	src/align/align_wozniak_128_16.h \
+	src/align/align_striped_128_16.h src/align/nw_ref.c \
 	src/align/nw_woz.c src/align/nw_striped.c \
 	src/align/nw_stats_ref.c src/align/nw_stats_woz.c \
 	src/align/nw_stats_striped.c src/align/sg_ref.c \
@@ -687,7 +689,9 @@ libalign_la_SOURCES = src/align/align.h src/align/nw_ref.c \
 	src/align/sw_woz.c src/align/sw_striped.c \
 	src/align/sw_stats_ref.c src/align/sw_stats_woz.c \
 	src/align/sw_stats_striped.c
-libalign_debug_la_SOURCES = $(libalign_la_SOURCES)
+libalign_debug_la_SOURCES = $(libalign_la_SOURCES) \
+	src/align/align_debug.h src/align/align_wozniak_128_16_debug.h \
+	src/align/align_striped_128_16_debug.h
 libalign_debug_la_CPPFLAGS = $(AM_CPPFLAGS) -DALIGN_EXTRA
 libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
 	src/AlignStats.hpp src/blosum/blosum40.h src/blosum/blosum45.h \

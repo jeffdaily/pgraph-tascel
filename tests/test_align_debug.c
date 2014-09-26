@@ -8,14 +8,9 @@
 #include <string.h>
 
 #include "align/align_debug.h"
+#include "align/align_wozniak_128_16_debug.h"
+#include "align/align_striped_128_16_debug.h"
 #include "blosum/blosum62.h"
-
-static float pct(unsigned long long orig_, unsigned long long new_)
-{
-    float orig = (float)orig_;
-    float new = (float)new_;
-    return 100.0*(orig - new)/orig;
-}
 
 
 static void print_array(
@@ -67,12 +62,12 @@ int main(int argc, char **argv)
     print_array("nw_ref_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
-    score = nw_woz_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
-    print_array("nw_woz_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    score = nw_wozniak_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
+    print_array("nw_wozniak_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
-    score = nw_striped_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
-    print_array("nw_stp_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    score = nw_striped_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
+    print_array("nw_striped_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
     score = nw_stats_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, &matches, &length, tbl_pr, del_pr, mch_pr, len_pr, scr_tbl, mch_tbl, len_tbl);
@@ -83,18 +78,18 @@ int main(int argc, char **argv)
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
 
-    score = nw_stats_woz_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, &matches, &length, tbl_pr, del_pr, mch_pr, len_pr, scr_tbl, mch_tbl, len_tbl);
-    print_array("nw_stats_woz_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
-    print_array("nw_stats_woz_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
-    print_array("nw_stats_woz_len.txt", len_tbl, seqA, lena, seqB, lenb);
+    score = nw_stats_wozniak_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, &matches, &length, tbl_pr, del_pr, mch_pr, len_pr, scr_tbl, mch_tbl, len_tbl);
+    print_array("nw_stats_wozniak_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    print_array("nw_stats_wozniak_128_16_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
+    print_array("nw_stats_wozniak_128_16_len.txt", len_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
 
-    score = nw_stats_striped_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length, scr_tbl, mch_tbl, len_tbl);
-    print_array("nw_stats_stp_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
-    print_array("nw_stats_stp_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
-    print_array("nw_stats_stp_len.txt", len_tbl, seqA, lena, seqB, lenb);
+    score = nw_stats_striped_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length, scr_tbl, mch_tbl, len_tbl);
+    print_array("nw_stats_striped_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    print_array("nw_stats_striped_128_16_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
+    print_array("nw_stats_striped_128_16_len.txt", len_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
@@ -103,12 +98,12 @@ int main(int argc, char **argv)
     print_array("sg_ref_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
-    score = sg_woz_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
-    print_array("sg_woz_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    score = sg_wozniak_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
+    print_array("sg_wozniak_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
-    score = sg_striped_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
-    print_array("sg_stp_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    score = sg_striped_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
+    print_array("sg_striped_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
     score = sg_stats_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, &matches, &length, tbl_pr, del_pr, mch_pr, len_pr, scr_tbl, mch_tbl, len_tbl);
@@ -119,18 +114,18 @@ int main(int argc, char **argv)
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
 
-    score = sg_stats_woz_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, &matches, &length, tbl_pr, del_pr, mch_pr, len_pr, scr_tbl, mch_tbl, len_tbl);
-    print_array("sg_stats_woz_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
-    print_array("sg_stats_woz_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
-    print_array("sg_stats_woz_len.txt", len_tbl, seqA, lena, seqB, lenb);
+    score = sg_stats_wozniak_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, &matches, &length, tbl_pr, del_pr, mch_pr, len_pr, scr_tbl, mch_tbl, len_tbl);
+    print_array("sg_stats_wozniak_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    print_array("sg_stats_wozniak_128_16_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
+    print_array("sg_stats_wozniak_128_16_len.txt", len_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
 
-    score = sg_stats_striped_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length, scr_tbl, mch_tbl, len_tbl);
-    print_array("sg_stats_stp_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
-    print_array("sg_stats_stp_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
-    print_array("sg_stats_stp_len.txt", len_tbl, seqA, lena, seqB, lenb);
+    score = sg_stats_striped_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length, scr_tbl, mch_tbl, len_tbl);
+    print_array("sg_stats_striped_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    print_array("sg_stats_striped_128_16_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
+    print_array("sg_stats_striped_128_16_len.txt", len_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
@@ -139,12 +134,12 @@ int main(int argc, char **argv)
     print_array("sw_ref_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
-    score = sw_woz_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
-    print_array("sw_woz_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    score = sw_wozniak_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
+    print_array("sw_wozniak_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
-    score = sw_striped_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
-    print_array("sw_stp_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    score = sw_striped_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
+    print_array("sw_striped_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
     score = sw_stats_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, &matches, &length, tbl_pr, del_pr, mch_pr, len_pr, scr_tbl, mch_tbl, len_tbl);
@@ -155,18 +150,18 @@ int main(int argc, char **argv)
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
 
-    score = sw_stats_woz_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, &matches, &length, tbl_pr, del_pr, mch_pr, len_pr, scr_tbl, mch_tbl, len_tbl);
-    print_array("sw_stats_woz_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
-    print_array("sw_stats_woz_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
-    print_array("sw_stats_woz_len.txt", len_tbl, seqA, lena, seqB, lenb);
+    score = sw_stats_wozniak_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, &matches, &length, tbl_pr, del_pr, mch_pr, len_pr, scr_tbl, mch_tbl, len_tbl);
+    print_array("sw_stats_wozniak_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    print_array("sw_stats_wozniak_128_16_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
+    print_array("sw_stats_wozniak_128_16_len.txt", len_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
 
-    score = sw_stats_striped_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length, scr_tbl, mch_tbl, len_tbl);
-    print_array("sw_stats_stp_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
-    print_array("sw_stats_stp_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
-    print_array("sw_stats_stp_len.txt", len_tbl, seqA, lena, seqB, lenb);
+    score = sw_stats_striped_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length, scr_tbl, mch_tbl, len_tbl);
+    print_array("sw_stats_striped_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    print_array("sw_stats_striped_128_16_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
+    print_array("sw_stats_striped_128_16_len.txt", len_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);

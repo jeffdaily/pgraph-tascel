@@ -40,7 +40,7 @@ static const int MAP_BLOSUM_[256] = {
     23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23
 };
 
-#define BLOSUM(ch1, ch2) (matrix[MAP_BLOSUM_[(ch1)]][MAP_BLOSUM_[(ch2)]])
+#define BLOSUM(ch1, ch2) (matrix[MAP_BLOSUM_[((unsigned char)ch1)]][MAP_BLOSUM_[((unsigned char)ch2)]])
 #define BLOSUM_(ch1, ch2) (matrix[(ch1)][(ch2)])
 
 #define BLOSUM0_(ch1, ch2) (matrow0[(ch2)])
@@ -241,6 +241,7 @@ static void print_m128i_16(const char *name, const __m128i &m) {
 #endif
 
 
+#if 0
 static int sw_woz(
         const char * const restrict seqA, const int lena,
         const char * const restrict seqB, const int lenb,
@@ -285,6 +286,7 @@ static int sw_woz(
 #endif
     return score;
 }
+#endif
 
 
 static int nw(
@@ -297,10 +299,10 @@ static int nw(
     int * const restrict s1 = new int[s1Len];
     int * const restrict s2 = new int[s2Len];
     for (int i=0; i<s1Len; ++i) {
-        s1[i] = MAP_BLOSUM_[_s1[i]];
+        s1[i] = MAP_BLOSUM_[(unsigned char)_s1[i]];
     }
     for (int j=0; j<s2Len; ++j) {
-        s2[j] = MAP_BLOSUM_[_s2[j]];
+        s2[j] = MAP_BLOSUM_[(unsigned char)_s2[j]];
     }
     /* upper left corner */
     tbl_pr[0] = 0;
@@ -365,10 +367,10 @@ static DP_t nw_stats(
     int * const restrict s1 = new int[s1Len];
     int * const restrict s2 = new int[s2Len];
     for (int i=0; i<s1Len; ++i) {
-        s1[i] = MAP_BLOSUM_[_s1[i]];
+        s1[i] = MAP_BLOSUM_[(unsigned char)_s1[i]];
     }
     for (int j=0; j<s2Len; ++j) {
-        s2[j] = MAP_BLOSUM_[_s2[j]];
+        s2[j] = MAP_BLOSUM_[(unsigned char)_s2[j]];
     }
     /* upper left corner */
     tbl_pr[0] = 0;
@@ -492,10 +494,10 @@ static int sg(
     int * const restrict s1 = new int[s1Len];
     int * const restrict s2 = new int[s2Len];
     for (int i=0; i<s1Len; ++i) {
-        s1[i] = MAP_BLOSUM_[_s1[i]];
+        s1[i] = MAP_BLOSUM_[(unsigned char)_s1[i]];
     }
     for (int j=0; j<s2Len; ++j) {
-        s2[j] = MAP_BLOSUM_[_s2[j]];
+        s2[j] = MAP_BLOSUM_[(unsigned char)_s2[j]];
     }
     /* upper left corner */
     tbl_pr[0] = 0;
@@ -603,10 +605,10 @@ static DP_t sg_stats(
     int * const restrict s1 = new int[s1Len];
     int * const restrict s2 = new int[s2Len];
     for (int i=0; i<s1Len; ++i) {
-        s1[i] = MAP_BLOSUM_[_s1[i]];
+        s1[i] = MAP_BLOSUM_[(unsigned char)_s1[i]];
     }
     for (int j=0; j<s2Len; ++j) {
-        s2[j] = MAP_BLOSUM_[_s2[j]];
+        s2[j] = MAP_BLOSUM_[(unsigned char)_s2[j]];
     }
     /* upper left corner */
     tbl_pr[0] = 0;
@@ -923,13 +925,13 @@ static int nw_sse8(
     int * const restrict s1 = new int[s1Len+8];
     int * const restrict s2 = new int[s2Len];
     for (int i=0; i<s1Len; ++i) {
-        s1[i] = MAP_BLOSUM_[_s1[i]];
+        s1[i] = MAP_BLOSUM_[(unsigned char)_s1[i]];
     }
     for (int i=s1Len; i<s1Len+8; ++i) {
         s1[i] = 23;
     }
     for (int j=0; j<s2Len; ++j) {
-        s2[j] = MAP_BLOSUM_[_s2[j]];
+        s2[j] = MAP_BLOSUM_[(unsigned char)_s2[j]];
     }
 #if DEBUG
     printf("array length (s2Len(=%d)+14+1)*(s1Len(=%d)+7+1) = %d\n",
@@ -1556,13 +1558,13 @@ static DP_t nw_stats_sse8(
     int * const restrict s1 = new int[s1Len+8];
     int * const restrict s2 = new int[s2Len];
     for (int i=0; i<s1Len; ++i) {
-        s1[i] = MAP_BLOSUM_[_s1[i]];
+        s1[i] = MAP_BLOSUM_[(unsigned char)_s1[i]];
     }
     for (int i=s1Len; i<s1Len+8; ++i) {
         s1[i] = 23;
     }
     for (int j=0; j<s2Len; ++j) {
-        s2[j] = MAP_BLOSUM_[_s2[j]];
+        s2[j] = MAP_BLOSUM_[(unsigned char)_s2[j]];
     }
 #if DEBUG
     printf("array length (s2Len(=%d)+14+1)*(s1Len(=%d)+7+1) = %d\n",
@@ -2418,13 +2420,13 @@ static int sg_sse8(
     int * const restrict s1 = new int[s1Len+8];
     int * const restrict s2 = new int[s2Len];
     for (int i=0; i<s1Len; ++i) {
-        s1[i] = MAP_BLOSUM_[_s1[i]];
+        s1[i] = MAP_BLOSUM_[(unsigned char)_s1[i]];
     }
     for (int i=s1Len; i<s1Len+8; ++i) {
         s1[i] = 23;
     }
     for (int j=0; j<s2Len; ++j) {
-        s2[j] = MAP_BLOSUM_[_s2[j]];
+        s2[j] = MAP_BLOSUM_[(unsigned char)_s2[j]];
     }
 #if DEBUG
     printf("array length (s2Len(=%d)+14+1)*(s1Len(=%d)+7+1) = %d\n",
@@ -3165,13 +3167,13 @@ static DP_t sg_stats_sse8(
     int * const restrict s1 = new int[s1Len+8];
     int * const restrict s2 = new int[s2Len];
     for (int i=0; i<s1Len; ++i) {
-        s1[i] = MAP_BLOSUM_[_s1[i]];
+        s1[i] = MAP_BLOSUM_[(unsigned char)_s1[i]];
     }
     for (int i=s1Len; i<s1Len+8; ++i) {
         s1[i] = 23;
     }
     for (int j=0; j<s2Len; ++j) {
-        s2[j] = MAP_BLOSUM_[_s2[j]];
+        s2[j] = MAP_BLOSUM_[(unsigned char)_s2[j]];
     }
 #if DEBUG
     printf("array length (s2Len(=%d)+14+1)*(s1Len(=%d)+7+1) = %d\n",
@@ -4229,13 +4231,13 @@ static int sw_sse8(
     int * const restrict s1 = new int[s1Len+8];
     int * const restrict s2 = new int[s2Len];
     for (int i=0; i<s1Len; ++i) {
-        s1[i] = MAP_BLOSUM_[_s1[i]];
+        s1[i] = MAP_BLOSUM_[(unsigned char)_s1[i]];
     }
     for (int i=s1Len; i<s1Len+8; ++i) {
         s1[i] = 23;
     }
     for (int j=0; j<s2Len; ++j) {
-        s2[j] = MAP_BLOSUM_[_s2[j]];
+        s2[j] = MAP_BLOSUM_[(unsigned char)_s2[j]];
     }
 #if DEBUG
     printf("array length (s2Len(=%d)+14+1)*(s1Len(=%d)+7+1) = %d\n",
@@ -4872,6 +4874,7 @@ static int sw_sse8(
 }
 
 
+#if 0
 static int sw_sse8_pad(
         const char * const restrict seqA, const int lena,
         const char * const restrict seqB, const int lenb,
@@ -4952,6 +4955,7 @@ static int sw_sse8_pad(
     max8(score, Vscore);
     return score;
 }
+#endif
 
 
 static DP_t sw_stats(
@@ -4968,10 +4972,10 @@ static DP_t sw_stats(
     int * const restrict s1 = new int[s1Len];
     int * const restrict s2 = new int[s2Len];
     for (int i=0; i<s1Len; ++i) {
-        s1[i] = MAP_BLOSUM_[_s1[i]];
+        s1[i] = MAP_BLOSUM_[(unsigned char)_s1[i]];
     }
     for (int j=0; j<s2Len; ++j) {
-        s2[j] = MAP_BLOSUM_[_s2[j]];
+        s2[j] = MAP_BLOSUM_[(unsigned char)_s2[j]];
     }
     /* upper left corner */
     tbl_pr[0] = 0;
@@ -5104,13 +5108,13 @@ static DP_t sw_stats_sse8(
     int * const restrict s1 = new int[s1Len+8];
     int * const restrict s2 = new int[s2Len];
     for (int i=0; i<s1Len; ++i) {
-        s1[i] = MAP_BLOSUM_[_s1[i]];
+        s1[i] = MAP_BLOSUM_[(unsigned char)_s1[i]];
     }
     for (int i=s1Len; i<s1Len+8; ++i) {
         s1[i] = 23;
     }
     for (int j=0; j<s2Len; ++j) {
-        s2[j] = MAP_BLOSUM_[_s2[j]];
+        s2[j] = MAP_BLOSUM_[(unsigned char)_s2[j]];
     }
 #if DEBUG
     printf("array length (s2Len(=%d)+14+1)*(s1Len(=%d)+7+1) = %d\n",
@@ -5187,8 +5191,6 @@ static DP_t sw_stats_sse8(
 
     /* iter over first sequence */
     for (int i=1; i<=s1Len; i+=8) {
-        bool last_pass = (i+8>=s1Len);
-        int offset = 7 - (s1Len - i);
         int j;
         __m128i NWscore  = _mm_set1_epi16(NEG_INF);
         __m128i NWmatch  = _mm_set1_epi16(NEG_INF);

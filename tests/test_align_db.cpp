@@ -16,6 +16,8 @@
 #include <mpi.h>
 
 #include "align/align.h"
+#include "align/align_wozniak_128_16.h"
+#include "align/align_striped_128_16.h"
 #include "blosum/blosum62.h"
 #include "Bootstrap.hpp"
 #include "mpix.hpp"
@@ -49,8 +51,6 @@ int main(int argc, char **argv)
     int score = 0;
     int matches = 0;
     int length = 0;
-    size_t limit = 10000U;
-    size_t i = 0U;
     int * tbl_pr = NULL;
     int * del_pr = NULL;
     int * mch_pr = NULL;
@@ -160,7 +160,7 @@ int main(int argc, char **argv)
 
 #if ENABLE_WOZNIAK
             time = MPI_Wtime();
-            score = nw_woz(seqa, lena, seqb, lenb, 10, 1, blosum62, tbl_pr, del_pr);
+            score = nw_wozniak_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62, tbl_pr, del_pr);
             time = MPI_Wtime() - time;
             time_nw_woz += time;
 
@@ -174,7 +174,7 @@ int main(int argc, char **argv)
 
 #if ENABLE_STRIPED
             time = MPI_Wtime();
-            score = nw_striped(seqa, lena, seqb, lenb, 10, 1, blosum62__);
+            score = nw_striped_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62__);
             time = MPI_Wtime() - time;
             time_nw_striped += time;
 
@@ -194,7 +194,7 @@ int main(int argc, char **argv)
 
 #if ENABLE_WOZNIAK
             time = MPI_Wtime();
-            score = nw_stats_woz(seqa, lena, seqb, lenb, 10, 1, blosum62,
+            score = nw_stats_wozniak_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62,
                     &matches, &length, tbl_pr, del_pr, mch_pr, len_pr);
             time = MPI_Wtime() - time;
             time_nw_stats_woz += time;
@@ -213,7 +213,7 @@ int main(int argc, char **argv)
 
 #if ENABLE_STRIPED
             time = MPI_Wtime();
-            score = nw_stats_striped(seqa, lena, seqb, lenb, 10, 1, blosum62__,
+            score = nw_stats_striped_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62__,
                     &matches, &length);
             time = MPI_Wtime() - time;
             time_nw_stats_striped += time;
@@ -237,7 +237,7 @@ int main(int argc, char **argv)
 
 #if ENABLE_WOZNIAK
             time = MPI_Wtime();
-            score = sg_woz(seqa, lena, seqb, lenb, 10, 1, blosum62, tbl_pr, del_pr);
+            score = sg_wozniak_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62, tbl_pr, del_pr);
             time = MPI_Wtime() - time;
             time_sg_woz += time;
 
@@ -251,7 +251,7 @@ int main(int argc, char **argv)
 
 #if ENABLE_STRIPED
             time = MPI_Wtime();
-            score = sg_striped(seqa, lena, seqb, lenb, 10, 1, blosum62__);
+            score = sg_striped_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62__);
             time = MPI_Wtime() - time;
             time_sg_striped += time;
 
@@ -271,7 +271,7 @@ int main(int argc, char **argv)
 
 #if ENABLE_WOZNIAK
             time = MPI_Wtime();
-            score = sg_stats_woz(seqa, lena, seqb, lenb, 10, 1, blosum62,
+            score = sg_stats_wozniak_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62,
                     &matches, &length, tbl_pr, del_pr, mch_pr, len_pr);
             time = MPI_Wtime() - time;
             time_sg_stats_woz += time;
@@ -290,7 +290,7 @@ int main(int argc, char **argv)
 
 #if ENABLE_STRIPED
             time = MPI_Wtime();
-            score = sg_stats_striped(seqa, lena, seqb, lenb, 10, 1, blosum62__,
+            score = sg_stats_striped_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62__,
                     &matches, &length);
             time = MPI_Wtime() - time;
             time_sg_stats_striped += time;
@@ -314,7 +314,7 @@ int main(int argc, char **argv)
 
 #if ENABLE_WOZNIAK
             time = MPI_Wtime();
-            score = sw_woz(seqa, lena, seqb, lenb, 10, 1, blosum62, tbl_pr, del_pr);
+            score = sw_wozniak_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62, tbl_pr, del_pr);
             time = MPI_Wtime() - time;
             time_sw_woz += time;
 
@@ -328,7 +328,7 @@ int main(int argc, char **argv)
 
 #if ENABLE_STRIPED
             time = MPI_Wtime();
-            score = sw_striped(seqa, lena, seqb, lenb, 10, 1, blosum62__);
+            score = sw_striped_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62__);
             time = MPI_Wtime() - time;
             time_sw_striped += time;
 
@@ -348,7 +348,7 @@ int main(int argc, char **argv)
 
 #if ENABLE_WOZNIAK
             time = MPI_Wtime();
-            score = sw_stats_woz(seqa, lena, seqb, lenb, 10, 1, blosum62,
+            score = sw_stats_wozniak_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62,
                     &matches, &length, tbl_pr, del_pr, mch_pr, len_pr);
             time = MPI_Wtime() - time;
             time_sw_stats_woz += time;
@@ -367,7 +367,7 @@ int main(int argc, char **argv)
 
 #if ENABLE_STRIPED
             time = MPI_Wtime();
-            score = sw_stats_striped(seqa, lena, seqb, lenb, 10, 1, blosum62__,
+            score = sw_stats_striped_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62__,
                     &matches, &length);
             time = MPI_Wtime() - time;
             time_sw_stats_striped += time;
