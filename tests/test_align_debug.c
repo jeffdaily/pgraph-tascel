@@ -9,6 +9,7 @@
 
 #include "align/align_debug.h"
 #include "align/align_wozniak_128_16_debug.h"
+#include "align/align_wozniak_128_8_debug.h"
 #include "align/align_striped_128_16_debug.h"
 #include "blosum/blosum62.h"
 
@@ -42,11 +43,13 @@ static void print_array(
 int main(int argc, char **argv)
 {
     const char *seqA = "MEFYDVAVTVGMLCIIIYLLLVRQFRYWTERNVPQLNPHLLFGDVRDVNKTHHIGEKFRQLYNELKGKHPFGGIYMFTKPVALVTDLELVKNVFVKDFQYFHDRGTYYDEKHDPLSAHLFNLEGYKWKSLRNKITPTFTSGKMKMMFPTVAAAGKQFKDYLEDAIGEQEEFELKELLARYTTDVIGTCAFGIECNSMRNPNAEFRVMGKKIFGRSRSNLQLLLMNAFPSVAKLVGIKLILPEVSDFFMNAVRDTIKYRVENNVQRNDFMDILIRMRSDKETKSDDGTLTFHEIAAQAFVFFVAGFETSSSLMAFTLYELALDQDMQDKARKCVTDVLERHNGELTYEAAMEMDYLDCVLKGWVR";
-    const char *seqB = "GIDSGIDTGIGSGIGSRIGSGIDSGIGIGSRIRIGSEIGFGSGIRIGSGIGIGSGIGSGIKIGSDIRFDSEIRIGFEIEIGYGIGFGSGIRISSGIGIGSGIGSGIKIGS";
+    const char *seqB = "AALGVAARAGFLAAGFASSSELSSELSSEDSAAFLAAAAGVAAFAGVFTIAAFGVAATADLLAAGLHSSSELSSELSSEDSAAFFAATAGVAALAGVLAAAAAFGVAATADFFAAGLESSSELSSELSSDDSAVFFAAAAGVATFAGVLAAAATFGVAACAGFFAAGLDSSSELSSELSSEDSAAFFAAAAGVATFTGVLAAAAACAAAACVGFFAAGLDSSSELSSELSSEDSAAFFAAAAGVAALAGVLAAAAACAGFFAAGLESSSELSSE";
+    //const char *seqA = "MEFYDVAVTV";
+    //const char *seqB = "AALGVAARAGFLAAGFASSS";
     const int lena = strlen(seqA);
     const int lenb = strlen(seqB);
-    const int longest = MAX(lena,lenb) + 16 /* +16 for woz padding */;
-    const int tbl_size = (16+lena)*(16+lenb);
+    const int longest = MAX(lena,lenb) + 32 /* +32 for woz padding */;
+    const int tbl_size = (32+lena)*(32+lenb);
     int score;
     int matches;
     int length;
@@ -64,6 +67,10 @@ int main(int argc, char **argv)
 
     score = nw_wozniak_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
     print_array("nw_wozniak_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    memset(scr_tbl, 0, sizeof(int)*tbl_size);
+
+    score = nw_wozniak_128_8_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
+    print_array("nw_wozniak_128_8_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
     score = nw_striped_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
@@ -100,6 +107,10 @@ int main(int argc, char **argv)
 
     score = sg_wozniak_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
     print_array("sg_wozniak_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    memset(scr_tbl, 0, sizeof(int)*tbl_size);
+
+    score = sg_wozniak_128_8_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
+    print_array("sg_wozniak_128_8_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
     score = sg_striped_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
