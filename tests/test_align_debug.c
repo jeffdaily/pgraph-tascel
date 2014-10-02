@@ -11,6 +11,7 @@
 #include "align/align_wozniak_128_16_debug.h"
 #include "align/align_wozniak_128_8_debug.h"
 #include "align/align_striped_128_16_debug.h"
+#include "align/align_striped_128_8_debug.h"
 #include "blosum/blosum62.h"
 
 
@@ -75,6 +76,10 @@ int main(int argc, char **argv)
 
     score = nw_striped_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
     print_array("nw_striped_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    memset(scr_tbl, 0, sizeof(int)*tbl_size);
+
+    score = nw_striped_128_8_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
+    print_array("nw_striped_128_8_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
     score = nw_stats_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, &matches, &length, tbl_pr, del_pr, mch_pr, len_pr, scr_tbl, mch_tbl, len_tbl);
