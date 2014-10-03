@@ -138,6 +138,10 @@ int main(int argc, char **argv)
     print_array("sg_striped_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
+    score = sg_striped_128_8_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
+    print_array("sg_striped_128_8_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    memset(scr_tbl, 0, sizeof(int)*tbl_size);
+
     score = sg_stats_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, &matches, &length, tbl_pr, del_pr, mch_pr, len_pr, scr_tbl, mch_tbl, len_tbl);
     print_array("sg_stats_ref_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     print_array("sg_stats_ref_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
