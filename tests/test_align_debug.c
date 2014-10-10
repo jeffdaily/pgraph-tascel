@@ -66,6 +66,10 @@ int main(int argc, char **argv)
     print_array("nw_ref_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
+    score = nw_scan_col_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
+    print_array("nw_scan_col_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    memset(scr_tbl, 0, sizeof(int)*tbl_size);
+
     score = nw_scan_row_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
     print_array("nw_scan_row_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);

@@ -52,6 +52,7 @@ libalign_la_SOURCES += src/align/align_wozniak_128_8.h
 libalign_la_SOURCES += src/align/align_striped_128_16.h
 libalign_la_SOURCES += src/align/align_striped_128_8.h
 libalign_la_SOURCES += src/align/nw_ref.c
+libalign_la_SOURCES += src/align/nw_scan_col.c
 libalign_la_SOURCES += src/align/nw_scan_row.c
 libalign_la_SOURCES += src/align/nw_wozniak_128_16.c
 libalign_la_SOURCES += src/align/nw_wozniak_128_8.c
