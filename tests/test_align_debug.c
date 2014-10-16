@@ -154,6 +154,10 @@ int main(int argc, char **argv)
     print_array("sg_scan_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
+    score = sg_scan_128_8_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
+    print_array("sg_scan_128_8_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    memset(scr_tbl, 0, sizeof(int)*tbl_size);
+
     score = sg_wozniak_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
     print_array("sg_wozniak_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
