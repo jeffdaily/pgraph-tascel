@@ -74,8 +74,8 @@ int main(int argc, char **argv)
     print_array("nw_scan_row_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
-    score = nw_scan_col_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
-    print_array("nw_scan_col_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    score = nw_scan_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
+    print_array("nw_scan_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
     score = nw_scan_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
@@ -146,8 +146,8 @@ int main(int argc, char **argv)
     print_array("sg_ref_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
-    score = sg_scan_col_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
-    print_array("sg_scan_col_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    score = sg_scan_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
+    print_array("sg_scan_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
     score = sg_scan_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
@@ -206,8 +206,8 @@ int main(int argc, char **argv)
     print_array("sw_ref_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
-    score = sw_scan_col_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
-    print_array("sw_scan_col_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    score = sw_scan_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
+    print_array("sw_scan_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
     score = sw_wozniak_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
