@@ -133,6 +133,14 @@ int main(int argc, char **argv)
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
+        score = nw_stats_scan(seqA, lena, seqB, lenb, 10, 1, blosum62,
+                &matches, &length, tbl_pr, del_pr, mch_pr, len_pr);
+    }
+    timer = timer_end(timer);
+    printf("nw scan stats reference\t\t%llu\t%4.1f\t%d\t%d\t%d\n", timer/limit, pct(timer_ref,timer), score, matches, length);
+
+    timer = timer_start();
+    for (i=0; i<limit; ++i) {
         score = nw_stats_wozniak_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62,
                 &matches, &length, tbl_pr, del_pr, mch_pr, len_pr);
     }

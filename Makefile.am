@@ -63,6 +63,7 @@ libalign_la_SOURCES += src/align/nw_wozniak_128_8.c
 libalign_la_SOURCES += src/align/nw_striped_128_16.c
 libalign_la_SOURCES += src/align/nw_striped_128_8.c
 libalign_la_SOURCES += src/align/nw_stats_ref.c
+libalign_la_SOURCES += src/align/nw_stats_scan.c
 libalign_la_SOURCES += src/align/nw_stats_wozniak_128_16.c
 libalign_la_SOURCES += src/align/nw_stats_wozniak_128_8.c
 libalign_la_SOURCES += src/align/nw_stats_striped_128_16.c
