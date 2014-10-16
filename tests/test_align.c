@@ -17,11 +17,17 @@
 #include "blosum/blosum62.h"
 #include "timer.h"
 
+#define USE_PERCENT_IMPROVED 0
+
 static float pct(unsigned long long orig_, unsigned long long new_)
 {
     float orig = (float)orig_;
     float new = (float)new_;
+#if USE_PERCENT_IMPROVED
     return 100.0*(orig - new)/orig;
+#else
+    return orig / new;
+#endif
 }
 
 
@@ -48,7 +54,11 @@ int main(int argc, char **argv)
 
     timer_init();
     printf("%s timer\n", timer_name());
+#if USE_PERCENT_IMPROVED
     printf("alg\t\t\t\ttime\t%%imp\tscore\tmatches\tlength\n");
+#else
+    printf("alg\t\t\t\ttime\tx_imp\tscore\tmatches\tlength\n");
+#endif
 
     timer_ref = timer_start();
     for (i=0; i<limit; ++i) {
@@ -57,19 +67,19 @@ int main(int argc, char **argv)
     timer_ref = timer_end(timer_ref);
     printf("nw reference\t\t\t%llu\t\t%d\n", timer_ref/limit, score);
 
-    timer_ref = timer_start();
+    timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw_scan_row(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
     }
-    timer_ref = timer_end(timer_ref);
-    printf("nw scan row\t\t\t%llu\t\t%d\n", timer_ref/limit, score);
+    timer = timer_end(timer);
+    printf("nw scan row\t\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
-    timer_ref = timer_start();
+    timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw_scan_col(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
     }
-    timer_ref = timer_end(timer_ref);
-    printf("nw scan col\t\t\t%llu\t\t%d\n", timer_ref/limit, score);
+    timer = timer_end(timer);
+    printf("nw scan col\t\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
@@ -158,12 +168,12 @@ int main(int argc, char **argv)
     timer_ref = timer_end(timer_ref);
     printf("sg reference\t\t\t%llu\t\t%d\n", timer_ref/limit, score);
 
-    timer_ref = timer_start();
+    timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sg_scan_col(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
     }
-    timer_ref = timer_end(timer_ref);
-    printf("sg scan col\t\t\t%llu\t\t%d\n", timer_ref/limit, score);
+    timer = timer_end(timer);
+    printf("sg scan col\t\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
@@ -231,6 +241,13 @@ int main(int argc, char **argv)
     }
     timer_ref = timer_end(timer_ref);
     printf("sw reference\t\t\t%llu\t\t%d\n", timer_ref/limit, score);
+
+    timer = timer_start();
+    for (i=0; i<limit; ++i) {
+        score = sw_scan_col(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
+    }
+    timer = timer_end(timer);
+    printf("sw scan col\t\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
