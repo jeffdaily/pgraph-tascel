@@ -177,6 +177,13 @@ int main(int argc, char **argv)
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
+        score = sg_scan_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__);
+    }
+    timer = timer_end(timer);
+    printf("sg scan 128 16\t\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
+
+    timer = timer_start();
+    for (i=0; i<limit; ++i) {
         score = sg_wozniak_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
     }
     timer = timer_end(timer);
