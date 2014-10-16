@@ -12,6 +12,8 @@
 #include "align/align_wozniak_128_8_debug.h"
 #include "align/align_striped_128_16_debug.h"
 #include "align/align_striped_128_8_debug.h"
+#include "align/align_scan_128_16_debug.h"
+#include "align/align_scan_128_8_debug.h"
 #include "blosum/blosum62.h"
 
 
@@ -43,10 +45,12 @@ static void print_array(
 
 int main(int argc, char **argv)
 {
-    const char *seqA = "MEFYDVAVTVGMLCIIIYLLLVRQFRYWTERNVPQLNPHLLFGDVRDVNKTHHIGEKFRQLYNELKGKHPFGGIYMFTKPVALVTDLELVKNVFVKDFQYFHDRGTYYDEKHDPLSAHLFNLEGYKWKSLRNKITPTFTSGKMKMMFPTVAAAGKQFKDYLEDAIGEQEEFELKELLARYTTDVIGTCAFGIECNSMRNPNAEFRVMGKKIFGRSRSNLQLLLMNAFPSVAKLVGIKLILPEVSDFFMNAVRDTIKYRVENNVQRNDFMDILIRMRSDKETKSDDGTLTFHEIAAQAFVFFVAGFETSSSLMAFTLYELALDQDMQDKARKCVTDVLERHNGELTYEAAMEMDYLDCVLKGWVR";
-    const char *seqB = "AALGVAARAGFLAAGFASSSELSSELSSEDSAAFLAAAAGVAAFAGVFTIAAFGVAATADLLAAGLHSSSELSSELSSEDSAAFFAATAGVAALAGVLAAAAAFGVAATADFFAAGLESSSELSSELSSDDSAVFFAAAAGVATFAGVLAAAATFGVAACAGFFAAGLDSSSELSSELSSEDSAAFFAAAAGVATFTGVLAAAAACAAAACVGFFAAGLDSSSELSSELSSEDSAAFFAAAAGVAALAGVLAAAAACAGFFAAGLESSSELSSE";
-    //const char *seqA = "MEFYDVAVTV";
-    //const char *seqB = "AALGVAARAGFLAAGFASSS";
+    //const char *seqA = "MEFYDVAVTVGMLCIIIYLLLVRQFRYWTERNVPQLNPHLLFGDVRDVNKTHHIGEKFRQLYNELKGKHPFGGIYMFTKPVALVTDLELVKNVFVKDFQYFHDRGTYYDEKHDPLSAHLFNLEGYKWKSLRNKITPTFTSGKMKMMFPTVAAAGKQFKDYLEDAIGEQEEFELKELLARYTTDVIGTCAFGIECNSMRNPNAEFRVMGKKIFGRSRSNLQLLLMNAFPSVAKLVGIKLILPEVSDFFMNAVRDTIKYRVENNVQRNDFMDILIRMRSDKETKSDDGTLTFHEIAAQAFVFFVAGFETSSSLMAFTLYELALDQDMQDKARKCVTDVLERHNGELTYEAAMEMDYLDCVLKGWVR";
+    //const char *seqB = "AALGVAARAGFLAAGFASSSELSSELSSEDSAAFLAAAAGVAAFAGVFTIAAFGVAATADLLAAGLHSSSELSSELSSEDSAAFFAATAGVAALAGVLAAAAAFGVAATADFFAAGLESSSELSSELSSDDSAVFFAAAAGVATFAGVLAAAATFGVAACAGFFAAGLDSSSELSSELSSEDSAAFFAAAAGVATFTGVLAAAAACAAAACVGFFAAGLDSSSELSSELSSEDSAAFFAAAAGVAALAGVLAAAAACAGFFAAGLESSSELSSE";
+    const char *seqA = "MEFYDVAVTV"
+                       "MEFYDVAVTV";
+    const char *seqB = "AALGVAARAGFLAAGFASSS"
+                       "AALGVAARAGFLAAGFASSS";
     const int lena = strlen(seqA);
     const int lenb = strlen(seqB);
     const int longest = MAX(lena,lenb) + 32 /* +32 for woz padding */;
@@ -66,12 +70,20 @@ int main(int argc, char **argv)
     print_array("nw_ref_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
+    score = nw_scan_row_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
+    print_array("nw_scan_row_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    memset(scr_tbl, 0, sizeof(int)*tbl_size);
+
     score = nw_scan_col_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
     print_array("nw_scan_col_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
-    score = nw_scan_row_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
-    print_array("nw_scan_row_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    score = nw_scan_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
+    print_array("nw_scan_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    memset(scr_tbl, 0, sizeof(int)*tbl_size);
+
+    score = nw_scan_128_8_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
+    print_array("nw_scan_128_8_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
     score = nw_wozniak_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);

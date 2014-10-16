@@ -12,6 +12,8 @@
 #include "align/align_wozniak_128_8.h"
 #include "align/align_striped_128_16.h"
 #include "align/align_striped_128_8.h"
+#include "align/align_scan_128_16.h"
+#include "align/align_scan_128_8.h"
 #include "blosum/blosum62.h"
 #include "timer.h"
 
@@ -57,17 +59,31 @@ int main(int argc, char **argv)
 
     timer_ref = timer_start();
     for (i=0; i<limit; ++i) {
+        score = nw_scan_row(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
+    }
+    timer_ref = timer_end(timer_ref);
+    printf("nw scan row\t\t\t%llu\t\t%d\n", timer_ref/limit, score);
+
+    timer_ref = timer_start();
+    for (i=0; i<limit; ++i) {
         score = nw_scan_col(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
     }
     timer_ref = timer_end(timer_ref);
     printf("nw scan col\t\t\t%llu\t\t%d\n", timer_ref/limit, score);
 
-    timer_ref = timer_start();
+    timer = timer_start();
     for (i=0; i<limit; ++i) {
-        score = nw_scan_row(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
+        score = nw_scan_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__);
     }
-    timer_ref = timer_end(timer_ref);
-    printf("nw scan row\t\t\t%llu\t\t%d\n", timer_ref/limit, score);
+    timer = timer_end(timer);
+    printf("nw scan 128 16\t\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
+
+    timer = timer_start();
+    for (i=0; i<limit; ++i) {
+        score = nw_scan_128_8(seqA, lena, seqB, lenb, 10, 1, blosum62__);
+    }
+    timer = timer_end(timer);
+    printf("nw scan 128 8\t\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
