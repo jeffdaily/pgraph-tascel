@@ -214,6 +214,10 @@ int main(int argc, char **argv)
     print_array("sw_scan_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
+    score = sw_scan_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
+    print_array("sw_scan_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    memset(scr_tbl, 0, sizeof(int)*tbl_size);
+
     score = sw_scan_128_8_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
     print_array("sw_scan_128_8_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
