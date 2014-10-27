@@ -28,13 +28,13 @@ static void print_array(
     FILE *f = fopen(filename, "w");
     fprintf(f, " ");
     for (j=0; j<s2Len; ++j) {
-        fprintf(f, "%3c", s2[j]);
+        fprintf(f, "%4c", s2[j]);
     }
     fprintf(f, "\n");
     for (i=0; i<s1Len; ++i) {
         fprintf(f, "%c", s1[i]);
         for (j=0; j<s2Len; ++j) {
-            fprintf(f, "%3d", array[i*s2Len + j]);
+            fprintf(f, "%4d", array[i*s2Len + j]);
         }
         fprintf(f, "\n");
     }
@@ -114,6 +114,14 @@ int main(int argc, char **argv)
     print_array("nw_stats_scan_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     print_array("nw_stats_scan_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
     print_array("nw_stats_scan_len.txt", len_tbl, seqA, lena, seqB, lenb);
+    memset(scr_tbl, 0, sizeof(int)*tbl_size);
+    memset(mch_tbl, 0, sizeof(int)*tbl_size);
+    memset(len_tbl, 0, sizeof(int)*tbl_size);
+
+    score = nw_stats_scan_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length, scr_tbl, mch_tbl, len_tbl);
+    print_array("nw_stats_scan_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    print_array("nw_stats_scan_128_16_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
+    print_array("nw_stats_scan_128_16_len.txt", len_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
