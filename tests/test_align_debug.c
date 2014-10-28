@@ -278,6 +278,14 @@ int main(int argc, char **argv)
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
 
+    score = sw_stats_scan_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length, scr_tbl, mch_tbl, len_tbl);
+    print_array("sw_stats_scan_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
+    print_array("sw_stats_scan_128_16_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
+    print_array("sw_stats_scan_128_16_len.txt", len_tbl, seqA, lena, seqB, lenb);
+    memset(scr_tbl, 0, sizeof(int)*tbl_size);
+    memset(mch_tbl, 0, sizeof(int)*tbl_size);
+    memset(len_tbl, 0, sizeof(int)*tbl_size);
+
     score = sw_stats_wozniak_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, &matches, &length, tbl_pr, del_pr, mch_pr, len_pr, scr_tbl, mch_tbl, len_tbl);
     print_array("sw_stats_wozniak_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     print_array("sw_stats_wozniak_128_16_mch.txt", mch_tbl, seqA, lena, seqB, lenb);

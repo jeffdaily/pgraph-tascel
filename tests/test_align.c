@@ -385,6 +385,17 @@ int main(int argc, char **argv)
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
+        score = sw_stats_scan_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__,
+                &matches, &length);
+    }
+    timer = timer_end(timer);
+    printf("sw stats scan 128 16\t\t%llu\t%4.1f\t%d\t%d\t%d\n", timer/limit, pct(timer_ref,timer), score, matches, length);
+    score = 0;
+    matches = 0;
+    length = 0;
+
+    timer = timer_start();
+    for (i=0; i<limit; ++i) {
         score = sw_stats_wozniak_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62,
                 &matches, &length, tbl_pr, del_pr, mch_pr, len_pr);
     }
