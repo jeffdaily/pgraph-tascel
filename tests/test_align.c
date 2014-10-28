@@ -55,9 +55,9 @@ int main(int argc, char **argv)
     timer_init();
     printf("%s timer\n", timer_name());
 #if USE_PERCENT_IMPROVED
-    printf("alg\t\t\t\ttime\t%%imp\tscore\tmatches\tlength\n");
+    printf("alg\ttype\tvec_w\tval_w\ttime\t%%imp\tscore\n");
 #else
-    printf("alg\t\t\t\ttime\tx_imp\tscore\tmatches\tlength\n");
+    printf("alg\ttype\tvec_w\tval_w\ttime\tx_imp\tscore\n");
 #endif
 
     timer_ref = timer_start();
@@ -65,356 +65,161 @@ int main(int argc, char **argv)
         score = nw(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
     }
     timer_ref = timer_end(timer_ref);
-    printf("nw reference\t\t\t%llu\t\t%d\n", timer_ref/limit, score);
+    printf("nw\tref\t\t\t%llu\t\t%d\n", timer_ref/limit, score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw_scan_row(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
     }
     timer = timer_end(timer);
-    printf("nw scan row\t\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
+    printf("nw\tscan row\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw_scan(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
     }
     timer = timer_end(timer);
-    printf("nw scan\t\t\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
+    printf("nw\tscan\t\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw_scan_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__);
     }
     timer = timer_end(timer);
-    printf("nw scan 128 16\t\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
+    printf("nw\tscan\t128\t16\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw_scan_128_8(seqA, lena, seqB, lenb, 10, 1, blosum62__);
     }
     timer = timer_end(timer);
-    printf("nw scan 128 8\t\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
+    printf("nw\tscan\t128\t8\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw_wozniak_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
     }
     timer = timer_end(timer);
-    printf("nw wozniak 128 16\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
+    printf("nw\twozniak\t128\t16\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw_wozniak_128_8(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
     }
     timer = timer_end(timer);
-    printf("nw wozniak 128 8\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
+    printf("nw\twozniak\t128\t8\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw_striped_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__);
     }
     timer = timer_end(timer);
-    printf("nw striped 128 16\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
+    printf("nw\tstriped\t128\t16\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw_striped_128_8(seqA, lena, seqB, lenb, 10, 1, blosum62__);
     }
     timer = timer_end(timer);
-    printf("nw striped 128 8\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
-
-    timer_ref = timer_start();
-    for (i=0; i<limit; ++i) {
-        score = nw_stats(seqA, lena, seqB, lenb, 10, 1, blosum62,
-                &matches, &length, tbl_pr, del_pr, mch_pr, len_pr);
-    }
-    timer_ref = timer_end(timer_ref);
-    printf("nw stats reference\t\t%llu\t\t%d\t%d\t%d\n", timer_ref/limit, score, matches, length);
-    score = 0;
-    matches = 0;
-    length = 0;
-
-    timer = timer_start();
-    for (i=0; i<limit; ++i) {
-        score = nw_stats_scan(seqA, lena, seqB, lenb, 10, 1, blosum62,
-                &matches, &length, tbl_pr, del_pr, mch_pr, len_pr);
-    }
-    timer = timer_end(timer);
-    printf("nw stats scan reference\t\t%llu\t%4.1f\t%d\t%d\t%d\n", timer/limit, pct(timer_ref,timer), score, matches, length);
-    score = 0;
-    matches = 0;
-    length = 0;
-
-    timer = timer_start();
-    for (i=0; i<limit; ++i) {
-        score = nw_stats_scan_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length);
-    }
-    timer = timer_end(timer);
-    printf("nw stats scan 128 16\t\t%llu\t%4.1f\t%d\t%d\t%d\n", timer/limit, pct(timer_ref,timer), score, matches, length);
-    score = 0;
-    matches = 0;
-    length = 0;
-
-    timer = timer_start();
-    for (i=0; i<limit; ++i) {
-        score = nw_stats_wozniak_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62,
-                &matches, &length, tbl_pr, del_pr, mch_pr, len_pr);
-    }
-    timer = timer_end(timer);
-    printf("nw stats wozniak 128 16\t\t%llu\t%4.1f\t%d\t%d\t%d\n", timer/limit, pct(timer_ref,timer), score, matches, length);
-    score = 0;
-    matches = 0;
-    length = 0;
-
-    timer = timer_start();
-    for (i=0; i<limit; ++i) {
-        score = nw_stats_wozniak_128_8(seqA, lena, seqB, lenb, 10, 1, blosum62,
-                &matches, &length, tbl_pr, del_pr, mch_pr, len_pr);
-    }
-    timer = timer_end(timer);
-    printf("nw stats wozniak 128 8\t\t%llu\t%4.1f\t%d\t%d\t%d\n", timer/limit, pct(timer_ref,timer), score, matches, length);
-    score = 0;
-    matches = 0;
-    length = 0;
-
-    timer = timer_start();
-    for (i=0; i<limit; ++i) {
-        score = nw_stats_striped_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length);
-    }
-    timer = timer_end(timer);
-    printf("nw stats striped 128 16\t\t%llu\t%4.1f\t%d\t%d\t%d\n", timer/limit, pct(timer_ref,timer), score, matches, length);
-    score = 0;
-    matches = 0;
-    length = 0;
-
-    timer = timer_start();
-    for (i=0; i<limit; ++i) {
-        score = nw_stats_striped_128_8(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length);
-    }
-    timer = timer_end(timer);
-    printf("nw stats striped 128 8\t\t%llu\t%4.1f\t%d\t%d\t%d\n", timer/limit, pct(timer_ref,timer), score, matches, length);
-    score = 0;
-    matches = 0;
-    length = 0;
+    printf("nw\tstriped\t128\t8\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer_ref = timer_start();
     for (i=0; i<limit; ++i) {
         score = sg(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
     }
     timer_ref = timer_end(timer_ref);
-    printf("sg reference\t\t\t%llu\t\t%d\n", timer_ref/limit, score);
+    printf("sg\tref\t\t\t%llu\t\t%d\n", timer_ref/limit, score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sg_scan(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
     }
     timer = timer_end(timer);
-    printf("sg scan\t\t\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
+    printf("sg\tscan\t\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sg_scan_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__);
     }
     timer = timer_end(timer);
-    printf("sg scan 128 16\t\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
+    printf("sg\tscan\t128\t16\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sg_scan_128_8(seqA, lena, seqB, lenb, 10, 1, blosum62__);
     }
     timer = timer_end(timer);
-    printf("sg scan 128 8\t\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
+    printf("sg\tscan\t128\t8\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sg_wozniak_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
     }
     timer = timer_end(timer);
-    printf("sg wozniak 128 16\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
+    printf("sg\twozniak\t128\t16\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sg_wozniak_128_8(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
     }
     timer = timer_end(timer);
-    printf("sg wozniak 128 8\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
+    printf("sg\twozniak\t128\t8\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sg_striped_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__);
     }
     timer = timer_end(timer);
-    printf("sg striped 128 16\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
+    printf("sg\tstriped\t128\t16\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sg_striped_128_8(seqA, lena, seqB, lenb, 10, 1, blosum62__);
     }
     timer = timer_end(timer);
-    printf("sg striped 128 8\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
-
-    timer_ref = timer_start();
-    for (i=0; i<limit; ++i) {
-        score = sg_stats(seqA, lena, seqB, lenb, 10, 1, blosum62,
-                &matches, &length, tbl_pr, del_pr, mch_pr, len_pr);
-    }
-    timer_ref = timer_end(timer_ref);
-    printf("sg stats reference\t\t%llu\t\t%d\t%d\t%d\n", timer_ref/limit, score, matches, length);
-    score = 0;
-    matches = 0;
-    length = 0;
-
-    timer = timer_start();
-    for (i=0; i<limit; ++i) {
-        score = sg_stats_scan(seqA, lena, seqB, lenb, 10, 1, blosum62,
-                &matches, &length, tbl_pr, del_pr, mch_pr, len_pr);
-    }
-    timer = timer_end(timer);
-    printf("sg stats scan reference\t\t%llu\t%4.1f\t%d\t%d\t%d\n", timer/limit, pct(timer_ref,timer), score, matches, length);
-    score = 0;
-    matches = 0;
-    length = 0;
-
-    timer = timer_start();
-    for (i=0; i<limit; ++i) {
-        score = sg_stats_scan_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__,
-                &matches, &length);
-    }
-    timer = timer_end(timer);
-    printf("sg stats scan 128 16\t\t%llu\t%4.1f\t%d\t%d\t%d\n", timer/limit, pct(timer_ref,timer), score, matches, length);
-    score = 0;
-    matches = 0;
-    length = 0;
-
-    timer = timer_start();
-    for (i=0; i<limit; ++i) {
-        score = sg_stats_wozniak_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62,
-                &matches, &length, tbl_pr, del_pr, mch_pr, len_pr);
-    }
-    timer = timer_end(timer);
-    printf("sg stats wozniak 128 16\t\t%llu\t%4.1f\t%d\t%d\t%d\n", timer/limit, pct(timer_ref,timer), score, matches, length);
-    score = 0;
-    matches = 0;
-    length = 0;
-
-    timer = timer_start();
-    for (i=0; i<limit; ++i) {
-        score = sg_stats_wozniak_128_8(seqA, lena, seqB, lenb, 10, 1, blosum62,
-                &matches, &length, tbl_pr, del_pr, mch_pr, len_pr);
-    }
-    timer = timer_end(timer);
-    printf("sg stats wozniak 128 8\t\t%llu\t%4.1f\t%d\t%d\t%d\n", timer/limit, pct(timer_ref,timer), score, matches, length);
-    score = 0;
-    matches = 0;
-    length = 0;
-
-    timer = timer_start();
-    for (i=0; i<limit; ++i) {
-        score = sg_stats_striped_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__,
-                &matches, &length);
-    }
-    timer = timer_end(timer);
-    printf("sg stats striped 128 16\t\t%llu\t%4.1f\t%d\t%d\t%d\n", timer/limit, pct(timer_ref,timer), score, matches, length);
-    score = 0;
-    matches = 0;
-    length = 0;
+    printf("sg\tstriped\t128\t8\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer_ref = timer_start();
     for (i=0; i<limit; ++i) {
         score = sw(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
     }
     timer_ref = timer_end(timer_ref);
-    printf("sw reference\t\t\t%llu\t\t%d\n", timer_ref/limit, score);
+    printf("sw\tref\t\t\t%llu\t\t%d\n", timer_ref/limit, score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sw_scan(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
     }
     timer = timer_end(timer);
-    printf("sw scan\t\t\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
+    printf("sw\tscan\t\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sw_scan_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__);
     }
     timer = timer_end(timer);
-    printf("sw scan 128 16\t\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
+    printf("sw\tscan\t128\t16\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sw_scan_128_8(seqA, lena, seqB, lenb, 10, 1, blosum62__);
     }
     timer = timer_end(timer);
-    printf("sw scan 128 8\t\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
+    printf("sw\tscan\t128\t8\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sw_wozniak_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
     }
     timer = timer_end(timer);
-    printf("sw wozniak 128 16\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
+    printf("sw\twozniak\t128\t16\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sw_striped_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__);
     }
     timer = timer_end(timer);
-    printf("sw striped 128 16\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
-
-    timer_ref = timer_start();
-    for (i=0; i<limit; ++i) {
-        score = sw_stats(seqA, lena, seqB, lenb, 10, 1, blosum62,
-                &matches, &length, tbl_pr, del_pr, mch_pr, len_pr);
-    }
-    timer_ref = timer_end(timer_ref);
-    printf("sw stats reference\t\t%llu\t\t%d\t%d\t%d\n", timer_ref/limit, score, matches, length);
-    score = 0;
-    matches = 0;
-    length = 0;
-
-    timer = timer_start();
-    for (i=0; i<limit; ++i) {
-        score = sw_stats_scan(seqA, lena, seqB, lenb, 10, 1, blosum62,
-                &matches, &length, tbl_pr, del_pr, mch_pr, len_pr);
-    }
-    timer = timer_end(timer);
-    printf("sw stats scan reference\t\t%llu\t%4.1f\t%d\t%d\t%d\n", timer/limit, pct(timer_ref,timer), score, matches, length);
-    score = 0;
-    matches = 0;
-    length = 0;
-
-    timer = timer_start();
-    for (i=0; i<limit; ++i) {
-        score = sw_stats_scan_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__,
-                &matches, &length);
-    }
-    timer = timer_end(timer);
-    printf("sw stats scan 128 16\t\t%llu\t%4.1f\t%d\t%d\t%d\n", timer/limit, pct(timer_ref,timer), score, matches, length);
-    score = 0;
-    matches = 0;
-    length = 0;
-
-    timer = timer_start();
-    for (i=0; i<limit; ++i) {
-        score = sw_stats_wozniak_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62,
-                &matches, &length, tbl_pr, del_pr, mch_pr, len_pr);
-    }
-    timer = timer_end(timer);
-    printf("sw stats wozniak 128 16\t\t%llu\t%4.1f\t%d\t%d\t%d\n", timer/limit, pct(timer_ref,timer), score, matches, length);
-    score = 0;
-    matches = 0;
-    length = 0;
-
-    timer = timer_start();
-    for (i=0; i<limit; ++i) {
-        score = sw_stats_striped_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__,
-                &matches, &length);
-    }
-    timer = timer_end(timer);
-    printf("sw stats striped 128 16\t\t%llu\t%4.1f\t%d\t%d\t%d\n", timer/limit, pct(timer_ref,timer), score, matches, length);
-    score = 0;
-    matches = 0;
-    length = 0;
+    printf("sw\tstriped\t128\t16\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
     free(tbl_pr);
     free(del_pr);

@@ -306,6 +306,7 @@ noinst_PROGRAMS += tests/test_parser
 noinst_PROGRAMS += tests/test_stl_container_performance
 if HAVE_SSE2
 noinst_PROGRAMS += tests/test_align
+noinst_PROGRAMS += tests/test_align_stats
 noinst_PROGRAMS += tests/test_align_debug
 noinst_PROGRAMS += tests/test_align_db
 noinst_PROGRAMS += tests/test_fasta_align
@@ -330,6 +331,8 @@ tests_test_woz_sw_SOURCES                  = tests/test_woz_sw.cpp
 tests_test_woz_sw_LDADD                    = 
 tests_test_align_SOURCES                   = tests/test_align.c
 tests_test_align_LDADD                     = libalign.la libalign_debug.la
+tests_test_align_stats_SOURCES             = tests/test_align_stats.c
+tests_test_align_stats_LDADD               = libalign.la libalign_debug.la
 tests_test_align_debug_SOURCES             = tests/test_align_debug.c
 tests_test_align_debug_LDADD               = libalign.la libalign_debug.la
 tests_test_align_db_SOURCES                = tests/test_align_db.cpp
