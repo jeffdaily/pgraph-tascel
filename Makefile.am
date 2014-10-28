@@ -81,6 +81,7 @@ libalign_la_SOURCES += src/align/sg_striped_128_8.c
 libalign_la_SOURCES += src/align/sg_stats_ref.c
 libalign_la_SOURCES += src/align/sg_stats_scan.c
 libalign_la_SOURCES += src/align/sg_stats_scan_128_16.c
+libalign_la_SOURCES += src/align/sg_stats_scan_128_8.c
 libalign_la_SOURCES += src/align/sg_stats_wozniak_128_16.c
 libalign_la_SOURCES += src/align/sg_stats_wozniak_128_8.c
 libalign_la_SOURCES += src/align/sg_stats_striped_128_16.c
