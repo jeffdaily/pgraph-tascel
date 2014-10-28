@@ -41,8 +41,6 @@ int main(int argc, char **argv)
     const int lenb = strlen(seqB);
     const int longest = MAX(lena,lenb) + 32 /* +32 for woz padding */;
     int score;
-    int matches;
-    int length;
     unsigned long long timer;
     unsigned long long timer_ref;
     size_t limit = 1000;
