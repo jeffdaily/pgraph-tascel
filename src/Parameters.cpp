@@ -8,6 +8,8 @@
  */
 #include "config.h"
 
+#include <mpi.h>
+
 #include <cassert>
 #include <fstream>
 #include <iostream>

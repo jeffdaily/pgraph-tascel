@@ -1,10 +1,11 @@
 #include "config.h"
 
+#include <mpi.h>
+
 #include <unistd.h>
 
 #include <cassert>
-
-#include <mpi.h>
+#include <iostream>
 
 #include "Bootstrap.hpp"
 #include "mpix.hpp"
@@ -51,7 +52,7 @@ void initialize(int &argc, char **&argv)
     comm = mpix::comm_dup(MPI_COMM_WORLD);
     comm_rank = mpix::comm_rank(comm);
     comm_size = mpix::comm_size(comm);
-    ::std::cout << "Hello from " << comm_rank << " of " << comm_size << endl;
+    ::std::cout << "Hello from " << comm_rank << " of " << comm_size << ::std::endl;
 }
 
 

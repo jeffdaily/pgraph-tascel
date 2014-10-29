@@ -21,7 +21,7 @@ happy=yes
 # Check for header.
 ga_save_CPPFLAGS="$CPPFLAGS"
 CPPFLAGS="$CPPFLAGS $TASCEL_CPPFLAGS"
-AC_CHECK_HEADER([tascel.h], [happy=yes], [happy=no])
+AC_CHECK_HEADER([tascel.h], [happy=yes], [happy=no], [#include <mpi.h>])
 CPPFLAGS="$ga_save_CPPFLAGS"
 AS_IF([test "x$happy" = xno],
     [AC_MSG_FAILURE([could not locate tascel])])

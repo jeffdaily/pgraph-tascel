@@ -351,14 +351,14 @@ am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
 	src/blosum/blosum50.h src/blosum/blosum62.h \
 	src/blosum/blosum75.h src/blosum/blosum80.h src/Bootstrap.cpp \
 	src/Bootstrap.hpp src/combinations.c src/combinations.h \
-	src/DupStats.hpp src/EdgeResult.hpp src/mpix.hpp \
-	src/mpix-inl.hpp src/mpix-types.hpp src/PairCheck.hpp \
-	src/PairCheckGlobal.cpp src/PairCheckGlobal.hpp \
-	src/PairCheckGlobalServer.cpp src/PairCheckGlobalServer.hpp \
-	src/PairCheckLocal.hpp src/PairCheckSemiLocal.hpp \
-	src/PairCheckSmp.hpp src/Parameters.cpp src/Parameters.hpp \
-	src/pthread_fixes.h src/Sequence.cpp src/Sequence.hpp \
-	src/SequenceDatabase.hpp src/SequenceDatabaseReplicated.cpp \
+	src/DupStats.hpp src/EdgeResult.hpp src/mpix.cpp src/mpix.hpp \
+	src/mpix-types.hpp src/PairCheck.hpp src/PairCheckGlobal.cpp \
+	src/PairCheckGlobal.hpp src/PairCheckGlobalServer.cpp \
+	src/PairCheckGlobalServer.hpp src/PairCheckLocal.hpp \
+	src/PairCheckSemiLocal.hpp src/PairCheckSmp.hpp \
+	src/Parameters.cpp src/Parameters.hpp src/pthread_fixes.h \
+	src/Sequence.cpp src/Sequence.hpp src/SequenceDatabase.hpp \
+	src/SequenceDatabaseReplicated.cpp \
 	src/SequenceDatabaseReplicated.hpp \
 	src/SequenceDatabaseTascel.cpp src/SequenceDatabaseTascel.hpp \
 	src/SigSegvHandler.hpp src/Stats.hpp src/Suffix.hpp \
@@ -373,7 +373,7 @@ am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
 @HAVE_ARMCI_TRUE@am__objects_7 = src/SuffixBucketsArmci.lo \
 @HAVE_ARMCI_TRUE@	src/SequenceDatabaseArmci.lo
 am_libpgraph_la_OBJECTS = src/alignment.lo src/Bootstrap.lo \
-	src/combinations.lo src/PairCheckGlobal.lo \
+	src/combinations.lo src/mpix.lo src/PairCheckGlobal.lo \
 	src/PairCheckGlobalServer.lo src/Parameters.lo src/Sequence.lo \
 	src/SequenceDatabaseReplicated.lo \
 	src/SequenceDatabaseTascel.lo src/SuffixBuckets.lo \
@@ -790,14 +790,14 @@ libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
 	src/blosum/blosum50.h src/blosum/blosum62.h \
 	src/blosum/blosum75.h src/blosum/blosum80.h src/Bootstrap.cpp \
 	src/Bootstrap.hpp src/combinations.c src/combinations.h \
-	src/DupStats.hpp src/EdgeResult.hpp src/mpix.hpp \
-	src/mpix-inl.hpp src/mpix-types.hpp src/PairCheck.hpp \
-	src/PairCheckGlobal.cpp src/PairCheckGlobal.hpp \
-	src/PairCheckGlobalServer.cpp src/PairCheckGlobalServer.hpp \
-	src/PairCheckLocal.hpp src/PairCheckSemiLocal.hpp \
-	src/PairCheckSmp.hpp src/Parameters.cpp src/Parameters.hpp \
-	src/pthread_fixes.h src/Sequence.cpp src/Sequence.hpp \
-	src/SequenceDatabase.hpp src/SequenceDatabaseReplicated.cpp \
+	src/DupStats.hpp src/EdgeResult.hpp src/mpix.cpp src/mpix.hpp \
+	src/mpix-types.hpp src/PairCheck.hpp src/PairCheckGlobal.cpp \
+	src/PairCheckGlobal.hpp src/PairCheckGlobalServer.cpp \
+	src/PairCheckGlobalServer.hpp src/PairCheckLocal.hpp \
+	src/PairCheckSemiLocal.hpp src/PairCheckSmp.hpp \
+	src/Parameters.cpp src/Parameters.hpp src/pthread_fixes.h \
+	src/Sequence.cpp src/Sequence.hpp src/SequenceDatabase.hpp \
+	src/SequenceDatabaseReplicated.cpp \
 	src/SequenceDatabaseReplicated.hpp \
 	src/SequenceDatabaseTascel.cpp src/SequenceDatabaseTascel.hpp \
 	src/SigSegvHandler.hpp src/Stats.hpp src/Suffix.hpp \
@@ -1213,6 +1213,7 @@ src/$(DEPDIR)/$(am__dirstamp):
 src/alignment.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/Bootstrap.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/combinations.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/mpix.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/PairCheckGlobal.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
 src/PairCheckGlobalServer.lo: src/$(am__dirstamp) \
@@ -1574,6 +1575,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/SuffixTree.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/alignment.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/combinations.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/mpix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/align/$(DEPDIR)/libalign_debug_la-nw_ref.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/align/$(DEPDIR)/libalign_debug_la-nw_scan.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/align/$(DEPDIR)/libalign_debug_la-nw_scan_128_16.Plo@am__quote@

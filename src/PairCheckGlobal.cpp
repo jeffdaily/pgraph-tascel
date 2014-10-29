@@ -8,6 +8,8 @@
  */
 #include "config.h"
 
+#include <mpi.h>
+
 #include <tascel.h>
 
 //#include <algorithm>

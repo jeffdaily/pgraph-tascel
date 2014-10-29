@@ -10,8 +10,11 @@
 #ifndef _MPIX_INL_H_
 #define _MPIX_INL_H_
 
+#include <mpi.h>
+
 #include <sys/stat.h>
 
+#include <cassert>
 #include <cstddef>
 #include <iostream>
 #include <map>
@@ -22,7 +25,7 @@
 #include <utility>
 #include <vector>
 
-#include <mpi.h>
+#include "mpix.hpp"
 
 using ::std::accumulate;
 using ::std::cerr;
@@ -37,114 +40,13 @@ using ::std::vector;
 
 namespace mpix {
 
-inline MPI_Datatype type_contiguous(int count, MPI_Datatype oldtype)
-{
-    MPI_Datatype newtype;
-    check(MPI_Type_contiguous(count, oldtype, &newtype));
-    return newtype;
-}
-
-inline MPI_Datatype type_create_struct(int count, const int blocklengths[], const MPI_Aint displacements[], const MPI_Datatype types[])
-{
-    MPI_Datatype newtype;
-    check(MPI_Type_create_struct(count, blocklengths, displacements, types, &newtype));
-    return newtype;
-}
-
-inline void type_commit(MPI_Datatype &type)
-{
-    check(MPI_Type_commit(&type));
-}
-
-inline void type_free(MPI_Datatype &type)
-{
-    check(MPI_Type_free(&type));
-}
-
-template <typename T>
-inline MPI_Datatype build_mpi_datatype(const T &object)
-{
-    add_custom_mpi_datatype(typeid(object).name(), MPI_DATATYPE_NULL);
-    return MPI_DATATYPE_NULL;
-}
-
-template <typename T>
-inline MPI_Datatype get_mpi_datatype(const T& object)
-{
-    static MPI_Datatype type = build_mpi_datatype(object);
-    assert(type != MPI_DATATYPE_NULL);
-    return type;
-}
-
-/* helper macro and macro invocations to implement the known types */
-#define MPIX_GET_MPI_DATATYPE_IMPL(CTYPE,MTYPE)         \
-template <>                                             \
-inline MPI_Datatype                                     \
-get_mpi_datatype<CTYPE>(const CTYPE&) {                 \
-    return MTYPE;                                       \
-}
-
-MPIX_GET_MPI_DATATYPE_IMPL(char, MPI_CHAR);
-MPIX_GET_MPI_DATATYPE_IMPL(short, MPI_SHORT);
-MPIX_GET_MPI_DATATYPE_IMPL(int, MPI_INT);
-MPIX_GET_MPI_DATATYPE_IMPL(long, MPI_LONG);
-MPIX_GET_MPI_DATATYPE_IMPL(float, MPI_FLOAT);
-MPIX_GET_MPI_DATATYPE_IMPL(double, MPI_DOUBLE);
-MPIX_GET_MPI_DATATYPE_IMPL(long double, MPI_LONG_DOUBLE);
-MPIX_GET_MPI_DATATYPE_IMPL(unsigned char, MPI_UNSIGNED_CHAR);
-MPIX_GET_MPI_DATATYPE_IMPL(unsigned short, MPI_UNSIGNED_SHORT);
-MPIX_GET_MPI_DATATYPE_IMPL(unsigned, MPI_UNSIGNED);
-MPIX_GET_MPI_DATATYPE_IMPL(unsigned long, MPI_UNSIGNED_LONG);
-#define MPIX_PAIR(A,B) A,B
-MPIX_GET_MPI_DATATYPE_IMPL(pair<MPIX_PAIR(float, int)>, MPI_FLOAT_INT);
-MPIX_GET_MPI_DATATYPE_IMPL(pair<MPIX_PAIR(double, int)>, MPI_DOUBLE_INT);
-MPIX_GET_MPI_DATATYPE_IMPL(pair<MPIX_PAIR(long double, int)>, MPI_LONG_DOUBLE_INT);
-MPIX_GET_MPI_DATATYPE_IMPL(pair<MPIX_PAIR(long, int)>, MPI_LONG_INT);
-MPIX_GET_MPI_DATATYPE_IMPL(pair<MPIX_PAIR(short, int)>, MPI_SHORT_INT);
-MPIX_GET_MPI_DATATYPE_IMPL(pair<MPIX_PAIR(int, int)>, MPI_2INT);
-#undef MPIX_PAIR
-
-#if defined(MPI_LONG_LONG_INT) || (defined(MPI_VERSION) && MPI_VERSION >= 2)
-MPIX_GET_MPI_DATATYPE_IMPL(long long, MPI_LONG_LONG_INT);
-#endif
-
-#if defined(MPI_UNSIGNED_LONG_LONG) || (defined(MPI_VERSION) && MPI_VERSION >= 2)
-MPIX_GET_MPI_DATATYPE_IMPL(unsigned long long, MPI_UNSIGNED_LONG_LONG);
-#endif
-
-#if SIZEOF_BOOL == SIZEOF_CHAR
-MPIX_GET_MPI_DATATYPE_IMPL(bool, MPI_CHAR);
-#elif SIZEOF_BOOL == SIZEOF_SHORT
-MPIX_GET_MPI_DATATYPE_IMPL(bool, MPI_SHORT);
-#elif SIZEOF_BOOL == SIZEOF_INT
-MPIX_GET_MPI_DATATYPE_IMPL(bool, MPI_INT);
-#else
-#error Cannot find MPI datatype for boolean
-#endif
-
-
-inline map<string,MPI_Datatype>& get_custom_mpi_datatypes()
-{
-    static map<string,MPI_Datatype> the_datatypes;
-    return the_datatypes;
-}
-
-
-inline void add_custom_mpi_datatype(const string &name, MPI_Datatype type)
-{
-    map<string,MPI_Datatype> &the_datatypes = get_custom_mpi_datatypes();
-    assert(the_datatypes.count(name) == 0);
-    the_datatypes[name] = type;
-}
-
-
-inline void init(int &argc, char **&argv)
+void init(int &argc, char **&argv)
 {
     check(MPI_Init(&argc,&argv));
 }
 
 
-inline void init_thread(int &argc, char **&argv, int requested)
+void init_thread(int &argc, char **&argv, int requested)
 {
     int provided;
     check(MPI_Init_thread(&argc, &argv, requested, &provided));
@@ -159,34 +61,13 @@ inline void init_thread(int &argc, char **&argv, int requested)
 }
 
 
-inline void finalize()
+void finalize()
 {
-    /* dallocate any custom data types */
-    map<string,MPI_Datatype> &the_datatypes = get_custom_mpi_datatypes();
-    for (map<string,MPI_Datatype>::iterator it=the_datatypes.begin();
-            it!=the_datatypes.end(); ++it) {
-        type_free(it->second);
-    }
-
     check(MPI_Finalize());
 }
 
 
-inline MPI_Comm comm_dup(MPI_Comm orig)
-{
-    MPI_Comm dup;
-    check(MPI_Comm_dup(orig, &dup));
-    return dup;
-}
-
-
-inline void comm_free(MPI_Comm &comm)
-{
-    check(MPI_Comm_free(&comm));
-}
-
-
-inline void check(int errorcode)
+void check(int errorcode)
 {
     if (MPI_SUCCESS != errorcode) {
         cerr << "[" << comm_rank(MPI_COMM_WORLD) << "] MPI ERROR"
@@ -199,7 +80,7 @@ inline void check(int errorcode)
 }
 
 
-inline int error_class(int errorcode)
+int error_class(int errorcode)
 {
     int eclass;
     MPI_Error_class(errorcode, &eclass);
@@ -207,7 +88,7 @@ inline int error_class(int errorcode)
 }
 
 
-inline string error_string(int errorcode)
+string error_string(int errorcode)
 {
     string result;
     char estring[MPI_MAX_ERROR_STRING];
@@ -220,7 +101,21 @@ inline string error_string(int errorcode)
 }
 
 
-inline int comm_rank(MPI_Comm comm)
+MPI_Comm comm_dup(MPI_Comm orig)
+{
+    MPI_Comm dup;
+    check(MPI_Comm_dup(orig, &dup));
+    return dup;
+}
+
+
+void comm_free(MPI_Comm &comm)
+{
+    check(MPI_Comm_free(&comm));
+}
+
+
+int comm_rank(MPI_Comm comm)
 {
     int result = 0;
     check(MPI_Comm_rank(comm, &result));
@@ -228,7 +123,7 @@ inline int comm_rank(MPI_Comm comm)
 }
 
 
-inline int comm_size(MPI_Comm comm)
+int comm_size(MPI_Comm comm)
 {
     int result = 0;
     check(MPI_Comm_size(comm, &result));
@@ -236,14 +131,83 @@ inline int comm_size(MPI_Comm comm)
 }
 
 
-inline void barrier(MPI_Comm comm)
+void barrier(MPI_Comm comm)
 {
     check(MPI_Barrier(comm));
 }
 
 
+MPI_Datatype type_contiguous(int count, MPI_Datatype oldtype)
+{
+    MPI_Datatype newtype;
+    check(MPI_Type_contiguous(count, oldtype, &newtype));
+    return newtype;
+}
+
+
+MPI_Datatype type_create_struct(int count, int blocklengths[], MPI_Aint displacements[], MPI_Datatype types[])
+{
+    MPI_Datatype newtype;
+    check(MPI_Type_create_struct(count, blocklengths, displacements, types, &newtype));
+    return newtype;
+}
+
+
+void type_commit(MPI_Datatype &type)
+{
+    check(MPI_Type_commit(&type));
+}
+
+
+void type_free(MPI_Datatype &type)
+{
+    check(MPI_Type_free(&type));
+}
+
+
+MPI_Datatype get_mpi_datatype(char object) { return MPI_CHAR; }
+MPI_Datatype get_mpi_datatype(signed char object) { return MPI_BYTE; }
+MPI_Datatype get_mpi_datatype(unsigned char object) { return MPI_UNSIGNED_CHAR; }
+MPI_Datatype get_mpi_datatype(short object) { return MPI_SHORT; }
+MPI_Datatype get_mpi_datatype(int object) { return MPI_INT; }
+MPI_Datatype get_mpi_datatype(long object) { return MPI_LONG; }
+MPI_Datatype get_mpi_datatype(unsigned short object) { return MPI_UNSIGNED_SHORT; }
+MPI_Datatype get_mpi_datatype(unsigned int object) { return MPI_UNSIGNED; }
+MPI_Datatype get_mpi_datatype(unsigned long object) { return MPI_UNSIGNED_LONG; }
+MPI_Datatype get_mpi_datatype(float object) { return MPI_FLOAT; }
+MPI_Datatype get_mpi_datatype(double object) { return MPI_DOUBLE; }
+MPI_Datatype get_mpi_datatype(long double object) { return MPI_LONG_DOUBLE; }
+MPI_Datatype get_mpi_datatype(pair<float, int> object) { return MPI_FLOAT_INT; }
+MPI_Datatype get_mpi_datatype(pair<double, int> object) { return MPI_DOUBLE_INT; }
+MPI_Datatype get_mpi_datatype(pair<long, int> object) { return MPI_LONG_INT; }
+MPI_Datatype get_mpi_datatype(pair<short, int> object) { return MPI_SHORT_INT; }
+MPI_Datatype get_mpi_datatype(pair<int, int> object) { return MPI_2INT; }
+MPI_Datatype get_mpi_datatype(pair<long double, int> object) { return MPI_LONG_DOUBLE_INT; }
+
+#if defined(MPI_LONG_LONG_INT) || (defined(MPI_VERSION) && MPI_VERSION >= 2)
+MPI_Datatype get_mpi_datatype(long long object) { return MPI_LONG_LONG; }
+#endif
+
+#if defined(MPI_UNSIGNED_LONG_LONG) || (defined(MPI_VERSION) && MPI_VERSION >= 2)
+MPI_Datatype get_mpi_datatype(unsigned long long object) { return MPI_UNSIGNED_LONG_LONG; }
+#endif
+
+#if SIZEOF_BOOL == SIZEOF_CHAR
+MPI_Datatype get_mpi_datatype(bool object) { return MPI_BYTE; }
+#elif SIZEOF_BOOL == SIZEOF_SHORT
+MPI_Datatype get_mpi_datatype(bool object) { return MPI_SHORT; }
+#elif SIZEOF_BOOL == SIZEOF_INT
+MPI_Datatype get_mpi_datatype(bool object) { return MPI_INT; }
+#elif SIZEOF_BOOL == SIZEOF_LONG
+MPI_Datatype get_mpi_datatype(bool object) { return MPI_LONG; }
+#else
+#error Cannot find MPI datatype for boolean
+#endif
+
+
+#if 0
 template <typename T>
-inline void bcast(T &object, int root, MPI_Comm comm)
+void bcast(T &object, int root, MPI_Comm comm)
 {
     MPI_Datatype datatype = get_mpi_datatype(object);
     check(MPI_Bcast(&object, 1, datatype, root, comm));
@@ -251,7 +215,7 @@ inline void bcast(T &object, int root, MPI_Comm comm)
 
 
 template <typename T>
-inline void bcast(vector<T> &object, int root, MPI_Comm comm)
+void bcast(vector<T> &object, int root, MPI_Comm comm)
 {
     typedef typename vector<T>::size_type size_type;
     size_type size = object.size();
@@ -266,7 +230,7 @@ inline void bcast(vector<T> &object, int root, MPI_Comm comm)
 
 
 template <typename T>
-inline void bcast(T *object, int size, int root, MPI_Comm comm)
+void bcast(T *object, int size, int root, MPI_Comm comm)
 {
     MPI_Datatype datatype = get_mpi_datatype(*object);
     check(MPI_Bcast(object, size, datatype, root, comm));
@@ -274,7 +238,7 @@ inline void bcast(T *object, int size, int root, MPI_Comm comm)
 
 
 template <>
-inline void bcast<string>(string &object, int root, MPI_Comm comm)
+void bcast<string>(string &object, int root, MPI_Comm comm)
 {
     typedef string::size_type size_type;
     size_type size = object.size();
@@ -293,7 +257,7 @@ inline void bcast<string>(string &object, int root, MPI_Comm comm)
 
 
 template <>
-inline void bcast<string>(vector<string> &object, int root, MPI_Comm comm)
+void bcast<string>(vector<string> &object, int root, MPI_Comm comm)
 {
     typedef vector<string>::size_type size_type;
     size_type size = object.size();
@@ -308,7 +272,7 @@ inline void bcast<string>(vector<string> &object, int root, MPI_Comm comm)
 }
 
 
-inline vector<string> bcast(int argc, char **argv, MPI_Comm comm)
+vector<string> bcast(int argc, char **argv, MPI_Comm comm)
 {
     vector<string> result(argc);
 
@@ -325,7 +289,7 @@ inline vector<string> bcast(int argc, char **argv, MPI_Comm comm)
 
 /* reduce */
 template <class T>
-inline void reduce(T &object, MPI_Op op, int root, MPI_Comm comm)
+void reduce(T &object, MPI_Op op, int root, MPI_Comm comm)
 {
     MPI_Datatype datatype = get_mpi_datatype(object);
 
@@ -339,7 +303,7 @@ inline void reduce(T &object, MPI_Op op, int root, MPI_Comm comm)
 
 
 template <typename T>
-inline void reduce(vector<T> &object, MPI_Op op, int root, MPI_Comm comm)
+void reduce(vector<T> &object, MPI_Op op, int root, MPI_Comm comm)
 {
     MPI_Datatype datatype = get_mpi_datatype(object[0]);
 
@@ -355,7 +319,7 @@ inline void reduce(vector<T> &object, MPI_Op op, int root, MPI_Comm comm)
 
 
 template <typename T>
-inline void reduce(T *object, int size, MPI_Op op, int root, MPI_Comm comm)
+void reduce(T *object, int size, MPI_Op op, int root, MPI_Comm comm)
 {
     MPI_Datatype datatype = get_mpi_datatype(*object);
 
@@ -371,7 +335,7 @@ inline void reduce(T *object, int size, MPI_Op op, int root, MPI_Comm comm)
 
 /* all reduce */
 template <typename T>
-inline void allreduce(T &object, MPI_Op op, MPI_Comm comm)
+void allreduce(T &object, MPI_Op op, MPI_Comm comm)
 {
     MPI_Datatype datatype = get_mpi_datatype(object);
     check(MPI_Allreduce(MPI_IN_PLACE, &object, 1, datatype, op, comm));
@@ -379,7 +343,7 @@ inline void allreduce(T &object, MPI_Op op, MPI_Comm comm)
 
 
 template <typename T>
-inline void allreduce(vector<T> &object, MPI_Op op, MPI_Comm comm)
+void allreduce(vector<T> &object, MPI_Op op, MPI_Comm comm)
 {
     MPI_Datatype datatype = get_mpi_datatype(object[0]);
     check(MPI_Allreduce(MPI_IN_PLACE, &object[0], object.size(),
@@ -388,7 +352,7 @@ inline void allreduce(vector<T> &object, MPI_Op op, MPI_Comm comm)
 
 
 template <typename T>
-inline void allreduce(T *object, int size, MPI_Op op, MPI_Comm comm)
+void allreduce(T *object, int size, MPI_Op op, MPI_Comm comm)
 {
     MPI_Datatype datatype = get_mpi_datatype(*object);
     check(MPI_Allreduce(MPI_IN_PLACE, object, size, datatype, op, comm));
@@ -397,7 +361,7 @@ inline void allreduce(T *object, int size, MPI_Op op, MPI_Comm comm)
 
 /* all to all */
 template <typename T>
-inline void alltoall(vector<T> &object, MPI_Comm comm)
+void alltoall(vector<T> &object, MPI_Comm comm)
 {
     /* unfortunately, support of MPI_IN_PLACE for MPI_Alltoall is
      * extremely lacking, e.g., OpenMPI, Cray. */
@@ -421,7 +385,7 @@ inline void alltoall(vector<T> &object, MPI_Comm comm)
 
 /* all to all */
 template <typename T>
-inline void alltoall(vector<T> &sendbuf, vector<T> &recvbuf, MPI_Comm comm)
+void alltoall(vector<T> &sendbuf, vector<T> &recvbuf, MPI_Comm comm)
 {
     /* unfortunately, support of MPI_IN_PLACE for MPI_Alltoall is
      * extremely lacking, e.g., OpenMPI, Cray. */
@@ -450,7 +414,7 @@ inline void alltoall(vector<T> &sendbuf, vector<T> &recvbuf, MPI_Comm comm)
 
 /* gather */
 template <typename T>
-inline vector<T> gather(const T &object, int root, MPI_Comm comm)
+vector<T> gather(T &object, int root, MPI_Comm comm)
 {
     vector<T> result;
     MPI_Datatype datatype = get_mpi_datatype(object);
@@ -470,7 +434,7 @@ inline vector<T> gather(const T &object, int root, MPI_Comm comm)
 
 
 template <typename T>
-inline vector<T> gather(const vector<T> &object, int root, MPI_Comm comm)
+vector<T> gather(vector<T> &object, int root, MPI_Comm comm)
 {
     vector<T> result;
     MPI_Datatype datatype = get_mpi_datatype(object[0]);
@@ -491,7 +455,7 @@ inline vector<T> gather(const vector<T> &object, int root, MPI_Comm comm)
 
 
 template <typename T>
-inline vector<T> gather(const T *object, int size, int root, MPI_Comm comm)
+vector<T> gather(T *object, int size, int root, MPI_Comm comm)
 {
     vector<T> result;
     MPI_Datatype datatype = get_mpi_datatype(*object);
@@ -511,7 +475,7 @@ inline vector<T> gather(const T *object, int size, int root, MPI_Comm comm)
 
 
 template <>
-inline vector<string> gather<string>(const string &object, int root, MPI_Comm comm)
+vector<string> gather<string>(string &object, int root, MPI_Comm comm)
 {
     vector<string> result;
     int sendcount = int(object.size());
@@ -543,7 +507,7 @@ inline vector<string> gather<string>(const string &object, int root, MPI_Comm co
 
 
 template <typename T>
-inline void gather(const T *sendbuf, int size, T *recvbuf, int root, MPI_Comm comm)
+void gather(T *sendbuf, int size, T *recvbuf, int root, MPI_Comm comm)
 {
     MPI_Datatype datatype = get_mpi_datatype(sendbuf[0]);
 
@@ -553,7 +517,7 @@ inline void gather(const T *sendbuf, int size, T *recvbuf, int root, MPI_Comm co
 
 
 template <typename T>
-inline void gather(const vector<T> &sendbuf, vector<T> &recvbuf, int root, MPI_Comm comm)
+void gather(vector<T> &sendbuf, vector<T> &recvbuf, int root, MPI_Comm comm)
 {
     MPI_Datatype datatype = get_mpi_datatype(sendbuf[0]);
     int size = int(sendbuf.size());
@@ -572,7 +536,7 @@ inline void gather(const vector<T> &sendbuf, vector<T> &recvbuf, int root, MPI_C
 
 /* synchronous printing */
 template <class T>
-inline void print_sync(const string &name, const T &what, MPI_Comm comm)
+void print_sync(const string &name, const T &what, MPI_Comm comm)
 {
     vector<T> all_what = gather(what, 0, comm);
 
@@ -587,7 +551,7 @@ inline void print_sync(const string &name, const T &what, MPI_Comm comm)
 
 
 template <typename T>
-inline void print_sync(const string &name, const vector<T> &what, MPI_Comm comm)
+void print_sync(const string &name, const vector<T> &what, MPI_Comm comm)
 {
     vector<T> all_what = gather(what, 0, comm);
 
@@ -607,7 +571,7 @@ inline void print_sync(const string &name, const vector<T> &what, MPI_Comm comm)
 
 
 template <typename T>
-inline void print_sync(const string &name, const T *what, int size_, MPI_Comm comm)
+void print_sync(const string &name, const T *what, int size_, MPI_Comm comm)
 {
     vector<T> all_what = gather(what, size_, 0, comm);
 
@@ -626,7 +590,7 @@ inline void print_sync(const string &name, const T *what, int size_, MPI_Comm co
 }
 
 
-inline void print_zero(const string &name, MPI_Comm comm)
+void print_zero(const string &name, MPI_Comm comm)
 {
     barrier(comm);
     if (0 == comm_rank(comm)) {
@@ -637,7 +601,7 @@ inline void print_zero(const string &name, MPI_Comm comm)
 
 
 template <class T>
-inline void print_zero(const string &name, const T &what, MPI_Comm comm)
+void print_zero(const string &name, T &what, MPI_Comm comm)
 {
     barrier(comm);
     if (0 == comm_rank(comm)) {
@@ -648,7 +612,7 @@ inline void print_zero(const string &name, const T &what, MPI_Comm comm)
 
 
 template <typename T>
-inline void print_zero(const string &name, const vector<T> &what, MPI_Comm comm)
+void print_zero(const string &name, vector<T> &what, MPI_Comm comm)
 {
     barrier(comm);
     if (0 == comm_rank(comm)) {
@@ -665,7 +629,7 @@ inline void print_zero(const string &name, const vector<T> &what, MPI_Comm comm)
 
 
 template <typename T>
-inline void print_zero(const string &name, const T *what, int size, MPI_Comm comm)
+void print_zero(const string &name, T *what, int size, MPI_Comm comm)
 {
     barrier(comm);
     if (0 == comm_rank(comm)) {
@@ -682,7 +646,7 @@ inline void print_zero(const string &name, const T *what, int size, MPI_Comm com
 
 
 /* file reading */
-inline MPI_Offset get_file_size(const string &file_name, MPI_Comm comm)
+MPI_Offset get_file_size(const string &file_name, MPI_Comm comm)
 {
     MPI_Offset file_size = 0;
 
@@ -718,7 +682,7 @@ inline MPI_Offset get_file_size(const string &file_name, MPI_Comm comm)
  * @param[out] file_size of the given file
  * @param[in] comm instance
  */
-inline void read_file(
+void read_file(
         const string &file_name,
         char *&file_buffer,
         MPI_Offset &file_size,
@@ -740,7 +704,7 @@ inline void read_file(
  * @param[out] file_size of the given file
  * @param[in] comm instance
  */
-inline void read_file_bcast(
+void read_file_bcast(
     const string &file_name,
     char *&file_buffer,
     MPI_Offset &file_size,
@@ -816,7 +780,7 @@ inline void read_file_bcast(
  * @param[out] file_size of the given file
  * @param[in] comm instance
  */
-inline void read_file_mpiio(
+void read_file_mpiio(
         const string &file_name,
         char *&file_buffer,
         MPI_Offset &file_size,
@@ -872,6 +836,7 @@ inline void read_file_mpiio(
         check(MPI_File_close(&fh));
     }
 }
+#endif
 
 } /* namespace mpix */
 
