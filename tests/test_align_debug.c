@@ -8,14 +8,19 @@
 #include <string.h>
 
 #include "align/align_debug.h"
-#include "align/align_wozniak_128_16_debug.h"
-#include "align/align_wozniak_128_8_debug.h"
-#include "align/align_striped_128_16_debug.h"
-#include "align/align_striped_128_8_debug.h"
-#include "align/align_scan_128_16_debug.h"
-#include "align/align_scan_128_8_debug.h"
 #include "blosum/blosum62.h"
 
+#if HAVE_EMMINTRIN_H
+#include "align/align_wozniak_128_16_debug.h"
+#include "align/align_striped_128_16_debug.h"
+#include "align/align_scan_128_16_debug.h"
+#endif
+
+#if HAVE_SMMINTRIN_H
+#include "align/align_wozniak_128_8_debug.h"
+#include "align/align_striped_128_8_debug.h"
+#include "align/align_scan_128_8_debug.h"
+#endif
 
 static void print_array(
         const char * filename,
@@ -78,29 +83,41 @@ int main(int argc, char **argv)
     print_array("nw_scan_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
+#if HAVE_EMMINTRIN_H
     score = nw_scan_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
     print_array("nw_scan_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_SMMINTRIN_H
     score = nw_scan_128_8_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
     print_array("nw_scan_128_8_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_EMMINTRIN_H
     score = nw_wozniak_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
     print_array("nw_wozniak_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_SMMINTRIN_H
     score = nw_wozniak_128_8_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
     print_array("nw_wozniak_128_8_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_EMMINTRIN_H
     score = nw_striped_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
     print_array("nw_striped_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_SMMINTRIN_H
     score = nw_striped_128_8_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
     print_array("nw_striped_128_8_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
     score = nw_stats_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, &matches, &length, tbl_pr, del_pr, mch_pr, len_pr, scr_tbl, mch_tbl, len_tbl);
     print_array("nw_stats_ref_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
@@ -118,6 +135,7 @@ int main(int argc, char **argv)
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
 
+#if HAVE_EMMINTRIN_H
     score = nw_stats_scan_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length, scr_tbl, mch_tbl, len_tbl);
     print_array("nw_stats_scan_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     print_array("nw_stats_scan_128_16_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
@@ -125,7 +143,9 @@ int main(int argc, char **argv)
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_SMMINTRIN_H
     score = nw_stats_scan_128_8_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length, scr_tbl, mch_tbl, len_tbl);
     print_array("nw_stats_scan_128_8_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     print_array("nw_stats_scan_128_8_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
@@ -133,7 +153,9 @@ int main(int argc, char **argv)
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_EMMINTRIN_H
     score = nw_stats_wozniak_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, &matches, &length, tbl_pr, del_pr, mch_pr, len_pr, scr_tbl, mch_tbl, len_tbl);
     print_array("nw_stats_wozniak_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     print_array("nw_stats_wozniak_128_16_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
@@ -141,7 +163,9 @@ int main(int argc, char **argv)
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_SMMINTRIN_H
     score = nw_stats_wozniak_128_8_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, &matches, &length, tbl_pr, del_pr, mch_pr, len_pr, scr_tbl, mch_tbl, len_tbl);
     print_array("nw_stats_wozniak_128_8_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     print_array("nw_stats_wozniak_128_8_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
@@ -149,7 +173,9 @@ int main(int argc, char **argv)
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_EMMINTRIN_H
     score = nw_stats_striped_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length, scr_tbl, mch_tbl, len_tbl);
     print_array("nw_stats_striped_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     print_array("nw_stats_striped_128_16_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
@@ -157,7 +183,9 @@ int main(int argc, char **argv)
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_SMMINTRIN_H
     score = nw_stats_striped_128_8_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length, scr_tbl, mch_tbl, len_tbl);
     print_array("nw_stats_striped_128_8_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     print_array("nw_stats_striped_128_8_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
@@ -165,6 +193,7 @@ int main(int argc, char **argv)
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
     score = sg_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
     print_array("sg_ref_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
@@ -174,29 +203,41 @@ int main(int argc, char **argv)
     print_array("sg_scan_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
+#if HAVE_EMMINTRIN_H
     score = sg_scan_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
     print_array("sg_scan_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_SMMINTRIN_H
     score = sg_scan_128_8_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
     print_array("sg_scan_128_8_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_EMMINTRIN_H
     score = sg_wozniak_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
     print_array("sg_wozniak_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_SMMINTRIN_H
     score = sg_wozniak_128_8_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
     print_array("sg_wozniak_128_8_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_EMMINTRIN_H
     score = sg_striped_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
     print_array("sg_striped_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_SMMINTRIN_H
     score = sg_striped_128_8_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
     print_array("sg_striped_128_8_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
     score = sg_stats_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, &matches, &length, tbl_pr, del_pr, mch_pr, len_pr, scr_tbl, mch_tbl, len_tbl);
     print_array("sg_stats_ref_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
@@ -214,6 +255,7 @@ int main(int argc, char **argv)
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
 
+#if HAVE_EMMINTRIN_H
     score = sg_stats_scan_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length, scr_tbl, mch_tbl, len_tbl);
     print_array("sg_stats_scan_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     print_array("sg_stats_scan_128_16_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
@@ -221,7 +263,9 @@ int main(int argc, char **argv)
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_SMMINTRIN_H
     score = sg_stats_scan_128_8_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length, scr_tbl, mch_tbl, len_tbl);
     print_array("sg_stats_scan_128_8_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     print_array("sg_stats_scan_128_8_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
@@ -229,7 +273,9 @@ int main(int argc, char **argv)
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_EMMINTRIN_H
     score = sg_stats_wozniak_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, &matches, &length, tbl_pr, del_pr, mch_pr, len_pr, scr_tbl, mch_tbl, len_tbl);
     print_array("sg_stats_wozniak_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     print_array("sg_stats_wozniak_128_16_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
@@ -237,7 +283,9 @@ int main(int argc, char **argv)
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_SMMINTRIN_H
     score = sg_stats_wozniak_128_8_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, &matches, &length, tbl_pr, del_pr, mch_pr, len_pr, scr_tbl, mch_tbl, len_tbl);
     print_array("sg_stats_wozniak_128_8_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     print_array("sg_stats_wozniak_128_8_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
@@ -245,7 +293,9 @@ int main(int argc, char **argv)
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_EMMINTRIN_H
     score = sg_stats_striped_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length, scr_tbl, mch_tbl, len_tbl);
     print_array("sg_stats_striped_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     print_array("sg_stats_striped_128_16_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
@@ -253,6 +303,7 @@ int main(int argc, char **argv)
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
     score = sw_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
     print_array("sw_ref_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
@@ -262,21 +313,29 @@ int main(int argc, char **argv)
     print_array("sw_scan_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
 
+#if HAVE_EMMINTRIN_H
     score = sw_scan_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
     print_array("sw_scan_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_SMMINTRIN_H
     score = sw_scan_128_8_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
     print_array("sw_scan_128_8_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_EMMINTRIN_H
     score = sw_wozniak_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr, scr_tbl);
     print_array("sw_wozniak_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_EMMINTRIN_H
     score = sw_striped_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, scr_tbl);
     print_array("sw_striped_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
     score = sw_stats_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, &matches, &length, tbl_pr, del_pr, mch_pr, len_pr, scr_tbl, mch_tbl, len_tbl);
     print_array("sw_stats_ref_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
@@ -294,6 +353,7 @@ int main(int argc, char **argv)
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
 
+#if HAVE_EMMINTRIN_H
     score = sw_stats_scan_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length, scr_tbl, mch_tbl, len_tbl);
     print_array("sw_stats_scan_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     print_array("sw_stats_scan_128_16_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
@@ -301,7 +361,9 @@ int main(int argc, char **argv)
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_SMMINTRIN_H
     score = sw_stats_scan_128_8_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length, scr_tbl, mch_tbl, len_tbl);
     print_array("sw_stats_scan_128_8_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     print_array("sw_stats_scan_128_8_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
@@ -309,7 +371,9 @@ int main(int argc, char **argv)
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_EMMINTRIN_H
     score = sw_stats_wozniak_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62, &matches, &length, tbl_pr, del_pr, mch_pr, len_pr, scr_tbl, mch_tbl, len_tbl);
     print_array("sw_stats_wozniak_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     print_array("sw_stats_wozniak_128_16_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
@@ -317,7 +381,9 @@ int main(int argc, char **argv)
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
+#if HAVE_EMMINTRIN_H
     score = sw_stats_striped_128_16_debug(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length, scr_tbl, mch_tbl, len_tbl);
     print_array("sw_stats_striped_128_16_scr.txt", scr_tbl, seqA, lena, seqB, lenb);
     print_array("sw_stats_striped_128_16_mch.txt", mch_tbl, seqA, lena, seqB, lenb);
@@ -325,6 +391,7 @@ int main(int argc, char **argv)
     memset(scr_tbl, 0, sizeof(int)*tbl_size);
     memset(mch_tbl, 0, sizeof(int)*tbl_size);
     memset(len_tbl, 0, sizeof(int)*tbl_size);
+#endif
 
     free(tbl_pr);
     free(del_pr);

@@ -17,11 +17,6 @@ AM_CPPFLAGS += $(ARMCI_CPPFLAGS)
 AM_CPPFLAGS += $(PT_MPI_CPPFLAGS)
 AM_CPPFLAGS += $(GMP_CPPFLAGS)
 AM_CPPFLAGS += -I$(top_srcdir)/src
-if HAVE_SSE2
-AM_CPPFLAGS += -I$(top_srcdir)/contrib/Complete-Striped-Smith-Waterman-Library/src
-AM_CPPFLAGS += -I$(top_srcdir)/contrib/fasta-36.3.6d/src
-AM_CPPFLAGS += -DSW_SSE2
-endif
 AM_CPPFLAGS += -I$(top_srcdir)/contrib/boost_1_55_0
 AM_CPPFLAGS += -I$(top_srcdir)/contrib/gtest-1.7.0
 AM_CPPFLAGS += -I$(top_srcdir)/contrib/gtest-1.7.0/include
@@ -47,67 +42,75 @@ LDADD += libyaml-cpp.la
 noinst_LTLIBRARIES += libalign.la
 libalign_la_SOURCES =
 libalign_la_SOURCES += src/align/align.h
-libalign_la_SOURCES += src/align/align_wozniak_128_16.h
-libalign_la_SOURCES += src/align/align_wozniak_128_8.h
-libalign_la_SOURCES += src/align/align_striped_128_16.h
-libalign_la_SOURCES += src/align/align_striped_128_8.h
-libalign_la_SOURCES += src/align/align_scan_128_16.h
-libalign_la_SOURCES += src/align/align_scan_128_8.h
 libalign_la_SOURCES += src/align/nw_ref.c
 libalign_la_SOURCES += src/align/nw_scan.c
-libalign_la_SOURCES += src/align/nw_scan_128_16.c
-libalign_la_SOURCES += src/align/nw_scan_128_8.c
 libalign_la_SOURCES += src/align/nw_scan_row.c
-libalign_la_SOURCES += src/align/nw_wozniak_128_16.c
-libalign_la_SOURCES += src/align/nw_wozniak_128_8.c
-libalign_la_SOURCES += src/align/nw_striped_128_16.c
-libalign_la_SOURCES += src/align/nw_striped_128_8.c
 libalign_la_SOURCES += src/align/nw_stats_ref.c
 libalign_la_SOURCES += src/align/nw_stats_scan.c
-libalign_la_SOURCES += src/align/nw_stats_scan_128_16.c
-libalign_la_SOURCES += src/align/nw_stats_scan_128_8.c
-libalign_la_SOURCES += src/align/nw_stats_wozniak_128_16.c
-libalign_la_SOURCES += src/align/nw_stats_wozniak_128_8.c
-libalign_la_SOURCES += src/align/nw_stats_striped_128_16.c
-libalign_la_SOURCES += src/align/nw_stats_striped_128_8.c
 libalign_la_SOURCES += src/align/sg_ref.c
 libalign_la_SOURCES += src/align/sg_scan.c
-libalign_la_SOURCES += src/align/sg_scan_128_16.c
-libalign_la_SOURCES += src/align/sg_scan_128_8.c
-libalign_la_SOURCES += src/align/sg_wozniak_128_16.c
-libalign_la_SOURCES += src/align/sg_wozniak_128_8.c
-libalign_la_SOURCES += src/align/sg_striped_128_16.c
-libalign_la_SOURCES += src/align/sg_striped_128_8.c
 libalign_la_SOURCES += src/align/sg_stats_ref.c
 libalign_la_SOURCES += src/align/sg_stats_scan.c
-libalign_la_SOURCES += src/align/sg_stats_scan_128_16.c
-libalign_la_SOURCES += src/align/sg_stats_scan_128_8.c
-libalign_la_SOURCES += src/align/sg_stats_wozniak_128_16.c
-libalign_la_SOURCES += src/align/sg_stats_wozniak_128_8.c
-libalign_la_SOURCES += src/align/sg_stats_striped_128_16.c
 libalign_la_SOURCES += src/align/sw_ref.c
 libalign_la_SOURCES += src/align/sw_scan.c
-libalign_la_SOURCES += src/align/sw_scan_128_16.c
-libalign_la_SOURCES += src/align/sw_scan_128_8.c
-libalign_la_SOURCES += src/align/sw_wozniak_128_16.c
-libalign_la_SOURCES += src/align/sw_striped_128_16.c
 libalign_la_SOURCES += src/align/sw_stats_ref.c
 libalign_la_SOURCES += src/align/sw_stats_scan.c
+if HAVE_SSE2
+libalign_la_SOURCES += src/align/align_scan_128_16.h
+libalign_la_SOURCES += src/align/align_striped_128_16.h
+libalign_la_SOURCES += src/align/align_wozniak_128_16.h
+libalign_la_SOURCES += src/align/nw_scan_128_16.c
+libalign_la_SOURCES += src/align/nw_striped_128_16.c
+libalign_la_SOURCES += src/align/nw_wozniak_128_16.c
+libalign_la_SOURCES += src/align/nw_stats_scan_128_16.c
+libalign_la_SOURCES += src/align/nw_stats_striped_128_16.c
+libalign_la_SOURCES += src/align/nw_stats_wozniak_128_16.c
+libalign_la_SOURCES += src/align/sg_scan_128_16.c
+libalign_la_SOURCES += src/align/sg_striped_128_16.c
+libalign_la_SOURCES += src/align/sg_wozniak_128_16.c
+libalign_la_SOURCES += src/align/sg_stats_scan_128_16.c
+libalign_la_SOURCES += src/align/sg_stats_striped_128_16.c
+libalign_la_SOURCES += src/align/sg_stats_wozniak_128_16.c
+libalign_la_SOURCES += src/align/sw_scan_128_16.c
+libalign_la_SOURCES += src/align/sw_striped_128_16.c
+libalign_la_SOURCES += src/align/sw_wozniak_128_16.c
 libalign_la_SOURCES += src/align/sw_stats_scan_128_16.c
-libalign_la_SOURCES += src/align/sw_stats_scan_128_8.c
-libalign_la_SOURCES += src/align/sw_stats_wozniak_128_16.c
 libalign_la_SOURCES += src/align/sw_stats_striped_128_16.c
+libalign_la_SOURCES += src/align/sw_stats_wozniak_128_16.c
+endif
+if HAVE_SSE4
+libalign_la_SOURCES += src/align/align_scan_128_8.h
+libalign_la_SOURCES += src/align/align_striped_128_8.h
+libalign_la_SOURCES += src/align/align_wozniak_128_8.h
+libalign_la_SOURCES += src/align/nw_scan_128_8.c
+libalign_la_SOURCES += src/align/nw_striped_128_8.c
+libalign_la_SOURCES += src/align/nw_wozniak_128_8.c
+libalign_la_SOURCES += src/align/nw_stats_scan_128_8.c
+libalign_la_SOURCES += src/align/nw_stats_striped_128_8.c
+libalign_la_SOURCES += src/align/nw_stats_wozniak_128_8.c
+libalign_la_SOURCES += src/align/sg_scan_128_8.c
+libalign_la_SOURCES += src/align/sg_striped_128_8.c
+libalign_la_SOURCES += src/align/sg_wozniak_128_8.c
+libalign_la_SOURCES += src/align/sg_stats_scan_128_8.c
+libalign_la_SOURCES += src/align/sg_stats_wozniak_128_8.c
+libalign_la_SOURCES += src/align/sw_scan_128_8.c
+libalign_la_SOURCES += src/align/sw_stats_scan_128_8.c
+endif
 
 noinst_LTLIBRARIES += libalign_debug.la
 libalign_debug_la_SOURCES =
 libalign_debug_la_SOURCES += $(libalign_la_SOURCES)
 libalign_debug_la_SOURCES += src/align/align_debug.h
-libalign_debug_la_SOURCES += src/align/align_wozniak_128_16_debug.h
-libalign_debug_la_SOURCES += src/align/align_wozniak_128_8_debug.h
-libalign_debug_la_SOURCES += src/align/align_striped_128_16_debug.h
-libalign_debug_la_SOURCES += src/align/align_striped_128_8_debug.h
+if HAVE_SSE2
 libalign_debug_la_SOURCES += src/align/align_scan_128_16_debug.h
+libalign_debug_la_SOURCES += src/align/align_striped_128_16_debug.h
+libalign_debug_la_SOURCES += src/align/align_wozniak_128_16_debug.h
+endif
+if HAVE_SSE4
 libalign_debug_la_SOURCES += src/align/align_scan_128_8_debug.h
+libalign_debug_la_SOURCES += src/align/align_striped_128_8_debug.h
+libalign_debug_la_SOURCES += src/align/align_wozniak_128_8_debug.h
+endif
 libalign_debug_la_CPPFLAGS =
 libalign_debug_la_CPPFLAGS += $(AM_CPPFLAGS)
 libalign_debug_la_CPPFLAGS += -DALIGN_EXTRA
@@ -169,23 +172,6 @@ libpgraph_la_SOURCES += src/SuffixBucketsArmci.cpp
 libpgraph_la_SOURCES += src/SuffixBucketsArmci.hpp
 libpgraph_la_SOURCES += src/SequenceDatabaseArmci.cpp
 libpgraph_la_SOURCES += src/SequenceDatabaseArmci.hpp
-endif
-if HAVE_SSE2
-libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.c
-libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.h
-libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.cpp
-libpgraph_la_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h
-libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/aln_structs.h
-libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/defs.h
-libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/dropgsw2.h
-libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/global_sse2.c
-libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/global_sse2.h
-libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/glocal_sse2.c
-libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/glocal_sse2.h
-libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/param.h
-libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/rstruct.h
-libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/smith_waterman_sse2.c
-libpgraph_la_SOURCES += contrib/fasta-36.3.6d/src/smith_waterman_sse2.h
 endif
 
 libpgraph_la_SOURCES += contrib/sais-lite-lcp/sais.c
@@ -286,19 +272,6 @@ libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/token.h
 bin_PROGRAMS += apps/align
 apps_align_SOURCES = apps/align.cpp
 
-if HAVE_SSE2
-if HAVE_ZLIB
-noinst_PROGRAMS += tests/ssw_test
-endif
-noinst_PROGRAMS += tests/test_fasta_align
-endif
-tests_ssw_test_SOURCES =
-tests_ssw_test_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/main.c
-tests_ssw_test_SOURCES += contrib/Complete-Striped-Smith-Waterman-Library/src/kseq.h
-tests_ssw_test_LDFLAGS = $(ZLIB_LDFLAGS) $(AM_LDFLAGS)
-
-tests_ssw_test_LDADD = $(LDADD) $(ZLIB_LIBS)
-
 noinst_PROGRAMS += tests/st_serial
 noinst_PROGRAMS += tests/suftest
 noinst_PROGRAMS += tests/suftest_orig
@@ -307,15 +280,10 @@ noinst_PROGRAMS += tests/test_combinations
 noinst_PROGRAMS += tests/test_db_reprinter
 noinst_PROGRAMS += tests/test_parser
 noinst_PROGRAMS += tests/test_stl_container_performance
-if HAVE_SSE2
 noinst_PROGRAMS += tests/test_align
 noinst_PROGRAMS += tests/test_align_stats
 noinst_PROGRAMS += tests/test_align_debug
 noinst_PROGRAMS += tests/test_align_db
-noinst_PROGRAMS += tests/test_fasta_align
-noinst_PROGRAMS += tests/test_striped_sw
-noinst_PROGRAMS += tests/test_woz_sw
-endif
 
 tests_suftest_SOURCES                      = tests/suftest.cpp
 tests_suftest_orig_SOURCES                 = contrib/sais-lite-lcp/suftest.c
@@ -326,12 +294,6 @@ tests_test_db_reprinter_SOURCES            = tests/test_db_reprinter.cpp
 tests_test_parser_SOURCES                  = tests/test_parser.cpp
 tests_test_stl_container_performance_SOURCES = tests/test_stl_container_performance.cpp
 
-tests_test_fasta_align_SOURCES             = tests/test_fasta_align.cpp
-
-tests_test_striped_sw_SOURCES              = tests/test_striped_sw.cpp
-tests_test_striped_sw_LDADD                = 
-tests_test_woz_sw_SOURCES                  = tests/test_woz_sw.cpp
-tests_test_woz_sw_LDADD                    = 
 tests_test_align_SOURCES                   = tests/test_align.c
 tests_test_align_LDADD                     = libalign.la libalign_debug.la
 tests_test_align_stats_SOURCES             = tests/test_align_stats.c

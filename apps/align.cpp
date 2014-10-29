@@ -958,16 +958,8 @@ static void align(
         ++stats[thd].align_counts;
         t = MPI_Wtime();
         cell_t result;
-#if ENABLE_SSE || 1
-        if (s1Len >=8 && s2Len >= 8) {
-            result = align_semi_affine_sse(
-                    *s1, *s2, open, gap, del[thd][0], del[thd][1],
-                    ins[thd][0], ins[thd][1]);
-        } else
-#else
-            result = align_semi_affine(
-                    *s1, *s2, open, gap, tbl[thd], del[thd], ins[thd]);
-#endif
+        result = align_semi_affine(
+                *s1, *s2, open, gap, tbl[thd], del[thd], ins[thd]);
         is_edge_answer = is_edge(
                 result, *s1, *s2, AOL, SIM, OS, sscore, max_len);
 

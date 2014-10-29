@@ -693,6 +693,8 @@ CXX
 MPICXX
 HAVE_PTHREAD_BARRIER_T_FALSE
 HAVE_PTHREAD_BARRIER_T_TRUE
+HAVE_SSE4_FALSE
+HAVE_SSE4_TRUE
 HAVE_SSE2_FALSE
 HAVE_SSE2_TRUE
 PERL
@@ -5365,6 +5367,18 @@ fi
 
 done
 
+for ac_header in smmintrin.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "smmintrin.h" "ac_cv_header_smmintrin_h" "$ac_includes_default"
+if test "x$ac_cv_header_smmintrin_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_SMMINTRIN_H 1
+_ACEOF
+
+fi
+
+done
+
 for ac_header in limits.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "limits.h" "ac_cv_header_limits_h" "$ac_includes_default"
@@ -5432,6 +5446,14 @@ done
 else
   HAVE_SSE2_TRUE='#'
   HAVE_SSE2_FALSE=
+fi
+
+ if test "x$ac_cv_header_smmintrin_h" = xyes; then
+  HAVE_SSE4_TRUE=
+  HAVE_SSE4_FALSE='#'
+else
+  HAVE_SSE4_TRUE='#'
+  HAVE_SSE4_FALSE=
 fi
 
 
@@ -18889,6 +18911,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${HAVE_SSE2_TRUE}" && test -z "${HAVE_SSE2_FALSE}"; then
   as_fn_error $? "conditional \"HAVE_SSE2\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_SSE4_TRUE}" && test -z "${HAVE_SSE4_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_SSE4\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${HAVE_PTHREAD_BARRIER_T_TRUE}" && test -z "${HAVE_PTHREAD_BARRIER_T_FALSE}"; then

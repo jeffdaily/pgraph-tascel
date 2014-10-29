@@ -51,6 +51,9 @@
 /* Define to 1 if you have the `sched_setaffinity' function. */
 #undef HAVE_SCHED_SETAFFINITY
 
+/* Define to 1 if you have the <smmintrin.h> header file. */
+#undef HAVE_SMMINTRIN_H
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 

@@ -80,41 +80,61 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = apps/align$(EXEEXT)
-noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) \
-	tests/st_serial$(EXEEXT) tests/suftest$(EXEEXT) \
+noinst_PROGRAMS = tests/st_serial$(EXEEXT) tests/suftest$(EXEEXT) \
 	tests/suftest_orig$(EXEEXT) tests/test_sais$(EXEEXT) \
 	tests/test_combinations$(EXEEXT) \
 	tests/test_db_reprinter$(EXEEXT) tests/test_parser$(EXEEXT) \
-	tests/test_stl_container_performance$(EXEEXT) $(am__EXEEXT_3)
+	tests/test_stl_container_performance$(EXEEXT) \
+	tests/test_align$(EXEEXT) tests/test_align_stats$(EXEEXT) \
+	tests/test_align_debug$(EXEEXT) tests/test_align_db$(EXEEXT)
 check_PROGRAMS = tests/test_mpi$(EXEEXT)
-@HAVE_SSE2_TRUE@am__append_1 = -I$(top_srcdir)/contrib/Complete-Striped-Smith-Waterman-Library/src \
-@HAVE_SSE2_TRUE@	-I$(top_srcdir)/contrib/fasta-36.3.6d/src \
-@HAVE_SSE2_TRUE@	-DSW_SSE2
-@HAVE_ARMCI_TRUE@am__append_2 = src/SuffixBucketsArmci.cpp \
+@HAVE_SSE2_TRUE@am__append_1 = src/align/align_scan_128_16.h \
+@HAVE_SSE2_TRUE@	src/align/align_striped_128_16.h \
+@HAVE_SSE2_TRUE@	src/align/align_wozniak_128_16.h \
+@HAVE_SSE2_TRUE@	src/align/nw_scan_128_16.c \
+@HAVE_SSE2_TRUE@	src/align/nw_striped_128_16.c \
+@HAVE_SSE2_TRUE@	src/align/nw_wozniak_128_16.c \
+@HAVE_SSE2_TRUE@	src/align/nw_stats_scan_128_16.c \
+@HAVE_SSE2_TRUE@	src/align/nw_stats_striped_128_16.c \
+@HAVE_SSE2_TRUE@	src/align/nw_stats_wozniak_128_16.c \
+@HAVE_SSE2_TRUE@	src/align/sg_scan_128_16.c \
+@HAVE_SSE2_TRUE@	src/align/sg_striped_128_16.c \
+@HAVE_SSE2_TRUE@	src/align/sg_wozniak_128_16.c \
+@HAVE_SSE2_TRUE@	src/align/sg_stats_scan_128_16.c \
+@HAVE_SSE2_TRUE@	src/align/sg_stats_striped_128_16.c \
+@HAVE_SSE2_TRUE@	src/align/sg_stats_wozniak_128_16.c \
+@HAVE_SSE2_TRUE@	src/align/sw_scan_128_16.c \
+@HAVE_SSE2_TRUE@	src/align/sw_striped_128_16.c \
+@HAVE_SSE2_TRUE@	src/align/sw_wozniak_128_16.c \
+@HAVE_SSE2_TRUE@	src/align/sw_stats_scan_128_16.c \
+@HAVE_SSE2_TRUE@	src/align/sw_stats_striped_128_16.c \
+@HAVE_SSE2_TRUE@	src/align/sw_stats_wozniak_128_16.c
+@HAVE_SSE4_TRUE@am__append_2 = src/align/align_scan_128_8.h \
+@HAVE_SSE4_TRUE@	src/align/align_striped_128_8.h \
+@HAVE_SSE4_TRUE@	src/align/align_wozniak_128_8.h \
+@HAVE_SSE4_TRUE@	src/align/nw_scan_128_8.c \
+@HAVE_SSE4_TRUE@	src/align/nw_striped_128_8.c \
+@HAVE_SSE4_TRUE@	src/align/nw_wozniak_128_8.c \
+@HAVE_SSE4_TRUE@	src/align/nw_stats_scan_128_8.c \
+@HAVE_SSE4_TRUE@	src/align/nw_stats_striped_128_8.c \
+@HAVE_SSE4_TRUE@	src/align/nw_stats_wozniak_128_8.c \
+@HAVE_SSE4_TRUE@	src/align/sg_scan_128_8.c \
+@HAVE_SSE4_TRUE@	src/align/sg_striped_128_8.c \
+@HAVE_SSE4_TRUE@	src/align/sg_wozniak_128_8.c \
+@HAVE_SSE4_TRUE@	src/align/sg_stats_scan_128_8.c \
+@HAVE_SSE4_TRUE@	src/align/sg_stats_wozniak_128_8.c \
+@HAVE_SSE4_TRUE@	src/align/sw_scan_128_8.c \
+@HAVE_SSE4_TRUE@	src/align/sw_stats_scan_128_8.c
+@HAVE_SSE2_TRUE@am__append_3 = src/align/align_scan_128_16_debug.h \
+@HAVE_SSE2_TRUE@	src/align/align_striped_128_16_debug.h \
+@HAVE_SSE2_TRUE@	src/align/align_wozniak_128_16_debug.h
+@HAVE_SSE4_TRUE@am__append_4 = src/align/align_scan_128_8_debug.h \
+@HAVE_SSE4_TRUE@	src/align/align_striped_128_8_debug.h \
+@HAVE_SSE4_TRUE@	src/align/align_wozniak_128_8_debug.h
+@HAVE_ARMCI_TRUE@am__append_5 = src/SuffixBucketsArmci.cpp \
 @HAVE_ARMCI_TRUE@	src/SuffixBucketsArmci.hpp \
 @HAVE_ARMCI_TRUE@	src/SequenceDatabaseArmci.cpp \
 @HAVE_ARMCI_TRUE@	src/SequenceDatabaseArmci.hpp
-@HAVE_SSE2_TRUE@am__append_3 = contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.c \
-@HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.h \
-@HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.cpp \
-@HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h \
-@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/aln_structs.h \
-@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/defs.h \
-@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/dropgsw2.h \
-@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/global_sse2.c \
-@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/global_sse2.h \
-@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/glocal_sse2.c \
-@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/glocal_sse2.h \
-@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/param.h \
-@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/rstruct.h \
-@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/smith_waterman_sse2.c \
-@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/smith_waterman_sse2.h
-@HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@am__append_4 = tests/ssw_test
-@HAVE_SSE2_TRUE@am__append_5 = tests/test_fasta_align
-@HAVE_SSE2_TRUE@am__append_6 = tests/test_align tests/test_align_stats \
-@HAVE_SSE2_TRUE@	tests/test_align_debug tests/test_align_db \
-@HAVE_SSE2_TRUE@	tests/test_fasta_align tests/test_striped_sw \
-@HAVE_SSE2_TRUE@	tests/test_woz_sw
 subdir = .
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) \
@@ -162,84 +182,168 @@ am_libpgtest_a_OBJECTS = tests/MpiEnvironment.$(OBJEXT) \
 libpgtest_a_OBJECTS = $(am_libpgtest_a_OBJECTS)
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libalign_la_LIBADD =
+am__libalign_la_SOURCES_DIST = src/align/align.h src/align/nw_ref.c \
+	src/align/nw_scan.c src/align/nw_scan_row.c \
+	src/align/nw_stats_ref.c src/align/nw_stats_scan.c \
+	src/align/sg_ref.c src/align/sg_scan.c \
+	src/align/sg_stats_ref.c src/align/sg_stats_scan.c \
+	src/align/sw_ref.c src/align/sw_scan.c \
+	src/align/sw_stats_ref.c src/align/sw_stats_scan.c \
+	src/align/align_scan_128_16.h src/align/align_striped_128_16.h \
+	src/align/align_wozniak_128_16.h src/align/nw_scan_128_16.c \
+	src/align/nw_striped_128_16.c src/align/nw_wozniak_128_16.c \
+	src/align/nw_stats_scan_128_16.c \
+	src/align/nw_stats_striped_128_16.c \
+	src/align/nw_stats_wozniak_128_16.c src/align/sg_scan_128_16.c \
+	src/align/sg_striped_128_16.c src/align/sg_wozniak_128_16.c \
+	src/align/sg_stats_scan_128_16.c \
+	src/align/sg_stats_striped_128_16.c \
+	src/align/sg_stats_wozniak_128_16.c src/align/sw_scan_128_16.c \
+	src/align/sw_striped_128_16.c src/align/sw_wozniak_128_16.c \
+	src/align/sw_stats_scan_128_16.c \
+	src/align/sw_stats_striped_128_16.c \
+	src/align/sw_stats_wozniak_128_16.c \
+	src/align/align_scan_128_8.h src/align/align_striped_128_8.h \
+	src/align/align_wozniak_128_8.h src/align/nw_scan_128_8.c \
+	src/align/nw_striped_128_8.c src/align/nw_wozniak_128_8.c \
+	src/align/nw_stats_scan_128_8.c \
+	src/align/nw_stats_striped_128_8.c \
+	src/align/nw_stats_wozniak_128_8.c src/align/sg_scan_128_8.c \
+	src/align/sg_striped_128_8.c src/align/sg_wozniak_128_8.c \
+	src/align/sg_stats_scan_128_8.c \
+	src/align/sg_stats_wozniak_128_8.c src/align/sw_scan_128_8.c \
+	src/align/sw_stats_scan_128_8.c
+@HAVE_SSE2_TRUE@am__objects_1 = src/align/nw_scan_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/nw_striped_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/nw_wozniak_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/nw_stats_scan_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/nw_stats_striped_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/nw_stats_wozniak_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/sg_scan_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/sg_striped_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/sg_wozniak_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/sg_stats_scan_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/sg_stats_striped_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/sg_stats_wozniak_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/sw_scan_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/sw_striped_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/sw_wozniak_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/sw_stats_scan_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/sw_stats_striped_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/sw_stats_wozniak_128_16.lo
+@HAVE_SSE4_TRUE@am__objects_2 = src/align/nw_scan_128_8.lo \
+@HAVE_SSE4_TRUE@	src/align/nw_striped_128_8.lo \
+@HAVE_SSE4_TRUE@	src/align/nw_wozniak_128_8.lo \
+@HAVE_SSE4_TRUE@	src/align/nw_stats_scan_128_8.lo \
+@HAVE_SSE4_TRUE@	src/align/nw_stats_striped_128_8.lo \
+@HAVE_SSE4_TRUE@	src/align/nw_stats_wozniak_128_8.lo \
+@HAVE_SSE4_TRUE@	src/align/sg_scan_128_8.lo \
+@HAVE_SSE4_TRUE@	src/align/sg_striped_128_8.lo \
+@HAVE_SSE4_TRUE@	src/align/sg_wozniak_128_8.lo \
+@HAVE_SSE4_TRUE@	src/align/sg_stats_scan_128_8.lo \
+@HAVE_SSE4_TRUE@	src/align/sg_stats_wozniak_128_8.lo \
+@HAVE_SSE4_TRUE@	src/align/sw_scan_128_8.lo \
+@HAVE_SSE4_TRUE@	src/align/sw_stats_scan_128_8.lo
 am_libalign_la_OBJECTS = src/align/nw_ref.lo src/align/nw_scan.lo \
-	src/align/nw_scan_128_16.lo src/align/nw_scan_128_8.lo \
-	src/align/nw_scan_row.lo src/align/nw_wozniak_128_16.lo \
-	src/align/nw_wozniak_128_8.lo src/align/nw_striped_128_16.lo \
-	src/align/nw_striped_128_8.lo src/align/nw_stats_ref.lo \
-	src/align/nw_stats_scan.lo src/align/nw_stats_scan_128_16.lo \
-	src/align/nw_stats_scan_128_8.lo \
-	src/align/nw_stats_wozniak_128_16.lo \
-	src/align/nw_stats_wozniak_128_8.lo \
-	src/align/nw_stats_striped_128_16.lo \
-	src/align/nw_stats_striped_128_8.lo src/align/sg_ref.lo \
-	src/align/sg_scan.lo src/align/sg_scan_128_16.lo \
-	src/align/sg_scan_128_8.lo src/align/sg_wozniak_128_16.lo \
-	src/align/sg_wozniak_128_8.lo src/align/sg_striped_128_16.lo \
-	src/align/sg_striped_128_8.lo src/align/sg_stats_ref.lo \
-	src/align/sg_stats_scan.lo src/align/sg_stats_scan_128_16.lo \
-	src/align/sg_stats_scan_128_8.lo \
-	src/align/sg_stats_wozniak_128_16.lo \
-	src/align/sg_stats_wozniak_128_8.lo \
-	src/align/sg_stats_striped_128_16.lo src/align/sw_ref.lo \
-	src/align/sw_scan.lo src/align/sw_scan_128_16.lo \
-	src/align/sw_scan_128_8.lo src/align/sw_wozniak_128_16.lo \
-	src/align/sw_striped_128_16.lo src/align/sw_stats_ref.lo \
-	src/align/sw_stats_scan.lo src/align/sw_stats_scan_128_16.lo \
-	src/align/sw_stats_scan_128_8.lo \
-	src/align/sw_stats_wozniak_128_16.lo \
-	src/align/sw_stats_striped_128_16.lo
+	src/align/nw_scan_row.lo src/align/nw_stats_ref.lo \
+	src/align/nw_stats_scan.lo src/align/sg_ref.lo \
+	src/align/sg_scan.lo src/align/sg_stats_ref.lo \
+	src/align/sg_stats_scan.lo src/align/sw_ref.lo \
+	src/align/sw_scan.lo src/align/sw_stats_ref.lo \
+	src/align/sw_stats_scan.lo $(am__objects_1) $(am__objects_2)
 libalign_la_OBJECTS = $(am_libalign_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
 libalign_debug_la_LIBADD =
-am__objects_1 = src/align/libalign_debug_la-nw_ref.lo \
+am__libalign_debug_la_SOURCES_DIST = src/align/align.h \
+	src/align/nw_ref.c src/align/nw_scan.c src/align/nw_scan_row.c \
+	src/align/nw_stats_ref.c src/align/nw_stats_scan.c \
+	src/align/sg_ref.c src/align/sg_scan.c \
+	src/align/sg_stats_ref.c src/align/sg_stats_scan.c \
+	src/align/sw_ref.c src/align/sw_scan.c \
+	src/align/sw_stats_ref.c src/align/sw_stats_scan.c \
+	src/align/align_scan_128_16.h src/align/align_striped_128_16.h \
+	src/align/align_wozniak_128_16.h src/align/nw_scan_128_16.c \
+	src/align/nw_striped_128_16.c src/align/nw_wozniak_128_16.c \
+	src/align/nw_stats_scan_128_16.c \
+	src/align/nw_stats_striped_128_16.c \
+	src/align/nw_stats_wozniak_128_16.c src/align/sg_scan_128_16.c \
+	src/align/sg_striped_128_16.c src/align/sg_wozniak_128_16.c \
+	src/align/sg_stats_scan_128_16.c \
+	src/align/sg_stats_striped_128_16.c \
+	src/align/sg_stats_wozniak_128_16.c src/align/sw_scan_128_16.c \
+	src/align/sw_striped_128_16.c src/align/sw_wozniak_128_16.c \
+	src/align/sw_stats_scan_128_16.c \
+	src/align/sw_stats_striped_128_16.c \
+	src/align/sw_stats_wozniak_128_16.c \
+	src/align/align_scan_128_8.h src/align/align_striped_128_8.h \
+	src/align/align_wozniak_128_8.h src/align/nw_scan_128_8.c \
+	src/align/nw_striped_128_8.c src/align/nw_wozniak_128_8.c \
+	src/align/nw_stats_scan_128_8.c \
+	src/align/nw_stats_striped_128_8.c \
+	src/align/nw_stats_wozniak_128_8.c src/align/sg_scan_128_8.c \
+	src/align/sg_striped_128_8.c src/align/sg_wozniak_128_8.c \
+	src/align/sg_stats_scan_128_8.c \
+	src/align/sg_stats_wozniak_128_8.c src/align/sw_scan_128_8.c \
+	src/align/sw_stats_scan_128_8.c src/align/align_debug.h \
+	src/align/align_scan_128_16_debug.h \
+	src/align/align_striped_128_16_debug.h \
+	src/align/align_wozniak_128_16_debug.h \
+	src/align/align_scan_128_8_debug.h \
+	src/align/align_striped_128_8_debug.h \
+	src/align/align_wozniak_128_8_debug.h
+@HAVE_SSE2_TRUE@am__objects_3 =  \
+@HAVE_SSE2_TRUE@	src/align/libalign_debug_la-nw_scan_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/libalign_debug_la-nw_striped_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/libalign_debug_la-nw_wozniak_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/libalign_debug_la-nw_stats_scan_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/libalign_debug_la-nw_stats_striped_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/libalign_debug_la-nw_stats_wozniak_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/libalign_debug_la-sg_scan_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/libalign_debug_la-sg_striped_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/libalign_debug_la-sg_wozniak_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/libalign_debug_la-sg_stats_scan_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/libalign_debug_la-sg_stats_striped_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/libalign_debug_la-sg_stats_wozniak_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/libalign_debug_la-sw_scan_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/libalign_debug_la-sw_striped_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/libalign_debug_la-sw_wozniak_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/libalign_debug_la-sw_stats_scan_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/libalign_debug_la-sw_stats_striped_128_16.lo \
+@HAVE_SSE2_TRUE@	src/align/libalign_debug_la-sw_stats_wozniak_128_16.lo
+@HAVE_SSE4_TRUE@am__objects_4 =  \
+@HAVE_SSE4_TRUE@	src/align/libalign_debug_la-nw_scan_128_8.lo \
+@HAVE_SSE4_TRUE@	src/align/libalign_debug_la-nw_striped_128_8.lo \
+@HAVE_SSE4_TRUE@	src/align/libalign_debug_la-nw_wozniak_128_8.lo \
+@HAVE_SSE4_TRUE@	src/align/libalign_debug_la-nw_stats_scan_128_8.lo \
+@HAVE_SSE4_TRUE@	src/align/libalign_debug_la-nw_stats_striped_128_8.lo \
+@HAVE_SSE4_TRUE@	src/align/libalign_debug_la-nw_stats_wozniak_128_8.lo \
+@HAVE_SSE4_TRUE@	src/align/libalign_debug_la-sg_scan_128_8.lo \
+@HAVE_SSE4_TRUE@	src/align/libalign_debug_la-sg_striped_128_8.lo \
+@HAVE_SSE4_TRUE@	src/align/libalign_debug_la-sg_wozniak_128_8.lo \
+@HAVE_SSE4_TRUE@	src/align/libalign_debug_la-sg_stats_scan_128_8.lo \
+@HAVE_SSE4_TRUE@	src/align/libalign_debug_la-sg_stats_wozniak_128_8.lo \
+@HAVE_SSE4_TRUE@	src/align/libalign_debug_la-sw_scan_128_8.lo \
+@HAVE_SSE4_TRUE@	src/align/libalign_debug_la-sw_stats_scan_128_8.lo
+am__objects_5 = src/align/libalign_debug_la-nw_ref.lo \
 	src/align/libalign_debug_la-nw_scan.lo \
-	src/align/libalign_debug_la-nw_scan_128_16.lo \
-	src/align/libalign_debug_la-nw_scan_128_8.lo \
 	src/align/libalign_debug_la-nw_scan_row.lo \
-	src/align/libalign_debug_la-nw_wozniak_128_16.lo \
-	src/align/libalign_debug_la-nw_wozniak_128_8.lo \
-	src/align/libalign_debug_la-nw_striped_128_16.lo \
-	src/align/libalign_debug_la-nw_striped_128_8.lo \
 	src/align/libalign_debug_la-nw_stats_ref.lo \
 	src/align/libalign_debug_la-nw_stats_scan.lo \
-	src/align/libalign_debug_la-nw_stats_scan_128_16.lo \
-	src/align/libalign_debug_la-nw_stats_scan_128_8.lo \
-	src/align/libalign_debug_la-nw_stats_wozniak_128_16.lo \
-	src/align/libalign_debug_la-nw_stats_wozniak_128_8.lo \
-	src/align/libalign_debug_la-nw_stats_striped_128_16.lo \
-	src/align/libalign_debug_la-nw_stats_striped_128_8.lo \
 	src/align/libalign_debug_la-sg_ref.lo \
 	src/align/libalign_debug_la-sg_scan.lo \
-	src/align/libalign_debug_la-sg_scan_128_16.lo \
-	src/align/libalign_debug_la-sg_scan_128_8.lo \
-	src/align/libalign_debug_la-sg_wozniak_128_16.lo \
-	src/align/libalign_debug_la-sg_wozniak_128_8.lo \
-	src/align/libalign_debug_la-sg_striped_128_16.lo \
-	src/align/libalign_debug_la-sg_striped_128_8.lo \
 	src/align/libalign_debug_la-sg_stats_ref.lo \
 	src/align/libalign_debug_la-sg_stats_scan.lo \
-	src/align/libalign_debug_la-sg_stats_scan_128_16.lo \
-	src/align/libalign_debug_la-sg_stats_scan_128_8.lo \
-	src/align/libalign_debug_la-sg_stats_wozniak_128_16.lo \
-	src/align/libalign_debug_la-sg_stats_wozniak_128_8.lo \
-	src/align/libalign_debug_la-sg_stats_striped_128_16.lo \
 	src/align/libalign_debug_la-sw_ref.lo \
 	src/align/libalign_debug_la-sw_scan.lo \
-	src/align/libalign_debug_la-sw_scan_128_16.lo \
-	src/align/libalign_debug_la-sw_scan_128_8.lo \
-	src/align/libalign_debug_la-sw_wozniak_128_16.lo \
-	src/align/libalign_debug_la-sw_striped_128_16.lo \
 	src/align/libalign_debug_la-sw_stats_ref.lo \
-	src/align/libalign_debug_la-sw_stats_scan.lo \
-	src/align/libalign_debug_la-sw_stats_scan_128_16.lo \
-	src/align/libalign_debug_la-sw_stats_scan_128_8.lo \
-	src/align/libalign_debug_la-sw_stats_wozniak_128_16.lo \
-	src/align/libalign_debug_la-sw_stats_striped_128_16.lo
-am_libalign_debug_la_OBJECTS = $(am__objects_1)
+	src/align/libalign_debug_la-sw_stats_scan.lo $(am__objects_3) \
+	$(am__objects_4)
+am__objects_6 =
+am_libalign_debug_la_OBJECTS = $(am__objects_5) $(am__objects_6) \
+	$(am__objects_6)
 libalign_debug_la_OBJECTS = $(am_libalign_debug_la_OBJECTS)
 libpgraph_la_LIBADD =
 am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
@@ -264,37 +368,17 @@ am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
 	src/SuffixTree.hpp src/tascelx.hpp src/timer.h \
 	src/TreeStats.hpp src/SuffixBucketsArmci.cpp \
 	src/SuffixBucketsArmci.hpp src/SequenceDatabaseArmci.cpp \
-	src/SequenceDatabaseArmci.hpp \
-	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.c \
-	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.h \
-	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.cpp \
-	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.h \
-	contrib/fasta-36.3.6d/src/aln_structs.h \
-	contrib/fasta-36.3.6d/src/defs.h \
-	contrib/fasta-36.3.6d/src/dropgsw2.h \
-	contrib/fasta-36.3.6d/src/global_sse2.c \
-	contrib/fasta-36.3.6d/src/global_sse2.h \
-	contrib/fasta-36.3.6d/src/glocal_sse2.c \
-	contrib/fasta-36.3.6d/src/glocal_sse2.h \
-	contrib/fasta-36.3.6d/src/param.h \
-	contrib/fasta-36.3.6d/src/rstruct.h \
-	contrib/fasta-36.3.6d/src/smith_waterman_sse2.c \
-	contrib/fasta-36.3.6d/src/smith_waterman_sse2.h \
-	contrib/sais-lite-lcp/sais.c contrib/sais-lite-lcp/sais.h
-@HAVE_ARMCI_TRUE@am__objects_2 = src/SuffixBucketsArmci.lo \
+	src/SequenceDatabaseArmci.hpp contrib/sais-lite-lcp/sais.c \
+	contrib/sais-lite-lcp/sais.h
+@HAVE_ARMCI_TRUE@am__objects_7 = src/SuffixBucketsArmci.lo \
 @HAVE_ARMCI_TRUE@	src/SequenceDatabaseArmci.lo
-@HAVE_SSE2_TRUE@am__objects_3 = contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.lo \
-@HAVE_SSE2_TRUE@	contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.lo \
-@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/global_sse2.lo \
-@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/glocal_sse2.lo \
-@HAVE_SSE2_TRUE@	contrib/fasta-36.3.6d/src/smith_waterman_sse2.lo
 am_libpgraph_la_OBJECTS = src/alignment.lo src/Bootstrap.lo \
 	src/combinations.lo src/PairCheckGlobal.lo \
 	src/PairCheckGlobalServer.lo src/Parameters.lo src/Sequence.lo \
 	src/SequenceDatabaseReplicated.lo \
 	src/SequenceDatabaseTascel.lo src/SuffixBuckets.lo \
 	src/SuffixBucketsTascel.lo src/SuffixArray.lo \
-	src/SuffixTree.lo $(am__objects_2) $(am__objects_3) \
+	src/SuffixTree.lo $(am__objects_7) \
 	contrib/sais-lite-lcp/sais.lo
 libpgraph_la_OBJECTS = $(am_libpgraph_la_OBJECTS)
 libyaml_cpp_la_LIBADD =
@@ -329,16 +413,6 @@ am_libyaml_cpp_la_OBJECTS = contrib/yaml-cpp-0.5.1/src/binary.lo \
 	contrib/yaml-cpp-0.5.1/src/tag.lo
 libyaml_cpp_la_OBJECTS = $(am_libyaml_cpp_la_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)"
-@HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@am__EXEEXT_1 =  \
-@HAVE_SSE2_TRUE@@HAVE_ZLIB_TRUE@	tests/ssw_test$(EXEEXT)
-@HAVE_SSE2_TRUE@am__EXEEXT_2 = tests/test_fasta_align$(EXEEXT)
-@HAVE_SSE2_TRUE@am__EXEEXT_3 = tests/test_align$(EXEEXT) \
-@HAVE_SSE2_TRUE@	tests/test_align_stats$(EXEEXT) \
-@HAVE_SSE2_TRUE@	tests/test_align_debug$(EXEEXT) \
-@HAVE_SSE2_TRUE@	tests/test_align_db$(EXEEXT) \
-@HAVE_SSE2_TRUE@	tests/test_fasta_align$(EXEEXT) \
-@HAVE_SSE2_TRUE@	tests/test_striped_sw$(EXEEXT) \
-@HAVE_SSE2_TRUE@	tests/test_woz_sw$(EXEEXT)
 PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
 am_apps_align_OBJECTS = apps/align.$(OBJEXT)
 apps_align_OBJECTS = $(am_apps_align_OBJECTS)
@@ -347,17 +421,6 @@ am__DEPENDENCIES_1 =
 apps_align_DEPENDENCIES = libpgraph.la libalign.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) libyaml-cpp.la
-am_tests_ssw_test_OBJECTS = contrib/Complete-Striped-Smith-Waterman-Library/src/main.$(OBJEXT)
-tests_ssw_test_OBJECTS = $(am_tests_ssw_test_OBJECTS)
-am__DEPENDENCIES_2 = libpgraph.la libalign.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) libyaml-cpp.la
-tests_ssw_test_DEPENDENCIES = $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_1)
-tests_ssw_test_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
-	$(AM_CFLAGS) $(CFLAGS) $(tests_ssw_test_LDFLAGS) $(LDFLAGS) -o \
-	$@
 am_tests_st_serial_OBJECTS = tests/st_serial.$(OBJEXT)
 tests_st_serial_OBJECTS = $(am_tests_st_serial_OBJECTS)
 tests_st_serial_LDADD = $(LDADD)
@@ -408,14 +471,11 @@ tests_test_db_reprinter_LDADD = $(LDADD)
 tests_test_db_reprinter_DEPENDENCIES = libpgraph.la libalign.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) libyaml-cpp.la
-am_tests_test_fasta_align_OBJECTS = tests/test_fasta_align.$(OBJEXT)
-tests_test_fasta_align_OBJECTS = $(am_tests_test_fasta_align_OBJECTS)
-tests_test_fasta_align_LDADD = $(LDADD)
-tests_test_fasta_align_DEPENDENCIES = libpgraph.la libalign.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) libyaml-cpp.la
 am_tests_test_mpi_OBJECTS = tests/test_mpi.$(OBJEXT)
 tests_test_mpi_OBJECTS = $(am_tests_test_mpi_OBJECTS)
+am__DEPENDENCIES_2 = libpgraph.la libalign.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) libyaml-cpp.la
 tests_test_mpi_DEPENDENCIES = $(am__DEPENDENCIES_2) libpgtest.a \
 	libgtest.a
 am_tests_test_parser_OBJECTS = tests/test_parser.$(OBJEXT)
@@ -438,12 +498,6 @@ tests_test_stl_container_performance_LDADD = $(LDADD)
 tests_test_stl_container_performance_DEPENDENCIES = libpgraph.la \
 	libalign.la $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) libyaml-cpp.la
-am_tests_test_striped_sw_OBJECTS = tests/test_striped_sw.$(OBJEXT)
-tests_test_striped_sw_OBJECTS = $(am_tests_test_striped_sw_OBJECTS)
-tests_test_striped_sw_DEPENDENCIES =
-am_tests_test_woz_sw_OBJECTS = tests/test_woz_sw.$(OBJEXT)
-tests_test_woz_sw_OBJECTS = $(am_tests_test_woz_sw_OBJECTS)
-tests_test_woz_sw_DEPENDENCIES =
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -499,33 +553,28 @@ am__v_CXXLD_1 =
 SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
 	$(libalign_la_SOURCES) $(libalign_debug_la_SOURCES) \
 	$(libpgraph_la_SOURCES) $(libyaml_cpp_la_SOURCES) \
-	$(apps_align_SOURCES) $(tests_ssw_test_SOURCES) \
-	$(tests_st_serial_SOURCES) $(tests_suftest_SOURCES) \
-	$(tests_suftest_orig_SOURCES) $(tests_test_align_SOURCES) \
-	$(tests_test_align_db_SOURCES) \
+	$(apps_align_SOURCES) $(tests_st_serial_SOURCES) \
+	$(tests_suftest_SOURCES) $(tests_suftest_orig_SOURCES) \
+	$(tests_test_align_SOURCES) $(tests_test_align_db_SOURCES) \
 	$(tests_test_align_debug_SOURCES) \
 	$(tests_test_align_stats_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
-	$(tests_test_db_reprinter_SOURCES) \
-	$(tests_test_fasta_align_SOURCES) $(tests_test_mpi_SOURCES) \
+	$(tests_test_db_reprinter_SOURCES) $(tests_test_mpi_SOURCES) \
 	$(tests_test_parser_SOURCES) $(tests_test_sais_SOURCES) \
-	$(tests_test_stl_container_performance_SOURCES) \
-	$(tests_test_striped_sw_SOURCES) $(tests_test_woz_sw_SOURCES)
+	$(tests_test_stl_container_performance_SOURCES)
 DIST_SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
-	$(libalign_la_SOURCES) $(libalign_debug_la_SOURCES) \
+	$(am__libalign_la_SOURCES_DIST) \
+	$(am__libalign_debug_la_SOURCES_DIST) \
 	$(am__libpgraph_la_SOURCES_DIST) $(libyaml_cpp_la_SOURCES) \
-	$(apps_align_SOURCES) $(tests_ssw_test_SOURCES) \
-	$(tests_st_serial_SOURCES) $(tests_suftest_SOURCES) \
-	$(tests_suftest_orig_SOURCES) $(tests_test_align_SOURCES) \
-	$(tests_test_align_db_SOURCES) \
+	$(apps_align_SOURCES) $(tests_st_serial_SOURCES) \
+	$(tests_suftest_SOURCES) $(tests_suftest_orig_SOURCES) \
+	$(tests_test_align_SOURCES) $(tests_test_align_db_SOURCES) \
 	$(tests_test_align_debug_SOURCES) \
 	$(tests_test_align_stats_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
-	$(tests_test_db_reprinter_SOURCES) \
-	$(tests_test_fasta_align_SOURCES) $(tests_test_mpi_SOURCES) \
+	$(tests_test_db_reprinter_SOURCES) $(tests_test_mpi_SOURCES) \
 	$(tests_test_parser_SOURCES) $(tests_test_sais_SOURCES) \
-	$(tests_test_stl_container_performance_SOURCES) \
-	$(tests_test_striped_sw_SOURCES) $(tests_test_woz_sw_SOURCES)
+	$(tests_test_stl_container_performance_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -715,7 +764,7 @@ AM_CFLAGS =
 AM_CXXFLAGS = 
 #AM_CPPFLAGS += $(GA_CPPFLAGS)
 AM_CPPFLAGS = $(TASCEL_CPPFLAGS) $(ARMCI_CPPFLAGS) $(PT_MPI_CPPFLAGS) \
-	$(GMP_CPPFLAGS) -I$(top_srcdir)/src $(am__append_1) \
+	$(GMP_CPPFLAGS) -I$(top_srcdir)/src \
 	-I$(top_srcdir)/contrib/boost_1_55_0 \
 	-I$(top_srcdir)/contrib/gtest-1.7.0 \
 	-I$(top_srcdir)/contrib/gtest-1.7.0/include \
@@ -728,46 +777,16 @@ AM_LDFLAGS = $(TASCEL_LDFLAGS) $(ARMCI_LDFLAGS) $(PT_MPI_LDFLAGS) \
 #LDADD += $(GA_FLIBS)
 LDADD = libpgraph.la libalign.la $(TASCEL_LIBS) $(ARMCI_LIBS) \
 	$(PT_MPI_LIBS) $(GMP_LIBS) libyaml-cpp.la
-libalign_la_SOURCES = src/align/align.h \
-	src/align/align_wozniak_128_16.h \
-	src/align/align_wozniak_128_8.h \
-	src/align/align_striped_128_16.h \
-	src/align/align_striped_128_8.h src/align/align_scan_128_16.h \
-	src/align/align_scan_128_8.h src/align/nw_ref.c \
-	src/align/nw_scan.c src/align/nw_scan_128_16.c \
-	src/align/nw_scan_128_8.c src/align/nw_scan_row.c \
-	src/align/nw_wozniak_128_16.c src/align/nw_wozniak_128_8.c \
-	src/align/nw_striped_128_16.c src/align/nw_striped_128_8.c \
+libalign_la_SOURCES = src/align/align.h src/align/nw_ref.c \
+	src/align/nw_scan.c src/align/nw_scan_row.c \
 	src/align/nw_stats_ref.c src/align/nw_stats_scan.c \
-	src/align/nw_stats_scan_128_16.c \
-	src/align/nw_stats_scan_128_8.c \
-	src/align/nw_stats_wozniak_128_16.c \
-	src/align/nw_stats_wozniak_128_8.c \
-	src/align/nw_stats_striped_128_16.c \
-	src/align/nw_stats_striped_128_8.c src/align/sg_ref.c \
-	src/align/sg_scan.c src/align/sg_scan_128_16.c \
-	src/align/sg_scan_128_8.c src/align/sg_wozniak_128_16.c \
-	src/align/sg_wozniak_128_8.c src/align/sg_striped_128_16.c \
-	src/align/sg_striped_128_8.c src/align/sg_stats_ref.c \
-	src/align/sg_stats_scan.c src/align/sg_stats_scan_128_16.c \
-	src/align/sg_stats_scan_128_8.c \
-	src/align/sg_stats_wozniak_128_16.c \
-	src/align/sg_stats_wozniak_128_8.c \
-	src/align/sg_stats_striped_128_16.c src/align/sw_ref.c \
-	src/align/sw_scan.c src/align/sw_scan_128_16.c \
-	src/align/sw_scan_128_8.c src/align/sw_wozniak_128_16.c \
-	src/align/sw_striped_128_16.c src/align/sw_stats_ref.c \
-	src/align/sw_stats_scan.c src/align/sw_stats_scan_128_16.c \
-	src/align/sw_stats_scan_128_8.c \
-	src/align/sw_stats_wozniak_128_16.c \
-	src/align/sw_stats_striped_128_16.c
+	src/align/sg_ref.c src/align/sg_scan.c \
+	src/align/sg_stats_ref.c src/align/sg_stats_scan.c \
+	src/align/sw_ref.c src/align/sw_scan.c \
+	src/align/sw_stats_ref.c src/align/sw_stats_scan.c \
+	$(am__append_1) $(am__append_2)
 libalign_debug_la_SOURCES = $(libalign_la_SOURCES) \
-	src/align/align_debug.h src/align/align_wozniak_128_16_debug.h \
-	src/align/align_wozniak_128_8_debug.h \
-	src/align/align_striped_128_16_debug.h \
-	src/align/align_striped_128_8_debug.h \
-	src/align/align_scan_128_16_debug.h \
-	src/align/align_scan_128_8_debug.h
+	src/align/align_debug.h $(am__append_3) $(am__append_4)
 libalign_debug_la_CPPFLAGS = $(AM_CPPFLAGS) -DALIGN_EXTRA
 libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
 	src/AlignStats.hpp src/blosum/blosum40.h src/blosum/blosum45.h \
@@ -789,8 +808,8 @@ libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
 	src/SuffixBucketsTascel.cpp src/SuffixBucketsTascel.hpp \
 	src/SuffixArray.cpp src/SuffixArray.hpp src/SuffixTree.cpp \
 	src/SuffixTree.hpp src/tascelx.hpp src/timer.h \
-	src/TreeStats.hpp $(am__append_2) $(am__append_3) \
-	contrib/sais-lite-lcp/sais.c contrib/sais-lite-lcp/sais.h
+	src/TreeStats.hpp $(am__append_5) contrib/sais-lite-lcp/sais.c \
+	contrib/sais-lite-lcp/sais.h
 libyaml_cpp_la_SOURCES =  \
 	contrib/yaml-cpp-0.5.1/include/yaml-cpp/anchor.h \
 	contrib/yaml-cpp-0.5.1/include/yaml-cpp/binary.h \
@@ -882,11 +901,6 @@ libyaml_cpp_la_SOURCES =  \
 	contrib/yaml-cpp-0.5.1/src/tag.h \
 	contrib/yaml-cpp-0.5.1/src/token.h
 apps_align_SOURCES = apps/align.cpp
-tests_ssw_test_SOURCES =  \
-	contrib/Complete-Striped-Smith-Waterman-Library/src/main.c \
-	contrib/Complete-Striped-Smith-Waterman-Library/src/kseq.h
-tests_ssw_test_LDFLAGS = $(ZLIB_LDFLAGS) $(AM_LDFLAGS)
-tests_ssw_test_LDADD = $(LDADD) $(ZLIB_LIBS)
 tests_suftest_SOURCES = tests/suftest.cpp
 tests_suftest_orig_SOURCES = contrib/sais-lite-lcp/suftest.c
 tests_test_sais_SOURCES = contrib/sais-lite-lcp/test.c
@@ -895,11 +909,6 @@ tests_test_combinations_SOURCES = tests/test_combinations.cpp
 tests_test_db_reprinter_SOURCES = tests/test_db_reprinter.cpp
 tests_test_parser_SOURCES = tests/test_parser.cpp
 tests_test_stl_container_performance_SOURCES = tests/test_stl_container_performance.cpp
-tests_test_fasta_align_SOURCES = tests/test_fasta_align.cpp
-tests_test_striped_sw_SOURCES = tests/test_striped_sw.cpp
-tests_test_striped_sw_LDADD = 
-tests_test_woz_sw_SOURCES = tests/test_woz_sw.cpp
-tests_test_woz_sw_LDADD = 
 tests_test_align_SOURCES = tests/test_align.c
 tests_test_align_LDADD = libalign.la libalign_debug.la
 tests_test_align_stats_SOURCES = tests/test_align_stats.c
@@ -1020,89 +1029,89 @@ src/align/nw_ref.lo: src/align/$(am__dirstamp) \
 	src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/nw_scan.lo: src/align/$(am__dirstamp) \
 	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/nw_scan_128_16.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/nw_scan_128_8.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/nw_scan_row.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/nw_wozniak_128_16.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/nw_wozniak_128_8.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/nw_striped_128_16.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/nw_striped_128_8.lo: src/align/$(am__dirstamp) \
 	src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/nw_stats_ref.lo: src/align/$(am__dirstamp) \
 	src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/nw_stats_scan.lo: src/align/$(am__dirstamp) \
 	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/nw_stats_scan_128_16.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/nw_stats_scan_128_8.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/nw_stats_wozniak_128_16.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/nw_stats_wozniak_128_8.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/nw_stats_striped_128_16.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/nw_stats_striped_128_8.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/sg_ref.lo: src/align/$(am__dirstamp) \
 	src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/sg_scan.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/sg_scan_128_16.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/sg_scan_128_8.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/sg_wozniak_128_16.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/sg_wozniak_128_8.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/sg_striped_128_16.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/sg_striped_128_8.lo: src/align/$(am__dirstamp) \
 	src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/sg_stats_ref.lo: src/align/$(am__dirstamp) \
 	src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/sg_stats_scan.lo: src/align/$(am__dirstamp) \
 	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/sg_stats_scan_128_16.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/sg_stats_scan_128_8.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/sg_stats_wozniak_128_16.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/sg_stats_wozniak_128_8.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/sg_stats_striped_128_16.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/sw_ref.lo: src/align/$(am__dirstamp) \
 	src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/sw_scan.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/sw_scan_128_16.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/sw_scan_128_8.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/sw_wozniak_128_16.lo: src/align/$(am__dirstamp) \
-	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/sw_striped_128_16.lo: src/align/$(am__dirstamp) \
 	src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/sw_stats_ref.lo: src/align/$(am__dirstamp) \
 	src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/sw_stats_scan.lo: src/align/$(am__dirstamp) \
 	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/nw_scan_128_16.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/nw_striped_128_16.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/nw_wozniak_128_16.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/nw_stats_scan_128_16.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/nw_stats_striped_128_16.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/nw_stats_wozniak_128_16.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/sg_scan_128_16.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/sg_striped_128_16.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/sg_wozniak_128_16.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/sg_stats_scan_128_16.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/sg_stats_striped_128_16.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/sg_stats_wozniak_128_16.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/sw_scan_128_16.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/sw_striped_128_16.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/sw_wozniak_128_16.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/sw_stats_scan_128_16.lo: src/align/$(am__dirstamp) \
 	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/sw_stats_scan_128_8.lo: src/align/$(am__dirstamp) \
+src/align/sw_stats_striped_128_16.lo: src/align/$(am__dirstamp) \
 	src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/sw_stats_wozniak_128_16.lo: src/align/$(am__dirstamp) \
 	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/sw_stats_striped_128_16.lo: src/align/$(am__dirstamp) \
+src/align/nw_scan_128_8.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/nw_striped_128_8.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/nw_wozniak_128_8.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/nw_stats_scan_128_8.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/nw_stats_striped_128_8.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/nw_stats_wozniak_128_8.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/sg_scan_128_8.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/sg_striped_128_8.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/sg_wozniak_128_8.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/sg_stats_scan_128_8.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/sg_stats_wozniak_128_8.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/sw_scan_128_8.lo: src/align/$(am__dirstamp) \
+	src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/sw_stats_scan_128_8.lo: src/align/$(am__dirstamp) \
 	src/align/$(DEPDIR)/$(am__dirstamp)
 
 libalign.la: $(libalign_la_OBJECTS) $(libalign_la_DEPENDENCIES) $(EXTRA_libalign_la_DEPENDENCIES) 
@@ -1111,89 +1120,89 @@ src/align/libalign_debug_la-nw_ref.lo: src/align/$(am__dirstamp) \
 	src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/libalign_debug_la-nw_scan.lo: src/align/$(am__dirstamp) \
 	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-nw_scan_128_16.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-nw_scan_128_8.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/libalign_debug_la-nw_scan_row.lo: src/align/$(am__dirstamp) \
 	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-nw_wozniak_128_16.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-nw_wozniak_128_8.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-nw_striped_128_16.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-nw_striped_128_8.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/libalign_debug_la-nw_stats_ref.lo:  \
 	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/libalign_debug_la-nw_stats_scan.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-nw_stats_scan_128_16.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-nw_stats_scan_128_8.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-nw_stats_wozniak_128_16.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-nw_stats_wozniak_128_8.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-nw_stats_striped_128_16.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-nw_stats_striped_128_8.lo:  \
 	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/libalign_debug_la-sg_ref.lo: src/align/$(am__dirstamp) \
 	src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/libalign_debug_la-sg_scan.lo: src/align/$(am__dirstamp) \
 	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-sg_scan_128_16.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-sg_scan_128_8.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-sg_wozniak_128_16.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-sg_wozniak_128_8.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-sg_striped_128_16.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-sg_striped_128_8.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/libalign_debug_la-sg_stats_ref.lo:  \
 	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/libalign_debug_la-sg_stats_scan.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-sg_stats_scan_128_16.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-sg_stats_scan_128_8.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-sg_stats_wozniak_128_16.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-sg_stats_wozniak_128_8.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-sg_stats_striped_128_16.lo:  \
 	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/libalign_debug_la-sw_ref.lo: src/align/$(am__dirstamp) \
 	src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/libalign_debug_la-sw_scan.lo: src/align/$(am__dirstamp) \
 	src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-sw_scan_128_16.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-sw_scan_128_8.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-sw_wozniak_128_16.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-sw_striped_128_16.lo:  \
-	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/libalign_debug_la-sw_stats_ref.lo:  \
 	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/libalign_debug_la-sw_stats_scan.lo:  \
 	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-nw_scan_128_16.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-nw_striped_128_16.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-nw_wozniak_128_16.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-nw_stats_scan_128_16.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-nw_stats_striped_128_16.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-nw_stats_wozniak_128_16.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-sg_scan_128_16.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-sg_striped_128_16.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-sg_wozniak_128_16.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-sg_stats_scan_128_16.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-sg_stats_striped_128_16.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-sg_stats_wozniak_128_16.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-sw_scan_128_16.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-sw_striped_128_16.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-sw_wozniak_128_16.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/libalign_debug_la-sw_stats_scan_128_16.lo:  \
 	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-sw_stats_scan_128_8.lo:  \
+src/align/libalign_debug_la-sw_stats_striped_128_16.lo:  \
 	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
 src/align/libalign_debug_la-sw_stats_wozniak_128_16.lo:  \
 	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
-src/align/libalign_debug_la-sw_stats_striped_128_16.lo:  \
+src/align/libalign_debug_la-nw_scan_128_8.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-nw_striped_128_8.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-nw_wozniak_128_8.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-nw_stats_scan_128_8.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-nw_stats_striped_128_8.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-nw_stats_wozniak_128_8.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-sg_scan_128_8.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-sg_striped_128_8.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-sg_wozniak_128_8.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-sg_stats_scan_128_8.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-sg_stats_wozniak_128_8.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-sw_scan_128_8.lo:  \
+	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
+src/align/libalign_debug_la-sw_stats_scan_128_8.lo:  \
 	src/align/$(am__dirstamp) src/align/$(DEPDIR)/$(am__dirstamp)
 
 libalign_debug.la: $(libalign_debug_la_OBJECTS) $(libalign_debug_la_DEPENDENCIES) $(EXTRA_libalign_debug_la_DEPENDENCIES) 
@@ -1227,31 +1236,6 @@ src/SuffixBucketsArmci.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
 src/SequenceDatabaseArmci.lo: src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
-contrib/Complete-Striped-Smith-Waterman-Library/src/$(am__dirstamp):
-	@$(MKDIR_P) contrib/Complete-Striped-Smith-Waterman-Library/src
-	@: > contrib/Complete-Striped-Smith-Waterman-Library/src/$(am__dirstamp)
-contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)
-	@: > contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/$(am__dirstamp)
-contrib/Complete-Striped-Smith-Waterman-Library/src/ssw.lo: contrib/Complete-Striped-Smith-Waterman-Library/src/$(am__dirstamp) \
-	contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/$(am__dirstamp)
-contrib/Complete-Striped-Smith-Waterman-Library/src/ssw_cpp.lo: contrib/Complete-Striped-Smith-Waterman-Library/src/$(am__dirstamp) \
-	contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/$(am__dirstamp)
-contrib/fasta-36.3.6d/src/$(am__dirstamp):
-	@$(MKDIR_P) contrib/fasta-36.3.6d/src
-	@: > contrib/fasta-36.3.6d/src/$(am__dirstamp)
-contrib/fasta-36.3.6d/src/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) contrib/fasta-36.3.6d/src/$(DEPDIR)
-	@: > contrib/fasta-36.3.6d/src/$(DEPDIR)/$(am__dirstamp)
-contrib/fasta-36.3.6d/src/global_sse2.lo:  \
-	contrib/fasta-36.3.6d/src/$(am__dirstamp) \
-	contrib/fasta-36.3.6d/src/$(DEPDIR)/$(am__dirstamp)
-contrib/fasta-36.3.6d/src/glocal_sse2.lo:  \
-	contrib/fasta-36.3.6d/src/$(am__dirstamp) \
-	contrib/fasta-36.3.6d/src/$(DEPDIR)/$(am__dirstamp)
-contrib/fasta-36.3.6d/src/smith_waterman_sse2.lo:  \
-	contrib/fasta-36.3.6d/src/$(am__dirstamp) \
-	contrib/fasta-36.3.6d/src/$(DEPDIR)/$(am__dirstamp)
 contrib/sais-lite-lcp/$(am__dirstamp):
 	@$(MKDIR_P) contrib/sais-lite-lcp
 	@: > contrib/sais-lite-lcp/$(am__dirstamp)
@@ -1444,12 +1428,6 @@ apps/align.$(OBJEXT): apps/$(am__dirstamp) \
 apps/align$(EXEEXT): $(apps_align_OBJECTS) $(apps_align_DEPENDENCIES) $(EXTRA_apps_align_DEPENDENCIES) apps/$(am__dirstamp)
 	@rm -f apps/align$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_OBJECTS) $(apps_align_LDADD) $(LIBS)
-contrib/Complete-Striped-Smith-Waterman-Library/src/main.$(OBJEXT): contrib/Complete-Striped-Smith-Waterman-Library/src/$(am__dirstamp) \
-	contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/$(am__dirstamp)
-
-tests/ssw_test$(EXEEXT): $(tests_ssw_test_OBJECTS) $(tests_ssw_test_DEPENDENCIES) $(EXTRA_tests_ssw_test_DEPENDENCIES) tests/$(am__dirstamp)
-	@rm -f tests/ssw_test$(EXEEXT)
-	$(AM_V_CCLD)$(tests_ssw_test_LINK) $(tests_ssw_test_OBJECTS) $(tests_ssw_test_LDADD) $(LIBS)
 tests/st_serial.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 
@@ -1505,12 +1483,6 @@ tests/test_db_reprinter.$(OBJEXT): tests/$(am__dirstamp) \
 tests/test_db_reprinter$(EXEEXT): $(tests_test_db_reprinter_OBJECTS) $(tests_test_db_reprinter_DEPENDENCIES) $(EXTRA_tests_test_db_reprinter_DEPENDENCIES) tests/$(am__dirstamp)
 	@rm -f tests/test_db_reprinter$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_db_reprinter_OBJECTS) $(tests_test_db_reprinter_LDADD) $(LIBS)
-tests/test_fasta_align.$(OBJEXT): tests/$(am__dirstamp) \
-	tests/$(DEPDIR)/$(am__dirstamp)
-
-tests/test_fasta_align$(EXEEXT): $(tests_test_fasta_align_OBJECTS) $(tests_test_fasta_align_DEPENDENCIES) $(EXTRA_tests_test_fasta_align_DEPENDENCIES) tests/$(am__dirstamp)
-	@rm -f tests/test_fasta_align$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_fasta_align_OBJECTS) $(tests_test_fasta_align_LDADD) $(LIBS)
 tests/test_mpi.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 
@@ -1536,26 +1508,10 @@ tests/test_stl_container_performance.$(OBJEXT): tests/$(am__dirstamp) \
 tests/test_stl_container_performance$(EXEEXT): $(tests_test_stl_container_performance_OBJECTS) $(tests_test_stl_container_performance_DEPENDENCIES) $(EXTRA_tests_test_stl_container_performance_DEPENDENCIES) tests/$(am__dirstamp)
 	@rm -f tests/test_stl_container_performance$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_stl_container_performance_OBJECTS) $(tests_test_stl_container_performance_LDADD) $(LIBS)
-tests/test_striped_sw.$(OBJEXT): tests/$(am__dirstamp) \
-	tests/$(DEPDIR)/$(am__dirstamp)
-
-tests/test_striped_sw$(EXEEXT): $(tests_test_striped_sw_OBJECTS) $(tests_test_striped_sw_DEPENDENCIES) $(EXTRA_tests_test_striped_sw_DEPENDENCIES) tests/$(am__dirstamp)
-	@rm -f tests/test_striped_sw$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_striped_sw_OBJECTS) $(tests_test_striped_sw_LDADD) $(LIBS)
-tests/test_woz_sw.$(OBJEXT): tests/$(am__dirstamp) \
-	tests/$(DEPDIR)/$(am__dirstamp)
-
-tests/test_woz_sw$(EXEEXT): $(tests_test_woz_sw_OBJECTS) $(tests_test_woz_sw_DEPENDENCIES) $(EXTRA_tests_test_woz_sw_DEPENDENCIES) tests/$(am__dirstamp)
-	@rm -f tests/test_woz_sw$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(tests_test_woz_sw_OBJECTS) $(tests_test_woz_sw_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 	-rm -f apps/*.$(OBJEXT)
-	-rm -f contrib/Complete-Striped-Smith-Waterman-Library/src/*.$(OBJEXT)
-	-rm -f contrib/Complete-Striped-Smith-Waterman-Library/src/*.lo
-	-rm -f contrib/fasta-36.3.6d/src/*.$(OBJEXT)
-	-rm -f contrib/fasta-36.3.6d/src/*.lo
 	-rm -f contrib/gtest-1.7.0/src/*.$(OBJEXT)
 	-rm -f contrib/sais-lite-lcp/*.$(OBJEXT)
 	-rm -f contrib/sais-lite-lcp/*.lo
@@ -1573,12 +1529,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/main.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/ssw.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/ssw_cpp.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@contrib/fasta-36.3.6d/src/$(DEPDIR)/global_sse2.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@contrib/fasta-36.3.6d/src/$(DEPDIR)/glocal_sse2.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@contrib/fasta-36.3.6d/src/$(DEPDIR)/smith_waterman_sse2.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/gtest-1.7.0/src/$(DEPDIR)/gtest-all.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/sais-lite-lcp/$(DEPDIR)/sais.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/sais-lite-lcp/$(DEPDIR)/suftest.Po@am__quote@
@@ -1725,12 +1675,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_align_stats.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_combinations.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_db_reprinter.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_fasta_align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_mpi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_stl_container_performance.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_striped_sw.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_woz_sw.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -1770,54 +1717,12 @@ src/align/libalign_debug_la-nw_scan.lo: src/align/nw_scan.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_scan.lo `test -f 'src/align/nw_scan.c' || echo '$(srcdir)/'`src/align/nw_scan.c
 
-src/align/libalign_debug_la-nw_scan_128_16.lo: src/align/nw_scan_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_scan_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_scan_128_16.Tpo -c -o src/align/libalign_debug_la-nw_scan_128_16.lo `test -f 'src/align/nw_scan_128_16.c' || echo '$(srcdir)/'`src/align/nw_scan_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_scan_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_scan_128_16.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_scan_128_16.c' object='src/align/libalign_debug_la-nw_scan_128_16.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_scan_128_16.lo `test -f 'src/align/nw_scan_128_16.c' || echo '$(srcdir)/'`src/align/nw_scan_128_16.c
-
-src/align/libalign_debug_la-nw_scan_128_8.lo: src/align/nw_scan_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_scan_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_scan_128_8.Tpo -c -o src/align/libalign_debug_la-nw_scan_128_8.lo `test -f 'src/align/nw_scan_128_8.c' || echo '$(srcdir)/'`src/align/nw_scan_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_scan_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_scan_128_8.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_scan_128_8.c' object='src/align/libalign_debug_la-nw_scan_128_8.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_scan_128_8.lo `test -f 'src/align/nw_scan_128_8.c' || echo '$(srcdir)/'`src/align/nw_scan_128_8.c
-
 src/align/libalign_debug_la-nw_scan_row.lo: src/align/nw_scan_row.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_scan_row.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_scan_row.Tpo -c -o src/align/libalign_debug_la-nw_scan_row.lo `test -f 'src/align/nw_scan_row.c' || echo '$(srcdir)/'`src/align/nw_scan_row.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_scan_row.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_scan_row.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_scan_row.c' object='src/align/libalign_debug_la-nw_scan_row.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_scan_row.lo `test -f 'src/align/nw_scan_row.c' || echo '$(srcdir)/'`src/align/nw_scan_row.c
-
-src/align/libalign_debug_la-nw_wozniak_128_16.lo: src/align/nw_wozniak_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_wozniak_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_wozniak_128_16.Tpo -c -o src/align/libalign_debug_la-nw_wozniak_128_16.lo `test -f 'src/align/nw_wozniak_128_16.c' || echo '$(srcdir)/'`src/align/nw_wozniak_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_wozniak_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_wozniak_128_16.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_wozniak_128_16.c' object='src/align/libalign_debug_la-nw_wozniak_128_16.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_wozniak_128_16.lo `test -f 'src/align/nw_wozniak_128_16.c' || echo '$(srcdir)/'`src/align/nw_wozniak_128_16.c
-
-src/align/libalign_debug_la-nw_wozniak_128_8.lo: src/align/nw_wozniak_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_wozniak_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_wozniak_128_8.Tpo -c -o src/align/libalign_debug_la-nw_wozniak_128_8.lo `test -f 'src/align/nw_wozniak_128_8.c' || echo '$(srcdir)/'`src/align/nw_wozniak_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_wozniak_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_wozniak_128_8.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_wozniak_128_8.c' object='src/align/libalign_debug_la-nw_wozniak_128_8.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_wozniak_128_8.lo `test -f 'src/align/nw_wozniak_128_8.c' || echo '$(srcdir)/'`src/align/nw_wozniak_128_8.c
-
-src/align/libalign_debug_la-nw_striped_128_16.lo: src/align/nw_striped_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_striped_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_striped_128_16.Tpo -c -o src/align/libalign_debug_la-nw_striped_128_16.lo `test -f 'src/align/nw_striped_128_16.c' || echo '$(srcdir)/'`src/align/nw_striped_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_striped_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_striped_128_16.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_striped_128_16.c' object='src/align/libalign_debug_la-nw_striped_128_16.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_striped_128_16.lo `test -f 'src/align/nw_striped_128_16.c' || echo '$(srcdir)/'`src/align/nw_striped_128_16.c
-
-src/align/libalign_debug_la-nw_striped_128_8.lo: src/align/nw_striped_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_striped_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_striped_128_8.Tpo -c -o src/align/libalign_debug_la-nw_striped_128_8.lo `test -f 'src/align/nw_striped_128_8.c' || echo '$(srcdir)/'`src/align/nw_striped_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_striped_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_striped_128_8.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_striped_128_8.c' object='src/align/libalign_debug_la-nw_striped_128_8.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_striped_128_8.lo `test -f 'src/align/nw_striped_128_8.c' || echo '$(srcdir)/'`src/align/nw_striped_128_8.c
 
 src/align/libalign_debug_la-nw_stats_ref.lo: src/align/nw_stats_ref.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_stats_ref.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_stats_ref.Tpo -c -o src/align/libalign_debug_la-nw_stats_ref.lo `test -f 'src/align/nw_stats_ref.c' || echo '$(srcdir)/'`src/align/nw_stats_ref.c
@@ -1833,48 +1738,6 @@ src/align/libalign_debug_la-nw_stats_scan.lo: src/align/nw_stats_scan.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_stats_scan.lo `test -f 'src/align/nw_stats_scan.c' || echo '$(srcdir)/'`src/align/nw_stats_scan.c
 
-src/align/libalign_debug_la-nw_stats_scan_128_16.lo: src/align/nw_stats_scan_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_stats_scan_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_stats_scan_128_16.Tpo -c -o src/align/libalign_debug_la-nw_stats_scan_128_16.lo `test -f 'src/align/nw_stats_scan_128_16.c' || echo '$(srcdir)/'`src/align/nw_stats_scan_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_stats_scan_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_stats_scan_128_16.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_stats_scan_128_16.c' object='src/align/libalign_debug_la-nw_stats_scan_128_16.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_stats_scan_128_16.lo `test -f 'src/align/nw_stats_scan_128_16.c' || echo '$(srcdir)/'`src/align/nw_stats_scan_128_16.c
-
-src/align/libalign_debug_la-nw_stats_scan_128_8.lo: src/align/nw_stats_scan_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_stats_scan_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_stats_scan_128_8.Tpo -c -o src/align/libalign_debug_la-nw_stats_scan_128_8.lo `test -f 'src/align/nw_stats_scan_128_8.c' || echo '$(srcdir)/'`src/align/nw_stats_scan_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_stats_scan_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_stats_scan_128_8.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_stats_scan_128_8.c' object='src/align/libalign_debug_la-nw_stats_scan_128_8.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_stats_scan_128_8.lo `test -f 'src/align/nw_stats_scan_128_8.c' || echo '$(srcdir)/'`src/align/nw_stats_scan_128_8.c
-
-src/align/libalign_debug_la-nw_stats_wozniak_128_16.lo: src/align/nw_stats_wozniak_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_stats_wozniak_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_stats_wozniak_128_16.Tpo -c -o src/align/libalign_debug_la-nw_stats_wozniak_128_16.lo `test -f 'src/align/nw_stats_wozniak_128_16.c' || echo '$(srcdir)/'`src/align/nw_stats_wozniak_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_stats_wozniak_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_stats_wozniak_128_16.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_stats_wozniak_128_16.c' object='src/align/libalign_debug_la-nw_stats_wozniak_128_16.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_stats_wozniak_128_16.lo `test -f 'src/align/nw_stats_wozniak_128_16.c' || echo '$(srcdir)/'`src/align/nw_stats_wozniak_128_16.c
-
-src/align/libalign_debug_la-nw_stats_wozniak_128_8.lo: src/align/nw_stats_wozniak_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_stats_wozniak_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_stats_wozniak_128_8.Tpo -c -o src/align/libalign_debug_la-nw_stats_wozniak_128_8.lo `test -f 'src/align/nw_stats_wozniak_128_8.c' || echo '$(srcdir)/'`src/align/nw_stats_wozniak_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_stats_wozniak_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_stats_wozniak_128_8.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_stats_wozniak_128_8.c' object='src/align/libalign_debug_la-nw_stats_wozniak_128_8.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_stats_wozniak_128_8.lo `test -f 'src/align/nw_stats_wozniak_128_8.c' || echo '$(srcdir)/'`src/align/nw_stats_wozniak_128_8.c
-
-src/align/libalign_debug_la-nw_stats_striped_128_16.lo: src/align/nw_stats_striped_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_stats_striped_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_stats_striped_128_16.Tpo -c -o src/align/libalign_debug_la-nw_stats_striped_128_16.lo `test -f 'src/align/nw_stats_striped_128_16.c' || echo '$(srcdir)/'`src/align/nw_stats_striped_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_stats_striped_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_stats_striped_128_16.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_stats_striped_128_16.c' object='src/align/libalign_debug_la-nw_stats_striped_128_16.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_stats_striped_128_16.lo `test -f 'src/align/nw_stats_striped_128_16.c' || echo '$(srcdir)/'`src/align/nw_stats_striped_128_16.c
-
-src/align/libalign_debug_la-nw_stats_striped_128_8.lo: src/align/nw_stats_striped_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_stats_striped_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_stats_striped_128_8.Tpo -c -o src/align/libalign_debug_la-nw_stats_striped_128_8.lo `test -f 'src/align/nw_stats_striped_128_8.c' || echo '$(srcdir)/'`src/align/nw_stats_striped_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_stats_striped_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_stats_striped_128_8.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_stats_striped_128_8.c' object='src/align/libalign_debug_la-nw_stats_striped_128_8.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_stats_striped_128_8.lo `test -f 'src/align/nw_stats_striped_128_8.c' || echo '$(srcdir)/'`src/align/nw_stats_striped_128_8.c
-
 src/align/libalign_debug_la-sg_ref.lo: src/align/sg_ref.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sg_ref.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sg_ref.Tpo -c -o src/align/libalign_debug_la-sg_ref.lo `test -f 'src/align/sg_ref.c' || echo '$(srcdir)/'`src/align/sg_ref.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sg_ref.Tpo src/align/$(DEPDIR)/libalign_debug_la-sg_ref.Plo
@@ -1888,48 +1751,6 @@ src/align/libalign_debug_la-sg_scan.lo: src/align/sg_scan.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sg_scan.c' object='src/align/libalign_debug_la-sg_scan.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sg_scan.lo `test -f 'src/align/sg_scan.c' || echo '$(srcdir)/'`src/align/sg_scan.c
-
-src/align/libalign_debug_la-sg_scan_128_16.lo: src/align/sg_scan_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sg_scan_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sg_scan_128_16.Tpo -c -o src/align/libalign_debug_la-sg_scan_128_16.lo `test -f 'src/align/sg_scan_128_16.c' || echo '$(srcdir)/'`src/align/sg_scan_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sg_scan_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-sg_scan_128_16.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sg_scan_128_16.c' object='src/align/libalign_debug_la-sg_scan_128_16.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sg_scan_128_16.lo `test -f 'src/align/sg_scan_128_16.c' || echo '$(srcdir)/'`src/align/sg_scan_128_16.c
-
-src/align/libalign_debug_la-sg_scan_128_8.lo: src/align/sg_scan_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sg_scan_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sg_scan_128_8.Tpo -c -o src/align/libalign_debug_la-sg_scan_128_8.lo `test -f 'src/align/sg_scan_128_8.c' || echo '$(srcdir)/'`src/align/sg_scan_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sg_scan_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-sg_scan_128_8.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sg_scan_128_8.c' object='src/align/libalign_debug_la-sg_scan_128_8.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sg_scan_128_8.lo `test -f 'src/align/sg_scan_128_8.c' || echo '$(srcdir)/'`src/align/sg_scan_128_8.c
-
-src/align/libalign_debug_la-sg_wozniak_128_16.lo: src/align/sg_wozniak_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sg_wozniak_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sg_wozniak_128_16.Tpo -c -o src/align/libalign_debug_la-sg_wozniak_128_16.lo `test -f 'src/align/sg_wozniak_128_16.c' || echo '$(srcdir)/'`src/align/sg_wozniak_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sg_wozniak_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-sg_wozniak_128_16.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sg_wozniak_128_16.c' object='src/align/libalign_debug_la-sg_wozniak_128_16.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sg_wozniak_128_16.lo `test -f 'src/align/sg_wozniak_128_16.c' || echo '$(srcdir)/'`src/align/sg_wozniak_128_16.c
-
-src/align/libalign_debug_la-sg_wozniak_128_8.lo: src/align/sg_wozniak_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sg_wozniak_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sg_wozniak_128_8.Tpo -c -o src/align/libalign_debug_la-sg_wozniak_128_8.lo `test -f 'src/align/sg_wozniak_128_8.c' || echo '$(srcdir)/'`src/align/sg_wozniak_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sg_wozniak_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-sg_wozniak_128_8.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sg_wozniak_128_8.c' object='src/align/libalign_debug_la-sg_wozniak_128_8.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sg_wozniak_128_8.lo `test -f 'src/align/sg_wozniak_128_8.c' || echo '$(srcdir)/'`src/align/sg_wozniak_128_8.c
-
-src/align/libalign_debug_la-sg_striped_128_16.lo: src/align/sg_striped_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sg_striped_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sg_striped_128_16.Tpo -c -o src/align/libalign_debug_la-sg_striped_128_16.lo `test -f 'src/align/sg_striped_128_16.c' || echo '$(srcdir)/'`src/align/sg_striped_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sg_striped_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-sg_striped_128_16.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sg_striped_128_16.c' object='src/align/libalign_debug_la-sg_striped_128_16.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sg_striped_128_16.lo `test -f 'src/align/sg_striped_128_16.c' || echo '$(srcdir)/'`src/align/sg_striped_128_16.c
-
-src/align/libalign_debug_la-sg_striped_128_8.lo: src/align/sg_striped_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sg_striped_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sg_striped_128_8.Tpo -c -o src/align/libalign_debug_la-sg_striped_128_8.lo `test -f 'src/align/sg_striped_128_8.c' || echo '$(srcdir)/'`src/align/sg_striped_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sg_striped_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-sg_striped_128_8.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sg_striped_128_8.c' object='src/align/libalign_debug_la-sg_striped_128_8.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sg_striped_128_8.lo `test -f 'src/align/sg_striped_128_8.c' || echo '$(srcdir)/'`src/align/sg_striped_128_8.c
 
 src/align/libalign_debug_la-sg_stats_ref.lo: src/align/sg_stats_ref.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sg_stats_ref.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sg_stats_ref.Tpo -c -o src/align/libalign_debug_la-sg_stats_ref.lo `test -f 'src/align/sg_stats_ref.c' || echo '$(srcdir)/'`src/align/sg_stats_ref.c
@@ -1945,41 +1766,6 @@ src/align/libalign_debug_la-sg_stats_scan.lo: src/align/sg_stats_scan.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sg_stats_scan.lo `test -f 'src/align/sg_stats_scan.c' || echo '$(srcdir)/'`src/align/sg_stats_scan.c
 
-src/align/libalign_debug_la-sg_stats_scan_128_16.lo: src/align/sg_stats_scan_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sg_stats_scan_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sg_stats_scan_128_16.Tpo -c -o src/align/libalign_debug_la-sg_stats_scan_128_16.lo `test -f 'src/align/sg_stats_scan_128_16.c' || echo '$(srcdir)/'`src/align/sg_stats_scan_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sg_stats_scan_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-sg_stats_scan_128_16.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sg_stats_scan_128_16.c' object='src/align/libalign_debug_la-sg_stats_scan_128_16.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sg_stats_scan_128_16.lo `test -f 'src/align/sg_stats_scan_128_16.c' || echo '$(srcdir)/'`src/align/sg_stats_scan_128_16.c
-
-src/align/libalign_debug_la-sg_stats_scan_128_8.lo: src/align/sg_stats_scan_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sg_stats_scan_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sg_stats_scan_128_8.Tpo -c -o src/align/libalign_debug_la-sg_stats_scan_128_8.lo `test -f 'src/align/sg_stats_scan_128_8.c' || echo '$(srcdir)/'`src/align/sg_stats_scan_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sg_stats_scan_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-sg_stats_scan_128_8.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sg_stats_scan_128_8.c' object='src/align/libalign_debug_la-sg_stats_scan_128_8.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sg_stats_scan_128_8.lo `test -f 'src/align/sg_stats_scan_128_8.c' || echo '$(srcdir)/'`src/align/sg_stats_scan_128_8.c
-
-src/align/libalign_debug_la-sg_stats_wozniak_128_16.lo: src/align/sg_stats_wozniak_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sg_stats_wozniak_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sg_stats_wozniak_128_16.Tpo -c -o src/align/libalign_debug_la-sg_stats_wozniak_128_16.lo `test -f 'src/align/sg_stats_wozniak_128_16.c' || echo '$(srcdir)/'`src/align/sg_stats_wozniak_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sg_stats_wozniak_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-sg_stats_wozniak_128_16.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sg_stats_wozniak_128_16.c' object='src/align/libalign_debug_la-sg_stats_wozniak_128_16.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sg_stats_wozniak_128_16.lo `test -f 'src/align/sg_stats_wozniak_128_16.c' || echo '$(srcdir)/'`src/align/sg_stats_wozniak_128_16.c
-
-src/align/libalign_debug_la-sg_stats_wozniak_128_8.lo: src/align/sg_stats_wozniak_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sg_stats_wozniak_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sg_stats_wozniak_128_8.Tpo -c -o src/align/libalign_debug_la-sg_stats_wozniak_128_8.lo `test -f 'src/align/sg_stats_wozniak_128_8.c' || echo '$(srcdir)/'`src/align/sg_stats_wozniak_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sg_stats_wozniak_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-sg_stats_wozniak_128_8.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sg_stats_wozniak_128_8.c' object='src/align/libalign_debug_la-sg_stats_wozniak_128_8.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sg_stats_wozniak_128_8.lo `test -f 'src/align/sg_stats_wozniak_128_8.c' || echo '$(srcdir)/'`src/align/sg_stats_wozniak_128_8.c
-
-src/align/libalign_debug_la-sg_stats_striped_128_16.lo: src/align/sg_stats_striped_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sg_stats_striped_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sg_stats_striped_128_16.Tpo -c -o src/align/libalign_debug_la-sg_stats_striped_128_16.lo `test -f 'src/align/sg_stats_striped_128_16.c' || echo '$(srcdir)/'`src/align/sg_stats_striped_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sg_stats_striped_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-sg_stats_striped_128_16.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sg_stats_striped_128_16.c' object='src/align/libalign_debug_la-sg_stats_striped_128_16.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sg_stats_striped_128_16.lo `test -f 'src/align/sg_stats_striped_128_16.c' || echo '$(srcdir)/'`src/align/sg_stats_striped_128_16.c
-
 src/align/libalign_debug_la-sw_ref.lo: src/align/sw_ref.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sw_ref.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sw_ref.Tpo -c -o src/align/libalign_debug_la-sw_ref.lo `test -f 'src/align/sw_ref.c' || echo '$(srcdir)/'`src/align/sw_ref.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sw_ref.Tpo src/align/$(DEPDIR)/libalign_debug_la-sw_ref.Plo
@@ -1993,34 +1779,6 @@ src/align/libalign_debug_la-sw_scan.lo: src/align/sw_scan.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sw_scan.c' object='src/align/libalign_debug_la-sw_scan.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sw_scan.lo `test -f 'src/align/sw_scan.c' || echo '$(srcdir)/'`src/align/sw_scan.c
-
-src/align/libalign_debug_la-sw_scan_128_16.lo: src/align/sw_scan_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sw_scan_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sw_scan_128_16.Tpo -c -o src/align/libalign_debug_la-sw_scan_128_16.lo `test -f 'src/align/sw_scan_128_16.c' || echo '$(srcdir)/'`src/align/sw_scan_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sw_scan_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-sw_scan_128_16.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sw_scan_128_16.c' object='src/align/libalign_debug_la-sw_scan_128_16.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sw_scan_128_16.lo `test -f 'src/align/sw_scan_128_16.c' || echo '$(srcdir)/'`src/align/sw_scan_128_16.c
-
-src/align/libalign_debug_la-sw_scan_128_8.lo: src/align/sw_scan_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sw_scan_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sw_scan_128_8.Tpo -c -o src/align/libalign_debug_la-sw_scan_128_8.lo `test -f 'src/align/sw_scan_128_8.c' || echo '$(srcdir)/'`src/align/sw_scan_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sw_scan_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-sw_scan_128_8.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sw_scan_128_8.c' object='src/align/libalign_debug_la-sw_scan_128_8.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sw_scan_128_8.lo `test -f 'src/align/sw_scan_128_8.c' || echo '$(srcdir)/'`src/align/sw_scan_128_8.c
-
-src/align/libalign_debug_la-sw_wozniak_128_16.lo: src/align/sw_wozniak_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sw_wozniak_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sw_wozniak_128_16.Tpo -c -o src/align/libalign_debug_la-sw_wozniak_128_16.lo `test -f 'src/align/sw_wozniak_128_16.c' || echo '$(srcdir)/'`src/align/sw_wozniak_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sw_wozniak_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-sw_wozniak_128_16.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sw_wozniak_128_16.c' object='src/align/libalign_debug_la-sw_wozniak_128_16.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sw_wozniak_128_16.lo `test -f 'src/align/sw_wozniak_128_16.c' || echo '$(srcdir)/'`src/align/sw_wozniak_128_16.c
-
-src/align/libalign_debug_la-sw_striped_128_16.lo: src/align/sw_striped_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sw_striped_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sw_striped_128_16.Tpo -c -o src/align/libalign_debug_la-sw_striped_128_16.lo `test -f 'src/align/sw_striped_128_16.c' || echo '$(srcdir)/'`src/align/sw_striped_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sw_striped_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-sw_striped_128_16.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sw_striped_128_16.c' object='src/align/libalign_debug_la-sw_striped_128_16.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sw_striped_128_16.lo `test -f 'src/align/sw_striped_128_16.c' || echo '$(srcdir)/'`src/align/sw_striped_128_16.c
 
 src/align/libalign_debug_la-sw_stats_ref.lo: src/align/sw_stats_ref.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sw_stats_ref.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sw_stats_ref.Tpo -c -o src/align/libalign_debug_la-sw_stats_ref.lo `test -f 'src/align/sw_stats_ref.c' || echo '$(srcdir)/'`src/align/sw_stats_ref.c
@@ -2036,6 +1794,111 @@ src/align/libalign_debug_la-sw_stats_scan.lo: src/align/sw_stats_scan.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sw_stats_scan.lo `test -f 'src/align/sw_stats_scan.c' || echo '$(srcdir)/'`src/align/sw_stats_scan.c
 
+src/align/libalign_debug_la-nw_scan_128_16.lo: src/align/nw_scan_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_scan_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_scan_128_16.Tpo -c -o src/align/libalign_debug_la-nw_scan_128_16.lo `test -f 'src/align/nw_scan_128_16.c' || echo '$(srcdir)/'`src/align/nw_scan_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_scan_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_scan_128_16.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_scan_128_16.c' object='src/align/libalign_debug_la-nw_scan_128_16.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_scan_128_16.lo `test -f 'src/align/nw_scan_128_16.c' || echo '$(srcdir)/'`src/align/nw_scan_128_16.c
+
+src/align/libalign_debug_la-nw_striped_128_16.lo: src/align/nw_striped_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_striped_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_striped_128_16.Tpo -c -o src/align/libalign_debug_la-nw_striped_128_16.lo `test -f 'src/align/nw_striped_128_16.c' || echo '$(srcdir)/'`src/align/nw_striped_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_striped_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_striped_128_16.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_striped_128_16.c' object='src/align/libalign_debug_la-nw_striped_128_16.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_striped_128_16.lo `test -f 'src/align/nw_striped_128_16.c' || echo '$(srcdir)/'`src/align/nw_striped_128_16.c
+
+src/align/libalign_debug_la-nw_wozniak_128_16.lo: src/align/nw_wozniak_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_wozniak_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_wozniak_128_16.Tpo -c -o src/align/libalign_debug_la-nw_wozniak_128_16.lo `test -f 'src/align/nw_wozniak_128_16.c' || echo '$(srcdir)/'`src/align/nw_wozniak_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_wozniak_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_wozniak_128_16.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_wozniak_128_16.c' object='src/align/libalign_debug_la-nw_wozniak_128_16.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_wozniak_128_16.lo `test -f 'src/align/nw_wozniak_128_16.c' || echo '$(srcdir)/'`src/align/nw_wozniak_128_16.c
+
+src/align/libalign_debug_la-nw_stats_scan_128_16.lo: src/align/nw_stats_scan_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_stats_scan_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_stats_scan_128_16.Tpo -c -o src/align/libalign_debug_la-nw_stats_scan_128_16.lo `test -f 'src/align/nw_stats_scan_128_16.c' || echo '$(srcdir)/'`src/align/nw_stats_scan_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_stats_scan_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_stats_scan_128_16.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_stats_scan_128_16.c' object='src/align/libalign_debug_la-nw_stats_scan_128_16.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_stats_scan_128_16.lo `test -f 'src/align/nw_stats_scan_128_16.c' || echo '$(srcdir)/'`src/align/nw_stats_scan_128_16.c
+
+src/align/libalign_debug_la-nw_stats_striped_128_16.lo: src/align/nw_stats_striped_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_stats_striped_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_stats_striped_128_16.Tpo -c -o src/align/libalign_debug_la-nw_stats_striped_128_16.lo `test -f 'src/align/nw_stats_striped_128_16.c' || echo '$(srcdir)/'`src/align/nw_stats_striped_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_stats_striped_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_stats_striped_128_16.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_stats_striped_128_16.c' object='src/align/libalign_debug_la-nw_stats_striped_128_16.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_stats_striped_128_16.lo `test -f 'src/align/nw_stats_striped_128_16.c' || echo '$(srcdir)/'`src/align/nw_stats_striped_128_16.c
+
+src/align/libalign_debug_la-nw_stats_wozniak_128_16.lo: src/align/nw_stats_wozniak_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_stats_wozniak_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_stats_wozniak_128_16.Tpo -c -o src/align/libalign_debug_la-nw_stats_wozniak_128_16.lo `test -f 'src/align/nw_stats_wozniak_128_16.c' || echo '$(srcdir)/'`src/align/nw_stats_wozniak_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_stats_wozniak_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_stats_wozniak_128_16.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_stats_wozniak_128_16.c' object='src/align/libalign_debug_la-nw_stats_wozniak_128_16.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_stats_wozniak_128_16.lo `test -f 'src/align/nw_stats_wozniak_128_16.c' || echo '$(srcdir)/'`src/align/nw_stats_wozniak_128_16.c
+
+src/align/libalign_debug_la-sg_scan_128_16.lo: src/align/sg_scan_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sg_scan_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sg_scan_128_16.Tpo -c -o src/align/libalign_debug_la-sg_scan_128_16.lo `test -f 'src/align/sg_scan_128_16.c' || echo '$(srcdir)/'`src/align/sg_scan_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sg_scan_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-sg_scan_128_16.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sg_scan_128_16.c' object='src/align/libalign_debug_la-sg_scan_128_16.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sg_scan_128_16.lo `test -f 'src/align/sg_scan_128_16.c' || echo '$(srcdir)/'`src/align/sg_scan_128_16.c
+
+src/align/libalign_debug_la-sg_striped_128_16.lo: src/align/sg_striped_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sg_striped_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sg_striped_128_16.Tpo -c -o src/align/libalign_debug_la-sg_striped_128_16.lo `test -f 'src/align/sg_striped_128_16.c' || echo '$(srcdir)/'`src/align/sg_striped_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sg_striped_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-sg_striped_128_16.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sg_striped_128_16.c' object='src/align/libalign_debug_la-sg_striped_128_16.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sg_striped_128_16.lo `test -f 'src/align/sg_striped_128_16.c' || echo '$(srcdir)/'`src/align/sg_striped_128_16.c
+
+src/align/libalign_debug_la-sg_wozniak_128_16.lo: src/align/sg_wozniak_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sg_wozniak_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sg_wozniak_128_16.Tpo -c -o src/align/libalign_debug_la-sg_wozniak_128_16.lo `test -f 'src/align/sg_wozniak_128_16.c' || echo '$(srcdir)/'`src/align/sg_wozniak_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sg_wozniak_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-sg_wozniak_128_16.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sg_wozniak_128_16.c' object='src/align/libalign_debug_la-sg_wozniak_128_16.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sg_wozniak_128_16.lo `test -f 'src/align/sg_wozniak_128_16.c' || echo '$(srcdir)/'`src/align/sg_wozniak_128_16.c
+
+src/align/libalign_debug_la-sg_stats_scan_128_16.lo: src/align/sg_stats_scan_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sg_stats_scan_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sg_stats_scan_128_16.Tpo -c -o src/align/libalign_debug_la-sg_stats_scan_128_16.lo `test -f 'src/align/sg_stats_scan_128_16.c' || echo '$(srcdir)/'`src/align/sg_stats_scan_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sg_stats_scan_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-sg_stats_scan_128_16.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sg_stats_scan_128_16.c' object='src/align/libalign_debug_la-sg_stats_scan_128_16.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sg_stats_scan_128_16.lo `test -f 'src/align/sg_stats_scan_128_16.c' || echo '$(srcdir)/'`src/align/sg_stats_scan_128_16.c
+
+src/align/libalign_debug_la-sg_stats_striped_128_16.lo: src/align/sg_stats_striped_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sg_stats_striped_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sg_stats_striped_128_16.Tpo -c -o src/align/libalign_debug_la-sg_stats_striped_128_16.lo `test -f 'src/align/sg_stats_striped_128_16.c' || echo '$(srcdir)/'`src/align/sg_stats_striped_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sg_stats_striped_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-sg_stats_striped_128_16.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sg_stats_striped_128_16.c' object='src/align/libalign_debug_la-sg_stats_striped_128_16.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sg_stats_striped_128_16.lo `test -f 'src/align/sg_stats_striped_128_16.c' || echo '$(srcdir)/'`src/align/sg_stats_striped_128_16.c
+
+src/align/libalign_debug_la-sg_stats_wozniak_128_16.lo: src/align/sg_stats_wozniak_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sg_stats_wozniak_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sg_stats_wozniak_128_16.Tpo -c -o src/align/libalign_debug_la-sg_stats_wozniak_128_16.lo `test -f 'src/align/sg_stats_wozniak_128_16.c' || echo '$(srcdir)/'`src/align/sg_stats_wozniak_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sg_stats_wozniak_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-sg_stats_wozniak_128_16.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sg_stats_wozniak_128_16.c' object='src/align/libalign_debug_la-sg_stats_wozniak_128_16.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sg_stats_wozniak_128_16.lo `test -f 'src/align/sg_stats_wozniak_128_16.c' || echo '$(srcdir)/'`src/align/sg_stats_wozniak_128_16.c
+
+src/align/libalign_debug_la-sw_scan_128_16.lo: src/align/sw_scan_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sw_scan_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sw_scan_128_16.Tpo -c -o src/align/libalign_debug_la-sw_scan_128_16.lo `test -f 'src/align/sw_scan_128_16.c' || echo '$(srcdir)/'`src/align/sw_scan_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sw_scan_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-sw_scan_128_16.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sw_scan_128_16.c' object='src/align/libalign_debug_la-sw_scan_128_16.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sw_scan_128_16.lo `test -f 'src/align/sw_scan_128_16.c' || echo '$(srcdir)/'`src/align/sw_scan_128_16.c
+
+src/align/libalign_debug_la-sw_striped_128_16.lo: src/align/sw_striped_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sw_striped_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sw_striped_128_16.Tpo -c -o src/align/libalign_debug_la-sw_striped_128_16.lo `test -f 'src/align/sw_striped_128_16.c' || echo '$(srcdir)/'`src/align/sw_striped_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sw_striped_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-sw_striped_128_16.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sw_striped_128_16.c' object='src/align/libalign_debug_la-sw_striped_128_16.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sw_striped_128_16.lo `test -f 'src/align/sw_striped_128_16.c' || echo '$(srcdir)/'`src/align/sw_striped_128_16.c
+
+src/align/libalign_debug_la-sw_wozniak_128_16.lo: src/align/sw_wozniak_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sw_wozniak_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sw_wozniak_128_16.Tpo -c -o src/align/libalign_debug_la-sw_wozniak_128_16.lo `test -f 'src/align/sw_wozniak_128_16.c' || echo '$(srcdir)/'`src/align/sw_wozniak_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sw_wozniak_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-sw_wozniak_128_16.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sw_wozniak_128_16.c' object='src/align/libalign_debug_la-sw_wozniak_128_16.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sw_wozniak_128_16.lo `test -f 'src/align/sw_wozniak_128_16.c' || echo '$(srcdir)/'`src/align/sw_wozniak_128_16.c
+
 src/align/libalign_debug_la-sw_stats_scan_128_16.lo: src/align/sw_stats_scan_128_16.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sw_stats_scan_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sw_stats_scan_128_16.Tpo -c -o src/align/libalign_debug_la-sw_stats_scan_128_16.lo `test -f 'src/align/sw_stats_scan_128_16.c' || echo '$(srcdir)/'`src/align/sw_stats_scan_128_16.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sw_stats_scan_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-sw_stats_scan_128_16.Plo
@@ -2043,12 +1906,12 @@ src/align/libalign_debug_la-sw_stats_scan_128_16.lo: src/align/sw_stats_scan_128
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sw_stats_scan_128_16.lo `test -f 'src/align/sw_stats_scan_128_16.c' || echo '$(srcdir)/'`src/align/sw_stats_scan_128_16.c
 
-src/align/libalign_debug_la-sw_stats_scan_128_8.lo: src/align/sw_stats_scan_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sw_stats_scan_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sw_stats_scan_128_8.Tpo -c -o src/align/libalign_debug_la-sw_stats_scan_128_8.lo `test -f 'src/align/sw_stats_scan_128_8.c' || echo '$(srcdir)/'`src/align/sw_stats_scan_128_8.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sw_stats_scan_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-sw_stats_scan_128_8.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sw_stats_scan_128_8.c' object='src/align/libalign_debug_la-sw_stats_scan_128_8.lo' libtool=yes @AMDEPBACKSLASH@
+src/align/libalign_debug_la-sw_stats_striped_128_16.lo: src/align/sw_stats_striped_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sw_stats_striped_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sw_stats_striped_128_16.Tpo -c -o src/align/libalign_debug_la-sw_stats_striped_128_16.lo `test -f 'src/align/sw_stats_striped_128_16.c' || echo '$(srcdir)/'`src/align/sw_stats_striped_128_16.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sw_stats_striped_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-sw_stats_striped_128_16.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sw_stats_striped_128_16.c' object='src/align/libalign_debug_la-sw_stats_striped_128_16.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sw_stats_scan_128_8.lo `test -f 'src/align/sw_stats_scan_128_8.c' || echo '$(srcdir)/'`src/align/sw_stats_scan_128_8.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sw_stats_striped_128_16.lo `test -f 'src/align/sw_stats_striped_128_16.c' || echo '$(srcdir)/'`src/align/sw_stats_striped_128_16.c
 
 src/align/libalign_debug_la-sw_stats_wozniak_128_16.lo: src/align/sw_stats_wozniak_128_16.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sw_stats_wozniak_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sw_stats_wozniak_128_16.Tpo -c -o src/align/libalign_debug_la-sw_stats_wozniak_128_16.lo `test -f 'src/align/sw_stats_wozniak_128_16.c' || echo '$(srcdir)/'`src/align/sw_stats_wozniak_128_16.c
@@ -2057,12 +1920,96 @@ src/align/libalign_debug_la-sw_stats_wozniak_128_16.lo: src/align/sw_stats_wozni
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sw_stats_wozniak_128_16.lo `test -f 'src/align/sw_stats_wozniak_128_16.c' || echo '$(srcdir)/'`src/align/sw_stats_wozniak_128_16.c
 
-src/align/libalign_debug_la-sw_stats_striped_128_16.lo: src/align/sw_stats_striped_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sw_stats_striped_128_16.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sw_stats_striped_128_16.Tpo -c -o src/align/libalign_debug_la-sw_stats_striped_128_16.lo `test -f 'src/align/sw_stats_striped_128_16.c' || echo '$(srcdir)/'`src/align/sw_stats_striped_128_16.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sw_stats_striped_128_16.Tpo src/align/$(DEPDIR)/libalign_debug_la-sw_stats_striped_128_16.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sw_stats_striped_128_16.c' object='src/align/libalign_debug_la-sw_stats_striped_128_16.lo' libtool=yes @AMDEPBACKSLASH@
+src/align/libalign_debug_la-nw_scan_128_8.lo: src/align/nw_scan_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_scan_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_scan_128_8.Tpo -c -o src/align/libalign_debug_la-nw_scan_128_8.lo `test -f 'src/align/nw_scan_128_8.c' || echo '$(srcdir)/'`src/align/nw_scan_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_scan_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_scan_128_8.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_scan_128_8.c' object='src/align/libalign_debug_la-nw_scan_128_8.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sw_stats_striped_128_16.lo `test -f 'src/align/sw_stats_striped_128_16.c' || echo '$(srcdir)/'`src/align/sw_stats_striped_128_16.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_scan_128_8.lo `test -f 'src/align/nw_scan_128_8.c' || echo '$(srcdir)/'`src/align/nw_scan_128_8.c
+
+src/align/libalign_debug_la-nw_striped_128_8.lo: src/align/nw_striped_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_striped_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_striped_128_8.Tpo -c -o src/align/libalign_debug_la-nw_striped_128_8.lo `test -f 'src/align/nw_striped_128_8.c' || echo '$(srcdir)/'`src/align/nw_striped_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_striped_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_striped_128_8.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_striped_128_8.c' object='src/align/libalign_debug_la-nw_striped_128_8.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_striped_128_8.lo `test -f 'src/align/nw_striped_128_8.c' || echo '$(srcdir)/'`src/align/nw_striped_128_8.c
+
+src/align/libalign_debug_la-nw_wozniak_128_8.lo: src/align/nw_wozniak_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_wozniak_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_wozniak_128_8.Tpo -c -o src/align/libalign_debug_la-nw_wozniak_128_8.lo `test -f 'src/align/nw_wozniak_128_8.c' || echo '$(srcdir)/'`src/align/nw_wozniak_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_wozniak_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_wozniak_128_8.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_wozniak_128_8.c' object='src/align/libalign_debug_la-nw_wozniak_128_8.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_wozniak_128_8.lo `test -f 'src/align/nw_wozniak_128_8.c' || echo '$(srcdir)/'`src/align/nw_wozniak_128_8.c
+
+src/align/libalign_debug_la-nw_stats_scan_128_8.lo: src/align/nw_stats_scan_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_stats_scan_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_stats_scan_128_8.Tpo -c -o src/align/libalign_debug_la-nw_stats_scan_128_8.lo `test -f 'src/align/nw_stats_scan_128_8.c' || echo '$(srcdir)/'`src/align/nw_stats_scan_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_stats_scan_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_stats_scan_128_8.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_stats_scan_128_8.c' object='src/align/libalign_debug_la-nw_stats_scan_128_8.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_stats_scan_128_8.lo `test -f 'src/align/nw_stats_scan_128_8.c' || echo '$(srcdir)/'`src/align/nw_stats_scan_128_8.c
+
+src/align/libalign_debug_la-nw_stats_striped_128_8.lo: src/align/nw_stats_striped_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_stats_striped_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_stats_striped_128_8.Tpo -c -o src/align/libalign_debug_la-nw_stats_striped_128_8.lo `test -f 'src/align/nw_stats_striped_128_8.c' || echo '$(srcdir)/'`src/align/nw_stats_striped_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_stats_striped_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_stats_striped_128_8.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_stats_striped_128_8.c' object='src/align/libalign_debug_la-nw_stats_striped_128_8.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_stats_striped_128_8.lo `test -f 'src/align/nw_stats_striped_128_8.c' || echo '$(srcdir)/'`src/align/nw_stats_striped_128_8.c
+
+src/align/libalign_debug_la-nw_stats_wozniak_128_8.lo: src/align/nw_stats_wozniak_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-nw_stats_wozniak_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-nw_stats_wozniak_128_8.Tpo -c -o src/align/libalign_debug_la-nw_stats_wozniak_128_8.lo `test -f 'src/align/nw_stats_wozniak_128_8.c' || echo '$(srcdir)/'`src/align/nw_stats_wozniak_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-nw_stats_wozniak_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-nw_stats_wozniak_128_8.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/nw_stats_wozniak_128_8.c' object='src/align/libalign_debug_la-nw_stats_wozniak_128_8.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-nw_stats_wozniak_128_8.lo `test -f 'src/align/nw_stats_wozniak_128_8.c' || echo '$(srcdir)/'`src/align/nw_stats_wozniak_128_8.c
+
+src/align/libalign_debug_la-sg_scan_128_8.lo: src/align/sg_scan_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sg_scan_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sg_scan_128_8.Tpo -c -o src/align/libalign_debug_la-sg_scan_128_8.lo `test -f 'src/align/sg_scan_128_8.c' || echo '$(srcdir)/'`src/align/sg_scan_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sg_scan_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-sg_scan_128_8.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sg_scan_128_8.c' object='src/align/libalign_debug_la-sg_scan_128_8.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sg_scan_128_8.lo `test -f 'src/align/sg_scan_128_8.c' || echo '$(srcdir)/'`src/align/sg_scan_128_8.c
+
+src/align/libalign_debug_la-sg_striped_128_8.lo: src/align/sg_striped_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sg_striped_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sg_striped_128_8.Tpo -c -o src/align/libalign_debug_la-sg_striped_128_8.lo `test -f 'src/align/sg_striped_128_8.c' || echo '$(srcdir)/'`src/align/sg_striped_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sg_striped_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-sg_striped_128_8.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sg_striped_128_8.c' object='src/align/libalign_debug_la-sg_striped_128_8.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sg_striped_128_8.lo `test -f 'src/align/sg_striped_128_8.c' || echo '$(srcdir)/'`src/align/sg_striped_128_8.c
+
+src/align/libalign_debug_la-sg_wozniak_128_8.lo: src/align/sg_wozniak_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sg_wozniak_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sg_wozniak_128_8.Tpo -c -o src/align/libalign_debug_la-sg_wozniak_128_8.lo `test -f 'src/align/sg_wozniak_128_8.c' || echo '$(srcdir)/'`src/align/sg_wozniak_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sg_wozniak_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-sg_wozniak_128_8.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sg_wozniak_128_8.c' object='src/align/libalign_debug_la-sg_wozniak_128_8.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sg_wozniak_128_8.lo `test -f 'src/align/sg_wozniak_128_8.c' || echo '$(srcdir)/'`src/align/sg_wozniak_128_8.c
+
+src/align/libalign_debug_la-sg_stats_scan_128_8.lo: src/align/sg_stats_scan_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sg_stats_scan_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sg_stats_scan_128_8.Tpo -c -o src/align/libalign_debug_la-sg_stats_scan_128_8.lo `test -f 'src/align/sg_stats_scan_128_8.c' || echo '$(srcdir)/'`src/align/sg_stats_scan_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sg_stats_scan_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-sg_stats_scan_128_8.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sg_stats_scan_128_8.c' object='src/align/libalign_debug_la-sg_stats_scan_128_8.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sg_stats_scan_128_8.lo `test -f 'src/align/sg_stats_scan_128_8.c' || echo '$(srcdir)/'`src/align/sg_stats_scan_128_8.c
+
+src/align/libalign_debug_la-sg_stats_wozniak_128_8.lo: src/align/sg_stats_wozniak_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sg_stats_wozniak_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sg_stats_wozniak_128_8.Tpo -c -o src/align/libalign_debug_la-sg_stats_wozniak_128_8.lo `test -f 'src/align/sg_stats_wozniak_128_8.c' || echo '$(srcdir)/'`src/align/sg_stats_wozniak_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sg_stats_wozniak_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-sg_stats_wozniak_128_8.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sg_stats_wozniak_128_8.c' object='src/align/libalign_debug_la-sg_stats_wozniak_128_8.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sg_stats_wozniak_128_8.lo `test -f 'src/align/sg_stats_wozniak_128_8.c' || echo '$(srcdir)/'`src/align/sg_stats_wozniak_128_8.c
+
+src/align/libalign_debug_la-sw_scan_128_8.lo: src/align/sw_scan_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sw_scan_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sw_scan_128_8.Tpo -c -o src/align/libalign_debug_la-sw_scan_128_8.lo `test -f 'src/align/sw_scan_128_8.c' || echo '$(srcdir)/'`src/align/sw_scan_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sw_scan_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-sw_scan_128_8.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sw_scan_128_8.c' object='src/align/libalign_debug_la-sw_scan_128_8.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sw_scan_128_8.lo `test -f 'src/align/sw_scan_128_8.c' || echo '$(srcdir)/'`src/align/sw_scan_128_8.c
+
+src/align/libalign_debug_la-sw_stats_scan_128_8.lo: src/align/sw_stats_scan_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/align/libalign_debug_la-sw_stats_scan_128_8.lo -MD -MP -MF src/align/$(DEPDIR)/libalign_debug_la-sw_stats_scan_128_8.Tpo -c -o src/align/libalign_debug_la-sw_stats_scan_128_8.lo `test -f 'src/align/sw_stats_scan_128_8.c' || echo '$(srcdir)/'`src/align/sw_stats_scan_128_8.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/align/$(DEPDIR)/libalign_debug_la-sw_stats_scan_128_8.Tpo src/align/$(DEPDIR)/libalign_debug_la-sw_stats_scan_128_8.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/align/sw_stats_scan_128_8.c' object='src/align/libalign_debug_la-sw_stats_scan_128_8.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libalign_debug_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/align/libalign_debug_la-sw_stats_scan_128_8.lo `test -f 'src/align/sw_stats_scan_128_8.c' || echo '$(srcdir)/'`src/align/sw_stats_scan_128_8.c
 
 .cc.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -2118,8 +2065,6 @@ mostlyclean-libtool:
 clean-libtool:
 	-rm -rf .libs _libs
 	-rm -rf apps/.libs apps/_libs
-	-rm -rf contrib/Complete-Striped-Smith-Waterman-Library/src/.libs contrib/Complete-Striped-Smith-Waterman-Library/src/_libs
-	-rm -rf contrib/fasta-36.3.6d/src/.libs contrib/fasta-36.3.6d/src/_libs
 	-rm -rf contrib/sais-lite-lcp/.libs contrib/sais-lite-lcp/_libs
 	-rm -rf contrib/yaml-cpp-0.5.1/src/.libs contrib/yaml-cpp-0.5.1/src/_libs
 	-rm -rf contrib/yaml-cpp-0.5.1/src/contrib/.libs contrib/yaml-cpp-0.5.1/src/contrib/_libs
@@ -2381,10 +2326,6 @@ distclean-generic:
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
 	-rm -f apps/$(DEPDIR)/$(am__dirstamp)
 	-rm -f apps/$(am__dirstamp)
-	-rm -f contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR)/$(am__dirstamp)
-	-rm -f contrib/Complete-Striped-Smith-Waterman-Library/src/$(am__dirstamp)
-	-rm -f contrib/fasta-36.3.6d/src/$(DEPDIR)/$(am__dirstamp)
-	-rm -f contrib/fasta-36.3.6d/src/$(am__dirstamp)
 	-rm -f contrib/gtest-1.7.0/src/$(DEPDIR)/$(am__dirstamp)
 	-rm -f contrib/gtest-1.7.0/src/$(am__dirstamp)
 	-rm -f contrib/sais-lite-lcp/$(DEPDIR)/$(am__dirstamp)
@@ -2411,7 +2352,7 @@ clean-am: clean-binPROGRAMS clean-checkLIBRARIES clean-checkPROGRAMS \
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf apps/$(DEPDIR) contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR) contrib/fasta-36.3.6d/src/$(DEPDIR) contrib/gtest-1.7.0/src/$(DEPDIR) contrib/sais-lite-lcp/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR) src/$(DEPDIR) src/align/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf apps/$(DEPDIR) contrib/gtest-1.7.0/src/$(DEPDIR) contrib/sais-lite-lcp/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR) src/$(DEPDIR) src/align/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -2459,7 +2400,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf apps/$(DEPDIR) contrib/Complete-Striped-Smith-Waterman-Library/src/$(DEPDIR) contrib/fasta-36.3.6d/src/$(DEPDIR) contrib/gtest-1.7.0/src/$(DEPDIR) contrib/sais-lite-lcp/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR) src/$(DEPDIR) src/align/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf apps/$(DEPDIR) contrib/gtest-1.7.0/src/$(DEPDIR) contrib/sais-lite-lcp/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/$(DEPDIR) contrib/yaml-cpp-0.5.1/src/contrib/$(DEPDIR) src/$(DEPDIR) src/align/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

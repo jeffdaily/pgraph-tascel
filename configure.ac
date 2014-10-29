@@ -42,6 +42,7 @@ AS_IF([test x$with_mpi_wrappers = xyes],
 
 # Checks for header files.
 AC_CHECK_HEADERS([emmintrin.h])
+AC_CHECK_HEADERS([smmintrin.h])
 AC_CHECK_HEADERS([limits.h])
 AC_CHECK_HEADERS([pthread.h])
 AC_CHECK_HEADERS([regex.h])
@@ -49,6 +50,7 @@ AC_CHECK_HEADERS([sched.h])
 AC_CHECK_HEADERS([stdlib.h])
 
 AM_CONDITIONAL([HAVE_SSE2], [test "x$ac_cv_header_emmintrin_h" = xyes])
+AM_CONDITIONAL([HAVE_SSE4], [test "x$ac_cv_header_smmintrin_h" = xyes])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
