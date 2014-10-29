@@ -2,7 +2,6 @@
 
 #include <stdint.h>
 
-#define NDEBUG 1
 #include <cassert>
 #include <climits>
 #include <cstddef>
@@ -20,6 +19,7 @@
 #include "align/align_wozniak_128_16.h"
 #include "align/align_striped_128_16.h"
 #include "align/align_scan_128_16.h"
+#include "align/align_scan_128_8.h"
 #include "blosum/blosum62.h"
 #include "Bootstrap.hpp"
 #include "mpix.hpp"
@@ -34,6 +34,7 @@ using namespace ::pgraph;
 #define ENABLE_STRIPED 0
 #define ENABLE_SCAN 1
 #define STATS_MISMATCH 0
+#define SATURATION 0
 
 static float pct(float orig_, float new_)
 {
@@ -67,26 +68,32 @@ int main(int argc, char **argv)
     double time_nw_woz = 0.0f;
     double time_nw_striped = 0.0f;
     double time_nw_scan = 0.0f;
+    double time_nw_scan8 = 0.0f;
     double time_sg_ref = 0.0f;
     double time_sg_woz = 0.0f;
     double time_sg_striped = 0.0f;
     double time_sg_scan = 0.0f;
+    double time_sg_scan8 = 0.0f;
     double time_sw_ref = 0.0f;
     double time_sw_woz = 0.0f;
     double time_sw_striped = 0.0f;
     double time_sw_scan = 0.0f;
+    double time_sw_scan8 = 0.0f;
     double time_nw_stats_ref = 0.0f;
     double time_nw_stats_woz = 0.0f;
     double time_nw_stats_striped = 0.0f;
     double time_nw_stats_scan = 0.0f;
+    double time_nw_stats_scan8 = 0.0f;
     double time_sg_stats_ref = 0.0f;
     double time_sg_stats_woz = 0.0f;
     double time_sg_stats_striped = 0.0f;
     double time_sg_stats_scan = 0.0f;
+    double time_sg_stats_scan8 = 0.0f;
     double time_sw_stats_ref = 0.0f;
     double time_sw_stats_woz = 0.0f;
     double time_sw_stats_striped = 0.0f;
     double time_sw_stats_scan = 0.0f;
+    double time_sw_stats_scan8 = 0.0f;
 
     /* MPI standard does not guarantee all procs receive argc and argv */
     pgraph::initialize(argc, argv);
@@ -175,7 +182,6 @@ int main(int argc, char **argv)
             time = MPI_Wtime() - time;
             time_nw_woz += time;
 
-            assert(ref_score == score);
             if (ref_score != score) {
                 cout << "nw woz mismatch " << i << " " << j << ":\t";
                 cout << " " << ref_score << "|" << score;
@@ -189,7 +195,6 @@ int main(int argc, char **argv)
             time = MPI_Wtime() - time;
             time_nw_striped += time;
 
-            assert(ref_score == score);
             if (ref_score != score) {
                 cout << "nw stp mismatch " << i << " " << j << ":\t";
                 cout << " " << ref_score << "|" << score;
@@ -203,9 +208,21 @@ int main(int argc, char **argv)
             time = MPI_Wtime() - time;
             time_nw_scan += time;
 
-            assert(ref_score == score);
             if (ref_score != score) {
                 cout << "nw scan mismatch " << i << " " << j << ":\t";
+                cout << " " << ref_score << "|" << score;
+                cout << endl;
+            }
+#endif
+
+#if ENABLE_SCAN
+            time = MPI_Wtime();
+            score = nw_scan_128_8(seqa, lena, seqb, lenb, 10, 1, blosum62__);
+            time = MPI_Wtime() - time;
+            time_nw_scan8 += time;
+
+            if (SATURATION && ref_score != score) {
+                cout << "nw scan8 mismatch " << i << " " << j << ":\t";
                 cout << " " << ref_score << "|" << score;
                 cout << endl;
             }
@@ -224,7 +241,6 @@ int main(int argc, char **argv)
             time = MPI_Wtime() - time;
             time_nw_stats_woz += time;
 
-            assert(ref_score == score);
             if (ref_score != score
 #if STATS_MISMATCH
                     || ref_matches != matches
@@ -246,7 +262,6 @@ int main(int argc, char **argv)
             time = MPI_Wtime() - time;
             time_nw_stats_striped += time;
 
-            assert(ref_score == score);
             if (ref_score != score
 #if STATS_MISMATCH
                     || ref_matches != matches
@@ -268,7 +283,6 @@ int main(int argc, char **argv)
             time = MPI_Wtime() - time;
             time_nw_stats_scan += time;
 
-            assert(ref_score == score);
             if (ref_score != score
 #if STATS_MISMATCH
                     || ref_matches != matches
@@ -276,6 +290,27 @@ int main(int argc, char **argv)
 #endif
                     ) {
                 cout << "nw stats scan mismatch " << i << " " << j << ":\t";
+                cout << " " << ref_score << "|" << score;
+                cout << " " << ref_matches << "|" << matches;
+                cout << " " << ref_length << "|" << length;
+                cout << endl;
+            }
+#endif
+
+#if ENABLE_SCAN
+            time = MPI_Wtime();
+            score = nw_stats_scan_128_8(seqa, lena, seqb, lenb, 10, 1, blosum62__,
+                    &matches, &length);
+            time = MPI_Wtime() - time;
+            time_nw_stats_scan8 += time;
+
+            if (SATURATION && ref_score != score
+#if STATS_MISMATCH
+                    || ref_matches != matches
+                    || ref_length != length
+#endif
+                    ) {
+                cout << "nw stats scan8 mismatch " << i << " " << j << ":\t";
                 cout << " " << ref_score << "|" << score;
                 cout << " " << ref_matches << "|" << matches;
                 cout << " " << ref_length << "|" << length;
@@ -294,7 +329,6 @@ int main(int argc, char **argv)
             time = MPI_Wtime() - time;
             time_sg_woz += time;
 
-            assert(ref_score == score);
             if (ref_score != score) {
                 cout << "sg woz mismatch " << i << " " << j << ":\t";
                 cout << " " << ref_score << "|" << score;
@@ -308,7 +342,6 @@ int main(int argc, char **argv)
             time = MPI_Wtime() - time;
             time_sg_striped += time;
 
-            assert(ref_score == score);
             if (ref_score != score) {
                 cout << "sg stp mismatch " << i << " " << j << ":\t";
                 cout << " " << ref_score << "|" << score;
@@ -322,9 +355,21 @@ int main(int argc, char **argv)
             time = MPI_Wtime() - time;
             time_sg_scan += time;
 
-            assert(ref_score == score);
             if (ref_score != score) {
                 cout << "sg scan mismatch " << i << " " << j << ":\t";
+                cout << " " << ref_score << "|" << score;
+                cout << endl;
+            }
+#endif
+
+#if ENABLE_SCAN
+            time = MPI_Wtime();
+            score = sg_scan_128_8(seqa, lena, seqb, lenb, 10, 1, blosum62__);
+            time = MPI_Wtime() - time;
+            time_sg_scan8 += time;
+
+            if (SATURATION && ref_score != score) {
+                cout << "sg scan8 mismatch " << i << " " << j << ":\t";
                 cout << " " << ref_score << "|" << score;
                 cout << endl;
             }
@@ -343,7 +388,6 @@ int main(int argc, char **argv)
             time = MPI_Wtime() - time;
             time_sg_stats_woz += time;
 
-            assert(ref_score == score);
             if (ref_score != score
 #if STATS_MISMATCH
                     || ref_matches != matches
@@ -365,7 +409,6 @@ int main(int argc, char **argv)
             time = MPI_Wtime() - time;
             time_sg_stats_striped += time;
 
-            assert(ref_score == score);
             if (ref_score != score
 #if STATS_MISMATCH
                     || ref_matches != matches
@@ -387,7 +430,6 @@ int main(int argc, char **argv)
             time = MPI_Wtime() - time;
             time_sg_stats_scan += time;
 
-            assert(ref_score == score);
             if (ref_score != score
 #if STATS_MISMATCH
                     || ref_matches != matches
@@ -395,6 +437,27 @@ int main(int argc, char **argv)
 #endif
                     ) {
                 cout << "sg stats scan mismatch " << i << " " << j << ":\t";
+                cout << " " << ref_score << "|" << score;
+                cout << " " << ref_matches << "|" << matches;
+                cout << " " << ref_length << "|" << length;
+                cout << endl;
+            }
+#endif
+
+#if ENABLE_SCAN
+            time = MPI_Wtime();
+            score = sg_stats_scan_128_8(seqa, lena, seqb, lenb, 10, 1, blosum62__,
+                    &matches, &length);
+            time = MPI_Wtime() - time;
+            time_sg_stats_scan8 += time;
+
+            if (SATURATION && ref_score != score
+#if STATS_MISMATCH
+                    || ref_matches != matches
+                    || ref_length != length
+#endif
+                    ) {
+                cout << "sg stats scan8 mismatch " << i << " " << j << ":\t";
                 cout << " " << ref_score << "|" << score;
                 cout << " " << ref_matches << "|" << matches;
                 cout << " " << ref_length << "|" << length;
@@ -413,7 +476,6 @@ int main(int argc, char **argv)
             time = MPI_Wtime() - time;
             time_sw_woz += time;
 
-            assert(ref_score == score);
             if (ref_score != score) {
                 cout << "sw woz mismatch " << i << " " << j << ":\t";
                 cout << " " << ref_score << "|" << score;
@@ -427,7 +489,6 @@ int main(int argc, char **argv)
             time = MPI_Wtime() - time;
             time_sw_striped += time;
 
-            assert(ref_score == score);
             if (ref_score != score) {
                 cout << "sw stp mismatch " << i << " " << j << ":\t";
                 cout << " " << ref_score << "|" << score;
@@ -441,9 +502,21 @@ int main(int argc, char **argv)
             time = MPI_Wtime() - time;
             time_sw_scan += time;
 
-            assert(ref_score == score);
             if (ref_score != score) {
                 cout << "sw scan mismatch " << i << " " << j << ":\t";
+                cout << " " << ref_score << "|" << score;
+                cout << endl;
+            }
+#endif
+
+#if ENABLE_SCAN
+            time = MPI_Wtime();
+            score = sw_scan_128_8(seqa, lena, seqb, lenb, 10, 1, blosum62__);
+            time = MPI_Wtime() - time;
+            time_sw_scan8 += time;
+
+            if (SATURATION && ref_score != score) {
+                cout << "sw scan8 mismatch " << i << " " << j << ":\t";
                 cout << " " << ref_score << "|" << score;
                 cout << endl;
             }
@@ -462,7 +535,6 @@ int main(int argc, char **argv)
             time = MPI_Wtime() - time;
             time_sw_stats_woz += time;
 
-            assert(ref_score == score);
             if (ref_score != score
 #if STATS_MISMATCH
                     || ref_matches != matches
@@ -484,7 +556,6 @@ int main(int argc, char **argv)
             time = MPI_Wtime() - time;
             time_sw_stats_striped += time;
 
-            assert(ref_score == score);
             if (ref_score != score
 #if STATS_MISMATCH
                     || ref_matches != matches
@@ -506,7 +577,6 @@ int main(int argc, char **argv)
             time = MPI_Wtime() - time;
             time_sw_stats_scan += time;
 
-            assert(ref_score == score);
             if (ref_score != score
 #if STATS_MISMATCH
                     || ref_matches != matches
@@ -514,6 +584,27 @@ int main(int argc, char **argv)
 #endif
                     ) {
                 cout << "sw stats scan mismatch " << i << " " << j << ":\t";
+                cout << " " << ref_score << "|" << score;
+                cout << " " << ref_matches << "|" << matches;
+                cout << " " << ref_length << "|" << length;
+                cout << endl;
+            }
+#endif
+
+#if ENABLE_SCAN
+            time = MPI_Wtime();
+            score = sw_stats_scan_128_8(seqa, lena, seqb, lenb, 10, 1, blosum62__,
+                    &matches, &length);
+            time = MPI_Wtime() - time;
+            time_sw_stats_scan8 += time;
+
+            if (SATURATION && ref_score != score
+#if STATS_MISMATCH
+                    || ref_matches != matches
+                    || ref_length != length
+#endif
+                    ) {
+                cout << "sw stats scan8 mismatch " << i << " " << j << ":\t";
                 cout << " " << ref_score << "|" << score;
                 cout << " " << ref_matches << "|" << matches;
                 cout << " " << ref_length << "|" << length;
@@ -536,6 +627,9 @@ int main(int argc, char **argv)
 #if ENABLE_SCAN
     cout << "nw scan     \t" << time_nw_scan << "\t" << pct(time_nw_ref, time_nw_scan) << endl;
 #endif
+#if ENABLE_SCAN
+    cout << "nw scan8    \t" << time_nw_scan8 << "\t" << pct(time_nw_ref, time_nw_scan8) << endl;
+#endif
 
     cout << "sg reference\t" << time_sg_ref << endl;
 #if ENABLE_WOZNIAK
@@ -546,6 +640,9 @@ int main(int argc, char **argv)
 #endif
 #if ENABLE_SCAN
     cout << "sg scan     \t" << time_sg_scan << "\t" << pct(time_sg_ref, time_sg_scan) << endl;
+#endif
+#if ENABLE_SCAN
+    cout << "sg scan8    \t" << time_sg_scan8 << "\t" << pct(time_sg_ref, time_sg_scan8) << endl;
 #endif
 
     cout << "sw reference\t" << time_sw_ref << endl;
@@ -558,6 +655,9 @@ int main(int argc, char **argv)
 #if ENABLE_SCAN
     cout << "sw scan     \t" << time_sw_scan << "\t" << pct(time_sw_ref, time_sw_scan) << endl;
 #endif
+#if ENABLE_SCAN
+    cout << "sw scan8    \t" << time_sw_scan8 << "\t" << pct(time_sw_ref, time_sw_scan8) << endl;
+#endif
 
     cout << "nw stats reference\t" << time_nw_stats_ref << endl;
 #if ENABLE_WOZNIAK
@@ -568,6 +668,9 @@ int main(int argc, char **argv)
 #endif
 #if ENABLE_SCAN
     cout << "nw stats scan     \t" << time_nw_stats_scan << "\t" << pct(time_nw_stats_ref, time_nw_stats_scan) << endl;
+#endif
+#if ENABLE_SCAN
+    cout << "nw stats scan8    \t" << time_nw_stats_scan8 << "\t" << pct(time_nw_stats_ref, time_nw_stats_scan8) << endl;
 #endif
 
     cout << "sg stats reference\t" << time_sg_stats_ref << endl;
@@ -580,6 +683,9 @@ int main(int argc, char **argv)
 #if ENABLE_SCAN
     cout << "sg stats scan     \t" << time_sg_stats_scan << "\t" << pct(time_sg_stats_ref, time_sg_stats_scan) << endl;
 #endif
+#if ENABLE_SCAN
+    cout << "sg stats scan8    \t" << time_sg_stats_scan8 << "\t" << pct(time_sg_stats_ref, time_sg_stats_scan8) << endl;
+#endif
 
     cout << "sw stats reference\t" << time_sw_stats_ref << endl;
 #if ENABLE_WOZNIAK
@@ -590,6 +696,9 @@ int main(int argc, char **argv)
 #endif
 #if ENABLE_SCAN
     cout << "sw stats scan     \t" << time_sw_stats_scan << "\t" << pct(time_sw_stats_ref, time_sw_stats_scan) << endl;
+#endif
+#if ENABLE_SCAN
+    cout << "sw stats scan8    \t" << time_sw_stats_scan8 << "\t" << pct(time_sw_stats_ref, time_sw_stats_scan8) << endl;
 #endif
 
     pgraph::finalize();
