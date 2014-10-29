@@ -97,7 +97,6 @@ AS_IF([test x$with_mpi_wrappers = xyes], [PT_MPI_UNWRAP])
 TASCEL_REQUIRE
 GA_CHECK_PACKAGE([gmp], [gmp.h], [gmp], [__gmpz_bin_uiui])
 GA_CHECK_PACKAGE([armci], [armci.h], [armci], [ARMCI_Init])
-GA_CHECK_PACKAGE([zlib], [zlib.h], [z], [gzread])
 
 # Checks for header files.
 

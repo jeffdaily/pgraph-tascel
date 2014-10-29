@@ -663,11 +663,6 @@ build_vendor
 build_cpu
 build
 LIBTOOL
-HAVE_ZLIB_FALSE
-HAVE_ZLIB_TRUE
-ZLIB_CPPFLAGS
-ZLIB_LDFLAGS
-ZLIB_LIBS
 HAVE_ARMCI_FALSE
 HAVE_ARMCI_TRUE
 ARMCI_CPPFLAGS
@@ -796,7 +791,6 @@ enable_dependency_tracking
 with_tascel
 with_gmp
 with_armci
-with_zlib
 enable_shared
 enable_static
 with_pic
@@ -1459,7 +1453,6 @@ Optional Packages:
                           flags
   --with-gmp[=ARG]        specify location of gmp install and/or other flags
   --with-armci[=ARG]      specify location of armci install and/or other flags
-  --with-zlib[=ARG]       specify location of zlib install and/or other flags
   --with-pic[=PKGS]       try to use only PIC/non-PIC objects [default=use
                           both]
   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
@@ -7508,255 +7501,6 @@ fi
 else
   HAVE_ARMCI_TRUE='#'
   HAVE_ARMCI_FALSE=
-fi
-
-
-
-
-
-
-
-
-
-
-
-ZLIB_LIBS=
-ZLIB_LDFLAGS=
-ZLIB_CPPFLAGS=
-
-# Check whether --with-zlib was given.
-if test "${with_zlib+set}" = set; then :
-  withval=$with_zlib;
-else
-  with_zlib=yes
-fi
-
-case $with_zlib in #(
-  yes) :
-     ;; #(
-  no) :
-     ;; #(
-  *) :
-    if ac_fn_cxx_compute_int "$LINENO" "(long int) (sizeof (void*))" "ga_arg_parse_sizeof_voidp"        ""; then :
-
-fi
-
-for arg in $with_zlib ; do
-    case $arg in #(
-  yes) :
-     ;; #(
-  no) :
-     ;; #(
-  -l*) :
-    ZLIB_LIBS="$ZLIB_LIBS $arg" ;; #(
-  -L*) :
-    ZLIB_LDFLAGS="$ZLIB_LDFLAGS $arg" ;; #(
-  -WL*) :
-    ZLIB_LDFLAGS="$ZLIB_LDFLAGS $arg" ;; #(
-  -Wl*) :
-    ZLIB_LDFLAGS="$ZLIB_LDFLAGS $arg" ;; #(
-  -I*) :
-    ZLIB_CPPFLAGS="$ZLIB_CPPFLAGS $arg" ;; #(
-  *.a) :
-    ZLIB_LIBS="$ZLIB_LIBS $arg" ;; #(
-  *.so) :
-    ZLIB_LIBS="$ZLIB_LIBS $arg" ;; #(
-  *lib) :
-    if test -d $arg; then :
-  ZLIB_LDFLAGS="$ZLIB_LDFLAGS -L$arg"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_zlib not parsed" >&5
-$as_echo "$as_me: WARNING: $arg of with_zlib not parsed" >&2;}
-fi ;; #(
-  *lib/) :
-    if test -d $arg; then :
-  ZLIB_LDFLAGS="$ZLIB_LDFLAGS -L$arg"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_zlib not parsed" >&5
-$as_echo "$as_me: WARNING: $arg of with_zlib not parsed" >&2;}
-fi ;; #(
-  *lib64) :
-    if test -d $arg; then :
-  ZLIB_LDFLAGS="$ZLIB_LDFLAGS -L$arg"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_zlib not parsed" >&5
-$as_echo "$as_me: WARNING: $arg of with_zlib not parsed" >&2;}
-fi ;; #(
-  *lib64/) :
-    if test -d $arg; then :
-  ZLIB_LDFLAGS="$ZLIB_LDFLAGS -L$arg"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_zlib not parsed" >&5
-$as_echo "$as_me: WARNING: $arg of with_zlib not parsed" >&2;}
-fi ;; #(
-  *include) :
-    if test -d $arg; then :
-  ZLIB_CPPFLAGS="$ZLIB_CPPFLAGS -I$arg"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_zlib not parsed" >&5
-$as_echo "$as_me: WARNING: $arg of with_zlib not parsed" >&2;}
-fi ;; #(
-  *include/) :
-    if test -d $arg; then :
-  ZLIB_CPPFLAGS="$ZLIB_CPPFLAGS -I$arg"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_zlib not parsed" >&5
-$as_echo "$as_me: WARNING: $arg of with_zlib not parsed" >&2;}
-fi ;; #(
-  *include64) :
-    if test -d $arg; then :
-  ZLIB_CPPFLAGS="$ZLIB_CPPFLAGS -I$arg"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_zlib not parsed" >&5
-$as_echo "$as_me: WARNING: $arg of with_zlib not parsed" >&2;}
-fi ;; #(
-  *include64/) :
-    if test -d $arg; then :
-  ZLIB_CPPFLAGS="$ZLIB_CPPFLAGS -I$arg"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_zlib not parsed" >&5
-$as_echo "$as_me: WARNING: $arg of with_zlib not parsed" >&2;}
-fi ;; #(
-  *) :
-    ga_arg_parse_ok=no ;;
-esac
-# $arg didn't fit the most common cases
-# check for subdirectories e.g. lib,include
-    if test "x$ga_arg_parse_ok" = xno; then :
-  if test "x$ga_arg_parse_sizeof_voidp" = x8; then :
-  if test -d $arg/lib64; then :
-  ZLIB_LDFLAGS="$ZLIB_LDFLAGS -L$arg/lib64"; ga_arg_parse_ok=yes
-elif test -d $arg/lib; then :
-  ZLIB_LDFLAGS="$ZLIB_LDFLAGS -L$arg/lib"; ga_arg_parse_ok=yes
-fi
-             if test -d $arg/include64; then :
-  ZLIB_CPPFLAGS="$ZLIB_CPPFLAGS -I$arg/include64"; ga_arg_parse_ok=yes
-elif test -d $arg/include; then :
-  ZLIB_CPPFLAGS="$ZLIB_CPPFLAGS -I$arg/include"; ga_arg_parse_ok=yes
-fi
-else
-  if test -d $arg/lib; then :
-  ZLIB_LDFLAGS="$ZLIB_LDFLAGS -L$arg/lib"; ga_arg_parse_ok=yes
-fi
-             if test -d $arg/include; then :
-  ZLIB_CPPFLAGS="$ZLIB_CPPFLAGS -I$arg/include"; ga_arg_parse_ok=yes
-fi
-fi
-fi
-# $arg still unknown, look for "lib" and "include" anywhere...
-    if test "x$ga_arg_parse_ok" = xno; then :
-  case $arg in #(
-  *lib*) :
-    if test -d $arg; then :
-  ZLIB_LDFLAGS="$ZLIB_LDFLAGS -L$arg"; ga_arg_parse_ok=yes
-fi ;; #(
-  *include*) :
-    if test -d $arg; then :
-  ZLIB_CPPFLAGS="$ZLIB_CPPFLAGS -I$arg"; ga_arg_parse_ok=yes
-fi ;; #(
-  *) :
-     ;;
-esac
-fi
-# warn user that $arg fell through
-     if test "x$ga_arg_parse_ok" = xno; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $arg of with_zlib not parsed" >&5
-$as_echo "$as_me: WARNING: $arg of with_zlib not parsed" >&2;}
-fi
-done ;;
-esac
-# Check for header.
-ga_save_CPPFLAGS="$CPPFLAGS"; CPPFLAGS="$CPPFLAGS $ZLIB_CPPFLAGS"
-ac_fn_cxx_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
-if test "x$ac_cv_header_zlib_h" = xyes; then :
-
-fi
-
-
-CPPFLAGS="$ga_save_CPPFLAGS"
-# Check for library.
-ga_save_LIBS="$LIBS"; LIBS="$ZLIB_LIBS $LIBS"
-ga_save_LDFLAGS="$LDFLAGS"; LDFLAGS="$LDFLAGS $ZLIB_LDFLAGS"
-ga_save_CPPFLAGS="$CPPFLAGS"; CPPFLAGS="$CPPFLAGS $ZLIB_CPPFLAGS"
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing gzread" >&5
-$as_echo_n "checking for library containing gzread... " >&6; }
-if ${ga_cv_search_gzread+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ga_func_search_save_LIBS=$LIBS
-     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char gzread ();
-int
-main ()
-{
-return gzread ();
-  ;
-  return 0;
-}
-_ACEOF
-     for ga_lib in '' z
-     do
-        if test -z "$ga_lib"; then
-            ga_res="none required"
-        else
-            ga_res=-l$ga_lib
-            LIBS="-l$ga_lib  $ga_func_search_save_LIBS"
-        fi
-        if ac_fn_cxx_try_link "$LINENO"; then :
-  ga_cv_search_gzread=$ga_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-        if ${ga_cv_search_gzread+:} false; then :
-  break
-fi
-     done
-     if ${ga_cv_search_gzread+:} false; then :
-
-else
-  ga_cv_search_gzread=no
-fi
-     rm conftest.$ac_ext
-     LIBS=$ga_func_search_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ga_cv_search_gzread" >&5
-$as_echo "$ga_cv_search_gzread" >&6; }
-ga_res=$ga_cv_search_gzread
-if test "$ga_res" != no; then :
-  test "$ga_res" = "none required" || LIBS="$ga_res $LIBS"
-
-fi
-
-LIBS="$ga_save_LIBS"
-LDFLAGS="$ga_save_LDFLAGS"
-CPPFLAGS="$ga_save_CPPFLAGS"
-if test "x$ga_cv_search_gzread" != xno; then :
-
-     if test "x$ga_cv_search_gzread" != "xnone required"; then :
-  as_fn_append ZLIB_LIBS $ga_cv_search_gzread
-fi
-
-$as_echo "#define HAVE_ZLIB 1" >>confdefs.h
-
-
-
-
-fi
- if test "x$ga_cv_search_gzread" != xno; then
-  HAVE_ZLIB_TRUE=
-  HAVE_ZLIB_FALSE='#'
-else
-  HAVE_ZLIB_TRUE='#'
-  HAVE_ZLIB_FALSE=
 fi
 
 
@@ -18935,10 +18679,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${HAVE_ARMCI_TRUE}" && test -z "${HAVE_ARMCI_FALSE}"; then
   as_fn_error $? "conditional \"HAVE_ARMCI\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${HAVE_ZLIB_TRUE}" && test -z "${HAVE_ZLIB_FALSE}"; then
-  as_fn_error $? "conditional \"HAVE_ZLIB\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 
