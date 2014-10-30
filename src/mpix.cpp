@@ -7,8 +7,6 @@
  *
  * Inline implementations of templated and/or overloaded MPI functions.
  */
-#ifndef _MPIX_INL_H_
-#define _MPIX_INL_H_
 
 #include <mpi.h>
 
@@ -26,6 +24,7 @@
 #include <vector>
 
 #include "mpix.hpp"
+#include "mpix_helper.hpp"
 
 using ::std::accumulate;
 using ::std::cerr;
@@ -137,19 +136,15 @@ void barrier(MPI_Comm comm)
 }
 
 
-MPI_Datatype type_contiguous(int count, MPI_Datatype oldtype)
+void type_contiguous(int count, MPI_Datatype oldtype, MPI_Datatype &newtype)
 {
-    MPI_Datatype newtype;
     check(MPI_Type_contiguous(count, oldtype, &newtype));
-    return newtype;
 }
 
 
-MPI_Datatype type_create_struct(int count, int blocklengths[], MPI_Aint displacements[], MPI_Datatype types[])
+void type_create_struct(int count, int blocklengths[], MPI_Aint displacements[], MPI_Datatype types[], MPI_Datatype &newtype)
 {
-    MPI_Datatype newtype;
     check(MPI_Type_create_struct(count, blocklengths, displacements, types, &newtype));
-    return newtype;
 }
 
 
@@ -165,83 +160,60 @@ void type_free(MPI_Datatype &type)
 }
 
 
-MPI_Datatype get_mpi_datatype(char object) { return MPI_CHAR; }
-MPI_Datatype get_mpi_datatype(signed char object) { return MPI_BYTE; }
-MPI_Datatype get_mpi_datatype(unsigned char object) { return MPI_UNSIGNED_CHAR; }
-MPI_Datatype get_mpi_datatype(short object) { return MPI_SHORT; }
-MPI_Datatype get_mpi_datatype(int object) { return MPI_INT; }
-MPI_Datatype get_mpi_datatype(long object) { return MPI_LONG; }
-MPI_Datatype get_mpi_datatype(unsigned short object) { return MPI_UNSIGNED_SHORT; }
-MPI_Datatype get_mpi_datatype(unsigned int object) { return MPI_UNSIGNED; }
-MPI_Datatype get_mpi_datatype(unsigned long object) { return MPI_UNSIGNED_LONG; }
-MPI_Datatype get_mpi_datatype(float object) { return MPI_FLOAT; }
-MPI_Datatype get_mpi_datatype(double object) { return MPI_DOUBLE; }
-MPI_Datatype get_mpi_datatype(long double object) { return MPI_LONG_DOUBLE; }
-MPI_Datatype get_mpi_datatype(pair<float, int> object) { return MPI_FLOAT_INT; }
-MPI_Datatype get_mpi_datatype(pair<double, int> object) { return MPI_DOUBLE_INT; }
-MPI_Datatype get_mpi_datatype(pair<long, int> object) { return MPI_LONG_INT; }
-MPI_Datatype get_mpi_datatype(pair<short, int> object) { return MPI_SHORT_INT; }
-MPI_Datatype get_mpi_datatype(pair<int, int> object) { return MPI_2INT; }
-MPI_Datatype get_mpi_datatype(pair<long double, int> object) { return MPI_LONG_DOUBLE_INT; }
+#define PAIR(A,B) pair<A,B>
 
-#if defined(MPI_LONG_LONG_INT) || (defined(MPI_VERSION) && MPI_VERSION >= 2)
-MPI_Datatype get_mpi_datatype(long long object) { return MPI_LONG_LONG; }
-#endif
+#define MPIX_GET_MPI_DATATYPE_IMPL(T,M) \
+MPI_Datatype get_mpi_datatype(T object) { return M; }
+MPIX_GET_MPI_DATATYPE_IMPL(char,                   MPI_CHAR)
+MPIX_GET_MPI_DATATYPE_IMPL(short,                  MPI_SHORT)
+MPIX_GET_MPI_DATATYPE_IMPL(int,                    MPI_INT)
+MPIX_GET_MPI_DATATYPE_IMPL(long,                   MPI_LONG)
+MPIX_GET_MPI_DATATYPE_IMPL(long long,              MPI_LONG_LONG)
+MPIX_GET_MPI_DATATYPE_IMPL(signed char,            MPI_BYTE)
+MPIX_GET_MPI_DATATYPE_IMPL(unsigned char,          MPI_UNSIGNED_CHAR)
+MPIX_GET_MPI_DATATYPE_IMPL(unsigned short,         MPI_UNSIGNED_SHORT)
+MPIX_GET_MPI_DATATYPE_IMPL(unsigned int,           MPI_UNSIGNED)
+MPIX_GET_MPI_DATATYPE_IMPL(unsigned long,          MPI_UNSIGNED_LONG)
+MPIX_GET_MPI_DATATYPE_IMPL(unsigned long long,     MPI_UNSIGNED_LONG_LONG)
+MPIX_GET_MPI_DATATYPE_IMPL(float,                  MPI_FLOAT)
+MPIX_GET_MPI_DATATYPE_IMPL(double,                 MPI_DOUBLE)
+MPIX_GET_MPI_DATATYPE_IMPL(long double,            MPI_LONG_DOUBLE)
+MPIX_GET_MPI_DATATYPE_IMPL(PAIR(short, int),       MPI_SHORT_INT)
+MPIX_GET_MPI_DATATYPE_IMPL(PAIR(int, int),         MPI_2INT)
+MPIX_GET_MPI_DATATYPE_IMPL(PAIR(long, int),        MPI_LONG_INT)
+MPIX_GET_MPI_DATATYPE_IMPL(PAIR(float, int),       MPI_FLOAT_INT)
+MPIX_GET_MPI_DATATYPE_IMPL(PAIR(double, int),      MPI_DOUBLE_INT)
+MPIX_GET_MPI_DATATYPE_IMPL(PAIR(long double, int), MPI_LONG_DOUBLE_INT)
 
-#if defined(MPI_UNSIGNED_LONG_LONG) || (defined(MPI_VERSION) && MPI_VERSION >= 2)
-MPI_Datatype get_mpi_datatype(unsigned long long object) { return MPI_UNSIGNED_LONG_LONG; }
-#endif
+#define MPIX_BCAST_IMPL_ALLP(A,B) \
+MPIX_BCAST_IMPL_ONE(PAIR(A,B))    \
+MPIX_BCAST_IMPL_ARR(PAIR(A,B))    \
+MPIX_BCAST_IMPL_VEC(PAIR(A,B))
 
-#if SIZEOF_BOOL == SIZEOF_CHAR
-MPI_Datatype get_mpi_datatype(bool object) { return MPI_BYTE; }
-#elif SIZEOF_BOOL == SIZEOF_SHORT
-MPI_Datatype get_mpi_datatype(bool object) { return MPI_SHORT; }
-#elif SIZEOF_BOOL == SIZEOF_INT
-MPI_Datatype get_mpi_datatype(bool object) { return MPI_INT; }
-#elif SIZEOF_BOOL == SIZEOF_LONG
-MPI_Datatype get_mpi_datatype(bool object) { return MPI_LONG; }
-#else
-#error Cannot find MPI datatype for boolean
-#endif
+MPIX_BCAST_IMPL_ALL(char)
+MPIX_BCAST_IMPL_ALL(short)
+MPIX_BCAST_IMPL_ALL(int)
+MPIX_BCAST_IMPL_ALL(long)
+MPIX_BCAST_IMPL_ALL(long long)
+MPIX_BCAST_IMPL_ALL(signed char)
+MPIX_BCAST_IMPL_ALL(unsigned char)
+MPIX_BCAST_IMPL_ALL(unsigned short)
+MPIX_BCAST_IMPL_ALL(unsigned int)
+MPIX_BCAST_IMPL_ALL(unsigned long)
+MPIX_BCAST_IMPL_ALL(unsigned long long)
+MPIX_BCAST_IMPL_ALL(float)
+MPIX_BCAST_IMPL_ALL(double)
+MPIX_BCAST_IMPL_ALL(long double)
+MPIX_BCAST_IMPL_ALLP(short, int)
+MPIX_BCAST_IMPL_ALLP(int, int)
+MPIX_BCAST_IMPL_ALLP(long, int)
+MPIX_BCAST_IMPL_ALLP(float, int)
+MPIX_BCAST_IMPL_ALLP(double, int)
+MPIX_BCAST_IMPL_ALLP(long double, int)
 
-
-#if 0
-template <typename T>
-void bcast(T &object, int root, MPI_Comm comm)
+void bcast(string &object, int root, MPI_Comm comm)
 {
-    MPI_Datatype datatype = get_mpi_datatype(object);
-    check(MPI_Bcast(&object, 1, datatype, root, comm));
-}
-
-
-template <typename T>
-void bcast(vector<T> &object, int root, MPI_Comm comm)
-{
-    typedef typename vector<T>::size_type size_type;
-    size_type size = object.size();
-    MPI_Datatype datatype = get_mpi_datatype(object[0]);
-
-    bcast(size, root, comm);
-    if (comm_rank(comm) != root) {
-        object.resize(size);
-    }
-    check(MPI_Bcast(&object[0], size, datatype, root, comm));
-}
-
-
-template <typename T>
-void bcast(T *object, int size, int root, MPI_Comm comm)
-{
-    MPI_Datatype datatype = get_mpi_datatype(*object);
-    check(MPI_Bcast(object, size, datatype, root, comm));
-}
-
-
-template <>
-void bcast<string>(string &object, int root, MPI_Comm comm)
-{
-    typedef string::size_type size_type;
-    size_type size = object.size();
+    int size = int(object.size());
 
     bcast(size, root, comm);
     if (comm_rank(comm) == root) {
@@ -256,11 +228,9 @@ void bcast<string>(string &object, int root, MPI_Comm comm)
 }
 
 
-template <>
-void bcast<string>(vector<string> &object, int root, MPI_Comm comm)
+void bcast(vector<string> &object, int root, MPI_Comm comm)
 {
-    typedef vector<string>::size_type size_type;
-    size_type size = object.size();
+    int size = int(object.size());
 
     bcast(size, root, comm);
     if (comm_rank(comm) != root) {
@@ -287,195 +257,114 @@ vector<string> bcast(int argc, char **argv, MPI_Comm comm)
 }
 
 
-/* reduce */
-template <class T>
-void reduce(T &object, MPI_Op op, int root, MPI_Comm comm)
-{
-    MPI_Datatype datatype = get_mpi_datatype(object);
+#define MPIX_REDUCE_IMPL_ALLP(A,B) \
+MPIX_REDUCE_IMPL_ONE(PAIR(A,B))    \
+MPIX_REDUCE_IMPL_ARR(PAIR(A,B))    \
+MPIX_REDUCE_IMPL_VEC(PAIR(A,B))
 
-    if (root == comm_rank(comm)) {
-        check(MPI_Reduce(MPI_IN_PLACE, &object, 1, datatype, op, root, comm));
-    }
-    else {
-        check(MPI_Reduce(&object, NULL, 1, datatype, op, root, comm));
-    }
-}
-
-
-template <typename T>
-void reduce(vector<T> &object, MPI_Op op, int root, MPI_Comm comm)
-{
-    MPI_Datatype datatype = get_mpi_datatype(object[0]);
-
-    if (root == comm_rank(comm)) {
-        check(MPI_Reduce(MPI_IN_PLACE, &object[0], object.size(),
-                    datatype, op, root, comm));
-    }
-    else {
-        check(MPI_Reduce(&object[0], NULL, object.size(),
-                    datatype, op, root, comm));
-    }
-}
+MPIX_REDUCE_IMPL_ALL(char)
+MPIX_REDUCE_IMPL_ALL(short)
+MPIX_REDUCE_IMPL_ALL(int)
+MPIX_REDUCE_IMPL_ALL(long)
+MPIX_REDUCE_IMPL_ALL(long long)
+MPIX_REDUCE_IMPL_ALL(signed char)
+MPIX_REDUCE_IMPL_ALL(unsigned char)
+MPIX_REDUCE_IMPL_ALL(unsigned short)
+MPIX_REDUCE_IMPL_ALL(unsigned int)
+MPIX_REDUCE_IMPL_ALL(unsigned long)
+MPIX_REDUCE_IMPL_ALL(unsigned long long)
+MPIX_REDUCE_IMPL_ALL(float)
+MPIX_REDUCE_IMPL_ALL(double)
+MPIX_REDUCE_IMPL_ALL(long double)
+MPIX_REDUCE_IMPL_ALLP(short, int)
+MPIX_REDUCE_IMPL_ALLP(int, int)
+MPIX_REDUCE_IMPL_ALLP(long, int)
+MPIX_REDUCE_IMPL_ALLP(float, int)
+MPIX_REDUCE_IMPL_ALLP(double, int)
+MPIX_REDUCE_IMPL_ALLP(long double, int)
 
 
-template <typename T>
-void reduce(T *object, int size, MPI_Op op, int root, MPI_Comm comm)
-{
-    MPI_Datatype datatype = get_mpi_datatype(*object);
+#define MPIX_ALLREDUCE_IMPL_ALLP(A,B) \
+MPIX_ALLREDUCE_IMPL_ONE(PAIR(A,B))    \
+MPIX_ALLREDUCE_IMPL_ARR(PAIR(A,B))    \
+MPIX_ALLREDUCE_IMPL_VEC(PAIR(A,B))
 
-    if (root == comm_rank(comm)) {
-        check(MPI_Reduce(MPI_IN_PLACE, object, size, datatype, op, root, comm));
-    }
-    else {
-        check(MPI_Reduce(object, NULL, size, datatype, op, root, comm));
-    }
-}
-
-
-
-/* all reduce */
-template <typename T>
-void allreduce(T &object, MPI_Op op, MPI_Comm comm)
-{
-    MPI_Datatype datatype = get_mpi_datatype(object);
-    check(MPI_Allreduce(MPI_IN_PLACE, &object, 1, datatype, op, comm));
-}
-
-
-template <typename T>
-void allreduce(vector<T> &object, MPI_Op op, MPI_Comm comm)
-{
-    MPI_Datatype datatype = get_mpi_datatype(object[0]);
-    check(MPI_Allreduce(MPI_IN_PLACE, &object[0], object.size(),
-                datatype, op, comm));
-}
+MPIX_ALLREDUCE_IMPL_ALL(char)
+MPIX_ALLREDUCE_IMPL_ALL(short)
+MPIX_ALLREDUCE_IMPL_ALL(int)
+MPIX_ALLREDUCE_IMPL_ALL(long)
+MPIX_ALLREDUCE_IMPL_ALL(long long)
+MPIX_ALLREDUCE_IMPL_ALL(signed char)
+MPIX_ALLREDUCE_IMPL_ALL(unsigned char)
+MPIX_ALLREDUCE_IMPL_ALL(unsigned short)
+MPIX_ALLREDUCE_IMPL_ALL(unsigned int)
+MPIX_ALLREDUCE_IMPL_ALL(unsigned long)
+MPIX_ALLREDUCE_IMPL_ALL(unsigned long long)
+MPIX_ALLREDUCE_IMPL_ALL(float)
+MPIX_ALLREDUCE_IMPL_ALL(double)
+MPIX_ALLREDUCE_IMPL_ALL(long double)
+MPIX_ALLREDUCE_IMPL_ALLP(short, int)
+MPIX_ALLREDUCE_IMPL_ALLP(int, int)
+MPIX_ALLREDUCE_IMPL_ALLP(long, int)
+MPIX_ALLREDUCE_IMPL_ALLP(float, int)
+MPIX_ALLREDUCE_IMPL_ALLP(double, int)
+MPIX_ALLREDUCE_IMPL_ALLP(long double, int)
 
 
-template <typename T>
-void allreduce(T *object, int size, MPI_Op op, MPI_Comm comm)
-{
-    MPI_Datatype datatype = get_mpi_datatype(*object);
-    check(MPI_Allreduce(MPI_IN_PLACE, object, size, datatype, op, comm));
-}
+#define MPIX_ALLTOALL_IMPL_ALLP(A,B)    \
+MPIX_ALLTOALL_IMPL_SENDRECV(PAIR(A,B))  \
+MPIX_ALLTOALL_IMPL_SEND_RECV(PAIR(A,B))
+
+MPIX_ALLTOALL_IMPL_ALL(char)
+MPIX_ALLTOALL_IMPL_ALL(short)
+MPIX_ALLTOALL_IMPL_ALL(int)
+MPIX_ALLTOALL_IMPL_ALL(long)
+MPIX_ALLTOALL_IMPL_ALL(long long)
+MPIX_ALLTOALL_IMPL_ALL(signed char)
+MPIX_ALLTOALL_IMPL_ALL(unsigned char)
+MPIX_ALLTOALL_IMPL_ALL(unsigned short)
+MPIX_ALLTOALL_IMPL_ALL(unsigned int)
+MPIX_ALLTOALL_IMPL_ALL(unsigned long)
+MPIX_ALLTOALL_IMPL_ALL(unsigned long long)
+MPIX_ALLTOALL_IMPL_ALL(float)
+MPIX_ALLTOALL_IMPL_ALL(double)
+MPIX_ALLTOALL_IMPL_ALL(long double)
+MPIX_ALLTOALL_IMPL_ALLP(short, int)
+MPIX_ALLTOALL_IMPL_ALLP(int, int)
+MPIX_ALLTOALL_IMPL_ALLP(long, int)
+MPIX_ALLTOALL_IMPL_ALLP(float, int)
+MPIX_ALLTOALL_IMPL_ALLP(double, int)
+MPIX_ALLTOALL_IMPL_ALLP(long double, int)
 
 
-/* all to all */
-template <typename T>
-void alltoall(vector<T> &object, MPI_Comm comm)
-{
-    /* unfortunately, support of MPI_IN_PLACE for MPI_Alltoall is
-     * extremely lacking, e.g., OpenMPI, Cray. */
+#define MPIX_GATHER_IMPL_ALLP(A,B) \
+MPIX_GATHER_IMPL_ONE(PAIR(A,B))    \
+MPIX_GATHER_IMPL_ARR(PAIR(A,B))    \
+MPIX_GATHER_IMPL_VEC(PAIR(A,B))
 
-    int size = comm_size(comm);
-    int count = 0;
-    MPI_Datatype datatype = get_mpi_datatype(object[0]);
-    vector<T> object_copy(object);
-
-    if (object.size() % size != 0) {
-        cerr << "[" << comm_rank(MPI_COMM_WORLD) << "] MPI ERROR"
-            << ": " << "mpix::alltoall has incorrect buffer size"
-            << endl;
-        MPI_Abort(MPI_COMM_WORLD, -1);
-    }
-    count = object.size() / size;
-    check(MPI_Alltoall(&object_copy[0], count, datatype,
-                &object[0], count, datatype, comm));
-}
-
-
-/* all to all */
-template <typename T>
-void alltoall(vector<T> &sendbuf, vector<T> &recvbuf, MPI_Comm comm)
-{
-    /* unfortunately, support of MPI_IN_PLACE for MPI_Alltoall is
-     * extremely lacking, e.g., OpenMPI, Cray. */
-
-    int size = comm_size(comm);
-    int count = 0;
-    MPI_Datatype datatype = get_mpi_datatype(sendbuf[0]);
-
-    if (sendbuf.size() % size != 0) {
-        cerr << "[" << comm_rank(MPI_COMM_WORLD) << "] MPI ERROR"
-            << ": " << "mpix::alltoall has incorrect buffer size"
-            << endl;
-        MPI_Abort(MPI_COMM_WORLD, -1);
-    }
-    if (sendbuf.size() != recvbuf.size()) {
-        cerr << "[" << comm_rank(MPI_COMM_WORLD) << "] MPI ERROR"
-            << ": " << "mpix::alltoall mismatched buffer size"
-            << endl;
-        MPI_Abort(MPI_COMM_WORLD, -1);
-    }
-    count = sendbuf.size() / size;
-    check(MPI_Alltoall(&sendbuf[0], count, datatype,
-                &recvbuf[0], count, datatype, comm));
-}
+MPIX_GATHER_IMPL_ALL(char)
+MPIX_GATHER_IMPL_ALL(short)
+MPIX_GATHER_IMPL_ALL(int)
+MPIX_GATHER_IMPL_ALL(long)
+MPIX_GATHER_IMPL_ALL(long long)
+MPIX_GATHER_IMPL_ALL(signed char)
+MPIX_GATHER_IMPL_ALL(unsigned char)
+MPIX_GATHER_IMPL_ALL(unsigned short)
+MPIX_GATHER_IMPL_ALL(unsigned int)
+MPIX_GATHER_IMPL_ALL(unsigned long)
+MPIX_GATHER_IMPL_ALL(unsigned long long)
+MPIX_GATHER_IMPL_ALL(float)
+MPIX_GATHER_IMPL_ALL(double)
+MPIX_GATHER_IMPL_ALL(long double)
+MPIX_GATHER_IMPL_ALLP(short, int)
+MPIX_GATHER_IMPL_ALLP(int, int)
+MPIX_GATHER_IMPL_ALLP(long, int)
+MPIX_GATHER_IMPL_ALLP(float, int)
+MPIX_GATHER_IMPL_ALLP(double, int)
+MPIX_GATHER_IMPL_ALLP(long double, int)
 
 
-/* gather */
-template <typename T>
-vector<T> gather(T &object, int root, MPI_Comm comm)
-{
-    vector<T> result;
-    MPI_Datatype datatype = get_mpi_datatype(object);
-
-    if (comm_rank(comm) == root) {
-        result.resize(comm_size(comm));
-        check(MPI_Gather(&object, 1, datatype,
-                    &result[0], 1, datatype, root, comm));
-    }
-    else {
-        check(MPI_Gather(&object, 1, datatype,
-                    NULL, 0, datatype, root, comm));
-    }
-
-    return result;
-}
-
-
-template <typename T>
-vector<T> gather(vector<T> &object, int root, MPI_Comm comm)
-{
-    vector<T> result;
-    MPI_Datatype datatype = get_mpi_datatype(object[0]);
-    int size = int(object.size());
-
-    if (comm_rank(comm) == root) {
-        result.resize(comm_size(comm) * size);
-        check(MPI_Gather(&object[0], size, datatype,
-                    &result[0], size, datatype, root, comm));
-    }
-    else {
-        check(MPI_Gather(&object[0], size, datatype,
-                    NULL, 0, datatype, root, comm));
-    }
-
-    return result;
-}
-
-
-template <typename T>
-vector<T> gather(T *object, int size, int root, MPI_Comm comm)
-{
-    vector<T> result;
-    MPI_Datatype datatype = get_mpi_datatype(*object);
-
-    if (comm_rank(comm) == root) {
-        result.resize(comm_size(comm) * size);
-        check(MPI_Gather(object, size, datatype,
-                    &result[0], size, datatype, root, comm));
-    }
-    else {
-        check(MPI_Gather(object, size, datatype,
-                    NULL, size, datatype, root, comm));
-    }
-
-    return result;
-}
-
-
-template <>
-vector<string> gather<string>(string &object, int root, MPI_Comm comm)
+vector<string> gather(string &object, int root, MPI_Comm comm)
 {
     vector<string> result;
     int sendcount = int(object.size());
@@ -506,88 +395,26 @@ vector<string> gather<string>(string &object, int root, MPI_Comm comm)
 }
 
 
-template <typename T>
-void gather(T *sendbuf, int size, T *recvbuf, int root, MPI_Comm comm)
-{
-    MPI_Datatype datatype = get_mpi_datatype(sendbuf[0]);
-
-    check(MPI_Gather(sendbuf, size, datatype,
-                recvbuf, size, datatype, root, comm));
-}
-
-
-template <typename T>
-void gather(vector<T> &sendbuf, vector<T> &recvbuf, int root, MPI_Comm comm)
-{
-    MPI_Datatype datatype = get_mpi_datatype(sendbuf[0]);
-    int size = int(sendbuf.size());
-
-    if (comm_rank(comm) == root) {
-        recvbuf.resize(comm_size(comm) * size);
-    }
-    else {
-        recvbuf.clear();
-    }
-
-    check(MPI_Gather(&sendbuf[0], size, datatype,
-                &recvbuf[0], size, datatype, root, comm));
-}
-
-
-/* synchronous printing */
-template <class T>
-void print_sync(const string &name, const T &what, MPI_Comm comm)
-{
-    vector<T> all_what = gather(what, 0, comm);
-
-    if (0 == comm_rank(comm)) {
-        for (int i = 0, size = comm_size(comm); i < size; ++i) {
-            cout << "[" << i << "] " << name << "=" << all_what[i] << endl;
-        }
-    }
-
-    barrier(comm);
-}
-
-
-template <typename T>
-void print_sync(const string &name, const vector<T> &what, MPI_Comm comm)
-{
-    vector<T> all_what = gather(what, 0, comm);
-
-    if (0 == comm_rank(comm)) {
-        for (int i = 0, size = comm_size(comm); i < size; ++i) {
-            cout << "[" << i << "] " << name << "={";
-            cout << all_what[i*what.size()];
-            for (int j = 1; j < what.size(); ++j) {
-                cout << "," << all_what[i*what.size() + j];
-            }
-            cout << "}" << endl;
-        }
-    }
-
-    barrier(comm);
-}
-
-
-template <typename T>
-void print_sync(const string &name, const T *what, int size_, MPI_Comm comm)
-{
-    vector<T> all_what = gather(what, size_, 0, comm);
-
-    if (0 == comm_rank(comm)) {
-        for (int i = 0, size = comm_size(comm); i < size; ++i) {
-            cout << "[" << i << "] " << name << "={";
-            cout << all_what[i*size_];
-            for (int j = 1; j < size_; ++j) {
-                cout << "," << all_what[i*size_ + j];
-            }
-            cout << "}" << endl;
-        }
-    }
-
-    barrier(comm);
-}
+MPIX_PRINT_SYNC_IMPL_ALL(char)
+MPIX_PRINT_SYNC_IMPL_ALL(short)
+MPIX_PRINT_SYNC_IMPL_ALL(int)
+MPIX_PRINT_SYNC_IMPL_ALL(long)
+MPIX_PRINT_SYNC_IMPL_ALL(long long)
+MPIX_PRINT_SYNC_IMPL_ALL(signed char)
+MPIX_PRINT_SYNC_IMPL_ALL(unsigned char)
+MPIX_PRINT_SYNC_IMPL_ALL(unsigned short)
+MPIX_PRINT_SYNC_IMPL_ALL(unsigned int)
+MPIX_PRINT_SYNC_IMPL_ALL(unsigned long)
+MPIX_PRINT_SYNC_IMPL_ALL(unsigned long long)
+MPIX_PRINT_SYNC_IMPL_ALL(float)
+MPIX_PRINT_SYNC_IMPL_ALL(double)
+MPIX_PRINT_SYNC_IMPL_ALL(long double)
+//MPIX_PRINT_SYNC_IMPL_ALLP(short, int)
+//MPIX_PRINT_SYNC_IMPL_ALLP(int, int)
+//MPIX_PRINT_SYNC_IMPL_ALLP(long, int)
+//MPIX_PRINT_SYNC_IMPL_ALLP(float, int)
+//MPIX_PRINT_SYNC_IMPL_ALLP(double, int)
+//MPIX_PRINT_SYNC_IMPL_ALLP(long double, int)
 
 
 void print_zero(const string &name, MPI_Comm comm)
@@ -600,49 +427,26 @@ void print_zero(const string &name, MPI_Comm comm)
 }
 
 
-template <class T>
-void print_zero(const string &name, T &what, MPI_Comm comm)
-{
-    barrier(comm);
-    if (0 == comm_rank(comm)) {
-        cout << name << "=" << what << endl;
-    }
-    barrier(comm);
-}
-
-
-template <typename T>
-void print_zero(const string &name, vector<T> &what, MPI_Comm comm)
-{
-    barrier(comm);
-    if (0 == comm_rank(comm)) {
-        cout << name << "={";
-        cout << what[0];
-        for (int j = 1; j < what.size(); ++j) {
-            cout << "," << what[j];
-        }
-        cout << "}" << endl;
-    }
-
-    barrier(comm);
-}
-
-
-template <typename T>
-void print_zero(const string &name, T *what, int size, MPI_Comm comm)
-{
-    barrier(comm);
-    if (0 == comm_rank(comm)) {
-        cout << name << "={";
-        cout << what[0];
-        for (int j = 1; j < size; ++j) {
-            cout << "," << what[j];
-        }
-        cout << "}" << endl;
-    }
-
-    barrier(comm);
-}
+MPIX_PRINT_ZERO_IMPL_ALL(char)
+MPIX_PRINT_ZERO_IMPL_ALL(short)
+MPIX_PRINT_ZERO_IMPL_ALL(int)
+MPIX_PRINT_ZERO_IMPL_ALL(long)
+MPIX_PRINT_ZERO_IMPL_ALL(long long)
+MPIX_PRINT_ZERO_IMPL_ALL(signed char)
+MPIX_PRINT_ZERO_IMPL_ALL(unsigned char)
+MPIX_PRINT_ZERO_IMPL_ALL(unsigned short)
+MPIX_PRINT_ZERO_IMPL_ALL(unsigned int)
+MPIX_PRINT_ZERO_IMPL_ALL(unsigned long)
+MPIX_PRINT_ZERO_IMPL_ALL(unsigned long long)
+MPIX_PRINT_ZERO_IMPL_ALL(float)
+MPIX_PRINT_ZERO_IMPL_ALL(double)
+MPIX_PRINT_ZERO_IMPL_ALL(long double)
+//MPIX_PRINT_ZERO_IMPL_ALLP(short, int)
+//MPIX_PRINT_ZERO_IMPL_ALLP(int, int)
+//MPIX_PRINT_ZERO_IMPL_ALLP(long, int)
+//MPIX_PRINT_ZERO_IMPL_ALLP(float, int)
+//MPIX_PRINT_ZERO_IMPL_ALLP(double, int)
+//MPIX_PRINT_ZERO_IMPL_ALLP(long double, int)
 
 
 /* file reading */
@@ -836,8 +640,6 @@ void read_file_mpiio(
         check(MPI_File_close(&fh));
     }
 }
-#endif
 
 } /* namespace mpix */
 
-#endif /* _MPIX_INL_H_ */

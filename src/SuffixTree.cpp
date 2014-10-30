@@ -9,6 +9,8 @@
  */
 #include "config.h"
 
+#include <mpi.h>
+
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>

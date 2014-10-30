@@ -1,5 +1,7 @@
 #include "config.h"
 
+#include <mpi.h>
+
 #include <stdint.h>
 
 #include <cassert>
@@ -10,10 +12,9 @@
 #include <cstring>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
-
-#include <mpi.h>
 
 #include "align/align.h"
 #include "blosum/blosum62.h"

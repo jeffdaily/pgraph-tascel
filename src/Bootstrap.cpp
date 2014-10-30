@@ -9,6 +9,7 @@
 
 #include "Bootstrap.hpp"
 #include "mpix.hpp"
+#include "mpix_types.hpp"
 
 #define PAUSE_ON_ERROR 1
 #if PAUSE_ON_ERROR
@@ -53,11 +54,14 @@ void initialize(int &argc, char **&argv)
     comm_rank = mpix::comm_rank(comm);
     comm_size = mpix::comm_size(comm);
     ::std::cout << "Hello from " << comm_rank << " of " << comm_size << ::std::endl;
+
+    mpix::init_types();
 }
 
 
 void finalize()
 {
+    mpix::free_types();
     finalize_armci();
     mpix::comm_free(comm);
     mpix::finalize();

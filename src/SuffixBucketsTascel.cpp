@@ -15,18 +15,21 @@
 #include <cassert>
 #include <cstdlib>
 #include <cstdio>
+#include <iostream>
 #include <vector>
 
 #include <tascel.h>
 
 #include "mpix.hpp"
-#include "mpix-types.hpp"
+#include "mpix_types.hpp"
 #include "Parameters.hpp"
 #include "SequenceDatabase.hpp"
 #include "SuffixBuckets.hpp"
 #include "SuffixBucketsTascel.hpp"
 
 using namespace tascel;
+using ::std::cout;
+using ::std::endl;
 using ::std::vector;
 
 extern Dispatcher<NullMutex> serverDispatcher;
@@ -314,7 +317,7 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
 #endif
 
     /* need to alltoallv the buckets to the owning processes */
-    MPI_Datatype SuffixType = mpix::get_mpi_datatype<Suffix>(initial_suffixes[0]);
+    MPI_Datatype SuffixType = mpix::get_mpi_datatype(initial_suffixes[0]);
 #if DEBUG
     mpix::print_sync("initial_suffixes", initial_suffixes, comm);
 #endif

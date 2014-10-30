@@ -37,7 +37,7 @@
 #include "combinations.h"
 #include "EdgeResult.hpp"
 #include "mpix.hpp"
-#include "mpix-types.hpp"
+#include "mpix_types.hpp"
 #include "PairCheck.hpp"
 #include "PairCheckGlobal.hpp"
 #include "PairCheckGlobalServer.hpp"

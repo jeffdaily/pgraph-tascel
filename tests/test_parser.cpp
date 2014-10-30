@@ -1,8 +1,8 @@
 #include "config.h"
 
-#include <iostream>
-
 #include <mpi.h>
+
+#include <iostream>
 
 #include "Bootstrap.hpp"
 #include "Parameters.hpp"

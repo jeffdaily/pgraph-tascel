@@ -19,7 +19,7 @@
 
 #include "Bootstrap.hpp"
 #include "mpix.hpp"
-#include "mpix-types.hpp"
+#include "mpix_types.hpp"
 #include "Parameters.hpp"
 #include "Sequence.hpp"
 #include "SequenceDatabase.hpp"
