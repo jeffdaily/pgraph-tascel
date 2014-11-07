@@ -396,9 +396,7 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
     }
     {
         Stats *all_stats = new Stats[comm_size];
-        mpix::check(MPI_Gather(&buckets_stats, sizeof(Stats), MPI_CHAR,
-                    all_stats, sizeof(Stats), MPI_CHAR,
-                    0, comm));
+        mpix::gather(&buckets_stats, 1, all_stats, 1, 0, comm);
         if (0 == comm_rank) {
             Stats combined_stats;
             cout << Stats::header() << endl;
@@ -415,12 +413,10 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
         delete [] all_stats;
     }
 
-#if DEBUG
+#if DEBUG || 1
     {
         Stats *all_stats = new Stats[comm_size];
-        mpix::check(MPI_Gather(&buckets_stats, sizeof(Stats), MPI_CHAR,
-                    all_stats, sizeof(Stats), MPI_CHAR,
-                    0, comm));
+        mpix::gather(&buckets_stats, 1, all_stats, 1, 0, comm);
         if (0 == comm_rank) {
             cout << Stats::header() << endl;
             for (size_t i=0; i<comm_size; ++i) {
@@ -526,9 +522,7 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
     }
     {
         Stats *all_stats = new Stats[comm_size];
-        mpix::check(MPI_Gather(&buckets_stats, sizeof(Stats), MPI_CHAR,
-                    all_stats, sizeof(Stats), MPI_CHAR,
-                    0, comm));
+        mpix::gather(&buckets_stats, 1, all_stats, 1, 0, comm);
         if (0 == comm_rank) {
             Stats combined_stats;
             cout << Stats::header() << endl;
@@ -545,12 +539,10 @@ SuffixBucketsTascel::SuffixBucketsTascel(SequenceDatabase *sequences,
         delete [] all_stats;
     }
 
-#if DEBUG
+#if DEBUG || 1
     {
         Stats *all_stats = new Stats[comm_size];
-        mpix::check(MPI_Gather(&buckets_stats, sizeof(Stats), MPI_CHAR,
-                    all_stats, sizeof(Stats), MPI_CHAR,
-                    0, comm));
+        mpix::gather(&buckets_stats, 1, all_stats, 1, 0, comm);
         if (0 == comm_rank) {
             cout << Stats::header() << endl;
             for (size_t i=0; i<comm_size; ++i) {

@@ -256,6 +256,21 @@ vector<float>              gather(float              object, int root, MPI_Comm 
 vector<double>             gather(double             object, int root, MPI_Comm comm);
 vector<long double>        gather(long double        object, int root, MPI_Comm comm);
 
+void                       gather(char               * sendbuf, int sendcount, char               * recvbuf, int recvcount, int root, MPI_Comm comm);
+void                       gather(short              * sendbuf, int sendcount, short              * recvbuf, int recvcount, int root, MPI_Comm comm);
+void                       gather(int                * sendbuf, int sendcount, int                * recvbuf, int recvcount, int root, MPI_Comm comm);
+void                       gather(long               * sendbuf, int sendcount, long               * recvbuf, int recvcount, int root, MPI_Comm comm);
+void                       gather(long long          * sendbuf, int sendcount, long long          * recvbuf, int recvcount, int root, MPI_Comm comm);
+void                       gather(signed char        * sendbuf, int sendcount, signed char        * recvbuf, int recvcount, int root, MPI_Comm comm);
+void                       gather(unsigned char      * sendbuf, int sendcount, unsigned char      * recvbuf, int recvcount, int root, MPI_Comm comm);
+void                       gather(unsigned short     * sendbuf, int sendcount, unsigned short     * recvbuf, int recvcount, int root, MPI_Comm comm);
+void                       gather(unsigned int       * sendbuf, int sendcount, unsigned int       * recvbuf, int recvcount, int root, MPI_Comm comm);
+void                       gather(unsigned long      * sendbuf, int sendcount, unsigned long      * recvbuf, int recvcount, int root, MPI_Comm comm);
+void                       gather(unsigned long long * sendbuf, int sendcount, unsigned long long * recvbuf, int recvcount, int root, MPI_Comm comm);
+void                       gather(float              * sendbuf, int sendcount, float              * recvbuf, int recvcount, int root, MPI_Comm comm);
+void                       gather(double             * sendbuf, int sendcount, double             * recvbuf, int recvcount, int root, MPI_Comm comm);
+void                       gather(long double        * sendbuf, int sendcount, long double        * recvbuf, int recvcount, int root, MPI_Comm comm);
+
 vector<char>               gather(char               * object, int count, int root, MPI_Comm comm);
 vector<short>              gather(short              * object, int count, int root, MPI_Comm comm);
 vector<int>                gather(int                * object, int count, int root, MPI_Comm comm);

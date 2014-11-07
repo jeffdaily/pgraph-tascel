@@ -227,6 +227,14 @@ vector<T> gather(T *object, int size, int root, MPI_Comm comm)  \
 }
 
 
+#define MPIX_GATHER_IMPL_NTV(T)                                                                 \
+void gather(T *sendbuf, int sendcount, T *recvbuf, int recvcount, int root, MPI_Comm comm)      \
+{                                                                                               \
+    MPI_Datatype datatype = get_mpi_datatype(*sendbuf);                                         \
+    check(MPI_Gather(sendbuf, sendcount, datatype, recvbuf, recvcount, datatype, root, comm));  \
+}
+
+
 #define MPIX_GATHER_IMPL_VEC(T)                                 \
 vector<T> gather(vector<T> &object, int root, MPI_Comm comm)    \
 {                                                               \
@@ -250,7 +258,8 @@ vector<T> gather(vector<T> &object, int root, MPI_Comm comm)    \
 #define MPIX_GATHER_IMPL_ALL(T) \
 MPIX_GATHER_IMPL_ONE(T)         \
 MPIX_GATHER_IMPL_ARR(T)         \
-MPIX_GATHER_IMPL_VEC(T)
+MPIX_GATHER_IMPL_VEC(T)         \
+MPIX_GATHER_IMPL_NTV(T)
 
 
 #define MPIX_PRINT_SYNC_IMPL_ONE(T)                                         \
@@ -379,6 +388,7 @@ void alltoall(vector<T> &object, MPI_Comm comm);                        \
 void alltoall(vector<T> &sendbuf, vector<T> &recvbuf, MPI_Comm comm);   \
 vector<T> gather(T object, int root, MPI_Comm comm);                    \
 vector<T> gather(T *object, int size, int root, MPI_Comm comm);         \
+void      gather(T *sendbuf, int sendcount, T *recvbuf, int recvcount, int root, MPI_Comm comm); \
 vector<T> gather(vector<T> &object, int root, MPI_Comm comm);           \
 void print_sync(const string &name, T what, MPI_Comm comm);             \
 void print_sync(const string &name, T *what, int size_, MPI_Comm comm); \

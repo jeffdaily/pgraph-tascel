@@ -14,6 +14,7 @@
 #include <tascel/Timer.h>
 
 #include "AlignStats.hpp"
+#include "DbStats.hpp"
 #include "DupStats.hpp"
 #include "Stats.hpp"
 #include "Suffix.hpp"
@@ -23,6 +24,7 @@
 #include "mpix_helper.hpp"
 
 using ::pgraph::AlignStats;
+using ::pgraph::DbStats;
 using ::pgraph::DupStats;
 using ::pgraph::Stats;
 using ::pgraph::Suffix;
@@ -39,6 +41,7 @@ MPI_Datatype mpi_datatype_Timer;
 MPI_Datatype mpi_datatype_StealingStats;
 MPI_Datatype mpi_datatype_Stats;
 MPI_Datatype mpi_datatype_TreeStats;
+MPI_Datatype mpi_datatype_DbStats;
 MPI_Datatype mpi_datatype_DupStats;
 MPI_Datatype mpi_datatype_AlignStats;
 MPI_Datatype mpi_datatype_Suffix;
@@ -48,6 +51,7 @@ MPI_Datatype get_mpi_datatype(Timer object)         { return mpi_datatype_Timer;
 MPI_Datatype get_mpi_datatype(StealingStats object) { return mpi_datatype_StealingStats; }
 MPI_Datatype get_mpi_datatype(Stats object)         { return mpi_datatype_Stats; }
 MPI_Datatype get_mpi_datatype(TreeStats object)     { return mpi_datatype_TreeStats; }
+MPI_Datatype get_mpi_datatype(DbStats object)       { return mpi_datatype_DbStats; }
 MPI_Datatype get_mpi_datatype(DupStats object)      { return mpi_datatype_DupStats; }
 MPI_Datatype get_mpi_datatype(AlignStats object)    { return mpi_datatype_AlignStats; }
 MPI_Datatype get_mpi_datatype(Suffix object)        { return mpi_datatype_Suffix; }
@@ -186,6 +190,29 @@ static void build_mpi_datatype_TreeStats()
 }
 
 
+static void build_mpi_datatype_DbStats()
+{
+    DbStats object;
+#if 0
+    mpi_datatype_DbStats = type_contiguous(3, get_mpi_datatype(object.time));
+#else
+    MPI_Datatype type[3] = {
+        get_mpi_datatype(object.time),
+        get_mpi_datatype(object.bytes),
+        get_mpi_datatype(object.cum)
+    };
+    int blocklen[3] = {1,1,1};
+    MPI_Aint disp[3] = {
+        MPI_Aint(&object.time)  - MPI_Aint(&object),
+        MPI_Aint(&object.bytes) - MPI_Aint(&object),
+        MPI_Aint(&object.cum)   - MPI_Aint(&object)
+    };
+    type_create_struct(3, blocklen, disp, type, mpi_datatype_DbStats);
+#endif
+    type_commit(mpi_datatype_DbStats);
+}
+
+
 static void build_mpi_datatype_DupStats()
 {
     DupStats object;
@@ -200,7 +227,7 @@ static void build_mpi_datatype_DupStats()
     int blocklen[3] = {1,1,1};
     MPI_Aint disp[3] = {
         MPI_Aint(&object.time)     - MPI_Aint(&object),
-        MPI_Aint(&object.checked   - MPI_Aint(&object)),
+        MPI_Aint(&object.checked)  - MPI_Aint(&object),
         MPI_Aint(&object.returned) - MPI_Aint(&object)
     };
     type_create_struct(3, blocklen, disp, type, mpi_datatype_DupStats);
@@ -268,6 +295,7 @@ void init_types()
     build_mpi_datatype_StealingStats();
     build_mpi_datatype_Stats();
     build_mpi_datatype_TreeStats();
+    build_mpi_datatype_DbStats();
     build_mpi_datatype_DupStats();
     build_mpi_datatype_AlignStats();
     build_mpi_datatype_Suffix();
@@ -281,6 +309,7 @@ void free_types()
     type_free(mpi_datatype_StealingStats);
     type_free(mpi_datatype_Stats);
     type_free(mpi_datatype_TreeStats);
+    type_free(mpi_datatype_DbStats);
     type_free(mpi_datatype_DupStats);
     type_free(mpi_datatype_AlignStats);
     type_free(mpi_datatype_Suffix);
@@ -289,6 +318,8 @@ void free_types()
 
 MPIX_IMPL_ALL(Stats)
 MPIX_IMPL_ALL(TreeStats)
+MPIX_IMPL_ALL(DbStats)
+MPIX_IMPL_ALL(DupStats)
 MPIX_IMPL_ALL(AlignStats)
 MPIX_IMPL_ALL(StealingStats)
 

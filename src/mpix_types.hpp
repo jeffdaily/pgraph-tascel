@@ -17,6 +17,7 @@
 #include <tascel/Timer.h>
 
 #include "AlignStats.hpp"
+#include "DbStats.hpp"
 #include "DupStats.hpp"
 #include "Stats.hpp"
 #include "Suffix.hpp"
@@ -26,6 +27,7 @@
 #include "mpix_helper.hpp"
 
 using ::pgraph::AlignStats;
+using ::pgraph::DbStats;
 using ::pgraph::DupStats;
 using ::pgraph::Stats;
 using ::pgraph::Suffix;
@@ -42,6 +44,7 @@ extern MPI_Datatype mpi_datatype_Timer;
 extern MPI_Datatype mpi_datatype_StealingStats;
 extern MPI_Datatype mpi_datatype_Stats;
 extern MPI_Datatype mpi_datatype_TreeStats;
+extern MPI_Datatype mpi_datatype_DbStats;
 extern MPI_Datatype mpi_datatype_DupStats;
 extern MPI_Datatype mpi_datatype_AlignStats;
 extern MPI_Datatype mpi_datatype_Suffix;
@@ -51,6 +54,7 @@ MPI_Datatype get_mpi_datatype(Timer object);
 MPI_Datatype get_mpi_datatype(StealingStats object);
 MPI_Datatype get_mpi_datatype(Stats object);
 MPI_Datatype get_mpi_datatype(TreeStats object);
+MPI_Datatype get_mpi_datatype(DbStats object);
 MPI_Datatype get_mpi_datatype(DupStats object);
 MPI_Datatype get_mpi_datatype(AlignStats object);
 MPI_Datatype get_mpi_datatype(Suffix object);
@@ -60,6 +64,8 @@ void free_types();
 
 MPIX_DECL_ALL(Stats)
 MPIX_DECL_ALL(TreeStats)
+MPIX_DECL_ALL(DbStats)
+MPIX_DECL_ALL(DupStats)
 MPIX_DECL_ALL(AlignStats)
 MPIX_DECL_ALL(StealingStats)
 

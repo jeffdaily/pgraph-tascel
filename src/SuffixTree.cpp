@@ -673,11 +673,10 @@ void SuffixTree::print()
                         else {
                             BWT = s[p->pid-1];
                         }
-                        printf("%c\t%d\t%d\t%.*s\n",
+                        printf("%c\t%lu\t%lu\t%.*s\n",
                                 BWT, p->sid, p->pid, len, &str[p->pid]);
                     }
                 }
-
             }
         }
         for (j=0; j<SIGMA; ++j) {
@@ -700,11 +699,10 @@ void SuffixTree::print()
                         else {
                             BWT = s[p->pid-1];
                         }
-                        printf("%c\t%d\t%d\t%.*s\n",
+                        printf("%c\t%lu\t%lu\t%.*s\n",
                                 BWT, p->sid, p->pid, len, &str[p->pid]);
                     }
                 }
-
             }
         }
     }

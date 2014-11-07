@@ -35,6 +35,7 @@
 #include "AlignStats.hpp"
 #include "Bootstrap.hpp"
 #include "combinations.h"
+#include "DbStats.hpp"
 #include "EdgeResult.hpp"
 #include "mpix.hpp"
 #include "mpix_types.hpp"
@@ -632,23 +633,16 @@ int inner_main(int argc, char **argv)
     }
 
     if (suffix_buckets && parameters->print_stats) {
-        //vector<DupStats> rstats = mpix::gather(stats_dup, NUM_WORKERS, 0, pgraph::comm);
         /* synchronously print tree stats all from process 0 */
         if (0 == rank) {
             DupStats *rstats = new DupStats[nprocs*NUM_WORKERS];
-            mpix::check(MPI_Gather(
-                        stats_dup, sizeof(DupStats)*NUM_WORKERS, MPI_CHAR,
-                        rstats, sizeof(DupStats)*NUM_WORKERS, MPI_CHAR,
-                        0, pgraph::comm));
+            mpix::gather(stats_dup, NUM_WORKERS, rstats, NUM_WORKERS, 0, pgraph::comm);
             size_t *size = new size_t[NUM_WORKERS];
             size_t *sizes = new size_t[nprocs*NUM_WORKERS];
             for (int i=0; i<NUM_WORKERS; ++i) {
                 size[i] = pair_check[i]->size();
             }
-            mpix::check(MPI_Gather(
-                        size, sizeof(size_t)*NUM_WORKERS, MPI_CHAR,
-                        sizes, sizeof(size_t)*NUM_WORKERS, MPI_CHAR,
-                        0, pgraph::comm));
+            mpix::gather(size, NUM_WORKERS, sizes, NUM_WORKERS, 0, pgraph::comm);
             DupStats cumulative;
             Stats all_sizes;
             Stats time_per_worker;
@@ -687,18 +681,12 @@ int inner_main(int argc, char **argv)
             delete [] sizes;
         }
         else {
-            mpix::check(MPI_Gather(
-                        stats_dup, sizeof(DupStats)*NUM_WORKERS, MPI_CHAR,
-                        NULL, sizeof(DupStats)*NUM_WORKERS, MPI_CHAR,
-                        0, pgraph::comm));
             size_t *size = new size_t[NUM_WORKERS];
+            mpix::gather(stats_dup, NUM_WORKERS, NULL, NUM_WORKERS, 0, pgraph::comm);
             for (int i=0; i<NUM_WORKERS; ++i) {
                 size[i] = pair_check[i]->size();
             }
-            mpix::check(MPI_Gather(
-                        size, sizeof(size_t)*NUM_WORKERS, MPI_CHAR,
-                        NULL, sizeof(size_t)*NUM_WORKERS, MPI_CHAR,
-                        0, pgraph::comm));
+            mpix::gather(size, NUM_WORKERS, NULL, NUM_WORKERS, 0, pgraph::comm);
             delete [] size;
         }
     }
@@ -762,10 +750,7 @@ int inner_main(int argc, char **argv)
             Stats time_per_worker;
             Stats bytes_per_worker;
             Stats count_per_worker;
-            mpix::check(MPI_Gather(
-                        stats, sizeof(DbStats)*NUM_WORKERS, MPI_CHAR,
-                        rstats, sizeof(DbStats)*NUM_WORKERS, MPI_CHAR,
-                        0, pgraph::comm));
+            mpix::gather(stats, NUM_WORKERS, rstats, NUM_WORKERS, 0, pgraph::comm);
             DbStats cumulative;
             ostringstream header;
             header.fill('-');
@@ -796,10 +781,7 @@ int inner_main(int argc, char **argv)
             delete [] rstats;
         }
         else {
-            mpix::check(MPI_Gather(
-                        stats, sizeof(DbStats)*NUM_WORKERS, MPI_CHAR,
-                        NULL, sizeof(DbStats)*NUM_WORKERS, MPI_CHAR,
-                        0, pgraph::comm));
+            mpix::gather(stats, NUM_WORKERS, NULL, NUM_WORKERS, 0, pgraph::comm);
         }
         delete [] stats;
     }
