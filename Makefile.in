@@ -793,7 +793,7 @@ AM_LDFLAGS = $(TASCEL_LDFLAGS) $(ARMCI_LDFLAGS) $(PT_MPI_LDFLAGS) \
 #LDADD += $(GA_FLIBS)
 LDADD = libpgraph.la libalign.la $(TASCEL_LIBS) $(ARMCI_LIBS) \
 	$(PT_MPI_LIBS) $(GMP_LIBS) libyaml-cpp.la
-OPENMP_FLAG = -openmp
+OPENMP_FLAG = 
 libalign_la_SOURCES = src/align/align.h src/align/nw_ref.c \
 	src/align/nw_scan.c src/align/nw_scan_row.c \
 	src/align/nw_stats_ref.c src/align/nw_stats_scan.c \
