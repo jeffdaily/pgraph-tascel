@@ -19,6 +19,8 @@
 
 #if defined(__xlc__) || defined(__xlC__) || defined(__IBMC__) || defined(__IBMCPP__)
 #define MFENCE __asm__ __volatile__  ("sync" ::: "memory");
+#elif defined(__MIC__)
+#define MFENCE __asm__ __volatile__("":::"memory");
 #else
 #define MFENCE asm("mfence");
 #endif

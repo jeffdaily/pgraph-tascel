@@ -688,8 +688,12 @@ CXX
 MPICXX
 HAVE_PTHREAD_BARRIER_T_FALSE
 HAVE_PTHREAD_BARRIER_T_TRUE
-HAVE_SSE4_FALSE
-HAVE_SSE4_TRUE
+HAVE_AVX_512_FALSE
+HAVE_AVX_512_TRUE
+HAVE_AVX2_FALSE
+HAVE_AVX2_TRUE
+HAVE_SSE41_FALSE
+HAVE_SSE41_TRUE
 HAVE_SSE2_FALSE
 HAVE_SSE2_TRUE
 PERL
@@ -5379,30 +5383,6 @@ fi
 #GA_REQUIRE
 
 # Checks for header files.
-for ac_header in emmintrin.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "emmintrin.h" "ac_cv_header_emmintrin_h" "$ac_includes_default"
-if test "x$ac_cv_header_emmintrin_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_EMMINTRIN_H 1
-_ACEOF
-
-fi
-
-done
-
-for ac_header in smmintrin.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "smmintrin.h" "ac_cv_header_smmintrin_h" "$ac_includes_default"
-if test "x$ac_cv_header_smmintrin_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_SMMINTRIN_H 1
-_ACEOF
-
-fi
-
-done
-
 for ac_header in limits.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "limits.h" "ac_cv_header_limits_h" "$ac_includes_default"
@@ -5462,23 +5442,6 @@ _ACEOF
 fi
 
 done
-
-
- if test "x$ac_cv_header_emmintrin_h" = xyes; then
-  HAVE_SSE2_TRUE=
-  HAVE_SSE2_FALSE='#'
-else
-  HAVE_SSE2_TRUE='#'
-  HAVE_SSE2_FALSE=
-fi
-
- if test "x$ac_cv_header_smmintrin_h" = xyes; then
-  HAVE_SSE4_TRUE=
-  HAVE_SSE4_FALSE='#'
-else
-  HAVE_SSE4_TRUE='#'
-  HAVE_SSE4_FALSE=
-fi
 
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -5613,6 +5576,206 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 ;;
 esac
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SSE2" >&5
+$as_echo_n "checking for SSE2... " >&6; }
+if ${pt_cv_sse2+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <emmintrin.h>
+__m128i foo() {
+    __m128i vZero = _mm_set1_epi16(0);
+    return _mm_add_epi16(vZero,vZero);
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  pt_cv_sse2=yes; pt_cv_sse2_val=1
+else
+  pt_cv_sse2=no; pt_cv_sse2_val=0
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+     ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $pt_cv_sse2" >&5
+$as_echo "$pt_cv_sse2" >&6; }
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_SSE2 $pt_cv_sse2_val
+_ACEOF
+
+ if test x$pt_cv_sse2 = xyes; then
+  HAVE_SSE2_TRUE=
+  HAVE_SSE2_FALSE='#'
+else
+  HAVE_SSE2_TRUE='#'
+  HAVE_SSE2_FALSE=
+fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SSE4.1" >&5
+$as_echo_n "checking for SSE4.1... " >&6; }
+if ${pt_cv_sse41+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <smmintrin.h>
+__m128i foo() {
+    __m128i vZero = _mm_set1_epi8(0);
+    return _mm_max_epi16(vZero,vZero);
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  pt_cv_sse41=yes; pt_cv_sse41_val=1
+else
+  pt_cv_sse41=no; pt_cv_sse41_val=0
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+     ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $pt_cv_sse41" >&5
+$as_echo "$pt_cv_sse41" >&6; }
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_SSE41 $pt_cv_sse41_val
+_ACEOF
+
+ if test x$pt_cv_sse41 = xyes; then
+  HAVE_SSE41_TRUE=
+  HAVE_SSE41_FALSE='#'
+else
+  HAVE_SSE41_TRUE='#'
+  HAVE_SSE41_FALSE=
+fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for AVX2" >&5
+$as_echo_n "checking for AVX2... " >&6; }
+if ${pt_cv_avx2+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <immintrin.h>
+__m256i foo() {
+    __m256i vZero = _mm256_set1_epi8(0);
+    return _mm256_add_epi8(vZero,vZero);
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  pt_cv_avx2=yes; pt_cv_avx2_val=1
+else
+  pt_cv_avx2=no; pt_cv_avx2_val=0
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+     ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $pt_cv_avx2" >&5
+$as_echo "$pt_cv_avx2" >&6; }
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_AVX2 $pt_cv_avx2_val
+_ACEOF
+
+ if test x$pt_cv_avx2 = xyes; then
+  HAVE_AVX2_TRUE=
+  HAVE_AVX2_FALSE='#'
+else
+  HAVE_AVX2_TRUE='#'
+  HAVE_AVX2_FALSE=
+fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for AVX-512" >&5
+$as_echo_n "checking for AVX-512... " >&6; }
+if ${pt_cv_avx512+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <immintrin.h>
+__m512i foo() {
+    __m512i vZero = _mm512_set1_epi8(0);
+    return _mm512_add_epi8(vZero,vZero);
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  pt_cv_avx512=yes; pt_cv_avx512_val=1
+else
+  pt_cv_avx512=no; pt_cv_avx512_val=0
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+     ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $pt_cv_avx512" >&5
+$as_echo "$pt_cv_avx512" >&6; }
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_AVX_512 $pt_cv_avx512_val
+_ACEOF
+
+ if test x$pt_cv_avx512 = xyes; then
+  HAVE_AVX_512_TRUE=
+  HAVE_AVX_512_FALSE='#'
+else
+  HAVE_AVX_512_TRUE='#'
+  HAVE_AVX_512_FALSE=
+fi
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for C global variable containing the name of the program" >&5
@@ -18689,8 +18852,16 @@ if test -z "${HAVE_SSE2_TRUE}" && test -z "${HAVE_SSE2_FALSE}"; then
   as_fn_error $? "conditional \"HAVE_SSE2\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${HAVE_SSE4_TRUE}" && test -z "${HAVE_SSE4_FALSE}"; then
-  as_fn_error $? "conditional \"HAVE_SSE4\" was never defined.
+if test -z "${HAVE_SSE41_TRUE}" && test -z "${HAVE_SSE41_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_SSE41\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_AVX2_TRUE}" && test -z "${HAVE_AVX2_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_AVX2\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_AVX_512_TRUE}" && test -z "${HAVE_AVX_512_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_AVX_512\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${HAVE_PTHREAD_BARRIER_T_TRUE}" && test -z "${HAVE_PTHREAD_BARRIER_T_FALSE}"; then

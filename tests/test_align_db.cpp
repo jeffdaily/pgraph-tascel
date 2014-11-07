@@ -24,13 +24,13 @@
 #include "SequenceDatabase.hpp"
 #include "SequenceDatabaseReplicated.hpp"
 
-#if HAVE_EMMINTRIN_H
+#if HAVE_SSE2
 #include "align/align_wozniak_128_16.h"
 #include "align/align_striped_128_16.h"
 #include "align/align_scan_128_16.h"
 #endif
 
-#if HAVE_SMMINTRIN_H
+#if HAVE_SSE41
 #include "align/align_scan_128_8.h"
 #endif
 
@@ -183,7 +183,7 @@ int main(int argc, char **argv)
             time = MPI_Wtime() - time;
             time_nw_ref += time;
 
-#if ENABLE_WOZNIAK && HAVE_EMMINTRIN_H
+#if ENABLE_WOZNIAK && HAVE_SSE2
             time = MPI_Wtime();
             score = nw_wozniak_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62, tbl_pr, del_pr);
             time = MPI_Wtime() - time;
@@ -196,7 +196,7 @@ int main(int argc, char **argv)
             }
 #endif
 
-#if ENABLE_STRIPED && HAVE_EMMINTRIN_H
+#if ENABLE_STRIPED && HAVE_SSE2
             time = MPI_Wtime();
             score = nw_striped_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62__);
             time = MPI_Wtime() - time;
@@ -209,7 +209,7 @@ int main(int argc, char **argv)
             }
 #endif
 
-#if ENABLE_SCAN && HAVE_EMMINTRIN_H
+#if ENABLE_SCAN && HAVE_SSE2
             time = MPI_Wtime();
             score = nw_scan_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62__);
             time = MPI_Wtime() - time;
@@ -222,7 +222,7 @@ int main(int argc, char **argv)
             }
 #endif
 
-#if ENABLE_SCAN && HAVE_SMMINTRIN_H
+#if ENABLE_SCAN && HAVE_SSE41
             time = MPI_Wtime();
             score = nw_scan_128_8(seqa, lena, seqb, lenb, 10, 1, blosum62__);
             time = MPI_Wtime() - time;
@@ -241,7 +241,7 @@ int main(int argc, char **argv)
             time = MPI_Wtime() - time;
             time_nw_stats_ref += time;
 
-#if ENABLE_WOZNIAK && HAVE_EMMINTRIN_H
+#if ENABLE_WOZNIAK && HAVE_SSE2
             time = MPI_Wtime();
             score = nw_stats_wozniak_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62,
                     &matches, &length, tbl_pr, del_pr, mch_pr, len_pr);
@@ -262,7 +262,7 @@ int main(int argc, char **argv)
             }
 #endif
 
-#if ENABLE_STRIPED && HAVE_EMMINTRIN_H
+#if ENABLE_STRIPED && HAVE_SSE2
             time = MPI_Wtime();
             score = nw_stats_striped_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62__,
                     &matches, &length);
@@ -283,7 +283,7 @@ int main(int argc, char **argv)
             }
 #endif
 
-#if ENABLE_SCAN && HAVE_EMMINTRIN_H
+#if ENABLE_SCAN && HAVE_SSE2
             time = MPI_Wtime();
             score = nw_stats_scan_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62__,
                     &matches, &length);
@@ -304,7 +304,7 @@ int main(int argc, char **argv)
             }
 #endif
 
-#if ENABLE_SCAN && HAVE_SMMINTRIN_H
+#if ENABLE_SCAN && HAVE_SSE41
             time = MPI_Wtime();
             score = nw_stats_scan_128_8(seqa, lena, seqb, lenb, 10, 1, blosum62__,
                     &matches, &length);
@@ -330,7 +330,7 @@ int main(int argc, char **argv)
             time = MPI_Wtime() - time;
             time_sg_ref += time;
 
-#if ENABLE_WOZNIAK && HAVE_EMMINTRIN_H
+#if ENABLE_WOZNIAK && HAVE_SSE2
             time = MPI_Wtime();
             score = sg_wozniak_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62, tbl_pr, del_pr);
             time = MPI_Wtime() - time;
@@ -343,7 +343,7 @@ int main(int argc, char **argv)
             }
 #endif
 
-#if ENABLE_STRIPED && HAVE_EMMINTRIN_H
+#if ENABLE_STRIPED && HAVE_SSE2
             time = MPI_Wtime();
             score = sg_striped_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62__);
             time = MPI_Wtime() - time;
@@ -356,7 +356,7 @@ int main(int argc, char **argv)
             }
 #endif
 
-#if ENABLE_SCAN && HAVE_EMMINTRIN_H
+#if ENABLE_SCAN && HAVE_SSE2
             time = MPI_Wtime();
             score = sg_scan_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62__);
             time = MPI_Wtime() - time;
@@ -369,7 +369,7 @@ int main(int argc, char **argv)
             }
 #endif
 
-#if ENABLE_SCAN && HAVE_SMMINTRIN_H
+#if ENABLE_SCAN && HAVE_SSE41
             time = MPI_Wtime();
             score = sg_scan_128_8(seqa, lena, seqb, lenb, 10, 1, blosum62__);
             time = MPI_Wtime() - time;
@@ -388,7 +388,7 @@ int main(int argc, char **argv)
             time = MPI_Wtime() - time;
             time_sg_stats_ref += time;
 
-#if ENABLE_WOZNIAK && HAVE_EMMINTRIN_H
+#if ENABLE_WOZNIAK && HAVE_SSE2
             time = MPI_Wtime();
             score = sg_stats_wozniak_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62,
                     &matches, &length, tbl_pr, del_pr, mch_pr, len_pr);
@@ -409,7 +409,7 @@ int main(int argc, char **argv)
             }
 #endif
 
-#if ENABLE_STRIPED && HAVE_EMMINTRIN_H
+#if ENABLE_STRIPED && HAVE_SSE2
             time = MPI_Wtime();
             score = sg_stats_striped_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62__,
                     &matches, &length);
@@ -430,7 +430,7 @@ int main(int argc, char **argv)
             }
 #endif
 
-#if ENABLE_SCAN && HAVE_EMMINTRIN_H
+#if ENABLE_SCAN && HAVE_SSE2
             time = MPI_Wtime();
             score = sg_stats_scan_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62__,
                     &matches, &length);
@@ -451,7 +451,7 @@ int main(int argc, char **argv)
             }
 #endif
 
-#if ENABLE_SCAN && HAVE_SMMINTRIN_H
+#if ENABLE_SCAN && HAVE_SSE41
             time = MPI_Wtime();
             score = sg_stats_scan_128_8(seqa, lena, seqb, lenb, 10, 1, blosum62__,
                     &matches, &length);
@@ -477,7 +477,7 @@ int main(int argc, char **argv)
             time = MPI_Wtime() - time;
             time_sw_ref += time;
 
-#if ENABLE_WOZNIAK && HAVE_EMMINTRIN_H
+#if ENABLE_WOZNIAK && HAVE_SSE2
             time = MPI_Wtime();
             score = sw_wozniak_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62, tbl_pr, del_pr);
             time = MPI_Wtime() - time;
@@ -490,7 +490,7 @@ int main(int argc, char **argv)
             }
 #endif
 
-#if ENABLE_STRIPED && HAVE_EMMINTRIN_H
+#if ENABLE_STRIPED && HAVE_SSE2
             time = MPI_Wtime();
             score = sw_striped_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62__);
             time = MPI_Wtime() - time;
@@ -503,7 +503,7 @@ int main(int argc, char **argv)
             }
 #endif
 
-#if ENABLE_SCAN && HAVE_EMMINTRIN_H
+#if ENABLE_SCAN && HAVE_SSE2
             time = MPI_Wtime();
             score = sw_scan_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62__);
             time = MPI_Wtime() - time;
@@ -516,7 +516,7 @@ int main(int argc, char **argv)
             }
 #endif
 
-#if ENABLE_SCAN && HAVE_SMMINTRIN_H
+#if ENABLE_SCAN && HAVE_SSE41
             time = MPI_Wtime();
             score = sw_scan_128_8(seqa, lena, seqb, lenb, 10, 1, blosum62__);
             time = MPI_Wtime() - time;
@@ -535,7 +535,7 @@ int main(int argc, char **argv)
             time = MPI_Wtime() - time;
             time_sw_stats_ref += time;
 
-#if ENABLE_WOZNIAK && HAVE_EMMINTRIN_H
+#if ENABLE_WOZNIAK && HAVE_SSE2
             time = MPI_Wtime();
             score = sw_stats_wozniak_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62,
                     &matches, &length, tbl_pr, del_pr, mch_pr, len_pr);
@@ -556,7 +556,7 @@ int main(int argc, char **argv)
             }
 #endif
 
-#if ENABLE_STRIPED && HAVE_EMMINTRIN_H
+#if ENABLE_STRIPED && HAVE_SSE2
             time = MPI_Wtime();
             score = sw_stats_striped_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62__,
                     &matches, &length);
@@ -577,7 +577,7 @@ int main(int argc, char **argv)
             }
 #endif
 
-#if ENABLE_SCAN && HAVE_EMMINTRIN_H
+#if ENABLE_SCAN && HAVE_SSE2
             time = MPI_Wtime();
             score = sw_stats_scan_128_16(seqa, lena, seqb, lenb, 10, 1, blosum62__,
                     &matches, &length);
@@ -598,7 +598,7 @@ int main(int argc, char **argv)
             }
 #endif
 
-#if ENABLE_SCAN && HAVE_SMMINTRIN_H
+#if ENABLE_SCAN && HAVE_SSE41
             time = MPI_Wtime();
             score = sw_stats_scan_128_8(seqa, lena, seqb, lenb, 10, 1, blosum62__,
                     &matches, &length);
@@ -625,86 +625,86 @@ int main(int argc, char **argv)
     }
 
     cout << "nw reference\t" << time_nw_ref << endl;
-#if ENABLE_WOZNIAK && HAVE_EMMINTRIN_H
+#if ENABLE_WOZNIAK && HAVE_SSE2
     cout << "nw wozniak  \t" << time_nw_woz << "\t" << pct(time_nw_ref, time_nw_woz) << endl;
 #endif
-#if ENABLE_STRIPED && HAVE_EMMINTRIN_H
+#if ENABLE_STRIPED && HAVE_SSE2
     cout << "nw striped  \t" << time_nw_striped << "\t" << pct(time_nw_ref, time_nw_striped) << endl;
 #endif
-#if ENABLE_SCAN && HAVE_EMMINTRIN_H
+#if ENABLE_SCAN && HAVE_SSE2
     cout << "nw scan     \t" << time_nw_scan << "\t" << pct(time_nw_ref, time_nw_scan) << endl;
 #endif
-#if ENABLE_SCAN && HAVE_SMMINTRIN_H
+#if ENABLE_SCAN && HAVE_SSE41
     cout << "nw scan8    \t" << time_nw_scan8 << "\t" << pct(time_nw_ref, time_nw_scan8) << endl;
 #endif
 
     cout << "sg reference\t" << time_sg_ref << endl;
-#if ENABLE_WOZNIAK && HAVE_EMMINTRIN_H
+#if ENABLE_WOZNIAK && HAVE_SSE2
     cout << "sg wozniak  \t" << time_sg_woz << "\t" << pct(time_sg_ref, time_sg_woz) << endl;
 #endif
-#if ENABLE_STRIPED && HAVE_EMMINTRIN_H
+#if ENABLE_STRIPED && HAVE_SSE2
     cout << "sg striped  \t" << time_sg_striped << "\t" << pct(time_sg_ref, time_sg_striped) << endl;
 #endif
-#if ENABLE_SCAN && HAVE_EMMINTRIN_H
+#if ENABLE_SCAN && HAVE_SSE2
     cout << "sg scan     \t" << time_sg_scan << "\t" << pct(time_sg_ref, time_sg_scan) << endl;
 #endif
-#if ENABLE_SCAN && HAVE_SMMINTRIN_H
+#if ENABLE_SCAN && HAVE_SSE41
     cout << "sg scan8    \t" << time_sg_scan8 << "\t" << pct(time_sg_ref, time_sg_scan8) << endl;
 #endif
 
     cout << "sw reference\t" << time_sw_ref << endl;
-#if ENABLE_WOZNIAK && HAVE_EMMINTRIN_H
+#if ENABLE_WOZNIAK && HAVE_SSE2
     cout << "sw wozniak  \t" << time_sw_woz << "\t" << pct(time_sw_ref, time_sw_woz) << endl;
 #endif
-#if ENABLE_STRIPED && HAVE_EMMINTRIN_H
+#if ENABLE_STRIPED && HAVE_SSE2
     cout << "sw striped  \t" << time_sw_striped << "\t" << pct(time_sw_ref, time_sw_striped) << endl;
 #endif
-#if ENABLE_SCAN && HAVE_EMMINTRIN_H
+#if ENABLE_SCAN && HAVE_SSE2
     cout << "sw scan     \t" << time_sw_scan << "\t" << pct(time_sw_ref, time_sw_scan) << endl;
 #endif
-#if ENABLE_SCAN && HAVE_SMMINTRIN_H
+#if ENABLE_SCAN && HAVE_SSE41
     cout << "sw scan8    \t" << time_sw_scan8 << "\t" << pct(time_sw_ref, time_sw_scan8) << endl;
 #endif
 
     cout << "nw stats reference\t" << time_nw_stats_ref << endl;
-#if ENABLE_WOZNIAK && HAVE_EMMINTRIN_H
+#if ENABLE_WOZNIAK && HAVE_SSE2
     cout << "nw stats wozniak  \t" << time_nw_stats_woz << "\t" << pct(time_nw_stats_ref, time_nw_stats_woz) << endl;
 #endif
-#if ENABLE_STRIPED && HAVE_EMMINTRIN_H
+#if ENABLE_STRIPED && HAVE_SSE2
     cout << "nw stats striped  \t" << time_nw_stats_striped << "\t" << pct(time_nw_stats_ref, time_nw_stats_striped) << endl;
 #endif
-#if ENABLE_SCAN && HAVE_EMMINTRIN_H
+#if ENABLE_SCAN && HAVE_SSE2
     cout << "nw stats scan     \t" << time_nw_stats_scan << "\t" << pct(time_nw_stats_ref, time_nw_stats_scan) << endl;
 #endif
-#if ENABLE_SCAN && HAVE_SMMINTRIN_H
+#if ENABLE_SCAN && HAVE_SSE41
     cout << "nw stats scan8    \t" << time_nw_stats_scan8 << "\t" << pct(time_nw_stats_ref, time_nw_stats_scan8) << endl;
 #endif
 
     cout << "sg stats reference\t" << time_sg_stats_ref << endl;
-#if ENABLE_WOZNIAK && HAVE_EMMINTRIN_H
+#if ENABLE_WOZNIAK && HAVE_SSE2
     cout << "sg stats wozniak  \t" << time_sg_stats_woz << "\t" << pct(time_sg_stats_ref, time_sg_stats_woz) << endl;
 #endif
-#if ENABLE_STRIPED && HAVE_EMMINTRIN_H
+#if ENABLE_STRIPED && HAVE_SSE2
     cout << "sg stats striped  \t" << time_sg_stats_striped << "\t" << pct(time_sg_stats_ref, time_sg_stats_striped) << endl;
 #endif
-#if ENABLE_SCAN && HAVE_EMMINTRIN_H
+#if ENABLE_SCAN && HAVE_SSE2
     cout << "sg stats scan     \t" << time_sg_stats_scan << "\t" << pct(time_sg_stats_ref, time_sg_stats_scan) << endl;
 #endif
-#if ENABLE_SCAN && HAVE_SMMINTRIN_H
+#if ENABLE_SCAN && HAVE_SSE41
     cout << "sg stats scan8    \t" << time_sg_stats_scan8 << "\t" << pct(time_sg_stats_ref, time_sg_stats_scan8) << endl;
 #endif
 
     cout << "sw stats reference\t" << time_sw_stats_ref << endl;
-#if ENABLE_WOZNIAK && HAVE_EMMINTRIN_H
+#if ENABLE_WOZNIAK && HAVE_SSE2
     cout << "sw stats wozniak  \t" << time_sw_stats_woz << "\t" << pct(time_sw_stats_ref, time_sw_stats_woz) << endl;
 #endif
-#if ENABLE_STRIPED && HAVE_EMMINTRIN_H
+#if ENABLE_STRIPED && HAVE_SSE2
     cout << "sw stats striped  \t" << time_sw_stats_striped << "\t" << pct(time_sw_stats_ref, time_sw_stats_striped) << endl;
 #endif
-#if ENABLE_SCAN && HAVE_EMMINTRIN_H
+#if ENABLE_SCAN && HAVE_SSE2
     cout << "sw stats scan     \t" << time_sw_stats_scan << "\t" << pct(time_sw_stats_ref, time_sw_stats_scan) << endl;
 #endif
-#if ENABLE_SCAN && HAVE_SMMINTRIN_H
+#if ENABLE_SCAN && HAVE_SSE41
     cout << "sw stats scan8    \t" << time_sw_stats_scan8 << "\t" << pct(time_sw_stats_ref, time_sw_stats_scan8) << endl;
 #endif
 

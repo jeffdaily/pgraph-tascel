@@ -3,6 +3,12 @@
 /* set to 1 if we have the indicated package */
 #undef HAVE_ARMCI
 
+/* define to 1 if the C compiler supports AVX2 */
+#undef HAVE_AVX2
+
+/* define to 1 if the C compiler supports AVX-512 */
+#undef HAVE_AVX_512
+
 /* Define if tr1/unordered_set is present. */
 #undef HAVE_CXX_TR1_UNORDERED_SET
 
@@ -11,9 +17,6 @@
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
-
-/* Define to 1 if you have the <emmintrin.h> header file. */
-#undef HAVE_EMMINTRIN_H
 
 /* set to 1 if we have the indicated package */
 #undef HAVE_GMP
@@ -51,8 +54,11 @@
 /* Define to 1 if you have the `sched_setaffinity' function. */
 #undef HAVE_SCHED_SETAFFINITY
 
-/* Define to 1 if you have the <smmintrin.h> header file. */
-#undef HAVE_SMMINTRIN_H
+/* define to 1 if the C compiler supports SSE2 */
+#undef HAVE_SSE2
+
+/* define to 1 if the C compiler supports SSE4.1 */
+#undef HAVE_SSE41
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H

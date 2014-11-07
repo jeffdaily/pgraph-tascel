@@ -11,16 +11,20 @@
 #include "blosum/blosum62.h"
 #include "timer.h"
 
-#if HAVE_EMMINTRIN_H
+#if HAVE_SSE2
 #include "align/align_wozniak_128_16.h"
 #include "align/align_striped_128_16.h"
 #include "align/align_scan_128_16.h"
 #endif
 
-#if HAVE_SMMINTRIN_H
+#if HAVE_SSE41
 #include "align/align_wozniak_128_8.h"
 #include "align/align_striped_128_8.h"
 #include "align/align_scan_128_8.h"
+#endif
+
+#if HAVE_AVX_512
+#include "align/align_scan_512_32.h"
 #endif
 
 #define USE_PERCENT_IMPROVED 0
@@ -85,7 +89,7 @@ int main(int argc, char **argv)
     timer = timer_end(timer);
     printf("nw\tscan\t\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
-#if HAVE_EMMINTRIN_H
+#if HAVE_SSE2
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw_scan_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__);
@@ -94,7 +98,7 @@ int main(int argc, char **argv)
     printf("nw\tscan\t128\t16\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 #endif
 
-#if HAVE_SMMINTRIN_H
+#if HAVE_SSE41
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw_scan_128_8(seqA, lena, seqB, lenb, 10, 1, blosum62__);
@@ -103,7 +107,16 @@ int main(int argc, char **argv)
     printf("nw\tscan\t128\t8\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 #endif
 
-#if HAVE_EMMINTRIN_H
+#if HAVE_AVX_512
+    timer = timer_start();
+    for (i=0; i<limit; ++i) {
+        score = nw_scan_512_32(seqA, lena, seqB, lenb, 10, 1, blosum62__);
+    }
+    timer = timer_end(timer);
+    printf("nw\tscan\t512\t32\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
+#endif
+
+#if HAVE_SSE2
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw_wozniak_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
@@ -112,7 +125,7 @@ int main(int argc, char **argv)
     printf("nw\twozniak\t128\t16\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 #endif
 
-#if HAVE_SMMINTRIN_H
+#if HAVE_SSE41
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw_wozniak_128_8(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
@@ -121,7 +134,7 @@ int main(int argc, char **argv)
     printf("nw\twozniak\t128\t8\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 #endif
 
-#if HAVE_EMMINTRIN_H
+#if HAVE_SSE2
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw_striped_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__);
@@ -130,7 +143,7 @@ int main(int argc, char **argv)
     printf("nw\tstriped\t128\t16\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 #endif
 
-#if HAVE_SMMINTRIN_H
+#if HAVE_SSE41
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw_striped_128_8(seqA, lena, seqB, lenb, 10, 1, blosum62__);
@@ -153,7 +166,7 @@ int main(int argc, char **argv)
     timer = timer_end(timer);
     printf("sg\tscan\t\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
-#if HAVE_EMMINTRIN_H
+#if HAVE_SSE2
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sg_scan_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__);
@@ -162,7 +175,7 @@ int main(int argc, char **argv)
     printf("sg\tscan\t128\t16\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 #endif
 
-#if HAVE_SMMINTRIN_H
+#if HAVE_SSE41
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sg_scan_128_8(seqA, lena, seqB, lenb, 10, 1, blosum62__);
@@ -171,7 +184,7 @@ int main(int argc, char **argv)
     printf("sg\tscan\t128\t8\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 #endif
 
-#if HAVE_EMMINTRIN_H
+#if HAVE_SSE2
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sg_wozniak_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
@@ -180,7 +193,7 @@ int main(int argc, char **argv)
     printf("sg\twozniak\t128\t16\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 #endif
 
-#if HAVE_SMMINTRIN_H
+#if HAVE_SSE41
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sg_wozniak_128_8(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
@@ -189,7 +202,7 @@ int main(int argc, char **argv)
     printf("sg\twozniak\t128\t8\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 #endif
 
-#if HAVE_EMMINTRIN_H
+#if HAVE_SSE2
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sg_striped_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__);
@@ -198,7 +211,7 @@ int main(int argc, char **argv)
     printf("sg\tstriped\t128\t16\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 #endif
 
-#if HAVE_SMMINTRIN_H
+#if HAVE_SSE41
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sg_striped_128_8(seqA, lena, seqB, lenb, 10, 1, blosum62__);
@@ -221,7 +234,7 @@ int main(int argc, char **argv)
     timer = timer_end(timer);
     printf("sw\tscan\t\t\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 
-#if HAVE_EMMINTRIN_H
+#if HAVE_SSE2
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sw_scan_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__);
@@ -230,7 +243,7 @@ int main(int argc, char **argv)
     printf("sw\tscan\t128\t16\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 #endif
 
-#if HAVE_SMMINTRIN_H
+#if HAVE_SSE41
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sw_scan_128_8(seqA, lena, seqB, lenb, 10, 1, blosum62__);
@@ -239,7 +252,7 @@ int main(int argc, char **argv)
     printf("sw\tscan\t128\t8\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 #endif
 
-#if HAVE_EMMINTRIN_H
+#if HAVE_SSE2
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sw_wozniak_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62, tbl_pr, del_pr);
@@ -248,7 +261,7 @@ int main(int argc, char **argv)
     printf("sw\twozniak\t128\t16\t%llu\t%4.1f\t%d\n", timer/limit, pct(timer_ref,timer), score);
 #endif
 
-#if HAVE_EMMINTRIN_H
+#if HAVE_SSE2
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sw_striped_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__);

@@ -10,6 +10,7 @@ AM_CXXFLAGS =
 AM_CPPFLAGS =
 AM_LDFLAGS =
 LDADD =
+OPENMP_FLAG = -openmp
 
 AM_CPPFLAGS += $(TASCEL_CPPFLAGS)
 #AM_CPPFLAGS += $(GA_CPPFLAGS)
@@ -78,7 +79,7 @@ libalign_la_SOURCES += src/align/sw_stats_scan_128_16.c
 libalign_la_SOURCES += src/align/sw_stats_striped_128_16.c
 libalign_la_SOURCES += src/align/sw_stats_wozniak_128_16.c
 endif
-if HAVE_SSE4
+if HAVE_SSE41
 libalign_la_SOURCES += src/align/align_scan_128_8.h
 libalign_la_SOURCES += src/align/align_striped_128_8.h
 libalign_la_SOURCES += src/align/align_wozniak_128_8.h
@@ -96,6 +97,9 @@ libalign_la_SOURCES += src/align/sg_stats_wozniak_128_8.c
 libalign_la_SOURCES += src/align/sw_scan_128_8.c
 libalign_la_SOURCES += src/align/sw_stats_scan_128_8.c
 endif
+if HAVE_AVX_512
+libalign_la_SOURCES += src/align/nw_scan_512_32.c
+endif
 
 noinst_LTLIBRARIES += libalign_debug.la
 libalign_debug_la_SOURCES =
@@ -106,7 +110,7 @@ libalign_debug_la_SOURCES += src/align/align_scan_128_16_debug.h
 libalign_debug_la_SOURCES += src/align/align_striped_128_16_debug.h
 libalign_debug_la_SOURCES += src/align/align_wozniak_128_16_debug.h
 endif
-if HAVE_SSE4
+if HAVE_SSE41
 libalign_debug_la_SOURCES += src/align/align_scan_128_8_debug.h
 libalign_debug_la_SOURCES += src/align/align_striped_128_8_debug.h
 libalign_debug_la_SOURCES += src/align/align_wozniak_128_8_debug.h
@@ -276,6 +280,7 @@ apps_align_SOURCES = apps/align.cpp
 
 noinst_PROGRAMS += tests/st_serial
 noinst_PROGRAMS += tests/suftest
+noinst_PROGRAMS += tests/suftest_omp
 noinst_PROGRAMS += tests/suftest_orig
 noinst_PROGRAMS += tests/test_sais
 noinst_PROGRAMS += tests/test_combinations
@@ -288,6 +293,7 @@ noinst_PROGRAMS += tests/test_align_debug
 noinst_PROGRAMS += tests/test_align_db
 
 tests_suftest_SOURCES                      = tests/suftest.cpp
+tests_suftest_omp_SOURCES                  = tests/suftest.cpp
 tests_suftest_orig_SOURCES                 = contrib/sais-lite-lcp/suftest.c
 tests_test_sais_SOURCES                    = contrib/sais-lite-lcp/test.c
 tests_st_serial_SOURCES                    = tests/st_serial.cpp
@@ -295,6 +301,9 @@ tests_test_combinations_SOURCES            = tests/test_combinations.cpp
 tests_test_db_reprinter_SOURCES            = tests/test_db_reprinter.cpp
 tests_test_parser_SOURCES                  = tests/test_parser.cpp
 tests_test_stl_container_performance_SOURCES = tests/test_stl_container_performance.cpp
+
+tests_suftest_omp_CPPFLAGS                 = $(AM_CPPFLAGS) $(OPENMP_FLAG)
+tests_suftest_omp_LDFLAGS                  = $(AM_LDFLAGS) $(OPENMP_FLAG)
 
 tests_test_align_SOURCES                   = tests/test_align.c
 tests_test_align_LDADD                     = libalign.la libalign_debug.la

@@ -11,13 +11,13 @@
 #include "blosum/blosum62.h"
 #include "timer.h"
 
-#if HAVE_EMMINTRIN_H
+#if HAVE_SSE2
 #include "align/align_wozniak_128_16.h"
 #include "align/align_striped_128_16.h"
 #include "align/align_scan_128_16.h"
 #endif
 
-#if HAVE_SMMINTRIN_H
+#if HAVE_SSE41
 #include "align/align_wozniak_128_8.h"
 #include "align/align_striped_128_8.h"
 #include "align/align_scan_128_8.h"
@@ -90,7 +90,7 @@ int main(int argc, char **argv)
     matches = 0;
     length = 0;
 
-#if HAVE_EMMINTRIN_H
+#if HAVE_SSE2
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw_stats_scan_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length);
@@ -102,7 +102,7 @@ int main(int argc, char **argv)
     length = 0;
 #endif
 
-#if HAVE_SMMINTRIN_H
+#if HAVE_SSE41
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw_stats_scan_128_8(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length);
@@ -114,7 +114,7 @@ int main(int argc, char **argv)
     length = 0;
 #endif
 
-#if HAVE_EMMINTRIN_H
+#if HAVE_SSE2
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw_stats_wozniak_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62,
@@ -127,7 +127,7 @@ int main(int argc, char **argv)
     length = 0;
 #endif
 
-#if HAVE_SMMINTRIN_H
+#if HAVE_SSE41
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw_stats_wozniak_128_8(seqA, lena, seqB, lenb, 10, 1, blosum62,
@@ -140,7 +140,7 @@ int main(int argc, char **argv)
     length = 0;
 #endif
 
-#if HAVE_EMMINTRIN_H
+#if HAVE_SSE2
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw_stats_striped_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length);
@@ -152,7 +152,7 @@ int main(int argc, char **argv)
     length = 0;
 #endif
 
-#if HAVE_SMMINTRIN_H
+#if HAVE_SSE41
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = nw_stats_striped_128_8(seqA, lena, seqB, lenb, 10, 1, blosum62__, &matches, &length);
@@ -186,7 +186,7 @@ int main(int argc, char **argv)
     matches = 0;
     length = 0;
 
-#if HAVE_EMMINTRIN_H
+#if HAVE_SSE2
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sg_stats_scan_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__,
@@ -199,7 +199,7 @@ int main(int argc, char **argv)
     length = 0;
 #endif
 
-#if HAVE_SMMINTRIN_H
+#if HAVE_SSE41
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sg_stats_scan_128_8(seqA, lena, seqB, lenb, 10, 1, blosum62__,
@@ -212,7 +212,7 @@ int main(int argc, char **argv)
     length = 0;
 #endif
 
-#if HAVE_EMMINTRIN_H
+#if HAVE_SSE2
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sg_stats_wozniak_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62,
@@ -225,7 +225,7 @@ int main(int argc, char **argv)
     length = 0;
 #endif
 
-#if HAVE_SMMINTRIN_H
+#if HAVE_SSE41
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sg_stats_wozniak_128_8(seqA, lena, seqB, lenb, 10, 1, blosum62,
@@ -238,7 +238,7 @@ int main(int argc, char **argv)
     length = 0;
 #endif
 
-#if HAVE_EMMINTRIN_H
+#if HAVE_SSE2
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sg_stats_striped_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__,
@@ -273,7 +273,7 @@ int main(int argc, char **argv)
     matches = 0;
     length = 0;
 
-#if HAVE_EMMINTRIN_H
+#if HAVE_SSE2
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sw_stats_scan_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__,
@@ -286,7 +286,7 @@ int main(int argc, char **argv)
     length = 0;
 #endif
 
-#if HAVE_SMMINTRIN_H
+#if HAVE_SSE41
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sw_stats_scan_128_8(seqA, lena, seqB, lenb, 10, 1, blosum62__,
@@ -299,7 +299,7 @@ int main(int argc, char **argv)
     length = 0;
 #endif
 
-#if HAVE_EMMINTRIN_H
+#if HAVE_SSE2
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sw_stats_wozniak_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62,
@@ -312,7 +312,7 @@ int main(int argc, char **argv)
     length = 0;
 #endif
 
-#if HAVE_EMMINTRIN_H
+#if HAVE_SSE2
     timer = timer_start();
     for (i=0; i<limit; ++i) {
         score = sw_stats_striped_128_16(seqA, lena, seqB, lenb, 10, 1, blosum62__,

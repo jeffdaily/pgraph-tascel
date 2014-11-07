@@ -249,7 +249,7 @@ static int sufcheck(const unsigned char *T, const int *SA, int n, int verbose) {
 }
 
 static void print_help(const char *progname, int status) {
-    fprintf(stderr, "usage: %s [-p] [-k window_size] [-c cutoff>=1] [-s sentinal] FILE\n\n", progname);
+    fprintf(stderr, "usage: %s [-b] [-x] [-p] [-k window_size] [-c cutoff>=1] [-s sentinal] FILE\n\n", progname);
     exit(status);
 }
 
@@ -365,6 +365,14 @@ int main(int argc, const char *argv[]) {
         print_help(argv[0], EXIT_FAILURE);
     }
 
+    /* print parameters */
+    printf("Parameters:\n");
+    printf("x=%d (1 means validate SA, BWT)\n", validate);
+    printf("b=%d (1 means bucket traversal)\n", bucket_traversal);
+    printf("p=%d (1 means verbose print)\n", print);
+    printf("s='%c' (sentinal specified)\n", sentinal == 0 ? '?' : sentinal);
+    printf("c=%d (exact-match cutoff)\n", cutoff);
+    printf("k=%d (sliding window size)\n", k);
     /* Open a file for reading. */
     if((fp = fopen(fname, "rb")) == NULL) {
         fprintf(stderr, "%s: Cannot open file `%s': ", argv[0], fname);
@@ -476,6 +484,8 @@ int main(int argc, const char *argv[]) {
         int len = END[SID[SA[i]]] - SA[i]; // don't include sentinal
         if (LCP[i] > len) LCP[i] = len;
         if (LCP[i] < k && len > 0) BUCKET.push_back(i);
+        //if (LCP[i] < k && len > 0)
+            //printf("bucket found at i=%d LCP[i]=%d SA[i]=%d T[SA[i-1]]='%c' T[SA[i]]='%c' T[SA[i+1]]='%c'\n", i, LCP[i], SA[i], T[SA[i-1]], T[SA[i]], T[SA[i+1]]);
         BWT[i] = (SA[i] > 0) ? T[SA[i]-1] : sentinal;
     }
     finish = timer();
@@ -812,12 +822,23 @@ inline static void process(
         const char &sentinal,
         const int &cutoff)
 {
+    static int used_cutoff = 0;
     const int n_children = q.children.size();
     int child_index = 0;
 
     ++count;
 
+#if 0
     if (q.lcp < cutoff) return;
+#else
+    if (q.lcp < cutoff) {
+        if (!used_cutoff) {
+            used_cutoff = 1;
+            printf("used cutoff\n");
+        }
+        return;
+    }
+#endif
 
     if (n_children) {
 #if 1
