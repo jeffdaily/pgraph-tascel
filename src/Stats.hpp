@@ -48,7 +48,7 @@ class Stats
             , _max(0.0)
         {}
 
-        virtual ~Stats() {}
+        ~Stats() {}
 
         void clear() {
             _n = 0UL;
