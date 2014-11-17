@@ -85,6 +85,7 @@ class SuffixBucketsArmci : public SuffixBuckets
                 return i.bid < j.bid;
         }
 
+        size_t n_buckets;
         Suffix **suffixes_remote;       /**< addresses of remote suffixes */
         Suffix *suffixes;               /**< array of all local suffixes */
         size_t suffixes_size;           /**< size of local suffixes array */

@@ -89,15 +89,7 @@ class SequenceDatabaseArmci : public SequenceDatabase
          * @param[in] i the index based on the global count of sequences
          * @return the Sequence reference (owned by this SequenceDatabaseArmci)
          */
-        virtual Sequence &get_sequence(size_t i);
-
-        /**
-         * Returns a reference to the Sequence based on the global index i.
-         *
-         * @param[in] i the index based on the global count of sequences
-         * @return the Sequence reference (owned by this SequenceDatabaseArmci)
-         */
-        virtual Sequence &operator[](size_t i);
+        virtual Sequence* get_sequence(size_t i);
 
     private:
         void read_and_parse_fasta();

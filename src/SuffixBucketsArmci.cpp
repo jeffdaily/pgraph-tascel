@@ -41,6 +41,7 @@ SuffixBucketsArmci::SuffixBucketsArmci(SequenceDatabase *sequences,
                              const Parameters &param,
                              MPI_Comm comm)
     :   SuffixBuckets(sequences, param, comm)
+    ,   n_buckets(0)
     ,   suffixes_remote(NULL)
     ,   suffixes(NULL)
     ,   suffixes_size(0)
@@ -62,6 +63,8 @@ SuffixBucketsArmci::SuffixBucketsArmci(SequenceDatabase *sequences,
     int ierr = 0;
 
     initialize_armci();
+
+    n_buckets = powz(SIGMA,param.window_size);
 
     /* how many buckets does this process own? */
     buckets_size = n_buckets / comm_size;
@@ -104,7 +107,10 @@ SuffixBucketsArmci::SuffixBucketsArmci(SequenceDatabase *sequences,
 
     size_t initial_suffixes_size = 0;
     for (size_t i = start; i < stop; ++i) {
-        initial_suffixes_size += (*sequences)[i].size() - param.window_size;
+        size_t sequence_length = sequences->get_sequence_size(i);
+        if (sequence_length >= size_t(param.window_size)) {
+            initial_suffixes_size += sequence_length - param.window_size + 1;
+        }
     }
     vector<Suffix> initial_suffixes(initial_suffixes_size);
 
@@ -113,8 +119,10 @@ SuffixBucketsArmci::SuffixBucketsArmci(SequenceDatabase *sequences,
         size_t stop_index = 0;
         const char *sequence_data = NULL;
         size_t sequence_length = 0;
+        Sequence * sequence = NULL;
 
-        (*sequences)[i].get_sequence(sequence_data, sequence_length);
+        sequence = sequences->get_sequence(i);
+        sequence->get_sequence(sequence_data, sequence_length);
         stop_index = sequence_length - param.window_size - 1;
 
         if (sequence_length <= ((unsigned)param.window_size)) continue;

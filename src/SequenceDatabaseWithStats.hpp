@@ -70,11 +70,12 @@ class SequenceDatabaseWithStats : public SequenceDatabase
         virtual Sequence* get_sequence(size_t i) {
             Sequence *sequence = NULL;
             double time;
-            if (!db->is_local(i)) {
+            bool local = (db->is_local(i));
+            if (!local) {
                 time = MPI_Wtime();
             }
             sequence = db->get_sequence(i);
-            if (!db->is_local(i)) {
+            if (!local) {
                 stats.time.push_back(MPI_Wtime()-time);
                 stats.bytes.push_back(sequence->get_id_length()+sequence->size());
             }

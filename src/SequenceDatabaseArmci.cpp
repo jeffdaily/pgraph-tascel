@@ -496,17 +496,17 @@ void SequenceDatabaseArmci::pack_and_index_fasta(char *buffer,
 
 
 
-Sequence &SequenceDatabaseArmci::get_sequence(size_t i)
+Sequence* SequenceDatabaseArmci::get_sequence(size_t i)
 {
     if (is_replicated) {
-        return *local_cache[i];
+        return local_cache[i];
     } else {
         if (comm_rank == owners.at(i)) {
-            return *local_cache[i];
+            return local_cache[i];
         }
         else if (remote_cache.count(i)) {
             LockGuard<PthreadMutex> guard(mutex);
-            return *remote_cache[i];
+            return remote_cache[i];
         }
         else {
             Sequence *sequence = NULL;
@@ -549,15 +549,9 @@ Sequence &SequenceDatabaseArmci::get_sequence(size_t i)
                 LockGuard<PthreadMutex> guard(mutex);
                 remote_cache[i] = sequence;
             }
-            return *sequence;
+            return sequence;
         }
     }
-}
-
-
-Sequence &SequenceDatabaseArmci::operator[](size_t i)
-{
-    return this->get_sequence(i);
 }
 
 
