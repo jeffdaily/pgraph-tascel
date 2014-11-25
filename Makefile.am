@@ -172,6 +172,7 @@ libpgraph_la_SOURCES += src/SuffixTree.cpp
 libpgraph_la_SOURCES += src/SuffixTree.hpp
 libpgraph_la_SOURCES += src/tascelx.hpp
 libpgraph_la_SOURCES += src/timer.h
+libpgraph_la_SOURCES += src/timer_real.h
 libpgraph_la_SOURCES += src/TreeStats.hpp
 if HAVE_ARMCI
 libpgraph_la_SOURCES += src/SuffixBucketsArmci.cpp
@@ -277,6 +278,9 @@ libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/token.h
 
 bin_PROGRAMS += apps/align
 apps_align_SOURCES = apps/align.cpp
+
+bin_PROGRAMS += apps/align_smp
+apps_align_smp_SOURCES = apps/align_smp.cpp
 
 noinst_PROGRAMS += tests/st_serial
 noinst_PROGRAMS += tests/suftest

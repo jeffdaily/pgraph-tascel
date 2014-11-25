@@ -79,7 +79,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = apps/align$(EXEEXT)
+bin_PROGRAMS = apps/align$(EXEEXT) apps/align_smp$(EXEEXT)
 noinst_PROGRAMS = tests/st_serial$(EXEEXT) tests/suftest$(EXEEXT) \
 	tests/suftest_omp$(EXEEXT) tests/suftest_orig$(EXEEXT) \
 	tests/test_sais$(EXEEXT) tests/test_combinations$(EXEEXT) \
@@ -371,7 +371,7 @@ am__libpgraph_la_SOURCES_DIST = src/alignment.cpp src/alignment.hpp \
 	src/SuffixBucketsTascel.cpp src/SuffixBucketsTascel.hpp \
 	src/SuffixArray.cpp src/SuffixArray.hpp src/SuffixTree.cpp \
 	src/SuffixTree.hpp src/tascelx.hpp src/timer.h \
-	src/TreeStats.hpp src/SuffixBucketsArmci.cpp \
+	src/timer_real.h src/TreeStats.hpp src/SuffixBucketsArmci.cpp \
 	src/SuffixBucketsArmci.hpp src/SequenceDatabaseArmci.cpp \
 	src/SequenceDatabaseArmci.hpp contrib/sais-lite-lcp/sais.c \
 	contrib/sais-lite-lcp/sais.h
@@ -425,6 +425,12 @@ apps_align_OBJECTS = $(am_apps_align_OBJECTS)
 apps_align_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
 apps_align_DEPENDENCIES = libpgraph.la libalign.la \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) libyaml-cpp.la
+am_apps_align_smp_OBJECTS = apps/align_smp.$(OBJEXT)
+apps_align_smp_OBJECTS = $(am_apps_align_smp_OBJECTS)
+apps_align_smp_LDADD = $(LDADD)
+apps_align_smp_DEPENDENCIES = libpgraph.la libalign.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) libyaml-cpp.la
 am_tests_st_serial_OBJECTS = tests/st_serial.$(OBJEXT)
@@ -570,10 +576,10 @@ am__v_CXXLD_1 =
 SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
 	$(libalign_la_SOURCES) $(libalign_debug_la_SOURCES) \
 	$(libpgraph_la_SOURCES) $(libyaml_cpp_la_SOURCES) \
-	$(apps_align_SOURCES) $(tests_st_serial_SOURCES) \
-	$(tests_suftest_SOURCES) $(tests_suftest_omp_SOURCES) \
-	$(tests_suftest_orig_SOURCES) $(tests_test_align_SOURCES) \
-	$(tests_test_align_db_SOURCES) \
+	$(apps_align_SOURCES) $(apps_align_smp_SOURCES) \
+	$(tests_st_serial_SOURCES) $(tests_suftest_SOURCES) \
+	$(tests_suftest_omp_SOURCES) $(tests_suftest_orig_SOURCES) \
+	$(tests_test_align_SOURCES) $(tests_test_align_db_SOURCES) \
 	$(tests_test_align_debug_SOURCES) \
 	$(tests_test_align_stats_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
@@ -584,10 +590,10 @@ DIST_SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
 	$(am__libalign_la_SOURCES_DIST) \
 	$(am__libalign_debug_la_SOURCES_DIST) \
 	$(am__libpgraph_la_SOURCES_DIST) $(libyaml_cpp_la_SOURCES) \
-	$(apps_align_SOURCES) $(tests_st_serial_SOURCES) \
-	$(tests_suftest_SOURCES) $(tests_suftest_omp_SOURCES) \
-	$(tests_suftest_orig_SOURCES) $(tests_test_align_SOURCES) \
-	$(tests_test_align_db_SOURCES) \
+	$(apps_align_SOURCES) $(apps_align_smp_SOURCES) \
+	$(tests_st_serial_SOURCES) $(tests_suftest_SOURCES) \
+	$(tests_suftest_omp_SOURCES) $(tests_suftest_orig_SOURCES) \
+	$(tests_test_align_SOURCES) $(tests_test_align_db_SOURCES) \
 	$(tests_test_align_debug_SOURCES) \
 	$(tests_test_align_stats_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
@@ -826,8 +832,8 @@ libpgraph_la_SOURCES = src/alignment.cpp src/alignment.hpp \
 	src/SuffixBucketsTascel.cpp src/SuffixBucketsTascel.hpp \
 	src/SuffixArray.cpp src/SuffixArray.hpp src/SuffixTree.cpp \
 	src/SuffixTree.hpp src/tascelx.hpp src/timer.h \
-	src/TreeStats.hpp $(am__append_6) contrib/sais-lite-lcp/sais.c \
-	contrib/sais-lite-lcp/sais.h
+	src/timer_real.h src/TreeStats.hpp $(am__append_6) \
+	contrib/sais-lite-lcp/sais.c contrib/sais-lite-lcp/sais.h
 libyaml_cpp_la_SOURCES =  \
 	contrib/yaml-cpp-0.5.1/include/yaml-cpp/anchor.h \
 	contrib/yaml-cpp-0.5.1/include/yaml-cpp/binary.h \
@@ -919,6 +925,7 @@ libyaml_cpp_la_SOURCES =  \
 	contrib/yaml-cpp-0.5.1/src/tag.h \
 	contrib/yaml-cpp-0.5.1/src/token.h
 apps_align_SOURCES = apps/align.cpp
+apps_align_smp_SOURCES = apps/align_smp.cpp
 tests_suftest_SOURCES = tests/suftest.cpp
 tests_suftest_omp_SOURCES = tests/suftest.cpp
 tests_suftest_orig_SOURCES = contrib/sais-lite-lcp/suftest.c
@@ -1455,6 +1462,12 @@ apps/align.$(OBJEXT): apps/$(am__dirstamp) \
 apps/align$(EXEEXT): $(apps_align_OBJECTS) $(apps_align_DEPENDENCIES) $(EXTRA_apps_align_DEPENDENCIES) apps/$(am__dirstamp)
 	@rm -f apps/align$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_OBJECTS) $(apps_align_LDADD) $(LIBS)
+apps/align_smp.$(OBJEXT): apps/$(am__dirstamp) \
+	apps/$(DEPDIR)/$(am__dirstamp)
+
+apps/align_smp$(EXEEXT): $(apps_align_smp_OBJECTS) $(apps_align_smp_DEPENDENCIES) $(EXTRA_apps_align_smp_DEPENDENCIES) apps/$(am__dirstamp)
+	@rm -f apps/align_smp$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_smp_OBJECTS) $(apps_align_smp_LDADD) $(LIBS)
 tests/st_serial.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 
@@ -1562,6 +1575,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_smp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/gtest-1.7.0/src/$(DEPDIR)/gtest-all.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/sais-lite-lcp/$(DEPDIR)/sais.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/sais-lite-lcp/$(DEPDIR)/suftest.Po@am__quote@
