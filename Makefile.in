@@ -148,7 +148,8 @@ DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/build-aux/ltmain.sh \
 	$(top_srcdir)/build-aux/missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/ga_arg_parse.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ax_openmp.m4 \
+	$(top_srcdir)/m4/ga_arg_parse.m4 \
 	$(top_srcdir)/m4/ga_check_package.m4 \
 	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
 	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
@@ -427,12 +428,16 @@ am__DEPENDENCIES_1 =
 apps_align_DEPENDENCIES = libpgraph.la libalign.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) libyaml-cpp.la
-am_apps_align_smp_OBJECTS = apps/align_smp.$(OBJEXT)
+am_apps_align_smp_OBJECTS = apps/apps_align_smp-align_smp.$(OBJEXT)
 apps_align_smp_OBJECTS = $(am_apps_align_smp_OBJECTS)
 apps_align_smp_LDADD = $(LDADD)
 apps_align_smp_DEPENDENCIES = libpgraph.la libalign.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) libyaml-cpp.la
+apps_align_smp_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
+	$(AM_CXXFLAGS) $(CXXFLAGS) $(apps_align_smp_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_tests_st_serial_OBJECTS = tests/st_serial.$(OBJEXT)
 tests_st_serial_OBJECTS = $(am_tests_st_serial_OBJECTS)
 tests_st_serial_LDADD = $(LDADD)
@@ -702,6 +707,8 @@ NM = @NM@
 NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
+OPENMP_CFLAGS = @OPENMP_CFLAGS@
+OPENMP_CXXFLAGS = @OPENMP_CXXFLAGS@
 OTOOL = @OTOOL@
 OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
@@ -799,7 +806,6 @@ AM_LDFLAGS = $(TASCEL_LDFLAGS) $(ARMCI_LDFLAGS) $(PT_MPI_LDFLAGS) \
 #LDADD += $(GA_FLIBS)
 LDADD = libpgraph.la libalign.la $(TASCEL_LIBS) $(ARMCI_LIBS) \
 	$(PT_MPI_LIBS) $(GMP_LIBS) libyaml-cpp.la
-OPENMP_FLAG = 
 libalign_la_SOURCES = src/align/align.h src/align/nw_ref.c \
 	src/align/nw_scan.c src/align/nw_scan_row.c \
 	src/align/nw_stats_ref.c src/align/nw_stats_scan.c \
@@ -926,6 +932,8 @@ libyaml_cpp_la_SOURCES =  \
 	contrib/yaml-cpp-0.5.1/src/token.h
 apps_align_SOURCES = apps/align.cpp
 apps_align_smp_SOURCES = apps/align_smp.cpp
+apps_align_smp_CPPFLAGS = $(AM_CPPFLAGS) $(OPENMP_CXXFLAGS)
+apps_align_smp_LDFLAGS = $(AM_LDFLAGS) $(OPENMP_CXXFLAGS)
 tests_suftest_SOURCES = tests/suftest.cpp
 tests_suftest_omp_SOURCES = tests/suftest.cpp
 tests_suftest_orig_SOURCES = contrib/sais-lite-lcp/suftest.c
@@ -935,8 +943,8 @@ tests_test_combinations_SOURCES = tests/test_combinations.cpp
 tests_test_db_reprinter_SOURCES = tests/test_db_reprinter.cpp
 tests_test_parser_SOURCES = tests/test_parser.cpp
 tests_test_stl_container_performance_SOURCES = tests/test_stl_container_performance.cpp
-tests_suftest_omp_CPPFLAGS = $(AM_CPPFLAGS) $(OPENMP_FLAG)
-tests_suftest_omp_LDFLAGS = $(AM_LDFLAGS) $(OPENMP_FLAG)
+tests_suftest_omp_CPPFLAGS = $(AM_CPPFLAGS) $(OPENMP_CXXFLAGS)
+tests_suftest_omp_LDFLAGS = $(AM_LDFLAGS) $(OPENMP_CXXFLAGS)
 tests_test_align_SOURCES = tests/test_align.c
 tests_test_align_LDADD = libalign.la libalign_debug.la
 tests_test_align_stats_SOURCES = tests/test_align_stats.c
@@ -1462,12 +1470,12 @@ apps/align.$(OBJEXT): apps/$(am__dirstamp) \
 apps/align$(EXEEXT): $(apps_align_OBJECTS) $(apps_align_DEPENDENCIES) $(EXTRA_apps_align_DEPENDENCIES) apps/$(am__dirstamp)
 	@rm -f apps/align$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_OBJECTS) $(apps_align_LDADD) $(LIBS)
-apps/align_smp.$(OBJEXT): apps/$(am__dirstamp) \
+apps/apps_align_smp-align_smp.$(OBJEXT): apps/$(am__dirstamp) \
 	apps/$(DEPDIR)/$(am__dirstamp)
 
 apps/align_smp$(EXEEXT): $(apps_align_smp_OBJECTS) $(apps_align_smp_DEPENDENCIES) $(EXTRA_apps_align_smp_DEPENDENCIES) apps/$(am__dirstamp)
 	@rm -f apps/align_smp$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_smp_OBJECTS) $(apps_align_smp_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(apps_align_smp_LINK) $(apps_align_smp_OBJECTS) $(apps_align_smp_LDADD) $(LIBS)
 tests/st_serial.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 
@@ -1575,7 +1583,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_smp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_smp-align_smp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/gtest-1.7.0/src/$(DEPDIR)/gtest-all.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/sais-lite-lcp/$(DEPDIR)/sais.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/sais-lite-lcp/$(DEPDIR)/suftest.Po@am__quote@
@@ -2093,6 +2101,20 @@ src/align/libalign_debug_la-nw_scan_512_32.lo: src/align/nw_scan_512_32.c
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LTCXXCOMPILE) -c -o $@ $<
+
+apps/apps_align_smp-align_smp.o: apps/align_smp.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_smp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_smp-align_smp.o -MD -MP -MF apps/$(DEPDIR)/apps_align_smp-align_smp.Tpo -c -o apps/apps_align_smp-align_smp.o `test -f 'apps/align_smp.cpp' || echo '$(srcdir)/'`apps/align_smp.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_smp-align_smp.Tpo apps/$(DEPDIR)/apps_align_smp-align_smp.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_smp.cpp' object='apps/apps_align_smp-align_smp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_smp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_smp-align_smp.o `test -f 'apps/align_smp.cpp' || echo '$(srcdir)/'`apps/align_smp.cpp
+
+apps/apps_align_smp-align_smp.obj: apps/align_smp.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_smp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_smp-align_smp.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_smp-align_smp.Tpo -c -o apps/apps_align_smp-align_smp.obj `if test -f 'apps/align_smp.cpp'; then $(CYGPATH_W) 'apps/align_smp.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_smp.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_smp-align_smp.Tpo apps/$(DEPDIR)/apps_align_smp-align_smp.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_smp.cpp' object='apps/apps_align_smp-align_smp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(apps_align_smp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_smp-align_smp.obj `if test -f 'apps/align_smp.cpp'; then $(CYGPATH_W) 'apps/align_smp.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_smp.cpp'; fi`
 
 tests/tests_suftest_omp-suftest.o: tests/suftest.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(tests_suftest_omp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT tests/tests_suftest_omp-suftest.o -MD -MP -MF tests/$(DEPDIR)/tests_suftest_omp-suftest.Tpo -c -o tests/tests_suftest_omp-suftest.o `test -f 'tests/suftest.cpp' || echo '$(srcdir)/'`tests/suftest.cpp

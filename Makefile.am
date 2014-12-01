@@ -10,7 +10,6 @@ AM_CXXFLAGS =
 AM_CPPFLAGS =
 AM_LDFLAGS =
 LDADD =
-OPENMP_FLAG =
 
 AM_CPPFLAGS += $(TASCEL_CPPFLAGS)
 #AM_CPPFLAGS += $(GA_CPPFLAGS)
@@ -281,6 +280,8 @@ apps_align_SOURCES = apps/align.cpp
 
 bin_PROGRAMS += apps/align_smp
 apps_align_smp_SOURCES = apps/align_smp.cpp
+apps_align_smp_CPPFLAGS = $(AM_CPPFLAGS) $(OPENMP_CXXFLAGS)
+apps_align_smp_LDFLAGS = $(AM_LDFLAGS) $(OPENMP_CXXFLAGS)
 
 noinst_PROGRAMS += tests/st_serial
 noinst_PROGRAMS += tests/suftest
@@ -306,8 +307,8 @@ tests_test_db_reprinter_SOURCES            = tests/test_db_reprinter.cpp
 tests_test_parser_SOURCES                  = tests/test_parser.cpp
 tests_test_stl_container_performance_SOURCES = tests/test_stl_container_performance.cpp
 
-tests_suftest_omp_CPPFLAGS                 = $(AM_CPPFLAGS) $(OPENMP_FLAG)
-tests_suftest_omp_LDFLAGS                  = $(AM_LDFLAGS) $(OPENMP_FLAG)
+tests_suftest_omp_CPPFLAGS                 = $(AM_CPPFLAGS) $(OPENMP_CXXFLAGS)
+tests_suftest_omp_LDFLAGS                  = $(AM_LDFLAGS) $(OPENMP_CXXFLAGS)
 
 tests_test_align_SOURCES                   = tests/test_align.c
 tests_test_align_LDADD                     = libalign.la libalign_debug.la

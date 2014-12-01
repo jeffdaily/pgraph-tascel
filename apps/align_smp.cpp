@@ -31,10 +31,17 @@
 #include <utility>
 #include <vector>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #include "align/align.h"
 #include "blosum/blosum62.h"
 #if HAVE_SSE2
 #include "align/align_scan_128_16.h"
+#endif
+#if HAVE_AVX_512
+#include "align/align_scan_512_32.h"
 #endif
 
 #include "sais.h"
@@ -96,8 +103,7 @@ int main(int argc, const char *argv[]) {
     FILE *fp = NULL;
     const char *fname = NULL;
     unsigned char *T = NULL;
-    int *tbl_pr = NULL;
-    int *del_pr = NULL;
+    int num_threads = 1;
     int *SA = NULL;
     int *LCP = NULL;
     unsigned char *BWT = NULL;
@@ -343,56 +349,50 @@ int main(int argc, const char *argv[]) {
     free(BWT);
     free(SID);
 
-#if HAVE_SSE2
-#else
-    /* allocate table memory */
-    tbl_pr = (int*)malloc(sizeof(int) * longest);
-    del_pr = (int*)malloc(sizeof(int) * longest);
+#ifdef _OPENMP
+    num_threads = omp_get_max_threads();
+    printf("omp num threads %d\n", num_threads);
 #endif
 
-#ifdef _OPENMP
+    /* OpenMP can't iterate over an STL set. Convert to STL vector. */
     start = timer_real();
     vector<Pair> vpairs(pairs.begin(), pairs.end());
     finish = timer_real();
-    fprintf(stdout, "omp pairs: %.4f sec\n", finish-start);
-#endif
+    fprintf(stdout, "vec pairs: %.4f sec\n", finish-start);
 
     /* align pairs */
     start = timer_real();
+#pragma omp parallel
+    {
+        int thread_num = 0;
 #ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic)
-    for (int index=0; index<vpairs.size(); ++index) {
-        int i = vpairs[index].first;
-        int j = vpairs[index].second;
-#else
-    for (PairSet::const_iterator it=pairs.begin(); it!=pairs.end(); ++it) {
-        int i = it->first;
-        int j = it->second;
+        thread_num = omp_get_thread_num();
 #endif
-        int i_beg = BEG[i];
-        int i_end = END[i];
-        int i_len = i_end-i_beg;
-        int j_beg = BEG[j];
-        int j_end = END[j];
-        int j_len = j_end-j_beg;
+#pragma omp for schedule(dynamic) nowait
+        for (int index=0; index<vpairs.size(); ++index) {
+            int i = vpairs[index].first;
+            int j = vpairs[index].second;
+            int i_beg = BEG[i];
+            int i_end = END[i];
+            int i_len = i_end-i_beg;
+            int j_beg = BEG[j];
+            int j_end = END[j];
+            int j_len = j_end-j_beg;
 #if HAVE_SSE2
-        int score = sg_scan_128_16(
-                (const char*)&T[i_beg], i_len,
-                (const char*)&T[j_beg], j_len,
-                10, 1, blosum62__);
-#else
-        int score = sg_scan(
-                (const char*)&T[i_beg], i_len,
-                (const char*)&T[j_beg], j_len,
-                10, 1, blosum62, tbl_pr, del_pr);
+            int score = nw_scan_128_16(
+                    (const char*)&T[i_beg], i_len,
+                    (const char*)&T[j_beg], j_len,
+                    10, 1, blosum62__);
+#elif HAVE_AVX_512
+            int score = nw_scan_512_32(
+                    (const char*)&T[i_beg], i_len,
+                    (const char*)&T[j_beg], j_len,
+                    10, 1, blosum62__);
 #endif
+        }
     }
     finish = timer_real();
     fprintf(stdout, "alignments: %.4f sec\n", finish-start);
-
-    /* Deallocate table memory. */
-    free(tbl_pr);
-    free(del_pr);
 
     /* Done with input text. */
     free(T);

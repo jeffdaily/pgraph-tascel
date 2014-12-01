@@ -54,6 +54,8 @@ AC_TYPE_INT8_T
 AC_TYPE_INT16_T
 AC_TYPE_INT32_T
 AC_TYPE_INT64_T
+AX_OPENMP
+AC_SUBST([OPENMP_CFLAGS])
 
 AC_CACHE_CHECK([for SSE2],
     [pt_cv_sse2],
@@ -180,6 +182,8 @@ AC_CHECK_SIZEOF([unsigned int])
 AC_CHECK_SIZEOF([unsigned long])
 AC_CHECK_SIZEOF([unsigned long long])
 dnl AX_CXX_COMPILE_STDCXX_11([],[optional])
+AX_OPENMP
+AC_SUBST([OPENMP_CXXFLAGS])
 PT_CXX_UNORDERED_SET
 
 # Checks for library functions.

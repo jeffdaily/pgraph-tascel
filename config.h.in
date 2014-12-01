@@ -30,6 +30,9 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
+/* Define if OpenMP is enabled */
+#undef HAVE_OPENMP
+
 /* define to 1 if the C compiler has a program name global varaible */
 #undef HAVE_PROGNAME
 
