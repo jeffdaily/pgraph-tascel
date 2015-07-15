@@ -1207,15 +1207,21 @@ static unsigned long process_tree(Bucket *bucket, local_data_t *local_data, int 
             stats_tree[worker].suffixes.push_back(bucket->size);
             /* generate pairs */
             for (size_t i=0, limit=bucket->size; i<limit; ++i) {
-                size_t id1 = bucket->suffixes[i].sid;
-                for (size_t j=0; j<limit; ++j) {
-                    size_t id2 = bucket->suffixes[j].sid;
-                    if (id1 == id2) continue;
-                    if (id1 > id2) {
-                        local_pairs.push_back(make_pair(id2,id1));
-                    }
-                    else {
-                        local_pairs.push_back(make_pair(id1,id2));
+                size_t sid1 = bucket->suffixes[i].sid;
+                size_t pid1 = bucket->suffixes[i].pid;
+                Sequence *s1 = sequences->get_sequence(sid1);
+                for (size_t j=i+1; j<limit; ++j) {
+                    size_t sid2 = bucket->suffixes[j].sid;
+                    size_t pid2 = bucket->suffixes[j].pid;
+                    Sequence *s2 = sequences->get_sequence(sid2);
+                    if (sid1 == sid2) continue;
+                    if (pid1>0 && pid2>0 && (*s1)[pid1-1] == (*s2)[pid2-1]) {
+                        if (sid1 > sid2) {
+                            local_pairs.push_back(make_pair(sid2,sid1));
+                        }
+                        else {
+                            local_pairs.push_back(make_pair(sid1,sid2));
+                        }
                     }
                     if (local_pairs.size() > LIMIT) {
                         {
