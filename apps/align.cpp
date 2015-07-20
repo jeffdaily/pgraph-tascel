@@ -31,6 +31,8 @@
 #include <string>
 #include <vector>
 
+#include <parasail.h>
+
 #include "alignment.hpp"
 #include "AlignStats.hpp"
 #include "Bootstrap.hpp"
@@ -98,11 +100,10 @@ typedef struct {
     SequenceDatabase **sequences;
     vector<EdgeResult> *edge_results;
     Parameters *parameters;
+    parasail_function_t *aligner;
+    const parasail_matrix_t *matrix;
     PairCheck **pair_check;
     SuffixBuckets *suffix_buckets;
-    cell_t ***tbl;
-    int ***del;
-    int ***ins;
 } local_data_t;
 
 
@@ -318,6 +319,16 @@ int inner_main(int argc, char **argv)
         cout << *parameters << endl;
     }
 
+    /* lookup function and matrix */
+    local_data->aligner = parasail_lookup_function(parameters->function.c_str());
+    local_data->matrix = parasail_matrix_lookup(parameters->matrix.c_str());
+    if (NULL == local_data->aligner) {
+        cout << "specified function not found" << endl;
+        TascelConfig::finalize();
+        pgraph::finalize();
+        return 1;
+    }
+
     if (parameters->use_tree
             || parameters->use_tree_dynamic
             || parameters->use_tree_hybrid) {
@@ -367,14 +378,8 @@ int inner_main(int argc, char **argv)
 
     sequences = new SequenceDatabase*[NUM_WORKERS];
     local_data->sequences = sequences;
-    local_data->tbl = new cell_t**[NUM_WORKERS];
-    local_data->del = new int**[NUM_WORKERS];
-    local_data->ins = new int**[NUM_WORKERS];
     for (int worker=0; worker<NUM_WORKERS; ++worker) {
         sequences[worker] = new SequenceDatabaseWithStats(sequence_db);
-        local_data->tbl[worker] = allocate_cell_table(2, sequence_db->longest());
-        local_data->del[worker] = allocate_int_table(2, sequence_db->longest()+16);
-        local_data->ins[worker] = allocate_int_table(2, sequence_db->longest()+16);
     }
 
     if (parameters->use_tree
@@ -846,9 +851,6 @@ int inner_main(int argc, char **argv)
             delete utcs[worker];
         }
         delete sequences[worker];
-        free_cell_table(local_data->tbl[worker], 2);
-        free_int_table(local_data->del[worker], 2);
-        free_int_table(local_data->ins[worker], 2);
     }
     delete [] utcs;
     delete [] stats_align;
@@ -868,9 +870,6 @@ int inner_main(int argc, char **argv)
     delete parameters;
     delete [] sequences;
     delete sequence_db;
-    delete [] local_data->tbl;
-    delete [] local_data->del;
-    delete [] local_data->ins;
     delete local_data;
 
     time_main = MPI_Wtime() - time_main;
@@ -913,23 +912,26 @@ static void align(
     SequenceDatabase *sequences = local_data->sequences[thd];
     vector<EdgeResult> *edge_results = local_data->edge_results;
     Parameters *parameters = local_data->parameters;
-    cell_t ***tbl = local_data->tbl;
-    int ***del = local_data->del;
-    int ***ins = local_data->ins;
 
     int open = parameters->open;
     int gap = parameters->gap;
     int AOL = parameters->AOL;
     int SIM = parameters->SIM;
     int OS = parameters->OS;
+    parasail_function_t *aligner = local_data->aligner;
+    const parasail_matrix_t *matrix = local_data->matrix;
 
     tt = MPI_Wtime();
 
     Sequence *s1 = sequences->get_sequence(seq_id[0]);
     Sequence *s2 = sequences->get_sequence(seq_id[1]);
-    unsigned long s1Len = s1->get_sequence_length();
-    unsigned long s2Len = s2->get_sequence_length();
+    const char * c1;
+    const char * c2;
+    size_t s1Len;
+    size_t s2Len;
     bool do_alignment = parameters->perform_alignments;
+    s1->get_sequence(c1, s1Len);
+    s2->get_sequence(c2, s2Len);
     if (parameters->use_length_filter) {
         do_alignment |= SuffixTree::length_filter(s1Len, s2Len, AOL*SIM/100);
     }
@@ -939,11 +941,11 @@ static void align(
         stats[thd].work += s1Len * s2Len;
         ++stats[thd].align_counts;
         t = MPI_Wtime();
-        cell_t result;
-        result = align_semi_affine(
-                *s1, *s2, open, gap, tbl[thd], del[thd], ins[thd]);
+        parasail_result_t *result;
+        result = aligner(
+                c1, s1Len, c2, s2Len, -open, -gap, matrix);
         is_edge_answer = is_edge(
-                result, *s1, *s2, AOL, SIM, OS, sscore, max_len);
+                result, c1, s1Len, c2, s2Len, AOL, SIM, OS, sscore, max_len, matrix);
 
         if (parameters->output_to_disk
                 && (is_edge_answer || parameters->output_all))
@@ -951,12 +953,13 @@ static void align(
             edge_results[thd].push_back(
                     EdgeResult(
                         seq_id[0], seq_id[1],
-                        1.0*result.length/max_len,
-                        1.0*result.matches/result.length,
-                        1.0*result.score/sscore,
+                        1.0*result->length/max_len,
+                        1.0*result->matches/result->length,
+                        1.0*result->score/sscore,
                         is_edge_answer)
                     );
         }
+        parasail_result_free(result);
         if (is_edge_answer) {
             ++stats[thd].edge_counts;
         }

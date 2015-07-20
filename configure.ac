@@ -57,74 +57,6 @@ AC_TYPE_INT64_T
 AX_OPENMP
 AC_SUBST([OPENMP_CFLAGS])
 
-AC_CACHE_CHECK([for SSE2],
-    [pt_cv_sse2],
-    [AC_LANG_PUSH([C])
-     AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
-#include <emmintrin.h>
-__m128i foo() {
-    __m128i vZero = _mm_set1_epi16(0);
-    return _mm_add_epi16(vZero,vZero);
-}
-]])],
-        [pt_cv_sse2=yes; pt_cv_sse2_val=1],
-        [pt_cv_sse2=no]; pt_cv_sse2_val=0)
-     AC_LANG_POP([C])])
-AC_DEFINE_UNQUOTED([HAVE_SSE2], [$pt_cv_sse2_val],
-    [define to 1 if the C compiler supports SSE2])
-AM_CONDITIONAL([HAVE_SSE2], [test x$pt_cv_sse2 = xyes])
-
-AC_CACHE_CHECK([for SSE4.1],
-    [pt_cv_sse41],
-    [AC_LANG_PUSH([C])
-     AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
-#include <smmintrin.h>
-__m128i foo() {
-    __m128i vZero = _mm_set1_epi8(0);
-    return _mm_max_epi16(vZero,vZero);
-}
-]])],
-        [pt_cv_sse41=yes; pt_cv_sse41_val=1],
-        [pt_cv_sse41=no]; pt_cv_sse41_val=0)
-     AC_LANG_POP([C])])
-AC_DEFINE_UNQUOTED([HAVE_SSE41], [$pt_cv_sse41_val],
-    [define to 1 if the C compiler supports SSE4.1])
-AM_CONDITIONAL([HAVE_SSE41], [test x$pt_cv_sse41 = xyes])
-
-AC_CACHE_CHECK([for AVX2],
-    [pt_cv_avx2],
-    [AC_LANG_PUSH([C])
-     AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
-#include <immintrin.h>
-__m256i foo() {
-    __m256i vZero = _mm256_set1_epi8(0);
-    return _mm256_add_epi8(vZero,vZero);
-}
-]])],
-        [pt_cv_avx2=yes; pt_cv_avx2_val=1],
-        [pt_cv_avx2=no]; pt_cv_avx2_val=0)
-     AC_LANG_POP([C])])
-AC_DEFINE_UNQUOTED([HAVE_AVX2], [$pt_cv_avx2_val],
-    [define to 1 if the C compiler supports AVX2])
-AM_CONDITIONAL([HAVE_AVX2], [test x$pt_cv_avx2 = xyes])
-
-AC_CACHE_CHECK([for AVX-512],
-    [pt_cv_avx512],
-    [AC_LANG_PUSH([C])
-     AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
-#include <immintrin.h>
-__m512i foo() {
-    __m512i vZero = _mm512_set1_epi8(0);
-    return _mm512_add_epi8(vZero,vZero);
-}
-]])],
-        [pt_cv_avx512=yes; pt_cv_avx512_val=1],
-        [pt_cv_avx512=no]; pt_cv_avx512_val=0)
-     AC_LANG_POP([C])])
-AC_DEFINE_UNQUOTED([HAVE_AVX_512], [$pt_cv_avx512_val],
-    [define to 1 if the C compiler supports AVX-512])
-AM_CONDITIONAL([HAVE_AVX_512], [test x$pt_cv_avx512 = xyes])
-
 PT_PROGNAME
 
 AC_CHECK_TYPES([pthread_barrier_t], [], [], [[#include <pthread.h>]])
@@ -162,6 +94,7 @@ AS_IF([test x$with_mpi_wrappers = xyes], [PT_MPI_UNWRAP])
 TASCEL_REQUIRE
 GA_CHECK_PACKAGE([gmp], [gmp.h], [gmp], [__gmpz_bin_uiui])
 GA_CHECK_PACKAGE([armci], [armci.h], [armci], [ARMCI_Init])
+GA_CHECK_PACKAGE([parasail], [parasail.h], [parasail], [parasail_sw])
 
 # Checks for header files.
 

@@ -16,6 +16,7 @@ AM_CPPFLAGS += $(TASCEL_CPPFLAGS)
 AM_CPPFLAGS += $(ARMCI_CPPFLAGS)
 AM_CPPFLAGS += $(PT_MPI_CPPFLAGS)
 AM_CPPFLAGS += $(GMP_CPPFLAGS)
+AM_CPPFLAGS += $(PARASAIL_CPPFLAGS)
 AM_CPPFLAGS += -I$(top_srcdir)/src
 AM_CPPFLAGS += -I$(top_srcdir)/contrib/boost_1_55_0
 AM_CPPFLAGS += -I$(top_srcdir)/contrib/gtest-1.7.0
@@ -28,9 +29,9 @@ AM_LDFLAGS += $(TASCEL_LDFLAGS)
 AM_LDFLAGS += $(ARMCI_LDFLAGS)
 AM_LDFLAGS += $(PT_MPI_LDFLAGS)
 AM_LDFLAGS += $(GMP_LDFLAGS)
+AM_LDFLAGS += $(PARASAIL_LDFLAGS)
 
 LDADD += libpgraph.la
-LDADD += libalign.la
 LDADD += $(TASCEL_LIBS)
 #LDADD += $(GA_LIBS)
 LDADD += $(ARMCI_LIBS)
@@ -38,97 +39,13 @@ LDADD += $(PT_MPI_LIBS)
 LDADD += $(GMP_LIBS)
 #LDADD += $(GA_FLIBS)
 LDADD += libyaml-cpp.la
-
-noinst_LTLIBRARIES += libalign.la
-libalign_la_SOURCES =
-libalign_la_SOURCES += src/align/align.h
-libalign_la_SOURCES += src/align/nw.c
-libalign_la_SOURCES += src/align/nw_scan.c
-libalign_la_SOURCES += src/align/nw_scan_row.c
-libalign_la_SOURCES += src/align/nw_stats.c
-libalign_la_SOURCES += src/align/nw_stats_scan.c
-libalign_la_SOURCES += src/align/sg.c
-libalign_la_SOURCES += src/align/sg_scan.c
-libalign_la_SOURCES += src/align/sg_stats.c
-libalign_la_SOURCES += src/align/sg_stats_scan.c
-libalign_la_SOURCES += src/align/sw.c
-libalign_la_SOURCES += src/align/sw_scan.c
-libalign_la_SOURCES += src/align/sw_stats.c
-libalign_la_SOURCES += src/align/sw_stats_scan.c
-if HAVE_SSE2
-libalign_la_SOURCES += src/align/align_scan_128_16.h
-libalign_la_SOURCES += src/align/align_striped_128_16.h
-libalign_la_SOURCES += src/align/align_wozniak_128_16.h
-libalign_la_SOURCES += src/align/nw_scan_128_16.c
-libalign_la_SOURCES += src/align/nw_striped_128_16.c
-libalign_la_SOURCES += src/align/nw_wozniak_128_16.c
-libalign_la_SOURCES += src/align/nw_stats_scan_128_16.c
-libalign_la_SOURCES += src/align/nw_stats_striped_128_16.c
-libalign_la_SOURCES += src/align/nw_stats_wozniak_128_16.c
-libalign_la_SOURCES += src/align/sg_scan_128_16.c
-libalign_la_SOURCES += src/align/sg_striped_128_16.c
-libalign_la_SOURCES += src/align/sg_wozniak_128_16.c
-libalign_la_SOURCES += src/align/sg_stats_scan_128_16.c
-libalign_la_SOURCES += src/align/sg_stats_striped_128_16.c
-libalign_la_SOURCES += src/align/sg_stats_wozniak_128_16.c
-libalign_la_SOURCES += src/align/sw_scan_128_16.c
-libalign_la_SOURCES += src/align/sw_striped_128_16.c
-libalign_la_SOURCES += src/align/sw_wozniak_128_16.c
-libalign_la_SOURCES += src/align/sw_stats_scan_128_16.c
-libalign_la_SOURCES += src/align/sw_stats_striped_128_16.c
-libalign_la_SOURCES += src/align/sw_stats_wozniak_128_16.c
-endif
-if HAVE_SSE41
-libalign_la_SOURCES += src/align/align_scan_128_8.h
-libalign_la_SOURCES += src/align/align_striped_128_8.h
-libalign_la_SOURCES += src/align/align_wozniak_128_8.h
-libalign_la_SOURCES += src/align/nw_scan_128_8.c
-libalign_la_SOURCES += src/align/nw_striped_128_8.c
-libalign_la_SOURCES += src/align/nw_wozniak_128_8.c
-libalign_la_SOURCES += src/align/nw_stats_scan_128_8.c
-libalign_la_SOURCES += src/align/nw_stats_striped_128_8.c
-libalign_la_SOURCES += src/align/nw_stats_wozniak_128_8.c
-libalign_la_SOURCES += src/align/sg_scan_128_8.c
-libalign_la_SOURCES += src/align/sg_striped_128_8.c
-libalign_la_SOURCES += src/align/sg_wozniak_128_8.c
-libalign_la_SOURCES += src/align/sg_stats_scan_128_8.c
-libalign_la_SOURCES += src/align/sg_stats_wozniak_128_8.c
-libalign_la_SOURCES += src/align/sw_scan_128_8.c
-libalign_la_SOURCES += src/align/sw_stats_scan_128_8.c
-endif
-if HAVE_AVX_512
-libalign_la_SOURCES += src/align/nw_scan_512_32.c
-endif
-
-noinst_LTLIBRARIES += libalign_debug.la
-libalign_debug_la_SOURCES =
-libalign_debug_la_SOURCES += $(libalign_la_SOURCES)
-libalign_debug_la_SOURCES += src/align/align_debug.h
-if HAVE_SSE2
-libalign_debug_la_SOURCES += src/align/align_scan_128_16_debug.h
-libalign_debug_la_SOURCES += src/align/align_striped_128_16_debug.h
-libalign_debug_la_SOURCES += src/align/align_wozniak_128_16_debug.h
-endif
-if HAVE_SSE41
-libalign_debug_la_SOURCES += src/align/align_scan_128_8_debug.h
-libalign_debug_la_SOURCES += src/align/align_striped_128_8_debug.h
-libalign_debug_la_SOURCES += src/align/align_wozniak_128_8_debug.h
-endif
-libalign_debug_la_CPPFLAGS =
-libalign_debug_la_CPPFLAGS += $(AM_CPPFLAGS)
-libalign_debug_la_CPPFLAGS += -DALIGN_EXTRA
+LDADD += $(PARASAIL_LIBS)
 
 noinst_LTLIBRARIES += libpgraph.la
 libpgraph_la_SOURCES =
 libpgraph_la_SOURCES += src/alignment.cpp
 libpgraph_la_SOURCES += src/alignment.hpp
 libpgraph_la_SOURCES += src/AlignStats.hpp
-libpgraph_la_SOURCES += src/blosum/blosum40.h
-libpgraph_la_SOURCES += src/blosum/blosum45.h
-libpgraph_la_SOURCES += src/blosum/blosum50.h
-libpgraph_la_SOURCES += src/blosum/blosum62.h
-libpgraph_la_SOURCES += src/blosum/blosum75.h
-libpgraph_la_SOURCES += src/blosum/blosum80.h
 libpgraph_la_SOURCES += src/Bootstrap.cpp
 libpgraph_la_SOURCES += src/Bootstrap.hpp
 libpgraph_la_SOURCES += src/combinations.c
@@ -278,11 +195,6 @@ libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/token.h
 bin_PROGRAMS += apps/align
 apps_align_SOURCES = apps/align.cpp
 
-bin_PROGRAMS += apps/align_smp
-apps_align_smp_SOURCES = apps/align_smp.cpp
-apps_align_smp_CPPFLAGS = $(AM_CPPFLAGS) $(OPENMP_CXXFLAGS)
-apps_align_smp_LDFLAGS = $(AM_LDFLAGS) $(OPENMP_CXXFLAGS)
-
 noinst_PROGRAMS += tests/st_serial
 noinst_PROGRAMS += tests/suftest
 noinst_PROGRAMS += tests/suftest_omp
@@ -292,10 +204,6 @@ noinst_PROGRAMS += tests/test_combinations
 noinst_PROGRAMS += tests/test_db_reprinter
 noinst_PROGRAMS += tests/test_parser
 noinst_PROGRAMS += tests/test_stl_container_performance
-noinst_PROGRAMS += tests/test_align
-noinst_PROGRAMS += tests/test_align_stats
-noinst_PROGRAMS += tests/test_align_debug
-noinst_PROGRAMS += tests/test_align_db
 
 tests_suftest_SOURCES                      = tests/suftest.cpp
 tests_suftest_omp_SOURCES                  = tests/suftest.cpp
@@ -309,14 +217,6 @@ tests_test_stl_container_performance_SOURCES = tests/test_stl_container_performa
 
 tests_suftest_omp_CPPFLAGS                 = $(AM_CPPFLAGS) $(OPENMP_CXXFLAGS)
 tests_suftest_omp_LDFLAGS                  = $(AM_LDFLAGS) $(OPENMP_CXXFLAGS)
-
-tests_test_align_SOURCES                   = tests/test_align.c
-tests_test_align_LDADD                     = libalign.la libalign_debug.la
-tests_test_align_stats_SOURCES             = tests/test_align_stats.c
-tests_test_align_stats_LDADD               = libalign.la libalign_debug.la
-tests_test_align_debug_SOURCES             = tests/test_align_debug.c
-tests_test_align_debug_LDADD               = libalign.la libalign_debug.la
-tests_test_align_db_SOURCES                = tests/test_align_db.cpp
 
 check_LIBRARIES += libgtest.a
 libgtest_a_SOURCES = contrib/gtest-1.7.0/src/gtest-all.cc

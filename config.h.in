@@ -3,12 +3,6 @@
 /* set to 1 if we have the indicated package */
 #undef HAVE_ARMCI
 
-/* define to 1 if the C compiler supports AVX2 */
-#undef HAVE_AVX2
-
-/* define to 1 if the C compiler supports AVX-512 */
-#undef HAVE_AVX_512
-
 /* Define if tr1/unordered_set is present. */
 #undef HAVE_CXX_TR1_UNORDERED_SET
 
@@ -33,6 +27,9 @@
 /* Define if OpenMP is enabled */
 #undef HAVE_OPENMP
 
+/* set to 1 if we have the indicated package */
+#undef HAVE_PARASAIL
+
 /* define to 1 if the C compiler has a program name global varaible */
 #undef HAVE_PROGNAME
 
@@ -56,12 +53,6 @@
 
 /* Define to 1 if you have the `sched_setaffinity' function. */
 #undef HAVE_SCHED_SETAFFINITY
-
-/* define to 1 if the C compiler supports SSE2 */
-#undef HAVE_SSE2
-
-/* define to 1 if the C compiler supports SSE4.1 */
-#undef HAVE_SSE41
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H

@@ -42,6 +42,8 @@ const string Parameters::KEY_MATCH_SIMILARITY("MatchSimilarity");
 const string Parameters::KEY_OPTIMAL_SCORE_OVER_SELF_SCORE("OptimalScoreOverSelfScore");
 const string Parameters::KEY_EXACT_MATCH_LENGTH("ExactMatchLength");
 const string Parameters::KEY_SLIDE_WINDOW_SIZE("SlideWindowSize");
+const string Parameters::KEY_FUNCTION("Function");
+const string Parameters::KEY_MATRIX("Matrix");
 const string Parameters::KEY_OPEN("Open");
 const string Parameters::KEY_GAP("Gap");
 const string Parameters::KEY_MEMORY_WORKER("MemoryWorker");
@@ -74,6 +76,8 @@ const int Parameters::DEF_MATCH_SIMILARITY(40);
 const int Parameters::DEF_OPTIMAL_SCORE_OVER_SELF_SCORE(30);
 const int Parameters::DEF_EXACT_MATCH_LENGTH(4);
 const int Parameters::DEF_SLIDE_WINDOW_SIZE(3);
+const string Parameters::DEF_FUNCTION("sw_stats_striped_16");
+const string Parameters::DEF_MATRIX("blosum62");
 const int Parameters::DEF_OPEN(-10);
 const int Parameters::DEF_GAP(-1);
 const size_t Parameters::DEF_MEMORY_WORKER(512U*MB);
@@ -165,6 +169,8 @@ Parameters::Parameters()
     , OS(DEF_OPTIMAL_SCORE_OVER_SELF_SCORE)
     , exact_match_length(DEF_EXACT_MATCH_LENGTH)
     , window_size(DEF_SLIDE_WINDOW_SIZE)
+    , function(DEF_FUNCTION)
+    , matrix(DEF_MATRIX)
     , open(DEF_OPEN)
     , gap(DEF_GAP)
     , memory_worker(DEF_MEMORY_WORKER)
@@ -202,6 +208,8 @@ Parameters::Parameters(const char *parameters_file, MPI_Comm comm)
     , OS(DEF_OPTIMAL_SCORE_OVER_SELF_SCORE)
     , exact_match_length(DEF_EXACT_MATCH_LENGTH)
     , window_size(DEF_SLIDE_WINDOW_SIZE)
+    , function(DEF_FUNCTION)
+    , matrix(DEF_MATRIX)
     , open(DEF_OPEN)
     , gap(DEF_GAP)
     , memory_worker(DEF_MEMORY_WORKER)
@@ -261,6 +269,10 @@ void Parameters::parse(const char *parameters_file, MPI_Comm comm)
                 DEF_EXACT_MATCH_LENGTH);
         window_size = config[KEY_SLIDE_WINDOW_SIZE].as<int>(
                 DEF_SLIDE_WINDOW_SIZE);
+        function = config[KEY_FUNCTION].as<string>(
+                DEF_FUNCTION);
+        matrix = config[KEY_MATRIX].as<string>(
+                DEF_MATRIX);
         open = config[KEY_OPEN].as<int>(
                 DEF_OPEN);
         gap = config[KEY_GAP].as<int>(
@@ -352,6 +364,8 @@ ostream& operator<< (ostream &os, const Parameters &p)
     out << YAML::Key << Parameters::KEY_OPTIMAL_SCORE_OVER_SELF_SCORE << YAML::Value << p.OS;
     out << YAML::Key << Parameters::KEY_EXACT_MATCH_LENGTH << YAML::Value << p.exact_match_length;
     out << YAML::Key << Parameters::KEY_SLIDE_WINDOW_SIZE << YAML::Value << p.window_size;
+    out << YAML::Key << Parameters::KEY_FUNCTION << YAML::Value << p.function;
+    out << YAML::Key << Parameters::KEY_MATRIX << YAML::Value << p.matrix;
     out << YAML::Key << Parameters::KEY_OPEN << YAML::Value << p.open;
     out << YAML::Key << Parameters::KEY_GAP << YAML::Value << p.gap;
     out << YAML::Key << Parameters::KEY_MEMORY_WORKER << YAML::Value << p.memory_worker;

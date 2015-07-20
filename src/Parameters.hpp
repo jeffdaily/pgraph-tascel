@@ -37,6 +37,8 @@ public:
     static const string KEY_OPTIMAL_SCORE_OVER_SELF_SCORE;
     static const string KEY_EXACT_MATCH_LENGTH;
     static const string KEY_SLIDE_WINDOW_SIZE;
+    static const string KEY_FUNCTION;
+    static const string KEY_MATRIX;
     static const string KEY_OPEN;
     static const string KEY_GAP;
     static const string KEY_MEMORY_WORKER;
@@ -70,6 +72,8 @@ public:
     static const int DEF_OPTIMAL_SCORE_OVER_SELF_SCORE;
     static const int DEF_EXACT_MATCH_LENGTH;
     static const int DEF_SLIDE_WINDOW_SIZE;
+    static const string DEF_FUNCTION;
+    static const string DEF_MATRIX;
     static const int DEF_OPEN;
     static const int DEF_GAP;
     static const size_t DEF_MEMORY_WORKER;
@@ -132,6 +136,8 @@ public:
     int OS;             /**< OptimalScoreOverSelfScore */
     int exact_match_length;/**< exact match length cutoff */
     int window_size;    /**< slide window size */
+    string function;
+    string matrix;
     int open;           /**< open penalty for affine gap alignment */
     int gap;            /**< gap extension penalty for affine gap alignment */
     size_t memory_worker; /**< memory budget per worker task pool */
