@@ -932,6 +932,12 @@ static void align(
     bool do_alignment = parameters->perform_alignments;
     s1->get_sequence(c1, s1Len);
     s2->get_sequence(c2, s2Len);
+    if (s1->uses_delimiter()) {
+        s1Len -= 1;
+    }
+    if (s2->uses_delimiter()) {
+        s2Len -= 1;
+    }
     if (parameters->use_length_filter) {
         do_alignment |= SuffixTree::length_filter(s1Len, s2Len, AOL*SIM/100);
     }
