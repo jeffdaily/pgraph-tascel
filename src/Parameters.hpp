@@ -37,6 +37,7 @@ public:
     static const string KEY_OPTIMAL_SCORE_OVER_SELF_SCORE;
     static const string KEY_EXACT_MATCH_LENGTH;
     static const string KEY_SLIDE_WINDOW_SIZE;
+    static const string KEY_SA_BLOCK_SIZE;
     static const string KEY_FUNCTION;
     static const string KEY_MATRIX;
     static const string KEY_OPEN;
@@ -72,6 +73,7 @@ public:
     static const int DEF_OPTIMAL_SCORE_OVER_SELF_SCORE;
     static const int DEF_EXACT_MATCH_LENGTH;
     static const int DEF_SLIDE_WINDOW_SIZE;
+    static const int DEF_SA_BLOCK_SIZE;
     static const string DEF_FUNCTION;
     static const string DEF_MATRIX;
     static const int DEF_OPEN;
@@ -136,6 +138,7 @@ public:
     int OS;             /**< OptimalScoreOverSelfScore */
     int exact_match_length;/**< exact match length cutoff */
     int window_size;    /**< slide window size */
+    int sa_block_size;
     string function;
     string matrix;
     int open;           /**< open penalty for affine gap alignment */

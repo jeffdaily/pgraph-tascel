@@ -195,6 +195,9 @@ libyaml_cpp_la_SOURCES += contrib/yaml-cpp-0.5.1/src/token.h
 bin_PROGRAMS += apps/align
 apps_align_SOURCES = apps/align.cpp
 
+bin_PROGRAMS += apps/align_parted
+apps_align_parted_SOURCES = apps/align_parted.cpp
+
 noinst_PROGRAMS += tests/st_serial
 noinst_PROGRAMS += tests/suftest
 noinst_PROGRAMS += tests/suftest_omp
