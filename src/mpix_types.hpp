@@ -21,6 +21,7 @@
 #include "DupStats.hpp"
 #include "Stats.hpp"
 #include "Suffix.hpp"
+#include "SuffixArrayStats.hpp"
 #include "TreeStats.hpp"
 
 #include "mpix.hpp"
@@ -31,6 +32,7 @@ using ::pgraph::DbStats;
 using ::pgraph::DupStats;
 using ::pgraph::Stats;
 using ::pgraph::Suffix;
+using ::pgraph::SuffixArrayStats;
 using ::pgraph::TreeStats;
 
 using ::tascel::Counter;
@@ -43,6 +45,7 @@ extern MPI_Datatype mpi_datatype_Counter;
 extern MPI_Datatype mpi_datatype_Timer;
 extern MPI_Datatype mpi_datatype_StealingStats;
 extern MPI_Datatype mpi_datatype_Stats;
+extern MPI_Datatype mpi_datatype_SuffixArrayStats;
 extern MPI_Datatype mpi_datatype_TreeStats;
 extern MPI_Datatype mpi_datatype_DbStats;
 extern MPI_Datatype mpi_datatype_DupStats;
@@ -53,6 +56,7 @@ MPI_Datatype get_mpi_datatype(Counter object);
 MPI_Datatype get_mpi_datatype(Timer object);
 MPI_Datatype get_mpi_datatype(StealingStats object);
 MPI_Datatype get_mpi_datatype(Stats object);
+MPI_Datatype get_mpi_datatype(SuffixArrayStats object);
 MPI_Datatype get_mpi_datatype(TreeStats object);
 MPI_Datatype get_mpi_datatype(DbStats object);
 MPI_Datatype get_mpi_datatype(DupStats object);
@@ -63,6 +67,7 @@ void init_types();
 void free_types();
 
 MPIX_DECL_ALL(Stats)
+MPIX_DECL_ALL(SuffixArrayStats)
 MPIX_DECL_ALL(TreeStats)
 MPIX_DECL_ALL(DbStats)
 MPIX_DECL_ALL(DupStats)

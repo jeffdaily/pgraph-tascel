@@ -64,7 +64,7 @@ class AlignStats
         }
 
         friend ostream &operator << (ostream &os, const AlignStats &stats) {
-            os << setprecision(3) << fixed << showpoint;
+            os << setprecision(5) << fixed << showpoint;
             os << setw(8) << stats.edge_counts
                << setw(12) << stats.align_counts
                << setw(12) << stats.align_skipped

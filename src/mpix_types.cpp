@@ -18,6 +18,7 @@
 #include "DupStats.hpp"
 #include "Stats.hpp"
 #include "Suffix.hpp"
+#include "SuffixArrayStats.hpp"
 #include "TreeStats.hpp"
 
 #include "mpix.hpp"
@@ -28,6 +29,7 @@ using ::pgraph::DbStats;
 using ::pgraph::DupStats;
 using ::pgraph::Stats;
 using ::pgraph::Suffix;
+using ::pgraph::SuffixArrayStats;
 using ::pgraph::TreeStats;
 
 using ::tascel::Counter;
@@ -40,6 +42,7 @@ MPI_Datatype mpi_datatype_Counter;
 MPI_Datatype mpi_datatype_Timer;
 MPI_Datatype mpi_datatype_StealingStats;
 MPI_Datatype mpi_datatype_Stats;
+MPI_Datatype mpi_datatype_SuffixArrayStats;
 MPI_Datatype mpi_datatype_TreeStats;
 MPI_Datatype mpi_datatype_DbStats;
 MPI_Datatype mpi_datatype_DupStats;
@@ -50,6 +53,7 @@ MPI_Datatype get_mpi_datatype(Counter object)       { return mpi_datatype_Counte
 MPI_Datatype get_mpi_datatype(Timer object)         { return mpi_datatype_Timer; }
 MPI_Datatype get_mpi_datatype(StealingStats object) { return mpi_datatype_StealingStats; }
 MPI_Datatype get_mpi_datatype(Stats object)         { return mpi_datatype_Stats; }
+MPI_Datatype get_mpi_datatype(SuffixArrayStats object)     { return mpi_datatype_SuffixArrayStats; }
 MPI_Datatype get_mpi_datatype(TreeStats object)     { return mpi_datatype_TreeStats; }
 MPI_Datatype get_mpi_datatype(DbStats object)       { return mpi_datatype_DbStats; }
 MPI_Datatype get_mpi_datatype(DupStats object)      { return mpi_datatype_DupStats; }
@@ -150,6 +154,33 @@ static void build_mpi_datatype_Stats()
     };
     type_create_struct(6, blocklen, disp, type, mpi_datatype_Stats);
     type_commit(mpi_datatype_Stats);
+}
+
+
+static void build_mpi_datatype_SuffixArrayStats()
+{
+    SuffixArrayStats object;
+    MPI_Datatype type[7] = {
+        get_mpi_datatype(object.arrays),
+        get_mpi_datatype(object.suffixes),
+        get_mpi_datatype(object.pairs),
+        get_mpi_datatype(object.time_build),
+        get_mpi_datatype(object.time_process),
+        get_mpi_datatype(object.time_first),
+        get_mpi_datatype(object.time_last)
+    };
+    int blocklen[7] = {1,1,1,1,1,1,1};
+    MPI_Aint disp[7] = {
+        MPI_Aint(&object.arrays)        - MPI_Aint(&object),
+        MPI_Aint(&object.suffixes)      - MPI_Aint(&object),
+        MPI_Aint(&object.pairs)         - MPI_Aint(&object),
+        MPI_Aint(&object.time_build)    - MPI_Aint(&object),
+        MPI_Aint(&object.time_process)  - MPI_Aint(&object),
+        MPI_Aint(&object.time_first)    - MPI_Aint(&object),
+        MPI_Aint(&object.time_last)     - MPI_Aint(&object)
+    };
+    type_create_struct(7, blocklen, disp, type, mpi_datatype_SuffixArrayStats);
+    type_commit(mpi_datatype_SuffixArrayStats);
 }
 
 
@@ -294,6 +325,7 @@ void init_types()
     build_mpi_datatype_Timer();
     build_mpi_datatype_StealingStats();
     build_mpi_datatype_Stats();
+    build_mpi_datatype_SuffixArrayStats();
     build_mpi_datatype_TreeStats();
     build_mpi_datatype_DbStats();
     build_mpi_datatype_DupStats();
@@ -308,6 +340,7 @@ void free_types()
     type_free(mpi_datatype_Timer);
     type_free(mpi_datatype_StealingStats);
     type_free(mpi_datatype_Stats);
+    type_free(mpi_datatype_SuffixArrayStats);
     type_free(mpi_datatype_TreeStats);
     type_free(mpi_datatype_DbStats);
     type_free(mpi_datatype_DupStats);
@@ -317,6 +350,7 @@ void free_types()
 
 
 MPIX_IMPL_ALL(Stats)
+MPIX_IMPL_ALL(SuffixArrayStats)
 MPIX_IMPL_ALL(TreeStats)
 MPIX_IMPL_ALL(DbStats)
 MPIX_IMPL_ALL(DupStats)

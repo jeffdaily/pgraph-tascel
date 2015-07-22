@@ -46,6 +46,7 @@
 #include "mpix.hpp"
 #include "mpix_types.hpp"
 #include "Parameters.hpp"
+#include "SuffixArrayStats.hpp"
 
 using namespace ::std;
 using namespace ::tascel;
@@ -66,6 +67,7 @@ typedef struct {
     int nprocs;
     UniformTaskCollection **utcs;
     AlignStats *stats_align;
+    SuffixArrayStats *stats_sa;
     const char *sequences;
     long n_sequences;
     unsigned long *SID;
@@ -127,7 +129,8 @@ static void SA_filter(
         long n,
         char sentinal,
         unsigned long sid_crossover,
-        int cutoff);
+        int cutoff,
+        SuffixArrayStats &stats_sa);
 
 static int trank(int thd);
 
@@ -183,6 +186,7 @@ static int inner_main(int argc, char **argv)
     vector<string> all_argv;
     UniformTaskCollection **utcs = NULL;
     AlignStats *stats_align = NULL;
+    SuffixArrayStats *stats_sa = NULL;
     vector<EdgeResult> *edge_results = NULL;
     Parameters *parameters = NULL;
     local_data_t *local_data = NULL;
@@ -213,6 +217,7 @@ static int inner_main(int argc, char **argv)
     /* initialize global data */
     utcs = new UniformTaskCollection*[NUM_WORKERS];
     stats_align = new AlignStats[NUM_WORKERS];
+    stats_sa = new SuffixArrayStats[NUM_WORKERS];
     edge_results = new vector<EdgeResult>[NUM_WORKERS];
     parameters = new Parameters;
     local_data = new local_data_t;
@@ -220,6 +225,7 @@ static int inner_main(int argc, char **argv)
     local_data->nprocs = nprocs;
     local_data->utcs = utcs;
     local_data->stats_align = stats_align;
+    local_data->stats_sa = stats_sa;
     local_data->edge_results = edge_results;
     local_data->parameters = parameters;
 
@@ -501,6 +507,47 @@ static int inner_main(int argc, char **argv)
     }
 
     if (parameters->print_stats) {
+        vector<SuffixArrayStats> rstats = mpix::gather(stats_sa, NUM_WORKERS, 0, pgraph::comm);
+        /* synchronously print tree stats all from process 0 */
+        if (0 == rank) {
+            SuffixArrayStats cumulative;
+            Stats arrays_per_worker;
+            Stats times_per_worker;
+            ostringstream header;
+            int p = cout.precision();
+
+            header.fill('-');
+            header << left << setw(79) << "--- Suffix Array Stats ";
+            cout << header.str() << endl;
+            cout << setprecision(2);
+            Stats::width(13);
+            for(int i=0; i<nprocs*NUM_WORKERS; i++) {
+                cout << right << setw(5) << i;
+                cout << right << setw(14) << "name";
+                cout << Stats::header() << endl;
+                cumulative += rstats[i];
+                arrays_per_worker.push_back(rstats[i].arrays);
+                times_per_worker.push_back(
+                        rstats[i].time_build.sum()+
+                        rstats[i].time_process.sum());
+                cout << rstats[i] << endl;
+            }
+            cout << string(79, '=') << endl;
+            cout << right << setw(5) << "TOTAL";
+            cout << right << setw(14) << "name";
+            cout << Stats::header() << endl;
+            cout << cumulative;
+            cout << right << setw(19) << "ArraysPerWorker" << arrays_per_worker << endl;
+            cout << right << setw(19) << "TimesPerWorker" << times_per_worker << endl;
+            cout << "first array" << setw(25) << cumulative.time_first << endl;
+            cout << " last array" << setw(25) << cumulative.time_last << endl;
+            cout << "       diff" << setw(25) << cumulative.time_last - cumulative.time_first << endl;
+            cout.precision(p);
+            cout << string(79, '-') << endl;
+        }
+    }
+
+    if (parameters->print_stats) {
         vector<StealingStats> stt(NUM_WORKERS);
         vector<StealingStats> rstt(NUM_WORKERS*nprocs);
 
@@ -689,7 +736,8 @@ static void SA_filter(
         long n,
         char sentinal,
         unsigned long sid_crossover,
-        int cutoff)
+        int cutoff,
+        SuffixArrayStats &stats_sa)
 {
     int rank = mpix::comm_rank(pgraph::comm);
     int nprocs = mpix::comm_size(pgraph::comm);
@@ -708,7 +756,14 @@ static void SA_filter(
     unsigned long count_generated = 0;
     unsigned long sid_crossover_local = 0;
     PairSet pairs;
+    double time_build = 0.0;
+    double time_process = 0.0;
 
+    if (stats_sa.time_first == 0.0) {
+        stats_sa.time_first = MPI_Wtime();
+    }
+
+    time_build = MPI_Wtime();
     time = MPI_Wtime();
     SID_local = new unsigned long[n+1];
     /* scan T from left to build sequence ID and end index */
@@ -773,6 +828,9 @@ static void SA_filter(
     finish = parasail_time();
     //cout << "clamp LCP time: " << finish-start << " seconds" << endl;
 
+    stats_sa.time_build.push_back(MPI_Wtime() - time_build);
+    time_process = MPI_Wtime();
+
     /* The GSA we create will put all sentinals either at the beginning
      * or end of the SA. We don't want to count all of the terminals,
      * nor do we want to process them in our bottom-up traversal. */
@@ -831,6 +889,7 @@ static void SA_filter(
         process(utc, count_generated, pairs, the_stack.top(), SA, BWT, SID, sid_crossover, sentinal, cutoff);
     }
     finish = parasail_time();
+    stats_sa.time_process.push_back(MPI_Wtime() - time_process);
     if (0 == sid_crossover) {
         count_possible = ((unsigned long)sid)*((unsigned long)sid-1)/2;
     }
@@ -843,6 +902,11 @@ static void SA_filter(
     cout << "generated pairs: " << count_generated << endl;
     cout << "unique pairs: " << pairs.size() << endl;
 #endif
+
+    stats_sa.arrays++;
+    stats_sa.suffixes.push_back(n);
+    stats_sa.pairs.push_back(count_generated);
+    stats_sa.time_last = MPI_Wtime();
 
     /* Deallocate memory. */
     delete [] SID_local;
@@ -1006,6 +1070,7 @@ static void sa_task(
     unsigned long *SID = NULL;
     int cutoff = local_data->parameters->exact_match_length;
     int sid_crossover = 0;
+    SuffixArrayStats *stats_sa = local_data->stats_sa;
 
     if (id1 == id2) {
         sequences = new char[len1+1];
@@ -1017,7 +1082,7 @@ static void sa_task(
              &local_data->SID[beg1+len1],
              &SID[0]);
         sequences[len1] = '\0';
-        SA_filter(utc, SID, sequences, len1, local_data->sentinal, sid_crossover, cutoff);
+        SA_filter(utc, SID, sequences, len1, local_data->sentinal, sid_crossover, cutoff, stats_sa[thd]);
     }
     else {
         sequences = new char[len1+len2+1];
@@ -1036,7 +1101,7 @@ static void sa_task(
              &SID[len1]);
         sid_crossover = id2_beg;
         sequences[len1+len2] = '\0';
-        SA_filter(utc, SID, sequences, len1+len2, local_data->sentinal, sid_crossover, cutoff);
+        SA_filter(utc, SID, sequences, len1+len2, local_data->sentinal, sid_crossover, cutoff, stats_sa[thd]);
     }
 
     delete [] sequences;
