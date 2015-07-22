@@ -939,7 +939,7 @@ static void align(
         s2Len -= 1;
     }
     if (parameters->use_length_filter) {
-        do_alignment |= SuffixTree::length_filter(s1Len, s2Len, AOL*SIM/100);
+        do_alignment &= SuffixTree::length_filter(s1Len, s2Len, AOL*SIM/100);
     }
 
     if (do_alignment)

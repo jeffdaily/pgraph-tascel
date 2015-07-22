@@ -346,6 +346,13 @@ static int inner_main(int argc, char **argv)
             << endl;
     }
 
+    while (sid % parameters->sa_block_size == 1) {
+        if (0 == rank) {
+            cout << "sa_block_size parameter left a remainder of 1; increasing by 1" << endl;
+            parameters->sa_block_size += 1;
+        }
+    }
+
     unsigned long global_num_workers = nprocs*NUM_WORKERS;
     unsigned long tasks_per_worker = ntasks / global_num_workers;
     unsigned long max_tasks_per_worker = ntasks / global_num_workers;
@@ -370,26 +377,35 @@ static int inner_main(int argc, char **argv)
             .maxTasks(parameters->memory_worker / sizeof(task_description_t))
             .localData(local_data, sizeof(void*));
         int parts = (sid + parameters->sa_block_size - 1) / parameters->sa_block_size;
+        int tiles = parts*(parts-1)/2 + parts;
+        if (0 == rank) {
+            printf("sequences split into %d parts for a total of %d tiles\n",
+                    parts, tiles);
+        }
         int crank = 0;
         int wsize = nprocs*NUM_WORKERS;
         task_description_t desc;
+        map<int,int> wrank_to_worker;
         for (int worker=0; worker<NUM_WORKERS; ++worker) {
             populate_time[worker] = MPI_Wtime();
             utcs[worker] = new UniformTaskCollectionSplit(props, worker);
-            int wrank = trank(worker);
-            for (int i=0; i<parts; ++i) {
-                for (int j=i; j<parts; ++j) {
-                    desc.id1 = i;
-                    desc.id2 = j;
-                    desc.type = 0;
-                    if (crank == wrank) {
-                        utcs[worker]->addTask(&desc, sizeof(desc));
-                        populate_count[worker] += 1;
-                    }
-                    ++crank;
-                    crank = crank % wsize;
+            wrank_to_worker[trank(worker)] = worker;
+        }
+        for (int i=0; i<parts; ++i) {
+            for (int j=i; j<parts; ++j) {
+                desc.id1 = i;
+                desc.id2 = j;
+                desc.type = 0;
+                if (wrank_to_worker.count(crank)) {
+                    int worker = wrank_to_worker[crank];
+                    utcs[worker]->addTask(&desc, sizeof(desc));
+                    populate_count[worker] += 1;
                 }
+                ++crank;
+                crank = crank % wsize;
             }
+        }
+        for (int worker=0; worker<NUM_WORKERS; ++worker) {
             populate_time[worker] = MPI_Wtime() - populate_time[worker];
         }
     }
@@ -993,7 +1009,7 @@ static void alignment_task(
     const char * c2 = &sequences[j_beg];
 
     if (parameters->use_length_filter) {
-        do_alignment |= length_filter(s1Len, s2Len, AOL*SIM/100);
+        do_alignment &= length_filter(s1Len, s2Len, AOL*SIM/100);
     }
 
     if (do_alignment)
