@@ -99,6 +99,7 @@ GA_CHECK_PACKAGE([parasail], [parasail.h], [parasail], [parasail_sw])
 # Checks for header files.
 
 # Checks for typedefs, structures, and compiler characteristics.
+AX_OPENMP
 AC_CHECK_SIZEOF([void*])
 AC_CHECK_SIZEOF([bool])
 AC_CHECK_SIZEOF([char])

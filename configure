@@ -5602,10 +5602,7 @@ for ax_openmp_flag in $ax_openmp_flags; do
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#ifdef __cplusplus
-extern "C"
-#endif
-void omp_set_num_threads(int);
+#include <omp.h>
 
 static void
 parallel_fill(int * data, int n)
@@ -7828,6 +7825,72 @@ fi
 # Checks for header files.
 
 # Checks for typedefs, structures, and compiler characteristics.
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for OpenMP flag of C++ compiler" >&5
+$as_echo_n "checking for OpenMP flag of C++ compiler... " >&6; }
+if ${ax_cv_cxx_openmp+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  saveCXXFLAGS=$CXXFLAGS
+ax_cv_cxx_openmp=unknown
+# Flags to try:  -fopenmp (gcc), -openmp (icc), -mp (SGI & PGI),
+#                -xopenmp (Sun), -omp (Tru64), -qsmp=omp (AIX), none
+ax_openmp_flags="-fopenmp -openmp -mp -xopenmp -omp -qsmp=omp none"
+if test "x$OPENMP_CXXFLAGS" != x; then
+  ax_openmp_flags="$OPENMP_CXXFLAGS $ax_openmp_flags"
+fi
+for ax_openmp_flag in $ax_openmp_flags; do
+  case $ax_openmp_flag in
+    none) CXXFLAGS=$saveCXX ;;
+    *) CXXFLAGS="$saveCXXFLAGS $ax_openmp_flag" ;;
+  esac
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <omp.h>
+
+static void
+parallel_fill(int * data, int n)
+{
+  int i;
+#pragma omp parallel for
+  for (i = 0; i < n; ++i)
+    data[i] = i;
+}
+
+int
+main()
+{
+  int arr[100000];
+  omp_set_num_threads(2);
+  parallel_fill(arr, 100000);
+  return 0;
+}
+
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ax_cv_cxx_openmp=$ax_openmp_flag; break
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+done
+CXXFLAGS=$saveCXXFLAGS
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_cxx_openmp" >&5
+$as_echo "$ax_cv_cxx_openmp" >&6; }
+if test "x$ax_cv_cxx_openmp" = "xunknown"; then
+  :
+else
+  if test "x$ax_cv_cxx_openmp" != "xnone"; then
+    OPENMP_CXXFLAGS=$ax_cv_cxx_openmp
+  fi
+
+$as_echo "#define HAVE_OPENMP 1" >>confdefs.h
+
+fi
+
 # The cast to long int works around a bug in the HP C Compiler
 # version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
 # declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
@@ -8346,10 +8409,7 @@ for ax_openmp_flag in $ax_openmp_flags; do
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#ifdef __cplusplus
-extern "C"
-#endif
-void omp_set_num_threads(int);
+#include <omp.h>
 
 static void
 parallel_fill(int * data, int n)

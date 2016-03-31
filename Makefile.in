@@ -79,7 +79,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = apps/align$(EXEEXT) apps/align_parted$(EXEEXT)
+bin_PROGRAMS = apps/align$(EXEEXT) apps/align_parted$(EXEEXT) \
+	apps/align_parted_nxtval$(EXEEXT)
 noinst_PROGRAMS = tests/st_serial$(EXEEXT) tests/suftest$(EXEEXT) \
 	tests/suftest_omp$(EXEEXT) tests/suftest_orig$(EXEEXT) \
 	tests/test_sais$(EXEEXT) tests/test_combinations$(EXEEXT) \
@@ -223,6 +224,19 @@ apps_align_parted_LDADD = $(LDADD)
 apps_align_parted_DEPENDENCIES = libpgraph.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) libyaml-cpp.la $(am__DEPENDENCIES_1)
+am_apps_align_parted_nxtval_OBJECTS =  \
+	apps/apps_align_parted_nxtval-align_parted_nxtval.$(OBJEXT)
+apps_align_parted_nxtval_OBJECTS =  \
+	$(am_apps_align_parted_nxtval_OBJECTS)
+apps_align_parted_nxtval_LDADD = $(LDADD)
+apps_align_parted_nxtval_DEPENDENCIES = libpgraph.la \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) libyaml-cpp.la \
+	$(am__DEPENDENCIES_1)
+apps_align_parted_nxtval_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
+	$(apps_align_parted_nxtval_CXXFLAGS) $(CXXFLAGS) \
+	$(apps_align_parted_nxtval_LDFLAGS) $(LDFLAGS) -o $@
 am_tests_st_serial_OBJECTS = tests/st_serial.$(OBJEXT)
 tests_st_serial_OBJECTS = $(am_tests_st_serial_OBJECTS)
 tests_st_serial_LDADD = $(LDADD)
@@ -354,8 +368,9 @@ am__v_CXXLD_1 =
 SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
 	$(libpgraph_la_SOURCES) $(libyaml_cpp_la_SOURCES) \
 	$(apps_align_SOURCES) $(apps_align_parted_SOURCES) \
-	$(tests_st_serial_SOURCES) $(tests_suftest_SOURCES) \
-	$(tests_suftest_omp_SOURCES) $(tests_suftest_orig_SOURCES) \
+	$(apps_align_parted_nxtval_SOURCES) $(tests_st_serial_SOURCES) \
+	$(tests_suftest_SOURCES) $(tests_suftest_omp_SOURCES) \
+	$(tests_suftest_orig_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
 	$(tests_test_db_reprinter_SOURCES) $(tests_test_mpi_SOURCES) \
 	$(tests_test_parser_SOURCES) $(tests_test_sais_SOURCES) \
@@ -363,8 +378,9 @@ SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
 DIST_SOURCES = $(libgtest_a_SOURCES) $(libpgtest_a_SOURCES) \
 	$(am__libpgraph_la_SOURCES_DIST) $(libyaml_cpp_la_SOURCES) \
 	$(apps_align_SOURCES) $(apps_align_parted_SOURCES) \
-	$(tests_st_serial_SOURCES) $(tests_suftest_SOURCES) \
-	$(tests_suftest_omp_SOURCES) $(tests_suftest_orig_SOURCES) \
+	$(apps_align_parted_nxtval_SOURCES) $(tests_st_serial_SOURCES) \
+	$(tests_suftest_SOURCES) $(tests_suftest_omp_SOURCES) \
+	$(tests_suftest_orig_SOURCES) \
 	$(tests_test_combinations_SOURCES) \
 	$(tests_test_db_reprinter_SOURCES) $(tests_test_mpi_SOURCES) \
 	$(tests_test_parser_SOURCES) $(tests_test_sais_SOURCES) \
@@ -685,6 +701,10 @@ libyaml_cpp_la_SOURCES =  \
 	contrib/yaml-cpp-0.5.1/src/token.h
 apps_align_SOURCES = apps/align.cpp
 apps_align_parted_SOURCES = apps/align_parted.cpp
+apps_align_parted_nxtval_SOURCES = apps/align_parted_nxtval.cpp \
+	apps/nxtval.h
+apps_align_parted_nxtval_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
+apps_align_parted_nxtval_LDFLAGS = $(AM_LDFLAGS) $(OPENMP_CXXFLAGS)
 tests_suftest_SOURCES = tests/suftest.cpp
 tests_suftest_omp_SOURCES = tests/suftest.cpp
 tests_suftest_orig_SOURCES = contrib/sais-lite-lcp/suftest.c
@@ -1028,6 +1048,12 @@ apps/align_parted.$(OBJEXT): apps/$(am__dirstamp) \
 apps/align_parted$(EXEEXT): $(apps_align_parted_OBJECTS) $(apps_align_parted_DEPENDENCIES) $(EXTRA_apps_align_parted_DEPENDENCIES) apps/$(am__dirstamp)
 	@rm -f apps/align_parted$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(apps_align_parted_OBJECTS) $(apps_align_parted_LDADD) $(LIBS)
+apps/apps_align_parted_nxtval-align_parted_nxtval.$(OBJEXT):  \
+	apps/$(am__dirstamp) apps/$(DEPDIR)/$(am__dirstamp)
+
+apps/align_parted_nxtval$(EXEEXT): $(apps_align_parted_nxtval_OBJECTS) $(apps_align_parted_nxtval_DEPENDENCIES) $(EXTRA_apps_align_parted_nxtval_DEPENDENCIES) apps/$(am__dirstamp)
+	@rm -f apps/align_parted_nxtval$(EXEEXT)
+	$(AM_V_CXXLD)$(apps_align_parted_nxtval_LINK) $(apps_align_parted_nxtval_OBJECTS) $(apps_align_parted_nxtval_LDADD) $(LIBS)
 tests/st_serial.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 
@@ -1110,6 +1136,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/align_parted.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@apps/$(DEPDIR)/apps_align_parted_nxtval-align_parted_nxtval.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/gtest-1.7.0/src/$(DEPDIR)/gtest-all.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/sais-lite-lcp/$(DEPDIR)/sais.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/sais-lite-lcp/$(DEPDIR)/suftest.Po@am__quote@
@@ -1218,6 +1245,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LTCXXCOMPILE) -c -o $@ $<
+
+apps/apps_align_parted_nxtval-align_parted_nxtval.o: apps/align_parted_nxtval.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(apps_align_parted_nxtval_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_parted_nxtval-align_parted_nxtval.o -MD -MP -MF apps/$(DEPDIR)/apps_align_parted_nxtval-align_parted_nxtval.Tpo -c -o apps/apps_align_parted_nxtval-align_parted_nxtval.o `test -f 'apps/align_parted_nxtval.cpp' || echo '$(srcdir)/'`apps/align_parted_nxtval.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_parted_nxtval-align_parted_nxtval.Tpo apps/$(DEPDIR)/apps_align_parted_nxtval-align_parted_nxtval.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_parted_nxtval.cpp' object='apps/apps_align_parted_nxtval-align_parted_nxtval.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(apps_align_parted_nxtval_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_parted_nxtval-align_parted_nxtval.o `test -f 'apps/align_parted_nxtval.cpp' || echo '$(srcdir)/'`apps/align_parted_nxtval.cpp
+
+apps/apps_align_parted_nxtval-align_parted_nxtval.obj: apps/align_parted_nxtval.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(apps_align_parted_nxtval_CXXFLAGS) $(CXXFLAGS) -MT apps/apps_align_parted_nxtval-align_parted_nxtval.obj -MD -MP -MF apps/$(DEPDIR)/apps_align_parted_nxtval-align_parted_nxtval.Tpo -c -o apps/apps_align_parted_nxtval-align_parted_nxtval.obj `if test -f 'apps/align_parted_nxtval.cpp'; then $(CYGPATH_W) 'apps/align_parted_nxtval.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_parted_nxtval.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) apps/$(DEPDIR)/apps_align_parted_nxtval-align_parted_nxtval.Tpo apps/$(DEPDIR)/apps_align_parted_nxtval-align_parted_nxtval.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='apps/align_parted_nxtval.cpp' object='apps/apps_align_parted_nxtval-align_parted_nxtval.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(apps_align_parted_nxtval_CXXFLAGS) $(CXXFLAGS) -c -o apps/apps_align_parted_nxtval-align_parted_nxtval.obj `if test -f 'apps/align_parted_nxtval.cpp'; then $(CYGPATH_W) 'apps/align_parted_nxtval.cpp'; else $(CYGPATH_W) '$(srcdir)/apps/align_parted_nxtval.cpp'; fi`
 
 tests/tests_suftest_omp-suftest.o: tests/suftest.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(tests_suftest_omp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT tests/tests_suftest_omp-suftest.o -MD -MP -MF tests/$(DEPDIR)/tests_suftest_omp-suftest.Tpo -c -o tests/tests_suftest_omp-suftest.o `test -f 'tests/suftest.cpp' || echo '$(srcdir)/'`tests/suftest.cpp

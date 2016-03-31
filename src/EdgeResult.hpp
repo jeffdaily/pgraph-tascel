@@ -35,7 +35,7 @@ class EdgeResult {
                 << SEP << edge.a
                 << SEP << edge.b
                 << SEP << edge.c
-                << SEP << edge.is_edge
+                /*<< SEP << edge.is_edge*/
                 ;
             return os;
         }

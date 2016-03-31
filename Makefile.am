@@ -198,6 +198,13 @@ apps_align_SOURCES = apps/align.cpp
 bin_PROGRAMS += apps/align_parted
 apps_align_parted_SOURCES = apps/align_parted.cpp
 
+bin_PROGRAMS += apps/align_parted_nxtval
+apps_align_parted_nxtval_SOURCES = 
+apps_align_parted_nxtval_SOURCES += apps/align_parted_nxtval.cpp
+apps_align_parted_nxtval_SOURCES += apps/nxtval.h
+apps_align_parted_nxtval_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
+apps_align_parted_nxtval_LDFLAGS = $(AM_LDFLAGS) $(OPENMP_CXXFLAGS)
+
 noinst_PROGRAMS += tests/st_serial
 noinst_PROGRAMS += tests/suftest
 noinst_PROGRAMS += tests/suftest_omp
