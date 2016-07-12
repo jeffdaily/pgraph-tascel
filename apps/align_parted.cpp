@@ -998,11 +998,11 @@ static void alignment_task(
 
     size_t i = desc->id1;
     size_t j = desc->id2;
-    int i_beg = BEG[i];
-    int i_end = END[i];
+    unsigned long i_beg = BEG[i];
+    unsigned long i_end = END[i];
     int s1Len = i_end-i_beg;
-    int j_beg = BEG[j];
-    int j_end = END[j];
+    unsigned long j_beg = BEG[j];
+    unsigned long j_end = END[j];
     int s2Len = j_end-j_beg;
 
     const char * c1 = &sequences[i_beg];
@@ -1060,17 +1060,17 @@ static void sa_task(
 {
     task_description_t *desc = (task_description_t*)bigd; 
     local_data_t *local_data = (local_data_t*)pldata; 
-    int block_size = local_data->parameters->sa_block_size;
-    int id1 = desc->id1;
-    int id2 = desc->id2;
-    int id1_beg = id1 * block_size;
-    int id2_beg = id2 * block_size;
-    int id1_end = id1_beg + block_size - 1;
-    int id2_end = id2_beg + block_size - 1;
-    int beg1 = (*local_data->BEG)[id1_beg];
-    int beg2 = (*local_data->BEG)[id2_beg];
-    int end1 = 0;
-    int end2 = 0;
+    size_t block_size = (size_t)local_data->parameters->sa_block_size;
+    size_t id1 = desc->id1;
+    size_t id2 = desc->id2;
+    size_t id1_beg = id1 * block_size;
+    size_t id2_beg = id2 * block_size;
+    size_t id1_end = id1_beg + block_size - 1;
+    size_t id2_end = id2_beg + block_size - 1;
+    unsigned long beg1 = (*local_data->BEG)[id1_beg];
+    unsigned long beg2 = (*local_data->BEG)[id2_beg];
+    unsigned long end1 = 0;
+    unsigned long end2 = 0;
     assert(id1 <= id2);
     if (id1_end > local_data->n_sequences) {
         id1_end = local_data->n_sequences - 1;
@@ -1080,12 +1080,12 @@ static void sa_task(
         id2_end = local_data->n_sequences - 1;
     }
     end2 = (*local_data->END)[id2_end];
-    int len1 = end1 - beg1 + 1;
-    int len2 = end2 - beg2 + 1;
+    unsigned long len1 = end1 - beg1 + 1;
+    unsigned long len2 = end2 - beg2 + 1;
     char *sequences = NULL;
     unsigned long *SID = NULL;
     int cutoff = local_data->parameters->exact_match_length;
-    int sid_crossover = 0;
+    unsigned long sid_crossover = 0;
     SuffixArrayStats *stats_sa = local_data->stats_sa;
 
     if (id1 == id2) {

@@ -61,7 +61,7 @@ static NXTVAL_t NXTVAL_init(long long start, long long stop)
 
     MPI_Query_thread(&nxt.provided);
 
-    if (1 != nxt.size) {
+    if (nxt.size > 1) {
         if (MPI_THREAD_MULTIPLE == nxt.provided) {
             if (0 == nxt.rank) {
                 int rc;
@@ -92,6 +92,10 @@ static NXTVAL_t NXTVAL_init(long long start, long long stop)
             }
         }
     }
+    else {
+        printf("NXTVAL_init not started due to single rank\n");
+        fflush(stdout);
+    }
 
     return nxt;
 }
@@ -99,10 +103,10 @@ static NXTVAL_t NXTVAL_init(long long start, long long stop)
 
 static void NXTVAL_stop(NXTVAL_t nxt)
 {
-    /*printf("%d: stopping nxtval\n", nxt.rank);*/
+    printf("%d: stopping nxtval\n", nxt.rank);
     fflush(stdout);
 
-    if (1 != nxt.size) {
+    if (nxt.size > 1) {
         if (MPI_THREAD_MULTIPLE == nxt.provided) {
             MPI_Barrier(nxt.comm);
             if (0 == nxt.rank) {
@@ -140,12 +144,16 @@ static void NXTVAL_stop(NXTVAL_t nxt)
 
         MPI_Barrier(nxt.comm);
     }
+    else {
+        printf("NXTVAL_stop not needed, single rank\n");
+        fflush(stdout);
+    }
 }
 
 
 static long long NXTVAL_get(NXTVAL_t nxt)
 {
-    if (1 != nxt.size) {
+    if (nxt.size > 1) {
         if (MPI_THREAD_MULTIPLE != nxt.provided && 0 == nxt.rank) {
             return nxt.stop;
         }

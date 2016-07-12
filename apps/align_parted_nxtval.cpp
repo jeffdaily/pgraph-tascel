@@ -65,6 +65,8 @@ typedef struct {
     vector<long> *END;
     char sentinal;
     vector<EdgeResult> *edge_results;
+    ofstream *edge_out;
+    ofstream *debug_out;
     Parameters *parameters;
     parasail_function_t *aligner;
     const parasail_matrix_t *matrix;
@@ -122,6 +124,8 @@ static void SA_filter(
 
 static string get_edges_filename(int rank);
 
+static string get_debug_filename(int rank);
+
 static bool length_filter(size_t s1Len, size_t s2Len, size_t cutOff);
 
 static void alignment_task(
@@ -160,6 +164,8 @@ static int inner_main(int argc, char **argv)
     AlignStats *stats_align = NULL;
     SuffixArrayStats *stats_sa = NULL;
     vector<EdgeResult> *edge_results = NULL;
+    ofstream edge_out;
+    ofstream debug_out;
     Parameters *parameters = NULL;
     local_data_t *local_data = NULL;
     char *file_buffer = NULL;
@@ -190,6 +196,8 @@ static int inner_main(int argc, char **argv)
     local_data->stats_align = stats_align;
     local_data->stats_sa = stats_sa;
     local_data->edge_results = edge_results;
+    local_data->edge_out = NULL;
+    local_data->debug_out = NULL;
     local_data->parameters = parameters;
 
     /* MPI standard does not guarantee all procs receive argc and arg */
@@ -225,6 +233,13 @@ static int inner_main(int argc, char **argv)
     }
     else if (all_argv.size() >= 2) {
         /* do nothing */
+    }
+
+    if (parameters->output_to_disk) {
+        edge_out.open(get_edges_filename(rank).c_str());
+        local_data->edge_out = &edge_out;
+        debug_out.open(get_debug_filename(rank).c_str());
+        local_data->debug_out = &debug_out;
     }
 
     /* print parameters */
@@ -361,11 +376,14 @@ static int inner_main(int argc, char **argv)
         long long index;
         NXTVAL_t nxt = NXTVAL_init(-parts, tiles);
         index = NXTVAL_get(nxt);
+        (*local_data->debug_out) << "NXTVAL_get: " << index << endl;
         while (index < tiles) {
             sa_task(index, local_data);
             index = NXTVAL_get(nxt);
+            (*local_data->debug_out) << "NXTVAL_get: " << index << endl;
         }
 
+        (*local_data->debug_out) << "NXTVAL_stop" << endl;
         NXTVAL_stop(nxt);
     }
 
@@ -462,32 +480,8 @@ static int inner_main(int argc, char **argv)
     MPI_Barrier(pgraph::comm);
 
     if (parameters->output_to_disk) {
-        double time = MPI_Wtime();
-        ofstream edge_out(get_edges_filename(rank).c_str());
-        for (int worker=0; worker<NUM_WORKERS; ++worker) {
-            for (size_t i=0,limit=edge_results[worker].size(); i<limit; ++i) {
-                edge_out << edge_results[worker][i] << endl;
-            }
-        }
         edge_out.close();
-        time = MPI_Wtime() - time;
-        if (0 == rank) {
-            ostringstream header;
-            header.fill('-');
-            header << left << setw(79) << "--- Disk Output Stats ";
-            Stats::width(11);
-            cout << header.str() << endl;
-            cout << Stats::header() << endl;
-            vector<double> times = mpix::gather(time, 0, pgraph::comm);
-            Stats ts;
-            for (int i=0; i<nprocs; ++i ) {
-                ts.push_back(times[i]);
-            }
-            cout << ts << endl;
-        }
-        else {
-            (void)mpix::gather(time, 0, pgraph::comm);
-        }
+        debug_out.close();
     }
 
     delete [] stats_align;
@@ -614,8 +608,6 @@ static void SA_filter(
     int *SA = NULL;
     int *LCP = NULL;
     unsigned char *BWT = NULL;
-    double start = 0;
-    double finish = 0;
     int i = 0;
     long sid = 0;
     vector<long> BEG;
@@ -673,30 +665,21 @@ static void SA_filter(
 
     /* Construct the suffix and LCP arrays.
      * The following sais routine is from Fischer, with bugs fixed. */
-    start = parasail_time();
     if(sais((const unsigned char *)T, SA, LCP, (int)n) != 0) {
         cerr << "Cannot allocate memory." << endl;
         exit(EXIT_FAILURE);
     }
-    finish = parasail_time();
-    //cout << "induced SA time: " << finish-start << " seconds" << endl;
 
     /* construct naive BWT: */
-    start = parasail_time();
     for (i = 0; i < n; ++i) {
         BWT[i] = (SA[i] > 0) ? T[SA[i]-1] : sentinal;
     }
-    finish = parasail_time();
-    //cout << "naive BWT time: " << finish-start << " seconds" << endl;
 
     /* "fix" the LCP array to clamp LCP's that are too long */
-    start = parasail_time();
     for (i = 0; i < n; ++i) {
         int len = END[SID_local[SA[i]]] - SA[i]; /* don't include sentinal */
         if (LCP[i] > len) LCP[i] = len;
     }
-    finish = parasail_time();
-    //cout << "clamp LCP time: " << finish-start << " seconds" << endl;
 
     stats_sa.time_build.push_back(MPI_Wtime() - time_build);
     time_process = MPI_Wtime();
@@ -723,7 +706,6 @@ static void SA_filter(
     }
 
     /* DFS of enhanced SA, from Abouelhoda et al */
-    start = parasail_time();
     count_generated = 0;
     LCP[n] = 0; /* doesn't really exist, but for the root */
     {
@@ -758,7 +740,6 @@ static void SA_filter(
         the_stack.top().rb = bup_stop - 1;
         process(count_generated, pairs, the_stack.top(), SA, BWT, SID, sid_crossover, sentinal, cutoff);
     }
-    finish = parasail_time();
     stats_sa.time_process.push_back(MPI_Wtime() - time_process);
     if (0 == sid_crossover) {
         count_possible = ((unsigned long)sid)*((unsigned long)sid-1)/2;
@@ -766,11 +747,11 @@ static void SA_filter(
     else {
         count_possible = (sid-sid_crossover_local)*sid_crossover_local;
     }
-#if 0
-    cout << "ESA time: " << finish-start << " seconds" << endl;
-    cout << "possible pairs: " << count_possible << endl;
-    cout << "generated pairs: " << count_generated << endl;
-    cout << "unique pairs: " << pairs.size() << endl;
+#if 1
+    (*local_data->debug_out) << "ESA time: " << MPI_Wtime() - time_process << endl;
+    //(*local_data->debug_out) << "possible pairs: " << count_possible << endl;
+    (*local_data->debug_out) << "generated pairs: " << count_generated << endl;
+    (*local_data->debug_out) << "unique pairs: " << pairs.size() << endl;
 #endif
 
     stats_sa.arrays++;
@@ -781,6 +762,16 @@ static void SA_filter(
     /* OpenMP can't iterate over an STL set. Convert to STL vector. */
     vpairs.assign(pairs.begin(), pairs.end());
     pairs.clear();
+
+    vector<EdgeResult> *edge_results = local_data->edge_results;
+
+    if (local_data->parameters->output_to_disk) {
+        for (int worker=0; worker<NUM_WORKERS; ++worker) {
+            edge_results[worker].clear();
+        }
+    }
+
+    time_process = MPI_Wtime();
     /* align pairs */
 #pragma omp parallel
     {
@@ -792,6 +783,19 @@ static void SA_filter(
             //cout << "alignment_task("<<i<<", "<<j<<", local_data, "<<thd<<");"<<endl;
             alignment_task(i, j, local_data, thd);
         }
+    }
+    time_process = MPI_Wtime() - time_process;
+    (*local_data->debug_out) << "align time: " << time_process << endl;
+    (*local_data->debug_out) << "time per align: " << time_process/vpairs.size() << endl;
+
+    if (local_data->parameters->output_to_disk) {
+        for (int worker=0; worker<NUM_WORKERS; ++worker) {
+            size_t limit = edge_results[worker].size();
+            for (size_t i=0; i<limit; ++i) {
+                (*local_data->edge_out) << edge_results[worker][i] << endl;
+            }
+        }
+        local_data->edge_out->flush();
     }
 
     /* Deallocate memory. */
@@ -805,6 +809,13 @@ static string get_edges_filename(int rank)
 {
     ostringstream str;
     str << "edges." << rank << ".txt";
+    return str.str();
+}
+
+static string get_debug_filename(int rank)
+{
+    ostringstream str;
+    str << "debug." << rank << ".txt";
     return str.str();
 }
 
@@ -907,7 +918,6 @@ static void sa_task(long long task_id, local_data_t *local_data)
     else {
         id1 = id2 = (-task_id)-1;
     }
-    cout << local_data->rank << "\t" << task_id << "\t" << id1 << "\t" << id2 << endl;
     size_t id1_beg = id1 * block_size;
     size_t id2_beg = id2 * block_size;
     size_t id1_end = id1_beg + block_size - 1;
@@ -932,6 +942,12 @@ static void sa_task(long long task_id, local_data_t *local_data)
     int cutoff = local_data->parameters->exact_match_length;
     int sid_crossover = 0;
     SuffixArrayStats *stats_sa = local_data->stats_sa;
+
+    (*local_data->debug_out) << task_id
+        << "\t" << id1
+        << "\t" << id2
+        << "\tbegin"
+        << endl;
 
     if (id1 == id2) {
         sequences = new char[len1+1];
@@ -967,6 +983,13 @@ static void sa_task(long long task_id, local_data_t *local_data)
 
     delete [] sequences;
     delete [] SID;
+
+    (*local_data->debug_out) << task_id
+        << "\t" << id1
+        << "\t" << id2
+        << "\tend"
+        << endl;
+
 }
 
 static bool length_filter(size_t s1Len, size_t s2Len, size_t cutOff)
